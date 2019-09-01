@@ -28,7 +28,9 @@ body {
   flex-direction: column;
 }
 
-
+code {
+  font-family: $code-font-family
+}
 
 /**
  * Set `margin-bottom` to maintain vertical rhythm
