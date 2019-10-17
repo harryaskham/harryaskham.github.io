@@ -2,7 +2,7 @@
 layout: home
 ---
 
-I am an engineering lead working in machine learning for healthcare at Google.
+I am an engineering lead working in machine learning for healthcare at [Google Health](https://health.google).
 
 {% highlight rust %}fn render_homepage() { unimplemented!("TODO(askham)"); }{% endhighlight %}
 
