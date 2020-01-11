@@ -9,4 +9,4 @@ renderHomepage :: IO ()
 renderHomepage = error "TODO(askham)"
 {% endhighlight %}
 
-This site is under construction - see my [LinkedIn](https://linkedin.com/harryaskham) for more information.
+This site is under construction - see my [LinkedIn](https://linkedin.com/in/harryaskham) for more information.
