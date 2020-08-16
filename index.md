@@ -2,7 +2,7 @@
 layout: home
 ---
 
-I am an engineering lead working in machine learning for healthcare at [Google Health](https://health.google).
+I am a Staff Software Engineer working at [DeepMind](https://deepmind.com).
 
 My CV is available [here](cv.pdf).
 
