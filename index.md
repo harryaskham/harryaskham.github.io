@@ -2,6 +2,6 @@
 layout: home
 ---
 
-I am a Staff Software Engineer working at [DeepMind](https://deepmind.com).
+I am a Staff Software Engineer working on real-world applications of AI at [DeepMind](https://deepmind.com).
 
 My CV is available [here](cv.pdf), or see my [LinkedIn](https://linkedin.com/in/harryaskham) for more information.
