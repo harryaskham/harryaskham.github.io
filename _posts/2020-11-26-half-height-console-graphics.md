@@ -3,6 +3,8 @@ layout: post
 title: Half-Height Console Graphics with Haskell and ncurses
 ---
 
+_Note: Since writing this post, I've written this technique up as a [standalone library](https://github.com/harryaskham/halfheight)._
+
 # Motivation
 
 Most terminals print characters twice as long as they are wide. This means that any character-based graphics that naively treat a character as a pixel are going to end up distorted. There are [plenty of ways](https://en.wikipedia.org/wiki/ANSI_art) around this, but I wanted to write up the ncurses-based solution I came up with when writing a terminal-only roguelike engine in Haskell recently with support for simulating square pixels in an otherwise rectangular terminal.
