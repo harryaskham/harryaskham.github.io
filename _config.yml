@@ -27,6 +27,7 @@ url: "https://a.skh.am" # the base hostname & protocol for your site, e.g. http:
 twitter_username: harryaskham
 github_username: harryaskham
 linkedin_username: harryaskham
+google_analytics: "G-E6LEXB5B8J"
 
 # Build settings
 theme: minima
