@@ -3,6 +3,8 @@ layout: post
 title: Half-Height Console Graphics with Haskell and ncurses
 ---
 
+{:center: style="text-align: center;"}
+
 _Note: Since writing this post, I've written this technique up as a [standalone library](https://github.com/harryaskham/halfheight)._
 
 # Motivation
@@ -12,14 +14,17 @@ Most terminals print characters twice as long as they are wide. This means that 
 <video muted controls="controls">
   <source type="video/mp4" src="/video/rouge-example.mp4"></source>
 </video>
+{: center}
 
 _A debug run showing the end result: full-height text at the bottom of the terminal, and dense half-height ncurses graphics at the top._
+{: center}
 
 # Problem and Solution
 
 The best examples of character per pixel ncurses rendering are those using the [libtcod](https://libtcod.readthedocs.io/en/latest/) engine:
 
 ![](/img/libtcod.png)
+{: center}
 
 This looks good, but note that each cell is the same height as the text around it (in the above screenshot, this effect is minimised by using a shorter monospaced font). We'd like two modes: one for denser cell-based graphics and another for full-sized text, both in the same terminal window.
 
