@@ -5,7 +5,7 @@ title: Half-Height Console Graphics with Haskell and ncurses
 
 {:center: style="text-align: center;"}
 
-_Note: Since writing this post, I've written this technique up as a [standalone library](https://github.com/harryaskham/halfheight)._
+_Note: Since writing this post, I've written this technique up as a [standalone library](https://github.com/harryaskham/halfheight){:target="_blank"}._
 
 # Motivation
 
