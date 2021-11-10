@@ -22,9 +22,9 @@ One needs Python and SymPy installed, and LaTeX set up well enough that previewi
 
 By default, org-mode will render any LaTeX inside e.g. `$inline$` blocks, `\[multi-line blocks\]`, etc if they appear inline alongside the rest of the text in an org file.
 
-What we'd like is to have it render the output of a Babel block - it doesn't render this by default. Babel even has a `latex` output option, which wraps the output of a block inside `#+BEGIN_EXPORT latex`, but this still does not render inline - only in subsequently produced LaTeX.
+What we'd like is to have it render the output of a Babel block - it doesn't render this by default. Babel even has a `latex` output option, which wraps the output of a block inside `#+BEGIN_EXPORT latex`, but this still does not render inline - only in, for example, subsequently produced PDF files.
 
-The trick is to set the Babel block's result to `raw`, which will insert it into the org file wholesale, and manually handle wrapping it for LaTeX display.
+The trick is to set the Babel block's result to `raw`, which will insert the output string into the org file wholesale - we make sure the output string is valid inline LaTeX by manually wrapping it inside `\[\]`.
 
 We need to include a preamble Babel block somewhere in the org file, defining a helper that will wrap raw LaTeX strings for inline display:
 
