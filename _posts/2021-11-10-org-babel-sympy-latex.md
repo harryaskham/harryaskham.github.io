@@ -26,6 +26,8 @@ What we'd like is to have it render the output of a Babel block - it doesn't ren
 
 The trick is to set the Babel block's result to `raw`, which will insert the output string into the org file wholesale - we make sure the output string is valid inline LaTeX by manually wrapping it inside `\[\]`.
 
+*Note: using `raw`, multiple runs of the same cell turn out to continuously append output to the `#+RESULTS` block; `replace` is ignored. Thankfully `drawer` also works, and is compatible with `replace`.*
+
 We need to include a preamble Babel block somewhere in the org file, defining a helper that will wrap raw LaTeX strings for inline display:
 
 ```python
