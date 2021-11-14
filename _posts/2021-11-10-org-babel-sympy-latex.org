@@ -7,7 +7,7 @@ I recently started playing around with [SymPy](https://www.sympy.org) as a kind 
 
 This is a great environment for interactive symbolic calculation, and could even be used to keep derivations and mathematical computations inline inside the papers they're included in. Looks like there's a decent amount of [prior art](https://dynamics-and-control.readthedocs.io/en/latest/0_Getting_Started/Notebook%20introduction.html) for doing this in Jupyter, but I tend to prefer Org and Babel where possible.
 
-[[/img/sympy-emacs.png]]
+[[/img/sympy-emacs.png]]\\
 /The output of SymPy in Babel rendered as inline LaTeX/
 
 * Requirements
