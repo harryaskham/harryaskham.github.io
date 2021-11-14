@@ -1,0 +1,133 @@
+#+TITLE: Advent of Code - 300 Stars
+#+JEKYLL_LAYOUT: post
+#+DATE: 2021-10-16
+#+OPTIONS: toc:nil
+
+This actually happened quite a while ago - I spent a few weeks obsessed with the wonderful [Advent of Code](https://adventofcode.com/) after participating in the last couple years, and ground out the full 300 stars:
+
+[[/img/300.png]]
+
+My complete Haskell solutions are up on [GitHub](https://github.com/harryaskham/advent).
+
+There are a handful of things I'd love to write about, but for now here's my cleanest take on A* in Haskell, which became an old friend over the course of the project:
+
+#+BEGIN_SRC haskell
+module Main where
+
+import Control.Arrow
+import Data.List
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+import qualified Data.PQueue.Prio.Min as PQ
+import Data.Set (Set)
+import qualified Data.Set as S
+import Data.Tuple.Extra
+import System.Random
+
+-- First let's make a random 2D grid, stored as a coordinate map.
+-- We'll find the shortest path from one diagonal to the other
+
+data Space = Wall | Empty deriving (Eq)
+
+instance Show Space where
+  show Wall = "#"
+  show Empty = "."
+
+-- A random space is a Wall 1/3 of the time.
+instance Random Space where
+  randomR (a, b) g = random g
+  random g =
+    let (i, g') = randomR (0 :: Int, 2) g
+     in case i of
+          0 -> (Wall, g')
+          _ -> (Empty, g')
+
+-- We'll represent the grid as a map from 2D coordinates to spaces.
+newtype Grid = Grid (Map (Int, Int) Space)
+
+-- Pretty-print the grid.
+instance Show Grid where
+  show (Grid g) =
+    intercalate
+      "\n"
+      [ concat
+          [ show (g M.! (x, y))
+            | x <- [0 .. maxX]
+          ]
+        | y <- [0 .. maxY]
+      ]
+    where
+      (maxX, maxY) = both maximum (unzip (M.keys g))
+
+-- Generate a random WxH grid-map with random wall placement
+-- Ensure (0, 0) and (w-1, h-1) are empty.
+genGrid :: (RandomGen g) => g -> Int -> Int -> Grid
+genGrid g w h =
+  Grid
+    ( M.insert (0, 0) Empty . M.insert (w - 1, h - 1) Empty $
+        M.fromList
+          ( zip
+              [ (x, y)
+                | x <- [0 .. w - 1],
+                  y <- [0 .. h - 1]
+              ]
+              (randoms g)
+          )
+    )
+
+-- Now we'll find the shortest path between two coordinates using A*.
+shortestPath :: Grid -> (Int, Int) -> (Int, Int) -> Maybe Int
+shortestPath (Grid g) start end@(endX, endY) =
+  -- Kick off the search with a queue containing only one zero-cost first state.
+  go (PQ.singleton 0 initialState)
+  where
+    -- Set up an initial search state with no tiles yet seen.
+    initialState = (start, S.empty)
+    -- An admissible heuristic for this problem:
+    -- Manhattan distance to target plus distance travelled so far.
+    heuristic ((x, y), seen) = S.size seen + abs (x - endX) + abs (y - endY)
+    -- The A* search function
+    go queue
+      | PQ.null queue = Nothing -- If we exhaust search space, there's no path
+      | current == end = Just (S.size seen) -- If we reach the target, conclude
+      | g M.! current == Wall = go rest -- Don't clip through walls
+      | current `S.member` seen = go rest -- Skip tiles we saw already, avoiding loops
+      | otherwise = go queue' -- Continue the search
+      where
+        -- Pluck the lowest-cost state from the queue
+        ((_, (current@(x, y), seen)), rest) = PQ.deleteFindMin queue
+        -- Generate a new seen-set including this tile to use in future states
+        seen' = S.insert current seen
+        -- Create next states from the neighbouring tiles, with a bounds check
+        states =
+          [ (p, seen')
+            | p <- [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)],
+              p `M.member` g
+          ]
+        -- Create a new queue by inserting each state into the priority queue.
+        queue' = foldl' (\q state -> PQ.insert (heuristic state) state q) rest states
+
+main :: IO ()
+main = do
+  g <- newStdGen
+  putStrLn "The grid:"
+  let grid = genGrid g 5 5
+  print grid
+  putStrLn $ case shortestPath grid (0, 0) (4, 4) of
+    Nothing -> "No path between corners exists"
+    Just d -> "Shortest path between corners: " <> show d
+#+END_SRC
+
+with typical output:
+
+#+BEGIN_EXAMPLE
+The grid:
+.....
+#..#.
+###..
+#....
+...#.
+Shortest path between corners: 8
+#+END_EXAMPLE
+
+It turns out random grids are nearly always either unsolvable, or there's no need for backtracking and one can reach the other corner in (W+H-2) moves.
