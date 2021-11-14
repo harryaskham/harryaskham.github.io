@@ -1,4 +1,4 @@
-#+TITLE: Algorithmic Music on iOS with TidalCycles woo yayy
+#+TITLE: Algorithmic Music on iOS with TidalCycles
 #+JEKYLL_LAYOUT: post
 #+DATE: 2020-08-31
 #+OPTIONS: toc:nil
