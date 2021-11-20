@@ -21,7 +21,7 @@
 title: Harry Askham
 email: harryaskham at gmail dot com
 description: >- # this means to ignore newlines until "baseurl:"
-  Harry Askham, Staff Software Engineer
+  Harry Askham, Senior Staff Software Engineer
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://a.skh.am" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: harryaskham
