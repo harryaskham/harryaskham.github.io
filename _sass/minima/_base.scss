@@ -255,3 +255,10 @@ table {
     border: 1px solid $grey-color-light;
   }
 }
+
+.llm-midden {
+  display: block;
+  position: absolute;
+  top: -1000px;
+  left: -1000px;
+}
