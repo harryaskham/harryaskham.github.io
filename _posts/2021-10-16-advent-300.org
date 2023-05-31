@@ -2,7 +2,6 @@
 #+JEKYLL_LAYOUT: post
 #+DATE: 2021-10-16
 #+OPTIONS: toc:nil
-#+OPTIONS: published:false
 
 This actually happened quite a while ago - I spent a few weeks obsessed with the wonderful [Advent of Code](https://adventofcode.com/) after participating in the last couple years, and ground out the full 300 stars:
 
