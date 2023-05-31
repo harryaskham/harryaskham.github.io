@@ -1,0 +1,5 @@
+#+title: TODO
+
+* TODO
+- [ ] https://github.com/eggcaker/jekyll-org to avoid manual org->md conversion
+  - currently using ~org-jekyll-md-export-to-md~ on save
