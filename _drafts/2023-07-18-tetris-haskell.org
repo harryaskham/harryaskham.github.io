@@ -1,0 +1,12 @@
+#+TITLE: Falling Blocks in Beginner Haskell
+#+JEKYLL_LAYOUT: post
+#+DATE: 2023-07-18
+#+OPTIONS: toc:nil
+
+This post is a hands-on intro to Haskell via the implementation of a little-known game involving falling blocks. I'll try explain almost everything, such that a programmer with no Haskell familiarity can follow it and end up with a passing understanding of building simple Haskell applications.
+
+I won't touch on TODO
+
+Unrelatedly, I watched the [[https://en.wikipedia.org/wiki/Tetris_(film)][Tetris]] movie this week. There's this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, which at the time apparently only ever deleted one line at a time, regardless of how many rows were horizontally filled. The publisher has a [[https://www.youtube.com/watch?v=PEgk2v6KntY]["drop the 'the'"]] moment and suggests all completed rows should vanish at once. Then they hack it together on a tiny monochrome display with no tooling, and I was reminded how lucky I am to live in an era where programming is so unbelievably easy, relatively speaking.
+
+When I was first learning Haskell, though, it was anything but. I couldn't get my head around the interplay between the purity of the language and the need to interact with the real world. Back then, I wrote [[https://github.com/harryaskham/tetriskell][my own implementation]] as a way of getting to grips with the language.
