@@ -23,9 +23,9 @@ We end up with a minimal terminal implementation of Tetris, and a simple agent p
 I won't touch on package management or project structure - in fact, this post is literate Haskell, and the concatenated code blocks can be run via ~runhaskell tetris.hs~ from the source TODO. There are plenty of tutorials on Stack, Cabal and general project management out there - for now, all you need is whatever Haskell distribution your machine uses. [[https://www.haskell.org/ghcup/][GHCup]] is as good a place to start as any. You might already even have ~runhaskell~ on your machine. We'll try to use as few external dependencies as possible.
 
 * Prelude
-I watched the [[https://en.wikipedia.org/wiki/Tetris_(film)][Tetris]] movie this week. There's this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, who has a [[https://www.youtube.com/watch?v=PEgk2v6KntY]["drop the 'the'"]] moment and suggests all completed rows should vanish at once (enabling the achievement of the four-lines-at-once Tetris). They swiftly hack it together on a tiny monochrome display with no tooling, and I was reminded how lucky I am to live in an era of rich tooling, expressive languages, and 4K monitors.
+I watched the [[https://en.wikipedia.org/wiki/Tetris_(film)][Tetris]] movie this week. There's this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, who has a [[https://www.youtube.com/watch?v=PEgk2v6KntY]["drop the 'the'"]] moment and suggests all completed rows should vanish at once, rather than one at a time, enabling the achievement of the four-lines-at-once namesake move. They swiftly hack the feature together on a tiny monochrome display, and I was reminded how lucky I am to live in an era of rich tooling, expressive languages, and 4K monitors.
 
-When I was first learning Haskell, though, it felt like punching holes in cards. I couldn't get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I'd grokked Gary Bernhardt's [[https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell][Functional Core, Imperative Shell]] message, but how does this apply in a world where everything is functional? As we'll see, the Haskell equivalent is something like "functional core, ~IO~ shell" - but we're getting ahead of ourselves. I wrote [[https://github.com/harryaskham/tetriskell][my own toy implementation]] as a way of getting to grips with the language, and thought I'd revisit it, rewriting it piece-by-piece to reflect my current workflow.
+When I was first learning Haskell, though, it felt like punching holes in cards. I couldn't get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I'd grokked Gary Bernhardt's [[https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell][Functional Core, Imperative Shell]] message, but how does this apply in a world where, supposedly, *everything* is functional? As we'll see, the Haskell equivalent is something like "functional core, ~IO~ shell" - but we're getting ahead of ourselves. I wrote [[https://github.com/harryaskham/tetriskell][my own toy implementation]] as a way of getting to grips with the language, and thought I'd revisit it, rewriting it piece-by-piece to reflect my current workflow.
 
 * Let's Get Started
 #+BEGIN_COMMENT
@@ -59,6 +59,7 @@ main = putStrLn $ foo <> foo
 
 #+RESULTS:
 : woowoo
+: ghci
 
 This gives:
 
