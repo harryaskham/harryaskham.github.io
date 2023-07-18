@@ -3,12 +3,68 @@
 #+DATE: 2023-07-18
 #+OPTIONS: toc:nil
 
-TODO fix jekyll
+[[/img/tetriskell.gif]]\\
+/We'll make this over the course of the tutorial/
 
-This post is a hands-on intro to Haskell via the implementation of a little-known game involving falling blocks. I'll try explain almost everything, such that a programmer with no Haskell familiarity can follow it and end up with a passing understanding of building simple Haskell applications.
+#+BEGIN_COMMENT
+Note SPC f j now runs all buffer and exports post
 
-I won't touch on TODO
+TODO
+- Update + center the gif
+- Add the literate source link and automate its creation.
+#+END_COMMENT
 
-Unrelatedly, I watched the [[https://en.wikipedia.org/wiki/Tetris_(film)][Tetris]] movie this week. There's this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, which at the time apparently only ever deleted one line at a time, regardless of how many rows were horizontally filled. The publisher has a [[https://www.youtube.com/watch?v=PEgk2v6KntY]["drop the 'the'"]] moment and suggests all completed rows should vanish at once. Then they hack it together on a tiny monochrome display with no tooling, and I was reminded how lucky I am to live in an era where programming is so unbelievably easy, relatively speaking.
+* What This Is
+This post is a hands-on intro to Haskell via the implementation of a little-known game involving falling blocks, because that's how I first learnt the basics. I'll try explain almost everything, such that a competent programmer with no Haskell or even functional programming familiarity can follow it and end up with a passing understanding of building a simple Haskell application.
 
-When I was first learning Haskell, though, it was anything but. I couldn't get my head around the interplay between the purity of the language and the need to interact with the real world. Back then, I wrote [[https://github.com/harryaskham/tetriskell][my own implementation]] as a way of getting to grips with the language.
+We end up with a minimal terminal implementation of Tetris, and a simple agent playing using [[https://en.wikipedia.org/wiki/Beam_search][beam search]].
+
+* What This Isn't
+I won't touch on package management or project structure - in fact, this post is literate Haskell, and the concatenated code blocks can be run via ~runhaskell tetris.hs~ from the source TODO. There are plenty of tutorials on Stack, Cabal and general project management out there - for now, all you need is whatever Haskell distribution your machine uses. [[https://www.haskell.org/ghcup/][GHCup]] is as good a place to start as any. You might already even have ~runhaskell~ on your machine. We'll try to use as few external dependencies as possible.
+
+* Prelude
+I watched the [[https://en.wikipedia.org/wiki/Tetris_(film)][Tetris]] movie this week. There's this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, who has a [[https://www.youtube.com/watch?v=PEgk2v6KntY]["drop the 'the'"]] moment and suggests all completed rows should vanish at once (enabling the achievement of the four-lines-at-once Tetris). They swiftly hack it together on a tiny monochrome display with no tooling, and I was reminded how lucky I am to live in an era of rich tooling, expressive languages, and 4K monitors.
+
+When I was first learning Haskell, though, it felt like punching holes in cards. I couldn't get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I'd grokked Gary Bernhardt's [[https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell][Functional Core, Imperative Shell]] message, but how does this apply in a world where everything is functional? As we'll see, the Haskell equivalent is something like "functional core, ~IO~ shell" - but we're getting ahead of ourselves. I wrote [[https://github.com/harryaskham/tetriskell][my own toy implementation]] as a way of getting to grips with the language, and thought I'd revisit it, rewriting it piece-by-piece to reflect my current workflow.
+
+* Let's Get Started
+#+BEGIN_COMMENT
+Or, let's get one bit of boilerplate out of the way. I'm writing this in Emacs using ~org-babel~ - this means each Haskell line is fed individuall into the GHCi interpreter, which you can also access simply via ~ghci~. By default this doesn't allow multiline code blocks, so we'll start with:
+#+END_COMMENT
+
+#+BEGIN_SRC haskell :exports none
+:set +m
+#+END_SRC
+
+#+RESULTS:
+
+Alright, so we've got our ~tetris.hs~ blank slate. This is going to be a single-file program. We open with:
+
+#+BEGIN_SRC haskell :exports code
+module Main where
+
+foo :: String
+foo = "woo"
+#+END_SRC
+
+#+RESULTS:
+: woo
+
+We can now run this as:
+
+#+BEGIN_SRC haskell :exports code
+main :: IO ()
+main = putStrLn $ foo <> foo
+#+END_SRC
+
+#+RESULTS:
+: woowoo
+
+This gives:
+
+#+BEGIN_SRC haskell :exports results
+main
+#+END_SRC
+
+#+RESULTS:
+: woowoo

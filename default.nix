@@ -1,3 +1,5 @@
+# bundix -m required in order to generate gemset.nix
+
 with import <nixpkgs> { };
 
 let jekyll_env = bundlerEnv rec {
@@ -13,6 +15,6 @@ in
     buildInputs = [ jekyll_env bundler ruby ];
 
     shellHook = ''
-      exec ${jekyll_env}/bin/jekyll serve --watch
+      exec ${jekyll_env}/bin/jekyll serve --watch --drafts
     '';
   }
