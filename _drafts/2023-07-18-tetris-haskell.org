@@ -3,6 +3,8 @@
 #+DATE: 2023-07-18
 #+OPTIONS: toc:nil
 
+TODO fix jekyll
+
 This post is a hands-on intro to Haskell via the implementation of a little-known game involving falling blocks. I'll try explain almost everything, such that a programmer with no Haskell familiarity can follow it and end up with a passing understanding of building simple Haskell applications.
 
 I won't touch on TODO
