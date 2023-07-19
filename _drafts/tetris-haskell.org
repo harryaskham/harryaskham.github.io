@@ -1,4 +1,4 @@
-#+TITLE: Learning Haskell by Making Tetris
+#+TITLE: Learning Haskell by Building Tetris
 #+JEKYLL_LAYOUT: post
 #+DATE: 2023-07-18
 #+OPTIONS: toc:t
@@ -94,7 +94,7 @@ import Control.Monad (forM_)
 #+END_SRC
 
 #+RESULTS:
-: gh
+: ghci>
 
 * Establishing the Grid
 
@@ -191,7 +191,6 @@ class Pretty a where
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 We can make ~Cell~ an instance of this typeclass simply by associating each cell with a character. We can use Haskell's pattern-matching to have ~pretty~ behave differently depending on whether it's given an ~Empty~ cell or a ~Block~ cell. We can also cheat a little, and make the ~Pretty~ representation of a ~Colour~ be a terminal escape code we can use to give colour to the blocks by using it as a prefix.
 
@@ -406,29 +405,29 @@ Let's see if we got that right by pretty-printing these pieces:
 #+begin_example
 Batch 1:
 ....
+.█..
+.█..
+.██.
+
+....
 ....
 ██..
 .██.
 
-.█..
-.█..
-.█..
-.█..
-
 ....
 ....
 .██.
 ██..
 
-....
-.██.
+.█..
+.█..
 .█..
 .█..
 
 ....
-....
 .██.
-.██.
+.█..
+.█..
 
 ....
 ....
@@ -436,44 +435,45 @@ Batch 1:
 ███.
 
 ....
-.█..
-.█..
+....
+.██.
 .██.
 Batch 2:
-....
 .█..
 .█..
-.██.
+.█..
+.█..
 
 ....
 ....
 ██..
 .██.
-
-....
-....
-.██.
-.██.
-
-....
-....
-.██.
-██..
-
-....
-.██.
-.█..
-.█..
 
 ....
 ....
 .█..
 ███.
 
+....
+....
+.██.
+██..
+
+....
+.██.
 .█..
 .█..
+
+....
+....
+.██.
+.██.
+
+....
 .█..
 .█..
+.██.
+ghci
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
