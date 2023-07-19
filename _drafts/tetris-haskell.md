@@ -52,12 +52,16 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 
 We&rsquo;ll start with the imports we need. Haskell is &ldquo;batteries included&rdquo; in so far as there are a tonne of widely used, canonical core libraries - but you need to make them available on your system. For example, we&rsquo;ll be using [`Map`](https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html) a lot, which is part of the `containers` package. This needs to be available on your system - there are myriad ways of doing this, but simplest is just running `$ cabal install containers`. You might be using Stack, or Nix, or something else. The full list of packages we need here are:
 
+-   `base`
 -   `containers`
--   TODO
+-   `random`
+-   `random-shuffle`
 
 If you&rsquo;re following along, you&rsquo;ll want to install them all:
 
-`cabal install containers TODO`
+`cabal install --lib base containers random random-shuffle`
+
+Versioning is a whole other topic. We aren&rsquo;t using any unstable features of these packages, so I&rsquo;ve not suggested pinning any particular versions, but just know it&rsquo;s often useful to do so do avoid dependency hell. A good package manager will help you here in a real project (I use Nix for everything).
 
 Alright, so say we&rsquo;ve got our `tetris.hs` blank slate. This is going to be a single-file program, so we&rsquo;ll put everything into a monolithic `Main` module.
 
@@ -78,6 +82,8 @@ import Data.Map.Strict (Map)
 -- Other things we'll need throughout
 import Data.List (intercalate, foldl')
 import Data.Function ((&))
+import System.Random (RandomGen, split, mkStdGen)
+import System.Random.Shuffle (shuffle')
 {% endhighlight %}
 
 
@@ -254,46 +260,55 @@ Alright!
 
 # Making Some Tetrominos
 
-Let&rsquo;s make the pieces. We&rsquo;ll represent them as another sum type, and take advantage of Haskell&rsquo;s laziness to construct an infinite stream of pieces, in chunks of seven, where each of the seven chunks is a shuffled collection containing every piece (per the **official rules**). This&rsquo;ll let us easily draw the next piece, as well as enabling a simple lookahead for a next-piece preview.
+Let&rsquo;s make the pieces. We&rsquo;ll represent them as another product type with a colour and coordinates, and take advantage of Haskell&rsquo;s laziness to construct an infinite stream of pieces, in chunks of seven, where each of the seven chunks is a shuffled collection containing every piece (per the **official rules**). This&rsquo;ll let us easily draw the next piece, as well as enabling a simple lookahead for a next-piece preview.
 
 We&rsquo;ll encode the actual shapes by the coordinates of their full blocks, letting us specify their colour as well. We&rsquo;ll use some helpers to let us quickly set coloured blocks on an empty grid. Eventually we&rsquo;ll have a function that transforms a `Grid` into a copy of itself containing one new coloured block - we can then `fold` this function, using an empty 4x4 grid as the initial state, over the coordinates of the piece, which will add the blocks one by one, giving us the finished piece.
 
 {% highlight haskell %}
 :{
--- By deriving `Enum` and `Bounded` typeclasses here, we'll be able to easily
--- get a list of all inhabitants of the `Piece` type later on.
--- We derive `Show` (which lets us print e.g. PieceSquare) for display purposes later.
-data Piece
-   = PieceL
-   | PieceR
-   | PieceSquare
-   | PieceS
-   | PieceZ
-   | PieceT
-   | PieceLine
-   deriving (Show, Enum, Bounded)
+data Piece = Piece Colour [V2]
 
--- No holy wars over these, please.
-pieceColour :: Piece -> Colour
-pieceColour PieceL = Orange
-pieceColour PieceR = Blue
-pieceColour PieceSquare = Yellow
-pieceColour PieceS = Green
-pieceColour PieceZ = Red
-pieceColour PieceT = Purple
-pieceColour PieceLine = Cyan
+pieceL :: Piece
+pieceL = Piece Orange [(1, 3), (1, 2), (1, 1), (2, 3)]
 
--- We'll keep all our pieces anchored to the bottom of the 4x4 grid
--- Remember, the y coordinate increases from top to bottom.
-pieceCoordinates :: Piece -> [V2]
-pieceCoordinates PieceL = [(1, 3), (1, 2), (1, 1), (2, 3)]
-pieceCoordinates PieceR = [(1, 3), (1, 2), (1, 1), (2, 1)]
-pieceCoordinates PieceSquare = [(1, 3), (1, 2), (2, 3), (2, 2)]
-pieceCoordinates PieceS = [(0, 3), (1, 3), (1, 2), (2, 2)]
-pieceCoordinates PieceZ = [(0, 2), (1, 2), (1, 3), (2, 3)]
-pieceCoordinates PieceT = [(0, 3), (1, 3), (2, 3), (1, 2)]
-pieceCoordinates PieceLine = [(1, 3), (1, 2), (1, 1), (1, 0)]
+pieceR :: Piece
+pieceR = Piece Blue [(1, 3), (1, 2), (1, 1), (2, 1)]
 
+pieceSquare :: Piece
+pieceSquare = Piece Yellow [(1, 3), (1, 2), (2, 3), (2, 2)]
+
+pieceS :: Piece
+pieceS = Piece Green [(0, 3), (1, 3), (1, 2), (2, 2)]
+
+pieceZ :: Piece
+pieceZ = Piece Red [(0, 2), (1, 2), (1, 3), (2, 3)]
+
+pieceT :: Piece
+pieceT = Piece Purple [(0, 3), (1, 3), (2, 3), (1, 2)]
+
+pieceLine :: Piece
+pieceLine = Piece Cyan [(1, 3), (1, 2), (1, 1), (1, 0)]
+
+allPieces :: [Piece]
+allPieces = [pieceL, pieceR, pieceSquare, pieceS, pieceZ, pieceT, pieceLine]
+
+-- Here we have a lazy infinite list of pieces.
+-- To avoid requiring side-effects here, we take a random state as an argument.
+-- Later, when we're inside the IO monad, we can hook into this source of randomness
+-- and pass it in; by avoiding this here, we can keep this function pure.
+-- The shuffle API is a little odd, so we need to handle splitting the random state
+-- ourselves otherwise every chunk of seven pieces will be the same.
+pieceStream :: RandomGen g => g -> [Piece]
+pieceStream g =
+  let (_, g') = split g -- obtain a new random generator for the recursive call
+   in shuffle' allPieces (length allPieces) g <> pieceStream g'
+:}
+{% endhighlight %}
+
+Now we need some functions for composing a `Piece` and a `Grid`, both for inspection and later, for placing tetrominos on the playing field.
+
+{% highlight haskell %}
+:{
 -- By only passing the first argument here, we get back a partially applied
 -- function; this is a new function of type `Grid -> V2 -> Grid` which is
 -- exactly what we need for our fold. It's a bit of an awkward argument
@@ -304,11 +319,7 @@ withBlock colour (Grid width height grid) xy =
 
 -- Adds a whole piece to the grid one block at a time
 withPiece :: Piece -> Grid -> Grid
-withPiece piece grid =
-   foldl'
-     (withBlock (pieceColour piece))
-     grid
-     (pieceCoordinates piece)
+withPiece (Piece colour coordinates) grid = foldl' (withBlock colour) grid coordinates
 
 -- Here the (&) operator is just the reverse of ($) - everything to the
 -- right is applied to the left. Useful for builder functions like these.
@@ -336,52 +347,81 @@ Let&rsquo;s see if we got that right by pretty-printing these pieces:
 -- To make this work, we need to add the type hint `:: Piece`.
 -- `mapM_` just lets us run a function with side effects and with no return value
 -- like `putStrLn` over a collection of things.
-putStrLn $ intercalate "\n\n" [show piece <> "\n" <> pretty piece
-                               | piece <- [minBound .. maxBound :: Piece]]
+-- Note that to keep this pure, we create our own random seed.
+putStrLn $ intercalate "\n\n" [pretty piece
+                               | piece <- take 14 (pieceStream $ mkStdGen 1337)]
 :}
 {% endhighlight %}
 
-    PieceL
-    ....
-    .█..
-    .█..
-    .██.
-    
-    PieceR
-    ....
-    .██.
-    .█..
-    .█..
-    
-    PieceSquare
-    ....
-    ....
-    .██.
-    .██.
-    
-    PieceS
     ....
     ....
     .██.
     ██..
     
-    PieceZ
+    ....
+    .██.
+    .█..
+    .█..
+    
+    .█..
+    .█..
+    .█..
+    .█..
+    
     ....
     ....
     ██..
     .██.
     
-    PieceT
+    ....
+    ....
+    .██.
+    .██.
+    
+    ....
+    .█..
+    .█..
+    .██.
+    
     ....
     ....
     .█..
     ███.
     
-    PieceLine
+    ....
+    .██.
+    .█..
+    .█..
+    
     .█..
     .█..
     .█..
     .█..
+    
+    ....
+    ....
+    .█..
+    ███.
+    
+    ....
+    ....
+    .██.
+    ██..
+    
+    ....
+    ....
+    .██.
+    .██.
+    
+    ....
+    ....
+    ██..
+    .██.
+    
+    ....
+    .█..
+    .█..
+    .██.
 
 Looks good to me. While we&rsquo;re here, let&rsquo;s implement piece rotation.
 
