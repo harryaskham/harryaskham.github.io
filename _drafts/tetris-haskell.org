@@ -20,8 +20,8 @@ TODO: grep for TODO and resolve
 #+RESULTS:
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
-/We'll make this over the course of the tutorial/
 
+This is what we'll build over the course of this post.
 * What This Is
 This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that's how I first learnt the basics. I'll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.
 
@@ -94,7 +94,6 @@ import Control.Monad (forM_)
 #+END_SRC
 
 #+RESULTS:
-: ghci>
 
 * Establishing the Grid
 
@@ -288,7 +287,7 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 ..........
 ..........
 ..........
-ghci
+ghc
 #+end_example
 
 Alright!
@@ -405,27 +404,22 @@ Let's see if we got that right by pretty-printing these pieces:
 #+begin_example
 Batch 1:
 ....
-.█..
-.█..
-.██.
-
-....
-....
-██..
-.██.
-
-....
 ....
 .██.
 ██..
 
-.█..
-.█..
-.█..
-.█..
+....
+....
+.██.
+.██.
 
 ....
 .██.
+.█..
+.█..
+
+.█..
+.█..
 .█..
 .█..
 
@@ -436,11 +430,26 @@ Batch 1:
 
 ....
 ....
+██..
 .██.
+
+....
+.█..
+.█..
 .██.
 Batch 2:
+....
 .█..
 .█..
+.██.
+
+.█..
+.█..
+.█..
+.█..
+
+....
+.██.
 .█..
 .█..
 
@@ -448,32 +457,21 @@ Batch 2:
 ....
 ██..
 .██.
+
+....
+....
+.██.
+.██.
+
+....
+....
+.██.
+██..
 
 ....
 ....
 .█..
 ███.
-
-....
-....
-.██.
-██..
-
-....
-.██.
-.█..
-.█..
-
-....
-....
-.██.
-.██.
-
-....
-.█..
-.█..
-.██.
-ghci
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.

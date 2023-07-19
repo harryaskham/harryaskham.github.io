@@ -9,27 +9,28 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#org964a7a9)
-2.  [What This Is](#org1ea2d41)
-3.  [What This Isn&rsquo;t](#org51e6820)
-4.  [Prelude](#orgab6318b)
-5.  [Strategy](#orgb37b6b8)
-6.  [Imports and Dependencies](#orgc260d31)
-7.  [Establishing the Grid](#org52351c4)
-8.  [Making Some Tetrominos](#org4ac8000)
-9.  [Representing the Game State](#orgc74b0be)
+1.  [Beginning at the End](#orga919196)
+2.  [What This Is](#org803589b)
+3.  [What This Isn&rsquo;t](#orga44a028)
+4.  [Prelude](#orgce1f261)
+5.  [Strategy](#orgae1ca39)
+6.  [Imports and Dependencies](#orgeef581b)
+7.  [Establishing the Grid](#org4001fdd)
+8.  [Making Some Tetrominos](#org9358170)
+9.  [Representing the Game State](#org2fb1d50)
 TODO: grep for TODO and resolve
 
 
-<a id="org964a7a9"></a>
+<a id="orga919196"></a>
 
 # Beginning at the End
 
 ![img](/img/tetriskell.gif)  
-*We&rsquo;ll make this over the course of the tutorial*
+
+This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org1ea2d41"></a>
+<a id="org803589b"></a>
 
 # What This Is
 
@@ -40,7 +41,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org51e6820"></a>
+<a id="orga44a028"></a>
 
 # What This Isn&rsquo;t
 
@@ -51,7 +52,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgab6318b"></a>
+<a id="orgce1f261"></a>
 
 # Prelude
 
@@ -60,7 +61,7 @@ I watched the [Tetris](https://en.wikipedia.org/wiki/Tetris_(film)) movie this w
 When I was first learning Haskell, though, it felt like punching holes in cards. I couldn&rsquo;t get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I&rsquo;d grokked Gary Bernhardt&rsquo;s [Functional Core, Imperative Shell](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell) message, but how does this apply in a world where, supposedly, **everything** is functional? As we&rsquo;ll see, the Haskell equivalent is something like &ldquo;functional core, `IO` shell&rdquo; - but we&rsquo;re getting ahead of ourselves. I wrote [my own toy implementation](https://github.com/harryaskham/tetriskell) as a way of getting to grips with the language, and thought I&rsquo;d revisit it, rewriting it piece-by-piece in notebook style.
 
 
-<a id="orgb37b6b8"></a>
+<a id="orgae1ca39"></a>
 
 # Strategy
 
@@ -75,7 +76,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll also implement a simple bot that simulates a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgc260d31"></a>
+<a id="orgeef581b"></a>
 
 # Imports and Dependencies
 
@@ -117,7 +118,7 @@ import Control.Monad (forM_)
 {% endhighlight %}
 
 
-<a id="org52351c4"></a>
+<a id="org4001fdd"></a>
 
 # Establishing the Grid
 
@@ -289,12 +290,11 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
     ..........
     ..........
     ..........
-    gh
 
 Alright!
 
 
-<a id="org4ac8000"></a>
+<a id="org9358170"></a>
 
 # Making Some Tetrominos
 
@@ -400,71 +400,71 @@ Let&rsquo;s see if we got that right by pretty-printing these pieces:
     ....
     ....
     .██.
-    ██..
+    .██.
     
     ....
-    .█..
-    .█..
+    ....
+    ██..
     .██.
+    
+    .█..
+    .█..
+    .█..
+    .█..
+    
+    ....
+    .██.
+    .█..
+    .█..
     
     ....
     ....
     .█..
     ███.
     
-    .█..
-    .█..
-    .█..
-    .█..
-    
     ....
-    .██.
     .█..
     .█..
-    
-    ....
-    ....
-    .██.
     .██.
     
     ....
     ....
+    .██.
     ██..
-    .██.
     Batch 2:
     ....
+    .██.
+    .█..
+    .█..
+    
+    ....
+    ....
+    .██.
+    .██.
+    
+    ....
+    .█..
+    .█..
+    .██.
+    
+    ....
+    ....
+    .██.
+    ██..
+    
+    ....
     ....
     .█..
     ███.
     
-    ....
-    ....
-    .██.
-    .██.
+    .█..
+    .█..
+    .█..
+    .█..
     
     ....
     ....
     ██..
-    .██.
-    
-    ....
-    ....
-    .██.
-    ██..
-    
-    .█..
-    .█..
-    .█..
-    .█..
-    
-    ....
-    .██.
-    .█..
-    .█..
-    
-    ....
-    .█..
-    .█..
     .██.
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
@@ -478,7 +478,7 @@ While we&rsquo;re here, let&rsquo;s implement piece rotation.
 TODO
 
 
-<a id="orgc74b0be"></a>
+<a id="org2fb1d50"></a>
 
 # Representing the Game State
 
