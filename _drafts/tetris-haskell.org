@@ -1,7 +1,7 @@
-#+TITLE: Making Tetris for Haskell Beginners
+#+TITLE: Learning Haskell by Making Tetris
 #+JEKYLL_LAYOUT: post
 #+DATE: 2023-07-18
-#+OPTIONS: toc:nil
+#+OPTIONS: toc:t
 
 #+BEGIN_SRC haskell :exports none
 :r
@@ -10,19 +10,18 @@
 #+END_SRC
 
 #+RESULTS:
-: ghci>
 
 #+BEGIN_SRC haskell :exports none :results output
 :set prompt-cont ""
 #+END_SRC
 
 #+RESULTS:
-
+* Beginning at the End
 [[/img/tetriskell.gif]]\\
 /We'll make this over the course of the tutorial/
 
 * What This Is
-This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that's how I first learnt the basics. I'll try explain almost everything, such that a competent programmer with no Haskell or even functional programming familiarity can follow it and end up with a passing understanding of building a simple Haskell application.
+This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that's how I first learnt the basics. I'll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.
 
 I'll explicitly try to overexplain everything, either in prose or in comments.
 
@@ -87,8 +86,9 @@ import Data.Map.Strict (Map)
 -- Other things we'll need throughout
 import Data.List (intercalate, foldl')
 import Data.Function ((&))
-import System.Random (RandomGen, split, mkStdGen)
+import System.Random (RandomGen, split, newStdGen)
 import System.Random.Shuffle (shuffle')
+import Control.Monad (forM_)
 #+END_SRC
 
 #+RESULTS:
@@ -234,13 +234,14 @@ instance Pretty Grid where
       rows = [[grid M.! (x, y) | x <- [0 .. width - 1]] | y <- [0 .. height - 1]]
       prettyRow :: [Cell] -> String
       prettyRow row = concatMap pretty row
+      -- Alternative implementations:
       -- With eta-reduction:
       -- prettyRow = concatMap pretty
-      -- With explicit mapping:
+      -- With explicit fmap:
       -- prettyRow row = concat (fmap pretty row)
-      -- Using the fmap operator:
+      -- Using the fmap "spaceship" operator:
       -- prettyRow row = concat (pretty <$> row)
-      -- Using the Monad instance of List (don't worry):
+      -- Using the Monad instance of List (don't worry, it just aliases concatMap):
       -- prettyRow row = pretty =<< row
 :}
 #+END_SRC
@@ -380,63 +381,24 @@ Let's see if we got that right by pretty-printing these pieces:
 
 #+BEGIN_SRC haskell :exports both
 :{
--- We can use the `Enum` and `Bounded` instances here to range over all pieces.
--- To make this work, we need to add the type hint `:: Piece`.
 -- `mapM_` just lets us run a function with side effects and with no return value
 -- like `putStrLn` over a collection of things.
--- Note that to keep this pure, we create our own random seed.
-putStrLn $ intercalate "\n\n" [pretty piece
-                               | piece <- take 14 (pieceStream $ mkStdGen 1337)]
+-- Because we're in IO, we can make use of the system's source of randomness via newStdGen
+ do
+   g <- newStdGen
+   let pieces = pieceStream g
+       batch1 = take 7 pieces
+       batch2 = take 7 (drop 7 pieces)
+       prettyBatch i batch = "Batch " <> show i <> ":\n" <> intercalate "\n\n" [pretty piece | piece <- batch]
+   forM_
+     (zip [1..] [batch1, batch2])
+     (putStrLn . uncurry prettyBatch)
 :}
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-....
-....
-.██.
-██..
-
-....
-.██.
-.█..
-.█..
-
-.█..
-.█..
-.█..
-.█..
-
-....
-....
-██..
-.██.
-
-....
-....
-.██.
-.██.
-
-....
-.█..
-.█..
-.██.
-
-....
-....
-.█..
-███.
-
-....
-.██.
-.█..
-.█..
-
-.█..
-.█..
-.█..
-.█..
-
+Batch 1:
 ....
 ....
 .█..
@@ -448,6 +410,21 @@ putStrLn $ intercalate "\n\n" [pretty piece
 ██..
 
 ....
+.█..
+.█..
+.██.
+
+.█..
+.█..
+.█..
+.█..
+
+....
+.██.
+.█..
+.█..
+
+....
 ....
 .██.
 .██.
@@ -456,14 +433,51 @@ putStrLn $ intercalate "\n\n" [pretty piece
 ....
 ██..
 .██.
+Batch 2:
+....
+....
+██..
+.██.
+
+....
+.██.
+.█..
+.█..
+
+....
+....
+.██.
+██..
+
+....
+....
+.██.
+.██.
+
+....
+....
+.█..
+███.
 
 ....
 .█..
 .█..
 .██.
+
+.█..
+.█..
+.█..
+.█..
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
+
+We introduced a number of new concepts here; we secretly entered a monad (~IO~, specifically), enabling the ~do~-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we've been doing this all along with every call to ~putStrLn~. We'll get into ~IO~ more later when we start dealing with user input and multiprocessing.
+
+We also introduced ~uncurry~ - we wanted to pass the tuples of form ~(1, batch1)~ we'd created via ~zip~ into a function that wanted arguments ~1 batch1~ - ~uncurry~ will convert a function that wants two arguments into a function that wants a tuple of those two arguments[fn:uncurry].
+
+[fn:uncurry] It gets more complex when you're dealing with more arguments (~uncurry3~ and so on exist).
+
 
 While we're here, let's implement piece rotation.
 

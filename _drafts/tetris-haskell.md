@@ -1,23 +1,45 @@
 ---
-title: "Making Tetris for Haskell Beginners"
+title: "Learning Haskell by Making Tetris"
 date: 2023-07-18
 layout: post
 categories: 
 tags: 
 ---
 
+
+# Table of Contents
+
+1.  [Beginning at the End](#org8508cda)
+2.  [What This Is](#orgb642523)
+3.  [What This Isn&rsquo;t](#org330fdef)
+4.  [Prelude](#org29ce823)
+5.  [Strategy](#orgd48d120)
+6.  [Imports and Dependencies](#orgdb03505)
+7.  [Establishing the Grid](#org9d3e4a0)
+8.  [Making Some Tetrominos](#org27bb519)
+9.  [Representing the Game State](#org76348db)
+
+
+<a id="org8508cda"></a>
+
+# Beginning at the End
+
 ![img](/img/tetriskell.gif)  
 *We&rsquo;ll make this over the course of the tutorial*
 
 
+<a id="orgb642523"></a>
+
 # What This Is
 
-This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that&rsquo;s how I first learnt the basics. I&rsquo;ll try explain almost everything, such that a competent programmer with no Haskell or even functional programming familiarity can follow it and end up with a passing understanding of building a simple Haskell application.
+This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that&rsquo;s how I first learnt the basics. I&rsquo;ll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.
 
 I&rsquo;ll explicitly try to overexplain everything, either in prose or in comments.
 
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
+
+<a id="org330fdef"></a>
 
 # What This Isn&rsquo;t
 
@@ -28,12 +50,16 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
+<a id="org29ce823"></a>
+
 # Prelude
 
 I watched the [Tetris](https://en.wikipedia.org/wiki/Tetris_(film)) movie this week. There&rsquo;s this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, who has a [&ldquo;drop the &lsquo;the&rsquo;&rdquo;](https://www.youtube.com/watch?v=PEgk2v6KntY) moment and suggests all completed rows should vanish at once, rather than one at a time, enabling the achievement of the four-lines-at-once namesake move. They swiftly hack the feature together on a tiny monochrome display, and I was reminded how lucky I am to live in an era of rich tooling, expressive languages, and 4K monitors.
 
 When I was first learning Haskell, though, it felt like punching holes in cards. I couldn&rsquo;t get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I&rsquo;d grokked Gary Bernhardt&rsquo;s [Functional Core, Imperative Shell](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell) message, but how does this apply in a world where, supposedly, **everything** is functional? As we&rsquo;ll see, the Haskell equivalent is something like &ldquo;functional core, `IO` shell&rdquo; - but we&rsquo;re getting ahead of ourselves. I wrote [my own toy implementation](https://github.com/harryaskham/tetriskell) as a way of getting to grips with the language, and thought I&rsquo;d revisit it, rewriting it piece-by-piece in notebook style.
 
+
+<a id="orgd48d120"></a>
 
 # Strategy
 
@@ -47,6 +73,8 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 -   We&rsquo;ll also implement a simple bot that simulates a few blocks ahead and optimises for keeping the grid as low as possible.
 
+
+<a id="orgdb03505"></a>
 
 # Imports and Dependencies
 
@@ -82,10 +110,13 @@ import Data.Map.Strict (Map)
 -- Other things we'll need throughout
 import Data.List (intercalate, foldl')
 import Data.Function ((&))
-import System.Random (RandomGen, split, mkStdGen)
+import System.Random (RandomGen, split, newStdGen)
 import System.Random.Shuffle (shuffle')
+import Control.Monad (forM_)
 {% endhighlight %}
 
+
+<a id="org9d3e4a0"></a>
 
 # Establishing the Grid
 
@@ -209,13 +240,14 @@ instance Pretty Grid where
       rows = [[grid M.! (x, y) | x <- [0 .. width - 1]] | y <- [0 .. height - 1]]
       prettyRow :: [Cell] -> String
       prettyRow row = concatMap pretty row
+      -- Alternative implementations:
       -- With eta-reduction:
       -- prettyRow = concatMap pretty
-      -- With explicit mapping:
+      -- With explicit fmap:
       -- prettyRow row = concat (fmap pretty row)
-      -- Using the fmap operator:
+      -- Using the fmap "spaceship" operator:
       -- prettyRow row = concat (pretty <$> row)
-      -- Using the Monad instance of List (don't worry):
+      -- Using the Monad instance of List (don't worry, it just aliases concatMap):
       -- prettyRow row = pretty =<< row
 :}
 {% endhighlight %}
@@ -257,6 +289,8 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 
 Alright!
 
+
+<a id="org27bb519"></a>
 
 # Making Some Tetrominos
 
@@ -343,41 +377,57 @@ Let&rsquo;s see if we got that right by pretty-printing these pieces:
 
 {% highlight haskell %}
 :{
--- We can use the `Enum` and `Bounded` instances here to range over all pieces.
--- To make this work, we need to add the type hint `:: Piece`.
 -- `mapM_` just lets us run a function with side effects and with no return value
 -- like `putStrLn` over a collection of things.
--- Note that to keep this pure, we create our own random seed.
-putStrLn $ intercalate "\n\n" [pretty piece
-                               | piece <- take 14 (pieceStream $ mkStdGen 1337)]
+-- Because we're in IO, we can make use of the system's source of randomness via newStdGen
+ do
+   g <- newStdGen
+   let pieces = pieceStream g
+       batch1 = take 7 pieces
+       batch2 = take 7 (drop 7 pieces)
+       prettyBatch i batch = "Batch " <> show i <> ":\n" <> intercalate "\n\n" [pretty piece | piece <- batch]
+   forM_
+     (zip [1..] [batch1, batch2])
+     (putStrLn . uncurry prettyBatch)
 :}
 {% endhighlight %}
 
+    Batch 1:
+    ....
+    .██.
+    .█..
+    .█..
+    
+    ....
+    .█..
+    .█..
+    .██.
+    
+    ....
+    ....
+    .█..
+    ███.
+    
+    .█..
+    .█..
+    .█..
+    .█..
+    
+    ....
+    ....
+    ██..
+    .██.
+    
     ....
     ....
     .██.
     ██..
     
     ....
-    .██.
-    .█..
-    .█..
-    
-    .█..
-    .█..
-    .█..
-    .█..
-    
-    ....
-    ....
-    ██..
-    .██.
-    
-    ....
     ....
     .██.
     .██.
-    
+    Batch 2:
     ....
     .█..
     .█..
@@ -400,16 +450,6 @@ putStrLn $ intercalate "\n\n" [pretty piece
     
     ....
     ....
-    .█..
-    ███.
-    
-    ....
-    ....
-    .██.
-    ██..
-    
-    ....
-    ....
     .██.
     .██.
     
@@ -419,14 +459,22 @@ putStrLn $ intercalate "\n\n" [pretty piece
     .██.
     
     ....
-    .█..
-    .█..
+    ....
     .██.
+    ██..
 
-Looks good to me. While we&rsquo;re here, let&rsquo;s implement piece rotation.
+Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
+
+We introduced a number of new concepts here; we secretly entered a monad (`IO`, specifically), enabling the `do`-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we&rsquo;ve been doing this all along with every call to `putStrLn`. We&rsquo;ll get into `IO` more later when we start dealing with user input and multiprocessing.
+
+We also introduced `uncurry` - we wanted to pass the tuples of form `(1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>.
+
+While we&rsquo;re here, let&rsquo;s implement piece rotation.
 
 TODO
 
+
+<a id="org76348db"></a>
 
 # Representing the Game State
 
@@ -453,3 +501,5 @@ TODO
 <sup><a id="fn.3" href="#fnr.3">3</a></sup> There&rsquo;s already the `Show` typeclass that does exactly this, and which can be automatically derived for many types, but I tend to think of it as for debugging and inspection purposes - I prefer a separate typeclass for representations intended to be user-facing.
 
 <sup><a id="fn.4" href="#fnr.4">4</a></sup> The use of `foldl'` here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don&rsquo;t accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
+
+<sup><a id="fn.5" href="#fnr.5">5</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3` and so on exist).
