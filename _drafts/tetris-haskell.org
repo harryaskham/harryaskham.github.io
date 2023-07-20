@@ -3,9 +3,13 @@
 #+DATE: 2023-07-18
 #+OPTIONS: toc:t
 
-TODO: grep for TODO and resolve
 
-#+BEGIN_SRC haskell :exports none
+* TO DO
+- [ ] grep for TODO and resolve
+- [ ] Figure out ghci :{ :} preamble
+
+#+BEGIN_SRC haskell :exports none :results output
+:set prompt-cont ""
 :r
 :m
 :set +m
@@ -13,11 +17,6 @@ TODO: grep for TODO and resolve
 
 #+RESULTS:
 
-#+BEGIN_SRC haskell :exports none :results output
-:set prompt-cont ""
-#+END_SRC
-
-#+RESULTS:
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
 
@@ -56,7 +55,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 - We'll also implement a simple bot that simulates a few blocks ahead and optimises for keeping the grid as low as possible.
 
 * Imports and Dependencies
-We'll start with the imports we need. Haskell is "batteries included" in so far as there are a tonne of widely used, canonical core libraries - but you need to make them available on your system. For example, we'll be using [[https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html][~Map~]] a lot, which is part of the ~containers~ package. This needs to be available on your system - there are myriad ways of doing this, but simplest is just running ~$ cabal install containers~. You might be using Stack, or Nix, or something else. The full list of packages we need here are:
+We'll start with the imports we need. Haskell is "batteries included" in so far as there is a rich collection of widely used, canonical core libraries on [[https://hackage.haskell.org/][Hackage]] - but you need to make them available on your system. For example, we'll be using [[https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html][~Map~]] a lot, which is part of the ~containers~ package. This needs to be available on your system - there are myriad ways of doing this, but simplest is just running ~$ cabal install containers~. You might be using Stack, or Nix, or something else. The full list of packages we need here are:
 
 - ~base~
 - ~containers~
@@ -72,25 +71,97 @@ Versioning is a whole other topic. We aren't using any unstable features of thes
 Alright, so say we've got our ~tetris.hs~ blank slate. This is going to be a single-file program, so we'll put everything into a monolithic ~Main~ module.
 
 #+BEGIN_SRC haskell :exports code
+:{
 -- Every Haskell source file begins with a module definition like this.
 module Main where
+:}
+#+END_SRC
 
+#+RESULTS:
+
+I'll spell out each import we're using explicitly:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- There are lots of Map-related methods; a qualified import avoids naming
 -- clashes, and means we can look things up using `M.lookup` rather than
 -- simply `lookup`.
 -- Ignore the 'Strict' for now - laziness/strictness is out of scope here.
-import Data.Map.Strict qualified as M
+import qualified Data.Map.Strict as M
+:}
+#+END_SRC
 
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- By also importing the Map type directly, we don't need to constantly
 -- specify `M.Map` and can just use `Map` directly in our type signatures.
 import Data.Map.Strict (Map)
+:}
+#+END_SRC
 
--- Other things we'll need throughout
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- `intercalate` is similar to Python's `x.join()`
+-- `foldl'` is similar to Python's `reduce(f, xs)`
 import Data.List (intercalate, foldl')
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- Reverse function application; allows e.g. `thing & withProperty a` pipelining.
 import Data.Function ((&))
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- Provides access to system pseudorandomness and control over setting random seeds.
 import System.Random (RandomGen, split, newStdGen)
+:}
+#+END_SRC
+
+#+RESULTS:
+: <no location info>: error:
+:     Could not find module ‘System.Random’
+:     It is not a module in the current program, or in any known package.
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- Utilities for shuffling collections (e.g. of tetrominos)
 import System.Random.Shuffle (shuffle')
+:}
+#+END_SRC
+
+#+RESULTS:
+: <no location info>: error:
+:     Could not find module ‘System.Random.Shuffle’
+:     It is not a module in the current program, or in any known package.
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- We'll be making use of this module for control flow when we get to our
+--imperative-looking (but still functional!) shell.
 import Control.Monad (forM_)
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- We'll use these to make modifications to coordinates as we stick different
+-- UI elements together.
+import Control.Arrow (first, second)
+:}
 #+END_SRC
 
 #+RESULTS:
@@ -287,7 +358,6 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 ..........
 ..........
 ..........
-ghc
 #+end_example
 
 Alright!
@@ -339,6 +409,8 @@ pieceStream g =
 #+END_SRC
 
 #+RESULTS:
+: <interactive>:798:16-24: error:
+:     Not in scope: type constructor or class ‘RandomGen’
 
 Now we need some functions for composing a ~Piece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
 
@@ -364,6 +436,14 @@ mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece piece)
 #+END_SRC
 
 #+RESULTS:
+: <interactive>:814:14-18: error:
+:     Not in scope: type constructor or class ‘Piece’
+:
+: <interactive>:815:12-16: error:
+:     Not in scope: data constructor ‘Piece’
+:
+: <interactive>:819:16-20: error:
+:     Not in scope: type constructor or class ‘Piece’
 
 Whew, okay. Let's give ourselves a nice way of inspecting these pieces - we'll use this for things like next piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The ~(.)~ operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:
 
@@ -375,13 +455,103 @@ instance Pretty Piece where
 #+END_SRC
 
 #+RESULTS:
+: <interactive>:824:17-21: error:
+:     Not in scope: type constructor or class ‘Piece’
 
 Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell's functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.[fn:foldl]
 
 [fn:foldl] The use of ~foldl'~ here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don't accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
 
 
-Let's see if we got that right by pretty-printing these pieces:
+Let's see if we got that right by pretty-printing these pieces.
+
+For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
+
+- ~Sum 2 <> Sum 3 == Sum 5~
+- ~Product 2 <> Product 3 == Product 6~
+
+There's a practical use here; we'll use these ~Monoid~ instances to compose UI elements like the grid, the next piece preview, and the display of the held piece. When we concatenate two grids along an edge, we'll grow the shorter grid to match it. This is a design choice; if we didn't do this, we'd still have a [[https://en.wikibooks.org/wiki/Haskell/Monoids#Monoid_laws][lawful ~Monoid~]][fn:lawful], but it wouldn't be as useful for us.
+
+A detail; a ~Semigroup~ is something that can be associatively combined - that's where the ~<>~ comes from (shorthand for ~mconcat~). A ~Monoid~ is a ~Semigroup~ with an identity element (e.g. the empty grid - something you can combine either on the left or right, and get the same thing back). So to make something a ~Monoid~, we first make it a ~Semigroup~, then simply define what an empty one looks like. It goes like this:
+
+[fn:lawful] That is, associative, and with a left and right identity (the empty grid in both cases).
+
+
+#+BEGIN_SRC haskell :exports both
+:{
+newtype VGrid = VGrid Grid
+
+instance Semigroup VGrid where
+  (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB gridB)) =
+    let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+        combinedGrid = grid
+          & M.unionWith gridA
+          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
+     in VGrid $ Grid width height combinedGrid
+
+instance Monoid VGrid where
+  mempty = VGrid $ mkEmptyGrid 0 0
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+<interactive>:959:25-29: error:
+    • Couldn't match expected type: Cell -> Cell -> Cell
+                  with actual type: Map V2 Cell
+    • In the first argument of ‘M.unionWith’, namely ‘gridA’
+      In the second argument of ‘(&)’, namely ‘M.unionWith gridA’
+      In the first argument of ‘(&)’, namely ‘grid & M.unionWith gridA’
+
+<interactive>:960:13-64: error:
+    • Couldn't match type: Map k a
+                     with: Map V2 Cell -> Map V2 Cell
+      Expected: (Map V2 Cell -> Map V2 Cell) -> Map k a -> Map k a
+        Actual: Map k a -> Map k a -> Map k a
+    • In the second argument of ‘(&)’, namely
+        ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
+      In the expression:
+        grid & M.unionWith gridA
+          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
+      In an equation for ‘combinedGrid’:
+          combinedGrid
+            = grid & M.unionWith gridA
+                & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
+    • Relevant bindings include
+        combinedGrid :: Map k a -> Map k a (bound at <interactive>:958:9)
+
+<interactive>:960:27-62: error:
+    • Couldn't match expected type: a -> a -> a
+                  with actual type: Map (Int, Int) Cell
+    • In the first argument of ‘M.unionWith’, namely
+        ‘((second (+ heightA) `M.mapKeys` gridB))’
+      In the second argument of ‘(&)’, namely
+        ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
+      In the expression:
+        grid & M.unionWith gridA
+          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
+    • Relevant bindings include
+        combinedGrid :: Map k a -> Map k a (bound at <interactive>:958:9)
+
+<interactive>:961:35-46: error:
+    • Couldn't match expected type: Map V2 Cell
+                  with actual type: Map k0 a0 -> Map k0 a0
+    • Probable cause: ‘combinedGrid’ is applied to too few arguments
+      In the third argument of ‘Grid’, namely ‘combinedGrid’
+      In the second argument of ‘($)’, namely
+        ‘Grid width height combinedGrid’
+      In the expression: VGrid $ Grid width height combinedGrid
+#+end_example
+
+There's quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we ~M.unionWith~ the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (~second (+heightA))~) and using an ~M.mapKeys~ to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it's kind of standing in place of the ~fmap~ operator ~(<$>)~[fn:operator].
+
+[fn:operator] Note that when referring to operators both in code and prose, it's typical to refer to them in parentheses. ~(+) 1 2~ is the same as ~1 + 2~.
+
+
+Now the same for the ~HGrid~:
+
+TODO
+
 
 #+BEGIN_SRC haskell :exports both
 :{
