@@ -371,6 +371,8 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 
 Alright!
 
+We'll hide the top four rows later on. For now it's useful to print the whole grid, as we'll use this to display our tetrominos too.
+
 * Making Some Tetrominos
 Let's make the pieces. We'll represent them as another product type with a colour and coordinates, and take advantage of Haskell's laziness to construct an infinite stream of pieces, in chunks of seven, where each of the seven chunks is a shuffled collection containing every piece (per the *official rules*). This'll let us easily draw the next piece, as well as enabling a simple lookahead for a next-piece preview.
 
