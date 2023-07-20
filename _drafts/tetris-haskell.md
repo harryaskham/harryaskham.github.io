@@ -9,27 +9,28 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org6d007da)
-2.  [Beginning at the End](#org4cb4c54)
-3.  [What This Is](#org63f62e7)
-4.  [What This Isn&rsquo;t](#org3fb94fb)
-5.  [Prelude](#org75b52a8)
-6.  [Strategy](#org4031d11)
-7.  [Imports and Dependencies](#org803b2e8)
-8.  [Establishing the Grid](#org297638d)
-9.  [Making Some Tetrominos](#orgedba3e1)
-10. [Representing the Game State](#org47d9f54)
+1.  [TO DO](#orga3ce092)
+2.  [Beginning at the End](#orgcfeab6e)
+3.  [What This Is](#org6cca0d5)
+4.  [What This Isn&rsquo;t](#org567ad43)
+5.  [Prelude](#orgc27ff2f)
+6.  [Strategy](#org7eb4601)
+7.  [Imports and Dependencies](#org68f68e5)
+8.  [Establishing the Grid](#org9c2c477)
+9.  [Making Some Tetrominos](#orga04be48)
+10. [Representing the Game State](#org8696f37)
 
 
-<a id="org6d007da"></a>
+<a id="orga3ce092"></a>
 
 # TO DO
 
 -   [ ] grep for TODO and resolve
+-   [ ] figure out colour block display
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="org4cb4c54"></a>
+<a id="orgcfeab6e"></a>
 
 # Beginning at the End
 
@@ -38,7 +39,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org63f62e7"></a>
+<a id="org6cca0d5"></a>
 
 # What This Is
 
@@ -49,7 +50,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org3fb94fb"></a>
+<a id="org567ad43"></a>
 
 # What This Isn&rsquo;t
 
@@ -60,7 +61,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org75b52a8"></a>
+<a id="orgc27ff2f"></a>
 
 # Prelude
 
@@ -68,8 +69,10 @@ I watched the [Tetris](https://en.wikipedia.org/wiki/Tetris_(film)) movie this w
 
 When I was first learning Haskell, though, it felt like punching holes in cards. I couldn&rsquo;t get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I&rsquo;d grokked Gary Bernhardt&rsquo;s [Functional Core, Imperative Shell](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell) message, but how does this apply in a world where, supposedly, **everything** is functional? As we&rsquo;ll see, the Haskell equivalent is something like &ldquo;functional core, `IO` shell&rdquo; - but we&rsquo;re getting ahead of ourselves. I wrote [my own toy implementation](https://github.com/harryaskham/tetriskell) as a way of getting to grips with the language, and thought I&rsquo;d revisit it, rewriting it piece-by-piece in notebook style.
 
+**Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
-<a id="org4031d11"></a>
+
+<a id="org7eb4601"></a>
 
 # Strategy
 
@@ -86,7 +89,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org803b2e8"></a>
+<a id="org68f68e5"></a>
 
 # Imports and Dependencies
 
@@ -184,7 +187,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org297638d"></a>
+<a id="org9c2c477"></a>
 
 # Establishing the Grid
 
@@ -283,8 +286,6 @@ instance Pretty Colour where
 :}
 {% endhighlight %}
 
-TODO: Why are colours being deleted on export?
-
 {% highlight haskell %}
 :{
 instance Pretty Cell where
@@ -360,7 +361,7 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 Alright!
 
 
-<a id="orgedba3e1"></a>
+<a id="orga04be48"></a>
 
 # Making Some Tetrominos
 
@@ -456,14 +457,35 @@ A detail; a `Semigroup` is something that can be associatively combined - that&r
 
 {% highlight haskell %}
 :{
+newtype HGrid = HGrid Grid
+
+instance Semigroup HGrid where
+  (HGrid (Grid widthA heightA gridA)) <> (HGrid (Grid widthB heightB gridB)) =
+    let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+        combinedGrid = grid
+          & M.union gridA
+          & M.union ((second (+ heightA) `M.mapKeys` gridB))
+     in HGrid $ Grid width height combinedGrid
+
+instance Monoid HGrid where
+  mempty = HGrid $ mkEmptyGrid 0 0
+:}
+{% endhighlight %}
+
+There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we `M.unionWith` the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
+
+Now the same for the `VGrid`:
+
+{% highlight haskell %}
+:{
 newtype VGrid = VGrid Grid
 
 instance Semigroup VGrid where
   (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB gridB)) =
-    let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+    let (Grid width height grid) = mkEmptyGrid (widthA + widthB) (max heightA heightB)
         combinedGrid = grid
-          & M.unionWith gridA
-          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
+          & M.union gridA
+          & M.union ((first (+ widthA) `M.mapKeys` gridB))
      in VGrid $ Grid width height combinedGrid
 
 instance Monoid VGrid where
@@ -471,80 +493,46 @@ instance Monoid VGrid where
 :}
 {% endhighlight %}
 
-    <interactive>:3218:25-29: error:
-        • Couldn't match expected type ‘Cell -> Cell -> Cell’
-                      with actual type ‘Map V2 Cell’
-        • In the first argument of ‘M.unionWith’, namely ‘gridA’
-          In the second argument of ‘(&)’, namely ‘M.unionWith gridA’
-          In the first argument of ‘(&)’, namely ‘grid & M.unionWith gridA’
-    
-    <interactive>:3219:13-64: error:
-        • Couldn't match type ‘Map V2 Cell -> Map V2 Cell’ with ‘Map k a’
-          Expected type: (Map V2 Cell -> Map V2 Cell) -> Map k a -> Map k a
-            Actual type: Map k a -> Map k a -> Map k a
-        • In the second argument of ‘(&)’, namely
-            ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
-          In the expression:
-            grid & M.unionWith gridA
-              & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-          In an equation for ‘combinedGrid’:
-              combinedGrid
-                = grid & M.unionWith gridA
-                    & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-        • Relevant bindings include
-            combinedGrid :: Map k a -> Map k a (bound at <interactive>:3217:9)
-    
-    <interactive>:3219:27-62: error:
-        • Couldn't match expected type ‘a -> a -> a’
-                      with actual type ‘Map (Int, Int) Cell’
-        • Possible cause: ‘M.mapKeys’ is applied to too many arguments
-          In the first argument of ‘M.unionWith’, namely
-            ‘((second (+ heightA) `M.mapKeys` gridB))’
-          In the second argument of ‘(&)’, namely
-            ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
-          In the expression:
-            grid & M.unionWith gridA
-              & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-        • Relevant bindings include
-            combinedGrid :: Map k a -> Map k a (bound at <interactive>:3217:9)
-    
-    <interactive>:3220:35-46: error:
-        • Couldn't match expected type ‘Map V2 Cell’
-                      with actual type ‘Map k0 a0 -> Map k0 a0’
-        • Probable cause: ‘combinedGrid’ is applied to too few arguments
-          In the third argument of ‘Grid’, namely ‘combinedGrid’
-          In the second argument of ‘($)’, namely
-            ‘Grid width height combinedGrid’
-          In the expression: VGrid $ Grid width height combinedGrid
-
-There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we `M.unionWith` the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
-
-Now the same for the `HGrid`:
-
-TODO
+Now we can generate some batches of seven pieces, and stitch them together like so:
 
 {% highlight haskell %}
 :{
--- `mapM_` just lets us run a function with side effects and with no return value
--- like `putStrLn` over a collection of things.
--- Because we're in IO, we can make use of the system's source of randomness via newStdGen
- do
-   g <- newStdGen
-   let pieces = pieceStream g
-       batch1 = take 7 pieces
-       batch2 = take 7 (drop 7 pieces)
-       prettyBatch i batch = "Batch " <> show i <> ":\n" <> intercalate "\n\n" [pretty piece | piece <- batch]
-   forM_
-     (zip [1..] [batch1, batch2])
-     (putStrLn . uncurry prettyBatch)
+do
+  -- Get the system source of randomness
+  g <- newStdGen
+  -- Create a stream of pieces wrapped in our HGrid Monoid.
+  let vStream = VGrid . mkPieceGrid <$> pieceStream g
+  -- We create an infinite stream of batches, each stitched together
+  let batches stream = (mconcat $ take 7 stream) : batches (drop 7 stream)
+  -- We'll need a way to translate between these Monoids to switch stitching direction.
+  let vToH (VGrid grid) = HGrid grid
+  -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
+  let (HGrid grid) = mconcat (vToH <$> take 5 (batches vStream))
+  -- Finally we can print the underlying, unwrapped grid.
+  putStrLn (pretty grid)
 :}
 {% endhighlight %}
 
-    <interactive>:3231:9-17: error:
-        Variable not in scope: newStdGen :: IO a2
-    
-    <interactive>:3232:17-27: error:
-        Variable not in scope: pieceStream :: a2 -> t
+    .....█......................
+    .....█...██..............█..
+    .██..█...█...██.██...█...█..
+    .██..█...█..██...██.███..██.
+    .................█..........
+    .....█...........█...██.....
+    .██..█...██..█...█...█..██..
+    .██..██.██..███..█...█...██.
+    .................█..........
+    .█...............█...██.....
+    .█...█..██...██..█...█...██.
+    .██.███..██.██...█...█...██.
+    .........................█..
+    .....██..█...............█..
+    .█...█...█..██...██..██..█..
+    ███..█...██..██.██...██..█..
+    .........................█..
+    .██..............█.......█..
+    .█...█...██.██...█...██..█..
+    .█..███..██..██..██.██...█..
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
 
@@ -557,7 +545,7 @@ While we&rsquo;re here, let&rsquo;s implement piece rotation.
 TODO
 
 
-<a id="org47d9f54"></a>
+<a id="org8696f37"></a>
 
 # Representing the Game State
 

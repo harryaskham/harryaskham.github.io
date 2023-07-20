@@ -6,6 +6,7 @@
 
 * TO DO
 - [ ] grep for TODO and resolve
+- [ ] figure out colour block display
 - [ ] Figure out ghci :{ :} preamble
 
 #+BEGIN_SRC haskell :exports none :results output
@@ -42,6 +43,8 @@ There are a lot of ways one could write this code more cleanly and performantly 
 I watched the [[https://en.wikipedia.org/wiki/Tetris_(film)][Tetris]] movie this week. There's this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, who has a [[https://www.youtube.com/watch?v=PEgk2v6KntY]["drop the 'the'"]] moment and suggests all completed rows should vanish at once, rather than one at a time, enabling the achievement of the four-lines-at-once namesake move. They swiftly hack the feature together on a tiny monochrome display, and I was reminded how lucky I am to live in an era of rich tooling, expressive languages, and 4K monitors.
 
 When I was first learning Haskell, though, it felt like punching holes in cards. I couldn't get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I'd grokked Gary Bernhardt's [[https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell][Functional Core, Imperative Shell]] message, but how does this apply in a world where, supposedly, *everything* is functional? As we'll see, the Haskell equivalent is something like "functional core, ~IO~ shell" - but we're getting ahead of ourselves. I wrote [[https://github.com/harryaskham/tetriskell][my own toy implementation]] as a way of getting to grips with the language, and thought I'd revisit it, rewriting it piece-by-piece in notebook style.
+
+*Please note* that I myself am a kind of "expert beginner" - I love the language but I'm sure (in fact I know) there's a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 * Strategy
 - We'll build up from a play area, to the tetrominos, to the game logic, to user input, and finally to a self-playing bot.
@@ -144,9 +147,6 @@ import System.Random (RandomGen, split, newStdGen)
 #+END_SRC
 
 #+RESULTS:
-: <no location info>: error:
-:     Could not find module ‘System.Random’
-:     It is not a module in the current program, or in any known package.
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -156,9 +156,6 @@ import System.Random.Shuffle (shuffle')
 #+END_SRC
 
 #+RESULTS:
-: <no location info>: error:
-:     Could not find module ‘System.Random.Shuffle’
-:     It is not a module in the current program, or in any known package.
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -293,8 +290,6 @@ instance Pretty Colour where
 
 #+RESULTS:
 
-TODO: Why are colours being deleted on export?
-
 #+BEGIN_SRC haskell :exports code
 :{
 instance Pretty Cell where
@@ -423,8 +418,6 @@ pieceStream g =
 #+END_SRC
 
 #+RESULTS:
-: <interactive>:3139:16-24: error:
-:     Not in scope: type constructor or class ‘RandomGen’
 
 Now we need some functions for composing a ~Piece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
 
@@ -450,14 +443,6 @@ mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece piece)
 #+END_SRC
 
 #+RESULTS:
-: <interactive>:3155:14-18: error:
-:     Not in scope: type constructor or class ‘Piece’
-:
-: <interactive>:3156:12-16: error:
-:     Not in scope: data constructor ‘Piece’
-:
-: <interactive>:3160:16-20: error:
-:     Not in scope: type constructor or class ‘Piece’
 
 Whew, okay. Let's give ourselves a nice way of inspecting these pieces - we'll use this for things like next piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The ~(.)~ operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:
 
@@ -469,8 +454,6 @@ instance Pretty Piece where
 #+END_SRC
 
 #+RESULTS:
-: <interactive>:3165:17-21: error:
-:     Not in scope: type constructor or class ‘Piece’
 
 Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell's functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.[fn:foldl]
 
@@ -493,14 +476,40 @@ A detail; a ~Semigroup~ is something that can be associatively combined - that's
 
 #+BEGIN_SRC haskell :exports both
 :{
+newtype HGrid = HGrid Grid
+
+instance Semigroup HGrid where
+  (HGrid (Grid widthA heightA gridA)) <> (HGrid (Grid widthB heightB gridB)) =
+    let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+        combinedGrid = grid
+          & M.union gridA
+          & M.union ((second (+ heightA) `M.mapKeys` gridB))
+     in HGrid $ Grid width height combinedGrid
+
+instance Monoid HGrid where
+  mempty = HGrid $ mkEmptyGrid 0 0
+:}
+#+END_SRC
+
+#+RESULTS:
+
+There's quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we ~M.unionWith~ the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (~second (+heightA))~) and using an ~M.mapKeys~ to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it's kind of standing in place of the ~fmap~ operator ~(<$>)~[fn:operator].
+
+[fn:operator] Note that when referring to operators both in code and prose, it's typical to refer to them in parentheses. ~(+) 1 2~ is the same as ~1 + 2~.
+
+
+Now the same for the ~VGrid~:
+
+#+BEGIN_SRC haskell :exports both
+:{
 newtype VGrid = VGrid Grid
 
 instance Semigroup VGrid where
   (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB gridB)) =
-    let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+    let (Grid width height grid) = mkEmptyGrid (widthA + widthB) (max heightA heightB)
         combinedGrid = grid
-          & M.unionWith gridA
-          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
+          & M.union gridA
+          & M.union ((first (+ widthA) `M.mapKeys` gridB))
      in VGrid $ Grid width height combinedGrid
 
 instance Monoid VGrid where
@@ -509,87 +518,50 @@ instance Monoid VGrid where
 #+END_SRC
 
 #+RESULTS:
-#+begin_example
-<interactive>:3176:25-29: error:
-    • Couldn't match expected type ‘Cell -> Cell -> Cell’
-                  with actual type ‘Map V2 Cell’
-    • In the first argument of ‘M.unionWith’, namely ‘gridA’
-      In the second argument of ‘(&)’, namely ‘M.unionWith gridA’
-      In the first argument of ‘(&)’, namely ‘grid & M.unionWith gridA’
 
-<interactive>:3177:13-64: error:
-    • Couldn't match type ‘Map V2 Cell -> Map V2 Cell’ with ‘Map k a’
-      Expected type: (Map V2 Cell -> Map V2 Cell) -> Map k a -> Map k a
-        Actual type: Map k a -> Map k a -> Map k a
-    • In the second argument of ‘(&)’, namely
-        ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
-      In the expression:
-        grid & M.unionWith gridA
-          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-      In an equation for ‘combinedGrid’:
-          combinedGrid
-            = grid & M.unionWith gridA
-                & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-    • Relevant bindings include
-        combinedGrid :: Map k a -> Map k a (bound at <interactive>:3175:9)
-
-<interactive>:3177:27-62: error:
-    • Couldn't match expected type ‘a -> a -> a’
-                  with actual type ‘Map (Int, Int) Cell’
-    • Possible cause: ‘M.mapKeys’ is applied to too many arguments
-      In the first argument of ‘M.unionWith’, namely
-        ‘((second (+ heightA) `M.mapKeys` gridB))’
-      In the second argument of ‘(&)’, namely
-        ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
-      In the expression:
-        grid & M.unionWith gridA
-          & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-    • Relevant bindings include
-        combinedGrid :: Map k a -> Map k a (bound at <interactive>:3175:9)
-
-<interactive>:3178:35-46: error:
-    • Couldn't match expected type ‘Map V2 Cell’
-                  with actual type ‘Map k0 a0 -> Map k0 a0’
-    • Probable cause: ‘combinedGrid’ is applied to too few arguments
-      In the third argument of ‘Grid’, namely ‘combinedGrid’
-      In the second argument of ‘($)’, namely
-        ‘Grid width height combinedGrid’
-      In the expression: VGrid $ Grid width height combinedGrid
-#+end_example
-
-There's quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we ~M.unionWith~ the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (~second (+heightA))~) and using an ~M.mapKeys~ to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it's kind of standing in place of the ~fmap~ operator ~(<$>)~[fn:operator].
-
-[fn:operator] Note that when referring to operators both in code and prose, it's typical to refer to them in parentheses. ~(+) 1 2~ is the same as ~1 + 2~.
-
-
-Now the same for the ~HGrid~:
-
-TODO
-
+Now we can generate some batches of seven pieces, and stitch them together like so:
 
 #+BEGIN_SRC haskell :exports both
 :{
--- `mapM_` just lets us run a function with side effects and with no return value
--- like `putStrLn` over a collection of things.
--- Because we're in IO, we can make use of the system's source of randomness via newStdGen
- do
-   g <- newStdGen
-   let pieces = pieceStream g
-       batch1 = take 7 pieces
-       batch2 = take 7 (drop 7 pieces)
-       prettyBatch i batch = "Batch " <> show i <> ":\n" <> intercalate "\n\n" [pretty piece | piece <- batch]
-   forM_
-     (zip [1..] [batch1, batch2])
-     (putStrLn . uncurry prettyBatch)
+do
+  -- Get the system source of randomness
+  g <- newStdGen
+  -- Create a stream of pieces wrapped in our HGrid Monoid.
+  let vStream = VGrid . mkPieceGrid <$> pieceStream g
+  -- We create an infinite stream of batches, each stitched together
+  let batches stream = (mconcat $ take 7 stream) : batches (drop 7 stream)
+  -- We'll need a way to translate between these Monoids to switch stitching direction.
+  let vToH (VGrid grid) = HGrid grid
+  -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
+  let (HGrid grid) = mconcat (vToH <$> take 5 (batches vStream))
+  -- Finally we can print the underlying, unwrapped grid.
+  putStrLn (pretty grid)
 :}
 #+END_SRC
 
 #+RESULTS:
-: <interactive>:3189:9-17: error:
-:     Variable not in scope: newStdGen :: IO a2
-:
-: <interactive>:3190:17-27: error:
-:     Variable not in scope: pieceStream :: a2 -> t
+#+begin_example
+.........█..................
+.....█...█...............██.
+.██..█...█...█...██.██...█..
+██...██..█..███..██..██..█..
+.....................█......
+.............█.......█...██.
+.██..█...██..█..██...█...█..
+██..███..██..██..██..█...█..
+.........................█..
+.........██..........█...█..
+.██..█...█...██.██...█...█..
+██..███..█...██..██..██..█..
+.........................█..
+.............█.......██..█..
+.█...██..██..█..██...█...█..
+███.██...██..██..██..█...█..
+.....................█......
+.....██......█.......█......
+.██..█..██...█...█...█...██.
+██...█...██..██.███..█...██.
+#+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
 
