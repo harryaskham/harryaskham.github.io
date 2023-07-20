@@ -9,19 +9,19 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#orga3ce092)
-2.  [Beginning at the End](#orgcfeab6e)
-3.  [What This Is](#org6cca0d5)
-4.  [What This Isn&rsquo;t](#org567ad43)
-5.  [Prelude](#orgc27ff2f)
-6.  [Strategy](#org7eb4601)
-7.  [Imports and Dependencies](#org68f68e5)
-8.  [Establishing the Grid](#org9c2c477)
-9.  [Making Some Tetrominos](#orga04be48)
-10. [Representing the Game State](#org8696f37)
+1.  [TO DO](#org353759f)
+2.  [Beginning at the End](#orgb438214)
+3.  [What This Is](#orgddfebe2)
+4.  [What This Isn&rsquo;t](#org5e59b77)
+5.  [Prelude](#orga7f0a9c)
+6.  [Strategy](#org4665d11)
+7.  [Imports and Dependencies](#org47ca498)
+8.  [Establishing the Grid](#orga667ce6)
+9.  [Making Some Tetrominos](#org8e1f337)
+10. [Representing the Game State](#org0117d0a)
 
 
-<a id="orga3ce092"></a>
+<a id="org353759f"></a>
 
 # TO DO
 
@@ -30,7 +30,7 @@ tags:
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="orgcfeab6e"></a>
+<a id="orgb438214"></a>
 
 # Beginning at the End
 
@@ -39,7 +39,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org6cca0d5"></a>
+<a id="orgddfebe2"></a>
 
 # What This Is
 
@@ -50,7 +50,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org567ad43"></a>
+<a id="org5e59b77"></a>
 
 # What This Isn&rsquo;t
 
@@ -61,7 +61,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgc27ff2f"></a>
+<a id="orga7f0a9c"></a>
 
 # Prelude
 
@@ -72,7 +72,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org7eb4601"></a>
+<a id="org4665d11"></a>
 
 # Strategy
 
@@ -89,7 +89,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org68f68e5"></a>
+<a id="org47ca498"></a>
 
 # Imports and Dependencies
 
@@ -187,7 +187,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org9c2c477"></a>
+<a id="orga667ce6"></a>
 
 # Establishing the Grid
 
@@ -361,7 +361,7 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 Alright!
 
 
-<a id="orga04be48"></a>
+<a id="org8e1f337"></a>
 
 # Making Some Tetrominos
 
@@ -502,37 +502,44 @@ do
   g <- newStdGen
   -- Create a stream of pieces wrapped in our HGrid Monoid.
   let vStream = VGrid . mkPieceGrid <$> pieceStream g
-  -- We create an infinite stream of batches, each stitched together
-  let batches stream = (mconcat $ take 7 stream) : batches (drop 7 stream)
+  -- We create an infinite stream of batches, each stitched together.
+  -- We'll add horizontal space for display.
+  let rows pieces = (mconcat $ take 7 pieces <> [VGrid $ mkEmptyGrid 1 4]) : rows (drop 7 pieces)
   -- We'll need a way to translate between these Monoids to switch stitching direction.
-  let vToH (VGrid grid) = HGrid grid
+  -- We'll add vertical space for display
+  let vToH (VGrid grid) = HGrid grid <> HGrid (mkEmptyGrid (4 * 7) 1)
   -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
-  let (HGrid grid) = mconcat (vToH <$> take 5 (batches vStream))
+  let (HGrid grid) = mconcat (vToH <$> take 5 (rows vStream))
   -- Finally we can print the underlying, unwrapped grid.
   putStrLn (pretty grid)
 :}
 {% endhighlight %}
 
-    .....█......................
-    .....█...██..............█..
-    .██..█...█...██.██...█...█..
-    .██..█...█..██...██.███..██.
-    .................█..........
-    .....█...........█...██.....
-    .██..█...██..█...█...█..██..
-    .██..██.██..███..█...█...██.
-    .................█..........
-    .█...............█...██.....
-    .█...█..██...██..█...█...██.
-    .██.███..██.██...█...█...██.
-    .........................█..
-    .....██..█...............█..
-    .█...█...█..██...██..██..█..
-    ███..█...██..██.██...██..█..
-    .........................█..
-    .██..............█.......█..
-    .█...█...██.██...█...██..█..
-    .█..███..██..██..██.██...█..
+    .................█...........
+    .................█...█...██..
+    .██.██...██..█...█...█...█...
+    ██...██..██.███..█...██..█...
+    .............................
+    .................█...........
+    .....█...........█...██......
+    .██..█...█..██...█...█...██..
+    .██..██.███..██..█...█..██...
+    .............................
+    .............█...............
+    .............█...██..█.......
+    .██..█..██...█...█...█...██..
+    ██..███..██..█...█...██..██..
+    .............................
+    .█...........................
+    .█.......██..█...............
+    .█...█...█...█..██...██..██..
+    .█..███..█...██..██.██...██..
+    .............................
+    .█...........................
+    .█...█...........██..........
+    .█...█..██...██..█...█...██..
+    .█...██..██..██..█..███.██...
+    .............................
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
 
@@ -545,7 +552,7 @@ While we&rsquo;re here, let&rsquo;s implement piece rotation.
 TODO
 
 
-<a id="org8696f37"></a>
+<a id="org0117d0a"></a>
 
 # Representing the Game State
 
