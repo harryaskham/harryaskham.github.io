@@ -9,19 +9,19 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#orgc10d06b)
-2.  [Beginning at the End](#org1730499)
-3.  [What This Is](#org9fba83a)
-4.  [What This Isn&rsquo;t](#orgccc91d8)
-5.  [Prelude](#orgee40c7b)
-6.  [Strategy](#org9380d72)
-7.  [Imports and Dependencies](#orgbe8eff9)
-8.  [Establishing the Grid](#org34b522b)
-9.  [Making Some Tetrominos](#orgb7de689)
-10. [Representing the Game State](#orgb2242ef)
+1.  [TO DO](#org6d007da)
+2.  [Beginning at the End](#org4cb4c54)
+3.  [What This Is](#org63f62e7)
+4.  [What This Isn&rsquo;t](#org3fb94fb)
+5.  [Prelude](#org75b52a8)
+6.  [Strategy](#org4031d11)
+7.  [Imports and Dependencies](#org803b2e8)
+8.  [Establishing the Grid](#org297638d)
+9.  [Making Some Tetrominos](#orgedba3e1)
+10. [Representing the Game State](#org47d9f54)
 
 
-<a id="orgc10d06b"></a>
+<a id="org6d007da"></a>
 
 # TO DO
 
@@ -29,7 +29,7 @@ tags:
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="org1730499"></a>
+<a id="org4cb4c54"></a>
 
 # Beginning at the End
 
@@ -38,7 +38,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org9fba83a"></a>
+<a id="org63f62e7"></a>
 
 # What This Is
 
@@ -49,18 +49,18 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orgccc91d8"></a>
+<a id="org3fb94fb"></a>
 
 # What This Isn&rsquo;t
 
-I won&rsquo;t touch on package management or project structure - in fact, this post is a literate<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> Haskell file, and the concatenated code blocks can be run via `runhaskell tetris.hs`. There are plenty of tutorials on package managers like Stack and Cabal, and on general project management out there - for now, all you need is whatever Haskell distribution your machine uses. [GHCup](https://www.haskell.org/ghcup/) is as good a place to start as any. You might already even have `runhaskell` on your machine.
+I won&rsquo;t touch on package management or project structure - in fact, this post is a literate<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> Haskell file, and the concatenated code blocks (if written to `tetris.hs`) can be run via `runhaskell tetris.hs`. There are plenty of tutorials on package managers like Stack and Cabal, and on general project management out there - for now, all you need is whatever Haskell distribution your machine uses. [GHCup](https://www.haskell.org/ghcup/) is as good a place to start as any. You might already even have `runhaskell` on your machine.
 
 We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t use any language extensions.
 
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgee40c7b"></a>
+<a id="org75b52a8"></a>
 
 # Prelude
 
@@ -69,26 +69,30 @@ I watched the [Tetris](https://en.wikipedia.org/wiki/Tetris_(film)) movie this w
 When I was first learning Haskell, though, it felt like punching holes in cards. I couldn&rsquo;t get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I&rsquo;d grokked Gary Bernhardt&rsquo;s [Functional Core, Imperative Shell](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell) message, but how does this apply in a world where, supposedly, **everything** is functional? As we&rsquo;ll see, the Haskell equivalent is something like &ldquo;functional core, `IO` shell&rdquo; - but we&rsquo;re getting ahead of ourselves. I wrote [my own toy implementation](https://github.com/harryaskham/tetriskell) as a way of getting to grips with the language, and thought I&rsquo;d revisit it, rewriting it piece-by-piece in notebook style.
 
 
-<a id="org9380d72"></a>
+<a id="org4031d11"></a>
 
 # Strategy
 
+-   We&rsquo;ll build up from a play area, to the tetrominos, to the game logic, to user input, and finally to a self-playing bot.
 -   We&rsquo;ll represent the play area as a [`Map`](https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html) (think: a tree-backed dictionary) whose keys are coordinates, and whose values are the contents of a grid cell, where the y-coordinate grows from top to bottom.
 -   We&rsquo;ll make this 10x24, to allow for a 4-row buffer at the top in which to place new pieces.
 -   Pieces themselves will begin life in a 4x4 grid, and remain that way until they get fixed to the board.
--   This lets us implement both collision detection and bounds checks on falling pieces by stepping forward (either by gravity or user input), looking for overlap, and simply rejecting the new game state.
+    -   This lets us implement rotation, collision detection and bounds checks on falling pieces by stepping forward (either by rotating, by translation or by gravity), looking for overlap, and simply rejecting the new game state if we have overlapping blocks.
+-   We&rsquo;ll build logic to move the game forward one &ldquo;step&rdquo; (apply gravity, fix blocks when they hit bottom, delete full rows, update the score, etc.)
 -   Eventually, we&rsquo;ll have three threads running:
-    -   One to progress the game state (lower the blocks, delete full rows, update score, etc)
+    -   One to progress the game state
     -   One to draw the game to the screen
     -   One to accept user input and act on it
--   We&rsquo;ll also implement a simple bot that simulates a few blocks ahead and optimises for keeping the grid as low as possible.
+-   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgbe8eff9"></a>
+<a id="org803b2e8"></a>
 
 # Imports and Dependencies
 
-We&rsquo;ll start with the imports we need. Haskell is &ldquo;batteries included&rdquo; in so far as there is a rich collection of widely used, canonical core libraries on [Hackage](https://hackage.haskell.org/) - but you need to make them available on your system. For example, we&rsquo;ll be using [`Map`](https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html) a lot, which is part of the `containers` package. This needs to be available on your system - there are myriad ways of doing this, but simplest is just running `$ cabal install containers`. You might be using Stack, or Nix, or something else. The full list of packages we need here are:
+We&rsquo;ll start with the imports we need. Haskell is &ldquo;batteries included&rdquo; in so far as there is a rich collection of widely used, canonical core libraries on [Hackage](https://hackage.haskell.org/) - but they don&rsquo;t come with the compiler. You need to make them available on your system. For example, we&rsquo;ll be using [`Map`](https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html) a lot, which is part of the `containers` package. The glorious [Glasgow Haskell Compiler](https://www.haskell.org/ghc/) needs you to install these libraries. There are myriad ways of doing this, but simplest might just be running `cabal install --lib <libname>`.
+
+The full list of packages we need here are:
 
 -   `base`
 -   `containers`
@@ -99,25 +103,29 @@ If you&rsquo;re following along, you&rsquo;ll want to install them all:
 
 `cabal install --lib base containers random random-shuffle`
 
-Versioning is a whole other topic. We aren&rsquo;t using any unstable features of these packages, so I&rsquo;ve not suggested pinning any particular versions, but just know it&rsquo;s often useful to do so do avoid dependency hell. A good package manager will help you here in a real project (I use Nix for everything).
+Versioning is a whole other topic. We aren&rsquo;t using any unstable features of these packages, so I&rsquo;ve not suggested pinning any particular versions, but just know it&rsquo;s often useful to do so do avoid dependency hell in a real project. A good package manager<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> (Cabal, Stack, Nix, others) will help you here.
 
-Alright, so say we&rsquo;ve got our `tetris.hs` blank slate. This is going to be a single-file program, so we&rsquo;ll put everything into a monolithic `Main` module.
+Alright, so say we&rsquo;ve got our `tetris.hs` blank slate. This is going to be a single-file program, so we&rsquo;ll put everything into a monolithic `Main` module. This isn&rsquo;t great practice for serious projects, but for our purposes we can keep everything in `Main`.
 
 {% highlight haskell %}
 :{
 -- Every Haskell source file begins with a module definition like this.
+-- In your own project, you might have submodules like `module Server.API.Payments where`
+-- to reflect the boring pragmatism of real-world engineering.
+-- This would typically live at the path `lib/Server/API/Payments.hs`
+-- In a Cabal project, this monolithic file would live in `app/Main.hs`.
 module Main where
 :}
 {% endhighlight %}
 
-I&rsquo;ll spell out each import we&rsquo;re using explicitly:
+I&rsquo;ll spell out each import we&rsquo;re using explicitly<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup>:
 
 {% highlight haskell %}
 :{
 -- There are lots of Map-related methods; a qualified import avoids naming
 -- clashes, and means we can look things up using `M.lookup` rather than
 -- simply `lookup`.
--- Ignore the 'Strict' for now - laziness/strictness is out of scope here.
+-- Ignore the 'Strict' for now - laziness/strictness is a large and separate topic.
 import qualified Data.Map.Strict as M
 :}
 {% endhighlight %}
@@ -176,7 +184,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org34b522b"></a>
+<a id="org297638d"></a>
 
 # Establishing the Grid
 
@@ -249,7 +257,7 @@ mkEmptyGrid width height =
 :}
 {% endhighlight %}
 
-Let&rsquo;s get some output going. We&rsquo;re going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We&rsquo;ll define a `Pretty` typeclass - any type that implements this will be convertable to a nicely formatted `String`<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> which we can later print to the screen<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup>.
+Let&rsquo;s get some output going. We&rsquo;re going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We&rsquo;ll define a `Pretty` typeclass - any type that implements this will be convertable to a nicely formatted `String`<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> which we can later print to the screen<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>.
 
 Here `a` is a placeholder for the type that will implement the `Pretty` class. We&rsquo;re simply saying that anything prettifiable must define a `pretty` function that spits out a nice `String` representation. Very hand-wavily, Haskell&rsquo;s type signatures are written this way as all functions can be partially applied and are curried by default; for now, a function with a signature of `foo :: a -> b -> c -> d` can be thought of as a three argument function taking an `a`, a `b`, a `c` and returning a `d`.
 
@@ -352,7 +360,7 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 Alright!
 
 
-<a id="orgb7de689"></a>
+<a id="orgedba3e1"></a>
 
 # Making Some Tetrominos
 
@@ -433,7 +441,7 @@ instance Pretty Piece where
 :}
 {% endhighlight %}
 
-Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell&rsquo;s functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>
+Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell&rsquo;s functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup>
 
 Let&rsquo;s see if we got that right by pretty-printing these pieces.
 
@@ -442,7 +450,7 @@ For fun, we&rsquo;ll implement `Monoid` for `Grid`; this just means defining wha
 -   `Sum 2 <> Sum 3 == Sum 5`
 -   `Product 2 <> Product 3 == Product 6`
 
-There&rsquo;s a practical use here; we&rsquo;ll use these `Monoid` instances to compose UI elements like the grid, the next piece preview, and the display of the held piece. When we concatenate two grids along an edge, we&rsquo;ll grow the shorter grid to match it. This is a design choice; if we didn&rsquo;t do this, we&rsquo;d still have a [lawful `Monoid`](https://en.wikibooks.org/wiki/Haskell/Monoids#Monoid_laws)<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>, but it wouldn&rsquo;t be as useful for us.
+There&rsquo;s a practical use here; we&rsquo;ll use these `Monoid` instances to compose UI elements like the grid, the next piece preview, and the display of the held piece. When we concatenate two grids along an edge, we&rsquo;ll grow the shorter grid to match it. This is a design choice; if we didn&rsquo;t do this, we&rsquo;d still have a [lawful `Monoid`](https://en.wikibooks.org/wiki/Haskell/Monoids#Monoid_laws)<sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup>, but it wouldn&rsquo;t be as useful for us.
 
 A detail; a `Semigroup` is something that can be associatively combined - that&rsquo;s where the `<>` comes from (shorthand for `mconcat`). A `Monoid` is a `Semigroup` with an identity element (e.g. the empty grid - something you can combine either on the left or right, and get the same thing back). So to make something a `Monoid`, we first make it a `Semigroup`, then simply define what an empty one looks like. It goes like this:
 
@@ -452,222 +460,104 @@ newtype VGrid = VGrid Grid
 
 instance Semigroup VGrid where
   (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB gridB)) =
-    let width = max widthA heightA
-        height = heightA + heightB
-        grid = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+    let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
+        combinedGrid = grid
           & M.unionWith gridA
           & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-     in Grid width height grid
+     in VGrid $ Grid width height combinedGrid
 
 instance Monoid VGrid where
-  mempty = mkEmptyGrid 0 0
+  mempty = VGrid $ mkEmptyGrid 0 0
 :}
 {% endhighlight %}
 
-    <interactive>:864:13-29: error:
-        • Couldn't match type ‘Map k1 a1’ with ‘Grid’
-          Expected: Grid -> Map k1 a1 -> Map k1 a1
-            Actual: Map k1 a1 -> Map k1 a1 -> Map k1 a1
-        • In the second argument of ‘(&)’, namely ‘M.unionWith gridA’
-          In the first argument of ‘(&)’, namely
-            ‘mkEmptyGrid (max widthA widthB) (heightA + heightB)
-               & M.unionWith gridA’
-          In the expression:
-            mkEmptyGrid (max widthA widthB) (heightA + heightB)
-              & M.unionWith gridA
-              & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-    
-    <interactive>:864:25-29: error:
-        • Couldn't match expected type: a1 -> a1 -> a1
-                      with actual type: Map V2 Cell
+    <interactive>:3218:25-29: error:
+        • Couldn't match expected type ‘Cell -> Cell -> Cell’
+                      with actual type ‘Map V2 Cell’
         • In the first argument of ‘M.unionWith’, namely ‘gridA’
           In the second argument of ‘(&)’, namely ‘M.unionWith gridA’
-          In the first argument of ‘(&)’, namely
-            ‘mkEmptyGrid (max widthA widthB) (heightA + heightB)
-               & M.unionWith gridA’
+          In the first argument of ‘(&)’, namely ‘grid & M.unionWith gridA’
     
-    <interactive>:865:13-64: error:
-        • Couldn't match type: Map k a
-                         with: Map k1 a1 -> Map k1 a1
-          Expected: (Map k1 a1 -> Map k1 a1) -> Map k a -> Map k a
-            Actual: Map k a -> Map k a -> Map k a
+    <interactive>:3219:13-64: error:
+        • Couldn't match type ‘Map V2 Cell -> Map V2 Cell’ with ‘Map k a’
+          Expected type: (Map V2 Cell -> Map V2 Cell) -> Map k a -> Map k a
+            Actual type: Map k a -> Map k a -> Map k a
         • In the second argument of ‘(&)’, namely
             ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
           In the expression:
-            mkEmptyGrid (max widthA widthB) (heightA + heightB)
-              & M.unionWith gridA
+            grid & M.unionWith gridA
               & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-          In an equation for ‘grid’:
-              grid
-                = mkEmptyGrid (max widthA widthB) (heightA + heightB)
-                    & M.unionWith gridA
+          In an equation for ‘combinedGrid’:
+              combinedGrid
+                = grid & M.unionWith gridA
                     & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
         • Relevant bindings include
-            grid :: Map k a -> Map k a (bound at <interactive>:863:9)
+            combinedGrid :: Map k a -> Map k a (bound at <interactive>:3217:9)
     
-    <interactive>:865:27-62: error:
-        • Couldn't match expected type: a -> a -> a
-                      with actual type: Map (Int, Int) Cell
-        • In the first argument of ‘M.unionWith’, namely
+    <interactive>:3219:27-62: error:
+        • Couldn't match expected type ‘a -> a -> a’
+                      with actual type ‘Map (Int, Int) Cell’
+        • Possible cause: ‘M.mapKeys’ is applied to too many arguments
+          In the first argument of ‘M.unionWith’, namely
             ‘((second (+ heightA) `M.mapKeys` gridB))’
           In the second argument of ‘(&)’, namely
             ‘M.unionWith ((second (+ heightA) `M.mapKeys` gridB))’
           In the expression:
-            mkEmptyGrid (max widthA widthB) (heightA + heightB)
-              & M.unionWith gridA
+            grid & M.unionWith gridA
               & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
         • Relevant bindings include
-            grid :: Map k a -> Map k a (bound at <interactive>:863:9)
+            combinedGrid :: Map k a -> Map k a (bound at <interactive>:3217:9)
     
-    <interactive>:866:9-30: error:
-        • Couldn't match expected type ‘VGrid’ with actual type ‘Grid’
-        • In the expression: Grid width height grid
-          In the expression:
-            let
-              width = max widthA heightA
-              height = heightA + heightB
-              grid
-                = mkEmptyGrid (max widthA widthB) (heightA + heightB)
-                    & M.unionWith gridA
-                    & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-            in Grid width height grid
-          In an equation for ‘<>’:
-              (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB
-                                                                  gridB))
-                = let
-                    width = max widthA heightA
-                    height = heightA + heightB
-                    ....
-                  in Grid width height grid
-    
-    <interactive>:866:27-30: error:
-        • Couldn't match expected type: Map V2 Cell
-                      with actual type: Map k0 a0 -> Map k0 a0
-        • Probable cause: ‘grid’ is applied to too few arguments
-          In the third argument of ‘Grid’, namely ‘grid’
-          In the expression: Grid width height grid
-          In the expression:
-            let
-              width = max widthA heightA
-              height = heightA + heightB
-              grid
-                = mkEmptyGrid (max widthA widthB) (heightA + heightB)
-                    & M.unionWith gridA
-                    & M.unionWith ((second (+ heightA) `M.mapKeys` gridB))
-            in Grid width height grid
-    
-    <interactive>:869:12-26: error:
-        • Couldn't match expected type ‘VGrid’ with actual type ‘Grid’
-        • In the expression: mkEmptyGrid 0 0
-          In an equation for ‘mempty’: mempty = mkEmptyGrid 0 0
-          In the instance declaration for ‘Monoid VGrid’
+    <interactive>:3220:35-46: error:
+        • Couldn't match expected type ‘Map V2 Cell’
+                      with actual type ‘Map k0 a0 -> Map k0 a0’
+        • Probable cause: ‘combinedGrid’ is applied to too few arguments
+          In the third argument of ‘Grid’, namely ‘combinedGrid’
+          In the second argument of ‘($)’, namely
+            ‘Grid width height combinedGrid’
+          In the expression: VGrid $ Grid width height combinedGrid
 
-There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we `M.unionWith` the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup>.
+There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we `M.unionWith` the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
 
 Now the same for the `HGrid`:
 
 TODO
 
-,#+BEGIN<sub>SRC</sub> haskell :exports both
+{% highlight haskell %}
 :{
-&#x2013; \`mapM\_\` just lets us run a function with side effects and with no return value
-&#x2013; like \`putStrLn\` over a collection of things.
-&#x2013; Because we&rsquo;re in IO, we can make use of the system&rsquo;s source of randomness via newStdGen
+-- `mapM_` just lets us run a function with side effects and with no return value
+-- like `putStrLn` over a collection of things.
+-- Because we're in IO, we can make use of the system's source of randomness via newStdGen
  do
    g <- newStdGen
    let pieces = pieceStream g
        batch1 = take 7 pieces
        batch2 = take 7 (drop 7 pieces)
-       prettyBatch i batch = &ldquo;Batch &rdquo; <> show i <> &ldquo;:\n&rdquo; <> intercalate &ldquo;\n\n&rdquo; [pretty piece | piece <- batch]
-   forM\_
+       prettyBatch i batch = "Batch " <> show i <> ":\n" <> intercalate "\n\n" [pretty piece | piece <- batch]
+   forM_
      (zip [1..] [batch1, batch2])
      (putStrLn . uncurry prettyBatch)
 :}
-\#+END<sub>SRC</sub>
+{% endhighlight %}
 
-    Batch 1:
-    ....
-    ....
-    .██.
-    ██..
+    <interactive>:3231:9-17: error:
+        Variable not in scope: newStdGen :: IO a2
     
-    ....
-    ....
-    .██.
-    .██.
-    
-    ....
-    .██.
-    .█..
-    .█..
-    
-    .█..
-    .█..
-    .█..
-    .█..
-    
-    ....
-    ....
-    .█..
-    ███.
-    
-    ....
-    ....
-    ██..
-    .██.
-    
-    ....
-    .█..
-    .█..
-    .██.
-    Batch 2:
-    ....
-    .█..
-    .█..
-    .██.
-    
-    .█..
-    .█..
-    .█..
-    .█..
-    
-    ....
-    .██.
-    .█..
-    .█..
-    
-    ....
-    ....
-    ██..
-    .██.
-    
-    ....
-    ....
-    .██.
-    .██.
-    
-    ....
-    ....
-    .██.
-    ██..
-    
-    ....
-    ....
-    .█..
-    ███.
+    <interactive>:3232:17-27: error:
+        Variable not in scope: pieceStream :: a2 -> t
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
 
 We introduced a number of new concepts here; we secretly entered a monad (`IO`, specifically), enabling the `do`-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we&rsquo;ve been doing this all along with every call to `putStrLn`. We&rsquo;ll get into `IO` more later when we start dealing with user input and multiprocessing.
 
-We also introduced `uncurry` - we wanted to pass the tuples of form `(1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup>.
+We also introduced `uncurry` - we wanted to pass the tuples of form `(1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 While we&rsquo;re here, let&rsquo;s implement piece rotation.
 
 TODO
 
 
-<a id="orgb2242ef"></a>
+<a id="org47d9f54"></a>
 
 # Representing the Game State
 
@@ -687,16 +577,20 @@ TODO
 
 # Footnotes
 
-<sup><a id="fn.1" href="#fnr.1">1</a></sup> Okay, not quite. I&rsquo;m writing this in Emacs, where `org-babel` will run each block in GHCi, a Haskell interpreter, with `set +m` enabled to allow multiline blocks. The whole thing gets compiled to Markdown via `ox-jekyll`. The end result is the same, more or less, as writing actual literate code.
+<sup><a id="fn.1" href="#fnr.1">1</a></sup> Okay, not quite. I&rsquo;m writing this in Emacs, where `org-babel` will run each block in GHCi, a Haskell interpreter, with `set +m` enabled to allow multiline blocks. The whole thing gets compiled to Markdown via `org-jekyll`. The end result is the same, more or less, as writing actual literate code, with some of the advantages of a Jupyter-style workflow.
 
-<sup><a id="fn.2" href="#fnr.2">2</a></sup> You&rsquo;ll typically be recommended to eschew `String` (which is a linked list of characters) for the more efficient `Text` type; we don&rsquo;t need to worry about this for a toy application.
+<sup><a id="fn.2" href="#fnr.2">2</a></sup> I use Cabal&rsquo;s Nix integration for anything serious.
 
-<sup><a id="fn.3" href="#fnr.3">3</a></sup> There&rsquo;s already the `Show` typeclass that does exactly this, and which can be automatically derived for many types, but I tend to think of it as for debugging and inspection purposes - I prefer a separate typeclass for representations intended to be user-facing.
+<sup><a id="fn.3" href="#fnr.3">3</a></sup> Also because for whatever reason, I can&rsquo;t get `org-babel` to accept more than one import per code block and I really want to be able to run this entire post as a single notebook-style program.
 
-<sup><a id="fn.4" href="#fnr.4">4</a></sup> The use of `foldl'` here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don&rsquo;t accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
+<sup><a id="fn.4" href="#fnr.4">4</a></sup> You&rsquo;ll typically be recommended to eschew `String` (which is a linked list of characters) for the more efficient `Text` type; we don&rsquo;t need to worry about this for a toy application.
 
-<sup><a id="fn.5" href="#fnr.5">5</a></sup> That is, associative, and with a left and right identity (the empty grid in both cases).
+<sup><a id="fn.5" href="#fnr.5">5</a></sup> There&rsquo;s already the `Show` typeclass that does exactly this, and which can be automatically derived for many types, but I tend to think of it as for debugging and inspection purposes - I prefer a separate typeclass for representations intended to be user-facing.
 
-<sup><a id="fn.6" href="#fnr.6">6</a></sup> Note that when referring to operators both in code and prose, it&rsquo;s typical to refer to them in parentheses. `(+) 1 2` is the same as `1 + 2`.
+<sup><a id="fn.6" href="#fnr.6">6</a></sup> The use of `foldl'` here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don&rsquo;t accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
 
-<sup><a id="fn.7" href="#fnr.7">7</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3` and so on exist).
+<sup><a id="fn.7" href="#fnr.7">7</a></sup> That is, associative, and with a left and right identity (the empty grid in both cases).
+
+<sup><a id="fn.8" href="#fnr.8">8</a></sup> Note that when referring to operators both in code and prose, it&rsquo;s typical to refer to them in parentheses. `(+) 1 2` is the same as `1 + 2`.
+
+<sup><a id="fn.9" href="#fnr.9">9</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3` and so on exist).
