@@ -9,19 +9,19 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org353759f)
-2.  [Beginning at the End](#orgb438214)
-3.  [What This Is](#orgddfebe2)
-4.  [What This Isn&rsquo;t](#org5e59b77)
-5.  [Prelude](#orga7f0a9c)
-6.  [Strategy](#org4665d11)
-7.  [Imports and Dependencies](#org47ca498)
-8.  [Establishing the Grid](#orga667ce6)
-9.  [Making Some Tetrominos](#org8e1f337)
-10. [Representing the Game State](#org0117d0a)
+1.  [TO DO](#orgab772b2)
+2.  [Beginning at the End](#org1d9ba35)
+3.  [What This Is](#orgeb4a5fd)
+4.  [What This Isn&rsquo;t](#orgf9b55a9)
+5.  [Prelude](#org41e6b47)
+6.  [Strategy](#org38c5abd)
+7.  [Imports and Dependencies](#org1e12425)
+8.  [Establishing the Grid](#org701f46a)
+9.  [Making Some Tetrominos](#orgce853a8)
+10. [Representing the Game State](#org87f5414)
 
 
-<a id="org353759f"></a>
+<a id="orgab772b2"></a>
 
 # TO DO
 
@@ -30,7 +30,7 @@ tags:
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="orgb438214"></a>
+<a id="org1d9ba35"></a>
 
 # Beginning at the End
 
@@ -39,7 +39,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="orgddfebe2"></a>
+<a id="orgeb4a5fd"></a>
 
 # What This Is
 
@@ -50,7 +50,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org5e59b77"></a>
+<a id="orgf9b55a9"></a>
 
 # What This Isn&rsquo;t
 
@@ -61,7 +61,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orga7f0a9c"></a>
+<a id="org41e6b47"></a>
 
 # Prelude
 
@@ -72,7 +72,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org4665d11"></a>
+<a id="org38c5abd"></a>
 
 # Strategy
 
@@ -89,7 +89,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org47ca498"></a>
+<a id="org1e12425"></a>
 
 # Imports and Dependencies
 
@@ -187,7 +187,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orga667ce6"></a>
+<a id="org701f46a"></a>
 
 # Establishing the Grid
 
@@ -360,8 +360,10 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 
 Alright!
 
+We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
-<a id="org8e1f337"></a>
+
+<a id="orgce853a8"></a>
 
 # Making Some Tetrominos
 
@@ -515,30 +517,30 @@ do
 :}
 {% endhighlight %}
 
-    .................█...........
-    .................█...█...██..
-    .██.██...██..█...█...█...█...
-    ██...██..██.███..█...██..█...
-    .............................
-    .................█...........
-    .....█...........█...██......
-    .██..█...█..██...█...█...██..
-    .██..██.███..██..█...█..██...
+    .........................█...
+    .....█...██..............█...
+    ██...█...█...██..█...██..█...
+    .██..██..█...██.███.██...█...
     .............................
     .............█...............
-    .............█...██..█.......
-    .██..█..██...█...█...█...██..
-    ██..███..██..█...█...██..██..
+    .....██......█.......█.......
+    .█...█...██..█..██...█...██..
+    ███..█..██...█...██..██..██..
+    .............................
+    .............█...............
+    .....██..█...█...............
+    .██..█...█...█...█..██...██..
+    .██..█...██..█..███..██.██...
+    .............................
+    .................█...........
+    .........█.......█.......██..
+    .█...██..█...██..█..██...█...
+    ███..██..██.██...█...██..█...
     .............................
     .█...........................
-    .█.......██..█...............
-    .█...█...█...█..██...██..██..
-    .█..███..█...██..██.██...██..
-    .............................
-    .█...........................
-    .█...█...........██..........
-    .█...█..██...██..█...█...██..
-    .█...██..██..██..█..███.██...
+    .█...██..█...................
+    .█...█...█...█...██.██...██..
+    .█...█...██.███..██..██.██...
     .............................
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
@@ -552,7 +554,7 @@ While we&rsquo;re here, let&rsquo;s implement piece rotation.
 TODO
 
 
-<a id="org0117d0a"></a>
+<a id="org87f5414"></a>
 
 # Representing the Game State
 
