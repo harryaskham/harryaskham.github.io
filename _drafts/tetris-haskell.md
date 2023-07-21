@@ -9,19 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org5796167)
-2.  [Beginning at the End](#orgcc94f59)
-3.  [What This Is](#orgf453a3b)
-4.  [What This Isn&rsquo;t](#org769e0b8)
-5.  [Prelude](#org9abaa83)
-6.  [Strategy](#orgabc6895)
-7.  [Imports and Dependencies](#org6a522c6)
-8.  [Establishing the Grid](#orgfe84a66)
-9.  [Making Some Tetrominos](#org75b43f6)
-10. [Representing the Game State](#org5af5c36)
+1.  [TO DO](#org72e7dd9)
+2.  [Beginning at the End](#orgad28d62)
+3.  [What This Is](#orgc12fc0b)
+4.  [What This Isn&rsquo;t](#org8a98b06)
+5.  [Prelude](#orgeef0309)
+6.  [Strategy](#org0aaeeff)
+7.  [Imports and Dependencies](#orgebd24c9)
+8.  [Establishing the Grid](#org66b73ea)
+9.  [Making Some Tetrominos](#org8112f25)
+10. [Rotations](#orge6d97d1)
+11. [Placing Pieces on the Grid](#org043bc11)
+12. [Representing the Game State](#org79fd56b)
 
 
-<a id="org5796167"></a>
+<a id="org72e7dd9"></a>
 
 # TO DO
 
@@ -30,7 +32,7 @@ tags:
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="orgcc94f59"></a>
+<a id="orgad28d62"></a>
 
 # Beginning at the End
 
@@ -39,7 +41,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="orgf453a3b"></a>
+<a id="orgc12fc0b"></a>
 
 # What This Is
 
@@ -50,7 +52,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org769e0b8"></a>
+<a id="org8a98b06"></a>
 
 # What This Isn&rsquo;t
 
@@ -61,7 +63,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org9abaa83"></a>
+<a id="orgeef0309"></a>
 
 # Prelude
 
@@ -72,7 +74,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgabc6895"></a>
+<a id="org0aaeeff"></a>
 
 # Strategy
 
@@ -89,7 +91,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org6a522c6"></a>
+<a id="orgebd24c9"></a>
 
 # Imports and Dependencies
 
@@ -187,7 +189,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orgfe84a66"></a>
+<a id="org66b73ea"></a>
 
 # Establishing the Grid
 
@@ -367,11 +369,11 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org75b43f6"></a>
+<a id="org8112f25"></a>
 
 # Making Some Tetrominos
 
-Let&rsquo;s make the pieces. We&rsquo;ll represent them as another product type with a colour and coordinates, and take advantage of Haskell&rsquo;s laziness to construct an infinite stream of pieces, in chunks of seven, where each of the seven chunks is a shuffled collection containing every piece (per the **official rules**). This&rsquo;ll let us easily draw the next piece, as well as enabling a simple lookahead for a next-piece preview.
+Let&rsquo;s make the pieces. We&rsquo;ll represent them as a product type with a colour and coordinates, and take advantage of Haskell&rsquo;s laziness to construct an infinite stream of pieces, in chunks of seven, where each of the seven chunks is a shuffled collection containing every piece (per the **official rules**). This&rsquo;ll let us easily draw the next piece, as well as enabling a simple lookahead for a next-piece preview.
 
 We&rsquo;ll encode the actual shapes by the coordinates of their full blocks, letting us specify their colour as well. We&rsquo;ll use some helpers to let us quickly set coloured blocks on an empty grid. Eventually we&rsquo;ll have a function that transforms a `Grid` into a copy of itself containing one new coloured block - we can then `fold` this function, using an empty 4x4 grid as the initial state, over the coordinates of the piece, which will add the blocks one by one, giving us the finished piece.
 
@@ -523,26 +525,26 @@ do
 :}
 {% endhighlight %}
 
-    .█..........................
-    .█...██.██...█...█...██..██.
-    .█..██...██.███..█...█...██.
-    .█...............██..█......
-    .........................█..
-    .██..█...██..██.██...█...█..
-    ██...█...██..█...██.███..█..
-    .....██......█...........█..
-    .....................█......
-    .██..█...█..██...██..█...██.
-    .██.███..█...██.██...█...█..
-    .........██..........█...█..
-    .█..........................
-    .█...█...██.██...██..█...██.
-    .█...█...██..██..█..███.██..
-    .█...██..........█..........
+    .................█..........
+    .██..█...█..██...█...██..██.
+    .██..█..███..██..█..██...█..
+    .....██..........█.......█..
+    .........█..................
+    .██..█...█...██..██.██...█..
+    .█...█...█..██...██..██.███.
+    .█...██..█..................
+    .........█..................
+    .██..██..█...█..██...█...██.
+    .██.██...█...█...██.███..█..
+    .........█...██..........█..
     .............█..............
-    ██...██..█...█...█...██..██.
-    .██.██...█...█..███..█...██.
-    .........██..█.......█......
+    .█...█...██..█..██...██..██.
+    .█..███.██...█...██..██..█..
+    .██..........█...........█..
+    .........................█..
+    .█...██..█...██..██.██...█..
+    ███..██..█...█..██...██..█..
+    .........██..█...........█..
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -550,7 +552,12 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
-While we&rsquo;re here, let&rsquo;s implement piece rotation. This will be a little janky, but we&rsquo;ll just rotate the entire 4x4 grid, and then
+
+<a id="orge6d97d1"></a>
+
+# Rotations
+
+While we&rsquo;re here, let&rsquo;s implement piece rotation. We can just rotate the entire 4x4 grid, and apply thrice to get the reverse direction:
 
 {% highlight haskell %}
 :{
@@ -562,13 +569,13 @@ rotateCW (Piece colour coordinates) =
 -- Lol. Lmao even.
 rotateCCW :: Piece -> Piece
 rotateCCW = rotateCW . rotateCW . rotateCW
-
 :}
 {% endhighlight %}
 
+Let&rsquo;s take a look at these rotations:
+
 {% highlight haskell %}
 :{
--- Let's inspect these rotations
 forM_ allPieces
   $ (\piece ->
         putStrLn
@@ -609,20 +616,86 @@ forM_ allPieces
     .█........█.████
     .█........█.....
 
+I&rsquo;m almsot sure it&rsquo;s not regulation, but it&rsquo;ll do.
 
-<a id="org5af5c36"></a>
+
+<a id="org043bc11"></a>
+
+# Placing Pieces on the Grid
+
+Let&rsquo;s start by placing a piece in that buffer zone at the top of the grid (which we&rsquo;ll eventually hide).
+
+We want it to be anchored to the bottom, so that it immediately starts to become visible as it falls, so we&rsquo;ll translate it based on its lowest y-coordinate.
+
+{% highlight haskell %}
+:{
+-- We can reuse our withPiece function from earlier.
+withNewPiece :: Piece -> Grid -> Grid
+withNewPiece (Piece colour coordinates) grid = grid & withPiece piece'
+  where
+    -- We need to ensure the largest y-coordinate is 3
+    yOffset = 3 - maximum (snd <$> coordinates)
+    -- And we'd like to roughly centre the piece, so we'll offset it by 3
+    piece' = Piece colour $ (\(x, y) -> (x + 3, y + yOffset)) <$> coordinates
+:}
+{% endhighlight %}
+
+And let&rsquo;s test this, as ever:
+
+{% highlight haskell %}
+:{
+putStrLn . pretty $ mkEmptyGrid 10 24 & withNewPiece pieceS
+:}
+{% endhighlight %}
+
+    ..........
+    ..........
+    ....██....
+    ...██.....
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+    ..........
+
+Looks solid - one step of gravity after this, and the piece will become visible.
+
+
+<a id="org79fd56b"></a>
 
 # Representing the Game State
 
-Now we&rsquo;ll create the type we&rsquo;ll be using to store all state about the ongoing game. This is a product type; rather than &ldquo;one-of-many&rdquo;, this represents a collection of many simultaneous values. You can think of it like a struct.
+Now we&rsquo;ll create the type we&rsquo;ll be using to store all state about the ongoing game. Note that we still keep this outside of `IO`, requiring that a source of randomness is piped in to create this state.
 
 {% highlight haskell %}
 :{
 data Game = Game {
   grid :: Grid,
+  pieces :: [Piece],
   score :: Int
 }
--- TODO more
+
+mkGame :: RandomGen g => g -> Game
+mkGame g = Game {
+  grid = mkEmptyGrid 10 24,
+  pieces = pieceStream g,
+  score = 0
+}
 :}
 {% endhighlight %}
 
