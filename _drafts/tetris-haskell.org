@@ -25,7 +25,7 @@ This is what we'll build over the course of this post.
 * What This Is
 This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that's how I first learnt the basics. I'll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.
 
-I'll explicitly try to overexplain everything, either in prose or in comments.
+I'll explicitly try to overexplain everything, either in prose or in comments. I'm also going to purposefully try to use a variety of different styles of Haskell programming.
 
 We'll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [[https://en.wikipedia.org/wiki/Beam_search][beam search]].
 
@@ -187,7 +187,9 @@ We'll need a 2D grid of cells, each of which can be empty or filled with a block
 :{
 -- This is a sum type; we can now use these colour values directly in our code.
 -- Yes, we'll be using British English.
-data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan
+-- We include black for background elements, and an end-code since these will map to
+-- ANSI escape codes.
+data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | ColourEnd
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
 data Cell = Block Colour | Empty
@@ -285,6 +287,8 @@ instance Pretty Colour where
   pretty Green = "\x1b[32m"
   pretty Purple = "\x1b[35m"
   pretty Orange = "\x1b[37m"
+  pretty Black = "\x1b[30m"
+  pretty ColourEnd = "\x1b[0m"
 :}
 #+END_SRC
 
@@ -293,8 +297,8 @@ instance Pretty Colour where
 #+BEGIN_SRC haskell :exports code
 :{
 instance Pretty Cell where
-  pretty Empty = "."
-  pretty (Block colour) = pretty colour <> "█"
+  pretty Empty = pretty Black <> "." <> pretty ColourEnd
+  pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
 :}
 #+END_SRC
 
@@ -389,16 +393,16 @@ pieceR :: Piece
 pieceR = Piece Blue [(1, 3), (1, 2), (1, 1), (2, 1)]
 
 pieceSquare :: Piece
-pieceSquare = Piece Yellow [(1, 3), (1, 2), (2, 3), (2, 2)]
+pieceSquare = Piece Yellow [(1, 2), (1, 1), (2, 2), (2, 1)]
 
 pieceS :: Piece
-pieceS = Piece Green [(0, 3), (1, 3), (1, 2), (2, 2)]
+pieceS = Piece Green [(0, 2), (1, 2), (1, 1), (2, 1)]
 
 pieceZ :: Piece
-pieceZ = Piece Red [(0, 2), (1, 2), (1, 3), (2, 3)]
+pieceZ = Piece Red [(0, 1), (1, 1), (1, 2), (2, 2)]
 
 pieceT :: Piece
-pieceT = Piece Purple [(0, 3), (1, 3), (2, 3), (1, 2)]
+pieceT = Piece Purple [(0, 2), (1, 2), (2, 2), (1, 1)]
 
 pieceLine :: Piece
 pieceLine = Piece Cyan [(1, 3), (1, 2), (1, 1), (1, 0)]
@@ -478,7 +482,7 @@ A detail; a ~Semigroup~ is something that can be associatively combined - that's
 
 #+BEGIN_SRC haskell :exports both
 :{
-newtype HGrid = HGrid Grid
+newtype HGrid = HGrid { unHGrid :: Grid }
 
 instance Semigroup HGrid where
   (HGrid (Grid widthA heightA gridA)) <> (HGrid (Grid widthB heightB gridB)) =
@@ -495,7 +499,13 @@ instance Monoid HGrid where
 
 #+RESULTS:
 
-There's quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we ~M.unionWith~ the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (~second (+heightA))~) and using an ~M.mapKeys~ to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it's kind of standing in place of the ~fmap~ operator ~(<$>)~[fn:operator].
+There's quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The ~unHGrid~ named member just lets us easily unwrap this type later on.
+
+Then we ~M.unionWith~ the original grid, copying over its elements.
+
+Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (~second (+heightA))~) and using an ~M.mapKeys~ to bump all y-coordinates of the second grid to the correct locations.
+
+Note that we use backticks to inline the function, since it's kind of standing in place of the ~fmap~ operator ~(<$>)~[fn:operator].
 
 [fn:operator] Note that when referring to operators both in code and prose, it's typical to refer to them in parentheses. ~(+) 1 2~ is the same as ~1 + 2~.
 
@@ -504,7 +514,7 @@ Now the same for the ~VGrid~:
 
 #+BEGIN_SRC haskell :exports both
 :{
-newtype VGrid = VGrid Grid
+newtype VGrid = VGrid { unVGrid :: Grid }
 
 instance Semigroup VGrid where
   (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB gridB)) =
@@ -528,14 +538,12 @@ Now we can generate some batches of seven pieces, and stitch them together like 
 do
   -- Get the system source of randomness
   g <- newStdGen
-  -- Create a stream of pieces wrapped in our HGrid Monoid.
+  -- Create a stream of pieces wrapped in our VGrid Monoid.
   let vStream = VGrid . mkPieceGrid <$> pieceStream g
   -- We create an infinite stream of batches, each stitched together.
-  -- We'll add horizontal space for display.
-  let rows pieces = (mconcat $ take 7 pieces <> [VGrid $ mkEmptyGrid 1 4]) : rows (drop 7 pieces)
+  let rows pieces = mconcat (take 7 pieces) : rows (drop 7 pieces)
   -- We'll need a way to translate between these Monoids to switch stitching direction.
-  -- We'll add vertical space for display
-  let vToH (VGrid grid) = HGrid grid <> HGrid (mkEmptyGrid (4 * 7) 1)
+  let vToH (VGrid grid) = HGrid grid
   -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
   let (HGrid grid) = mconcat (vToH <$> take 5 (rows vStream))
   -- Finally we can print the underlying, unwrapped grid.
@@ -545,45 +553,100 @@ do
 
 #+RESULTS:
 #+begin_example
-.....█.......................
-.....█...█...........██......
-██...█...█...██..██..█...█...
-.██..█...██..██.██...█..███..
-.............................
-.....................█.......
-.........██..█.......█.......
-██...██..█...█...█...█...██..
-.██.██...█...██.███..█...██..
-.............................
-.............█...............
-.............█...██..█.......
-.██.██...██..█...█...█...█...
-.██..██.██...█...█...██.███..
-.............................
-.....................█.......
-.██..█...............█.......
-.█...█...██..█...██..█..██...
-.█...██..██.███.██...█...██..
-.............................
-.........................█...
-.........█.......██......█...
-.██..██..█...█...█..██...█...
-.██.██...██.███..█...██..█...
-.............................
+.....................█......
+.█...██..█..██...██..█...██.
+.█...██.███..██.██...█...█..
+.██..................█...█..
+.....................█......
+.█...██..██.██...█...█...██.
+███..██.██...██..█...█...█..
+.................██..█...█..
+.█..........................
+.█..██...██..█...██..██..█..
+.█...██..█...█...██.██..███.
+.█.......█...██.............
+.........█..................
+.██..██..█..██...█...█...██.
+.█..██...█...██..█..███..██.
+.█.......█.......██.........
+.........................█..
+.██.██...██..██..█...█...█..
+.█...██.██...██..█..███..█..
+.█...............██......█..
 #+end_example
 
-Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
+Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
 
 We introduced a number of new concepts here; we secretly entered a monad (~IO~, specifically), enabling the ~do~-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we've been doing this all along with every call to ~putStrLn~. We'll get into ~IO~ more later when we start dealing with user input and multiprocessing.
 
-We also introduced ~uncurry~ - we wanted to pass the tuples of form ~(1, batch1)~ we'd created via ~zip~ into a function that wanted arguments ~1 batch1~ - ~uncurry~ will convert a function that wants two arguments into a function that wants a tuple of those two arguments[fn:uncurry].
+We also introduced ~uncurry~ - we wanted to pass the tuples of form ~f (1, batch1)~ we'd created via ~zip~ into a function that wanted arguments ~f 1 batch1~ - ~uncurry~ will convert a function that wants two arguments into a function that wants a tuple of those two arguments[fn:uncurry].
 
 [fn:uncurry] It gets more complex when you're dealing with more arguments (~uncurry3~ and so on exist).
 
 
-While we're here, let's implement piece rotation.
+While we're here, let's implement piece rotation. This will be a little janky, but we'll just rotate the entire 4x4 grid, and then
 
-TODO
+#+BEGIN_SRC haskell :exports code
+:{
+-- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
+rotateCW :: Piece -> Piece
+rotateCW (Piece colour coordinates) =
+  Piece colour $ (\(x, y) -> (3 - y, x)) <$> coordinates
+
+-- Lol. Lmao even.
+rotateCCW :: Piece -> Piece
+rotateCCW = rotateCW . rotateCW . rotateCW
+
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports both
+:{
+-- Let's inspect these rotations
+forM_ allPieces
+  $ (\piece ->
+        putStrLn
+        . pretty
+        . unVGrid
+        . mconcat
+        . take 4
+        $ VGrid . mkPieceGrid <$> iterate rotateCW piece)
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+.........██.....
+.█..███...█....█
+.█..█.....█..███
+.██.............
+..........█.....
+.██.███...█..█..
+.█....█..██..███
+.█..............
+................
+.██..██..██..██.
+.██..██..██..██.
+................
+.....█..........
+.██..██...██.█..
+██....█..██..██.
+..............█.
+......█.........
+██...██..██...█.
+.██..█....██.██.
+.............█..
+.....█..........
+.█...██..███..█.
+███..█....█..██.
+..............█.
+.█........█.....
+.█..████..█.....
+.█........█.████
+.█........█.....
+#+end_example
 
 * Representing the Game State
 

@@ -9,19 +9,19 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org353759f)
-2.  [Beginning at the End](#orgb438214)
-3.  [What This Is](#orgddfebe2)
-4.  [What This Isn&rsquo;t](#org5e59b77)
-5.  [Prelude](#orga7f0a9c)
-6.  [Strategy](#org4665d11)
-7.  [Imports and Dependencies](#org47ca498)
-8.  [Establishing the Grid](#orga667ce6)
-9.  [Making Some Tetrominos](#org8e1f337)
-10. [Representing the Game State](#org0117d0a)
+1.  [TO DO](#orgedf6975)
+2.  [Beginning at the End](#org0f77802)
+3.  [What This Is](#org4cb9fe1)
+4.  [What This Isn&rsquo;t](#orgd70ee36)
+5.  [Prelude](#org0de090a)
+6.  [Strategy](#org81d9694)
+7.  [Imports and Dependencies](#org3d27362)
+8.  [Establishing the Grid](#org031af44)
+9.  [Making Some Tetrominos](#orgc04d7d3)
+10. [Representing the Game State](#org2e19eae)
 
 
-<a id="org353759f"></a>
+<a id="orgedf6975"></a>
 
 # TO DO
 
@@ -30,7 +30,7 @@ tags:
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="orgb438214"></a>
+<a id="org0f77802"></a>
 
 # Beginning at the End
 
@@ -39,7 +39,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="orgddfebe2"></a>
+<a id="org4cb9fe1"></a>
 
 # What This Is
 
@@ -50,7 +50,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org5e59b77"></a>
+<a id="orgd70ee36"></a>
 
 # What This Isn&rsquo;t
 
@@ -61,7 +61,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orga7f0a9c"></a>
+<a id="org0de090a"></a>
 
 # Prelude
 
@@ -72,7 +72,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org4665d11"></a>
+<a id="org81d9694"></a>
 
 # Strategy
 
@@ -89,7 +89,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org47ca498"></a>
+<a id="org3d27362"></a>
 
 # Imports and Dependencies
 
@@ -187,7 +187,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orga667ce6"></a>
+<a id="org031af44"></a>
 
 # Establishing the Grid
 
@@ -199,7 +199,9 @@ We&rsquo;ll need a 2D grid of cells, each of which can be empty or filled with a
 :{
 -- This is a sum type; we can now use these colour values directly in our code.
 -- Yes, we'll be using British English.
-data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan
+-- We include black for background elements, and an end-code since these will map to
+-- ANSI escape codes.
+data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | ColourEnd
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
 data Cell = Block Colour | Empty
@@ -283,14 +285,16 @@ instance Pretty Colour where
   pretty Green = "\x1b[32m"
   pretty Purple = "\x1b[35m"
   pretty Orange = "\x1b[37m"
+  pretty Black = "\x1b[30m"
+  pretty ColourEnd = "\x1b[0m"
 :}
 {% endhighlight %}
 
 {% highlight haskell %}
 :{
 instance Pretty Cell where
-  pretty Empty = "."
-  pretty (Block colour) = pretty colour <> "█"
+  pretty Empty = pretty Black <> "." <> pretty ColourEnd
+  pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
 :}
 {% endhighlight %}
 
@@ -360,8 +364,10 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 
 Alright!
 
+We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
-<a id="org8e1f337"></a>
+
+<a id="orgc04d7d3"></a>
 
 # Making Some Tetrominos
 
@@ -380,16 +386,16 @@ pieceR :: Piece
 pieceR = Piece Blue [(1, 3), (1, 2), (1, 1), (2, 1)]
 
 pieceSquare :: Piece
-pieceSquare = Piece Yellow [(1, 3), (1, 2), (2, 3), (2, 2)]
+pieceSquare = Piece Yellow [(1, 2), (1, 1), (2, 2), (2, 1)]
 
 pieceS :: Piece
-pieceS = Piece Green [(0, 3), (1, 3), (1, 2), (2, 2)]
+pieceS = Piece Green [(0, 2), (1, 2), (1, 1), (2, 1)]
 
 pieceZ :: Piece
-pieceZ = Piece Red [(0, 2), (1, 2), (1, 3), (2, 3)]
+pieceZ = Piece Red [(0, 1), (1, 1), (1, 2), (2, 2)]
 
 pieceT :: Piece
-pieceT = Piece Purple [(0, 3), (1, 3), (2, 3), (1, 2)]
+pieceT = Piece Purple [(0, 2), (1, 2), (2, 2), (1, 1)]
 
 pieceLine :: Piece
 pieceLine = Piece Cyan [(1, 3), (1, 2), (1, 1), (1, 0)]
@@ -457,7 +463,7 @@ A detail; a `Semigroup` is something that can be associatively combined - that&r
 
 {% highlight haskell %}
 :{
-newtype HGrid = HGrid Grid
+newtype HGrid = HGrid { unHGrid :: Grid }
 
 instance Semigroup HGrid where
   (HGrid (Grid widthA heightA gridA)) <> (HGrid (Grid widthB heightB gridB)) =
@@ -472,13 +478,19 @@ instance Monoid HGrid where
 :}
 {% endhighlight %}
 
-There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. Then we `M.unionWith` the original grid, copying over its elements. Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations. Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
+There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The `unHGrid` named member just lets us easily unwrap this type later on.
+
+Then we `M.unionWith` the original grid, copying over its elements.
+
+Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations.
+
+Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
 
 Now the same for the `VGrid`:
 
 {% highlight haskell %}
 :{
-newtype VGrid = VGrid Grid
+newtype VGrid = VGrid { unVGrid :: Grid }
 
 instance Semigroup VGrid where
   (VGrid (Grid widthA heightA gridA)) <> (VGrid (Grid widthB heightB gridB)) =
@@ -500,14 +512,12 @@ Now we can generate some batches of seven pieces, and stitch them together like 
 do
   -- Get the system source of randomness
   g <- newStdGen
-  -- Create a stream of pieces wrapped in our HGrid Monoid.
+  -- Create a stream of pieces wrapped in our VGrid Monoid.
   let vStream = VGrid . mkPieceGrid <$> pieceStream g
   -- We create an infinite stream of batches, each stitched together.
-  -- We'll add horizontal space for display.
-  let rows pieces = (mconcat $ take 7 pieces <> [VGrid $ mkEmptyGrid 1 4]) : rows (drop 7 pieces)
+  let rows pieces = mconcat (take 7 pieces) : rows (drop 7 pieces)
   -- We'll need a way to translate between these Monoids to switch stitching direction.
-  -- We'll add vertical space for display
-  let vToH (VGrid grid) = HGrid grid <> HGrid (mkEmptyGrid (4 * 7) 1)
+  let vToH (VGrid grid) = HGrid grid
   -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
   let (HGrid grid) = mconcat (vToH <$> take 5 (rows vStream))
   -- Finally we can print the underlying, unwrapped grid.
@@ -515,44 +525,94 @@ do
 :}
 {% endhighlight %}
 
-    .................█...........
-    .................█...█...██..
-    .██.██...██..█...█...█...█...
-    ██...██..██.███..█...██..█...
-    .............................
-    .................█...........
-    .....█...........█...██......
-    .██..█...█..██...█...█...██..
-    .██..██.███..██..█...█..██...
-    .............................
-    .............█...............
-    .............█...██..█.......
-    .██..█..██...█...█...█...██..
-    ██..███..██..█...█...██..██..
-    .............................
-    .█...........................
-    .█.......██..█...............
-    .█...█...█...█..██...██..██..
-    .█..███..█...██..██.██...██..
-    .............................
-    .█...........................
-    .█...█...........██..........
-    .█...█..██...██..█...█...██..
-    .█...██..██..██..█..███.██...
-    .............................
+    .........█..................
+    ██...█...█...██..██..██..█..
+    .██..█...█...██.██...█..███.
+    .....██..█...........█......
+    .....█......................
+    .██..█...██..█...█...██.██..
+    .██..█...█..███..█..██...██.
+    .....█...█.......██.........
+    .............█..............
+    .█...█...██..█...██..██.██..
+    .█..███.██...█...██..█...██.
+    .██..........█.......█......
+    .....█......................
+    ██...█...█...██..██..██..█..
+    .██..█..███..██.██...█...█..
+    .....█...............█...██.
+    .........█..................
+    ██...██..█...█...██..██..█..
+    .██..█...█..███..██.██...█..
+    .....█...█...............██.
 
-Looks good to me - each batch of seven represents all pieces, and each is separately shuffled.
+Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
 We introduced a number of new concepts here; we secretly entered a monad (`IO`, specifically), enabling the `do`-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we&rsquo;ve been doing this all along with every call to `putStrLn`. We&rsquo;ll get into `IO` more later when we start dealing with user input and multiprocessing.
 
-We also introduced `uncurry` - we wanted to pass the tuples of form `(1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
+We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
-While we&rsquo;re here, let&rsquo;s implement piece rotation.
+While we&rsquo;re here, let&rsquo;s implement piece rotation. This will be a little janky, but we&rsquo;ll just rotate the entire 4x4 grid, and then
 
-TODO
+{% highlight haskell %}
+:{
+-- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
+rotateCW :: Piece -> Piece
+rotateCW (Piece colour coordinates) =
+  Piece colour $ (\(x, y) -> (3 - y, x)) <$> coordinates
+
+-- Lol. Lmao even.
+rotateCCW :: Piece -> Piece
+rotateCCW = rotateCW . rotateCW . rotateCW
+
+:}
+{% endhighlight %}
+
+{% highlight haskell %}
+:{
+-- Let's inspect these rotations
+forM_ allPieces
+  $ (\piece ->
+        putStrLn
+        . pretty
+        . unVGrid
+        . mconcat
+        . take 4
+        $ VGrid . mkPieceGrid <$> iterate rotateCW piece)
+:}
+{% endhighlight %}
+
+    .........██.....
+    .█..███...█....█
+    .█..█.....█..███
+    .██.............
+    ..........█.....
+    .██.███...█..█..
+    .█....█..██..███
+    .█..............
+    ................
+    .██..██..██..██.
+    .██..██..██..██.
+    ................
+    .....█..........
+    .██..██...██.█..
+    ██....█..██..██.
+    ..............█.
+    ......█.........
+    ██...██..██...█.
+    .██..█....██.██.
+    .............█..
+    .....█..........
+    .█...██..███..█.
+    ███..█....█..██.
+    ..............█.
+    .█........█.....
+    .█..████..█.....
+    .█........█.████
+    .█........█.....
 
 
-<a id="org0117d0a"></a>
+<a id="org2e19eae"></a>
 
 # Representing the Game State
 
