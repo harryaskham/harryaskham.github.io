@@ -542,10 +542,8 @@ do
   let vStream = VGrid . mkPieceGrid <$> pieceStream g
   -- We create an infinite stream of batches, each stitched together.
   let rows pieces = mconcat (take 7 pieces) : rows (drop 7 pieces)
-  -- We'll need a way to translate between these Monoids to switch stitching direction.
-  let vToH (VGrid grid) = HGrid grid
   -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
-  let (HGrid grid) = mconcat (vToH <$> take 5 (rows vStream))
+  let grid = unHGrid $ mconcat (HGrid . unVGrid <$> take 5 (rows vStream))
   -- Finally we can print the underlying, unwrapped grid.
   putStrLn (pretty grid)
 :}
@@ -553,26 +551,26 @@ do
 
 #+RESULTS:
 #+begin_example
-.....................█......
-██...██..█...██..█...█...██.
-.██..██..█..██..███..█...█..
-.........██..........█...█..
+.........................█..
+.██..█..██...██..██..█...█..
+.█...█...██.██...██.███..█..
+.█...██..................█..
 .................█..........
-.█...██.██...█...█...██..██.
-███..██..██..█...█..██...█..
-.............██..█.......█..
-.....█......................
-.█...█...██.██...██..██..█..
-███..█..██...██..██..█...█..
-.....█...............█...██.
+.██..██.██...█...█...█...██.
+.██..█...██..█...█..███.██..
+.....█.......██..█..........
+.........█..................
+██...██..█...█...██..█...██.
+.██..█...█..███..██..█..██..
+.....█...█...........██.....
+.................█..........
+.██..██.██...██..█...█...█..
+██...█...██..██..█...█..███.
+.....█...........█...██.....
 .█..........................
-.█...██.██...█...█...██..██.
-.█..██...██.███..█...█...██.
-.█...............██..█......
-.............█..............
-██...█...██..█...█...██..██.
-.██..█...█...█..███.██...██.
-.....██..█...█..............
+.█...██..██.██...█...██..█..
+.█...██..█...██.███.██...█..
+.█.......█...............██.
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
