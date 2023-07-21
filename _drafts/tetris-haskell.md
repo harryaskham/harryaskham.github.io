@@ -9,19 +9,19 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#orgedf6975)
-2.  [Beginning at the End](#org0f77802)
-3.  [What This Is](#org4cb9fe1)
-4.  [What This Isn&rsquo;t](#orgd70ee36)
-5.  [Prelude](#org0de090a)
-6.  [Strategy](#org81d9694)
-7.  [Imports and Dependencies](#org3d27362)
-8.  [Establishing the Grid](#org031af44)
-9.  [Making Some Tetrominos](#orgc04d7d3)
-10. [Representing the Game State](#org2e19eae)
+1.  [TO DO](#org75c790a)
+2.  [Beginning at the End](#orgd1fc5fe)
+3.  [What This Is](#org6c49d12)
+4.  [What This Isn&rsquo;t](#org818c15f)
+5.  [Prelude](#org06f4219)
+6.  [Strategy](#orgc2f49c2)
+7.  [Imports and Dependencies](#orgcc9ccb4)
+8.  [Establishing the Grid](#orgfce41e2)
+9.  [Making Some Tetrominos](#org14fa88e)
+10. [Representing the Game State](#orge17c8ce)
 
 
-<a id="orgedf6975"></a>
+<a id="org75c790a"></a>
 
 # TO DO
 
@@ -30,7 +30,7 @@ tags:
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="org0f77802"></a>
+<a id="orgd1fc5fe"></a>
 
 # Beginning at the End
 
@@ -39,18 +39,18 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org4cb9fe1"></a>
+<a id="org6c49d12"></a>
 
 # What This Is
 
 This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that&rsquo;s how I first learnt the basics. I&rsquo;ll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.
 
-I&rsquo;ll explicitly try to overexplain everything, either in prose or in comments.
+I&rsquo;ll explicitly try to overexplain everything, either in prose or in comments. I&rsquo;m also going to purposefully try to use a variety of different styles of Haskell programming.
 
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orgd70ee36"></a>
+<a id="org818c15f"></a>
 
 # What This Isn&rsquo;t
 
@@ -61,7 +61,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org0de090a"></a>
+<a id="org06f4219"></a>
 
 # Prelude
 
@@ -72,7 +72,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org81d9694"></a>
+<a id="orgc2f49c2"></a>
 
 # Strategy
 
@@ -89,7 +89,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org3d27362"></a>
+<a id="orgcc9ccb4"></a>
 
 # Imports and Dependencies
 
@@ -187,7 +187,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org031af44"></a>
+<a id="orgfce41e2"></a>
 
 # Establishing the Grid
 
@@ -367,7 +367,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="orgc04d7d3"></a>
+<a id="org14fa88e"></a>
 
 # Making Some Tetrominos
 
@@ -525,26 +525,26 @@ do
 :}
 {% endhighlight %}
 
-    .........█..................
-    ██...█...█...██..██..██..█..
-    .██..█...█...██.██...█..███.
-    .....██..█...........█......
     .....█......................
-    .██..█...██..█...█...██.██..
-    .██..█...█..███..█..██...██.
-    .....█...█.......██.........
+    ██...█...██..██..█...██..█..
+    .██..█..██...█...█...██.███.
+    .....█.......█...██.........
     .............█..............
-    .█...█...██..█...██..██.██..
-    .█..███.██...█...██..█...██.
-    .██..........█.......█......
+    .█..██...██..█...██..█...██.
+    .█...██.██...█...██.███..█..
+    .██..........█...........█..
     .....█......................
-    ██...█...█...██..██..██..█..
-    .██..█..███..██.██...█...█..
-    .....█...............█...██.
-    .........█..................
-    ██...██..█...█...██..██..█..
+    .██..█...██..█..██...██..█..
     .██..█...█..███..██.██...█..
     .....█...█...............██.
+    .█..........................
+    .█...█...██..██..██..█..██..
+    .█..███.██...██..█...█...██.
+    .█...............█...██.....
+    .█..........................
+    .█...█...█...██..██.██...██.
+    .█..███..█...█..██...██..██.
+    .█.......██..█..............
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -612,7 +612,7 @@ forM_ allPieces
     .█........█.....
 
 
-<a id="org2e19eae"></a>
+<a id="orge17c8ce"></a>
 
 # Representing the Game State
 
