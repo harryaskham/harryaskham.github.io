@@ -9,30 +9,31 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org72e7dd9)
-2.  [Beginning at the End](#orgad28d62)
-3.  [What This Is](#orgc12fc0b)
-4.  [What This Isn&rsquo;t](#org8a98b06)
-5.  [Prelude](#orgeef0309)
-6.  [Strategy](#org0aaeeff)
-7.  [Imports and Dependencies](#orgebd24c9)
-8.  [Establishing the Grid](#org66b73ea)
-9.  [Making Some Tetrominos](#org8112f25)
-10. [Rotations](#orge6d97d1)
-11. [Placing Pieces on the Grid](#org043bc11)
-12. [Representing the Game State](#org79fd56b)
+1.  [TO DO](#org7d0e7df)
+2.  [Beginning at the End](#org4cfe73f)
+3.  [What This Is](#org35c3886)
+4.  [What This Isn&rsquo;t](#orgec5e1dd)
+5.  [Prelude](#org3bcf966)
+6.  [Strategy](#orgb51717d)
+7.  [Imports and Dependencies](#org3e18fc8)
+8.  [Establishing the Grid](#org63a248a)
+9.  [Making Some Tetrominos](#org6137054)
+10. [Rotations](#org6d91edc)
+11. [Placing Pieces on the Grid](#org9286a7a)
+12. [Representing the Game State](#orgce89603)
 
 
-<a id="org72e7dd9"></a>
+<a id="org7d0e7df"></a>
 
 # TO DO
 
 -   [ ] grep for TODO and resolve
+-   [ ] adding borders would make this way nicer
 -   [ ] figure out colour block display
 -   [ ] Figure out ghci :{ :} preamble
 
 
-<a id="orgad28d62"></a>
+<a id="org4cfe73f"></a>
 
 # Beginning at the End
 
@@ -41,7 +42,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="orgc12fc0b"></a>
+<a id="org35c3886"></a>
 
 # What This Is
 
@@ -52,7 +53,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org8a98b06"></a>
+<a id="orgec5e1dd"></a>
 
 # What This Isn&rsquo;t
 
@@ -63,7 +64,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgeef0309"></a>
+<a id="org3bcf966"></a>
 
 # Prelude
 
@@ -74,7 +75,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org0aaeeff"></a>
+<a id="orgb51717d"></a>
 
 # Strategy
 
@@ -91,7 +92,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgebd24c9"></a>
+<a id="org3e18fc8"></a>
 
 # Imports and Dependencies
 
@@ -161,7 +162,7 @@ import Data.Function ((&))
 {% highlight haskell %}
 :{
 -- Provides access to system pseudorandomness and control over setting random seeds.
-import System.Random (RandomGen, split, newStdGen)
+import System.Random (RandomGen, split, newStdGen, getStdGen)
 :}
 {% endhighlight %}
 
@@ -189,7 +190,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org66b73ea"></a>
+<a id="org63a248a"></a>
 
 # Establishing the Grid
 
@@ -206,7 +207,9 @@ We&rsquo;ll need a 2D grid of cells, each of which can be empty or filled with a
 data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | ColourEnd
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
-data Cell = Block Colour | Empty
+-- We also insert the ability to display a char here because later, we'll use this
+-- to compose some basic UI elements.
+data Cell = Block Colour | BlockChar Char | Empty
 :}
 {% endhighlight %}
 
@@ -297,6 +300,7 @@ instance Pretty Colour where
 instance Pretty Cell where
   pretty Empty = pretty Black <> "." <> pretty ColourEnd
   pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
+  pretty (BlockChar c) = [c]
 :}
 {% endhighlight %}
 
@@ -369,7 +373,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org8112f25"></a>
+<a id="org6137054"></a>
 
 # Making Some Tetrominos
 
@@ -526,25 +530,25 @@ do
 {% endhighlight %}
 
     .................█..........
-    .██..█...█..██...█...██..██.
-    .██..█..███..██..█..██...█..
-    .....██..........█.......█..
-    .........█..................
-    .██..█...█...██..██.██...█..
-    .█...█...█..██...██..██.███.
-    .█...██..█..................
-    .........█..................
-    .██..██..█...█..██...█...██.
-    .██.██...█...█...██.███..█..
-    .........█...██..........█..
+    .█..██...██..██..█...██..█..
+    .█...██..█...██..█..██..███.
+    .██......█.......█..........
     .............█..............
-    .█...█...██..█..██...██..██.
-    .█..███.██...█...██..██..█..
-    .██..........█...........█..
-    .........................█..
-    .█...██..█...██..██.██...█..
-    ███..██..█...█..██...██..█..
-    .........██..█...........█..
+    ██...█...██..█...██..██..█..
+    .██.███..██..█..██...█...█..
+    .............█.......█...██.
+    .....█......................
+    .█...█..██...█...██..██..██.
+    ███..█...██..█..██...█...██.
+    .....█.......██......█......
+    .....................█......
+    .██..█...█..██...██..█...██.
+    ██...█..███..██..█...█...██.
+    .....██..........█...█......
+    .....................█......
+    .█...██..█...██..██..█..██..
+    .█...█..███..██.██...█...██.
+    .██..█...............█......
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -553,7 +557,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="orge6d97d1"></a>
+<a id="org6d91edc"></a>
 
 # Rotations
 
@@ -619,7 +623,7 @@ forM_ allPieces
 I&rsquo;m almsot sure it&rsquo;s not regulation, but it&rsquo;ll do.
 
 
-<a id="org043bc11"></a>
+<a id="org9286a7a"></a>
 
 # Placing Pieces on the Grid
 
@@ -629,9 +633,9 @@ We want it to be anchored to the bottom, so that it immediately starts to become
 
 {% highlight haskell %}
 :{
--- We can reuse our withPiece function from earlier.
-withNewPiece :: Piece -> Grid -> Grid
-withNewPiece (Piece colour coordinates) grid = grid & withPiece piece'
+-- Ensure the piece is centred and anchored to the top of the viewport.
+initPiece :: Piece -> Piece
+initPiece (Piece colour coordinates) = piece'
   where
     -- We need to ensure the largest y-coordinate is 3
     yOffset = 3 - maximum (snd <$> coordinates)
@@ -644,7 +648,7 @@ And let&rsquo;s test this, as ever:
 
 {% highlight haskell %}
 :{
-putStrLn . pretty $ mkEmptyGrid 10 24 & withNewPiece pieceS
+putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 :}
 {% endhighlight %}
 
@@ -676,30 +680,109 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withNewPiece pieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org79fd56b"></a>
+<a id="orgce89603"></a>
 
 # Representing the Game State
 
 Now we&rsquo;ll create the type we&rsquo;ll be using to store all state about the ongoing game. Note that we still keep this outside of `IO`, requiring that a source of randomness is piped in to create this state.
 
+We&rsquo;re going to implement piece holding - since there might not be a held piece, we&rsquo;ll represent this using `Maybe`. This is a Haksell staple, defined as `data Maybe a = Just a | Nothing`. It&rsquo;s like Rust&rsquo;s `Option<a>` and there are analogues in most languages. It forces you to consider both cases when you may or may not have a value.
+
 {% highlight haskell %}
 :{
 data Game = Game {
   grid :: Grid,
+  currentPiece :: Piece,
+  heldPiece :: Maybe Piece,
   pieces :: [Piece],
   score :: Int
 }
 
 mkGame :: RandomGen g => g -> Game
-mkGame g = Game {
-  grid = mkEmptyGrid 10 24,
-  pieces = pieceStream g,
-  score = 0
-}
+mkGame g =
+  let (firstPiece:rest) = pieceStream g
+   in Game {
+        grid = mkEmptyGrid 10 24,
+        currentPiece = initPiece firstPiece,
+        pieces = rest,
+        score = 0,
+        heldPiece = Nothing
+      }
 :}
 {% endhighlight %}
 
-TODO
+As we pull pieces from the infinite lazy list `pieces`, we&rsquo;ll create new `Game` objects that contain the remainder of the lazy list.
+
+Note each field of this record type (essentially a Haskell product type with named members) creates a function of the same name, which you can call on inhabitants of this datatype to retrieve the field value. So `score game` will return the score of a game, and so on. This can cause all kinds of namespace clashes and there are a lot of ways around it, but for now we&rsquo;re just going to use these default record accessors.
+
+Alright - now we&rsquo;re in a position to render our rudimentary UI by stitching these things together. On the left we&rsquo;ll have our grid, and on the right we&rsquo;ll have our next piece on the top, and our held piece on the bottom:
+
+{% highlight haskell %}
+:{
+-- Bump a grid down by concatenating empty space above.
+-- Used to take UI elements below our 4-line hidden buffer.
+lowerGrid :: Int -> Grid -> Grid
+lowerGrid n grid = unHGrid $ (HGrid $ mkEmptyGrid 1 n) <> (HGrid grid)
+
+-- Turn a string into a grid for composability
+-- Only supports single lines.
+sToG :: String -> Grid
+sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar c) | (x, c) <- zip [0..] s]
+
+-- Here we'll stitch it all together, dropping the four lines, and popping the
+-- score at the top with the held piece and next piece on the right.
+instance Pretty Game where
+  pretty game =
+    let (Grid width height fullGrid) = grid game
+        grid' = Grid width (height - 4)
+                  $ M.fromList [((x, y), v) | ((x, y), v) <- M.toList fullGrid, y > 3]
+        scoreGrid = HGrid (sToG $ "Score: " <> show (score game))
+        lhs = VGrid $ grid' & withPiece (currentPiece game)
+        nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
+        held = HGrid (sToG "Held:") <> (HGrid $ case heldPiece game of
+                 Nothing -> mkEmptyGrid 4 4
+                 Just piece -> mkPieceGrid piece)
+        rhs = nextPiece <> held
+        playArea = HGrid . unVGrid $ lhs <> VGrid (lowerGrid 4 $ unHGrid rhs)
+        withScore = scoreGrid <> playArea
+     in pretty (unHGrid withScore)
+:}
+{% endhighlight %}
+
+We can preview this as so:
+
+{% highlight haskell %}
+:{
+do
+  g <- getStdGen
+  let game = (mkGame g) {heldPiece = Just pieceSquare}
+  putStrLn (pretty game)
+:}
+{% endhighlight %}
+
+    Score: 0.......
+    ...............
+    ....█..........
+    ....█..........
+    ....██.........
+    ..........Next:
+    ...............
+    ..........██...
+    ...........██..
+    ...............
+    ..........Held:
+    ...............
+    ...........██..
+    ...........██..
+    ...............
+    ...............
+    ...............
+    ...............
+    ...............
+    ...............
+    ...............
+
+We can see the buffer zone at the top with the falling piece, the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 # Footnotes
 
