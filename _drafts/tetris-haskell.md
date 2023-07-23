@@ -6,24 +6,23 @@ categories:
 tags: 
 ---
 
-
 # Table of Contents
 
-1.  [TO DO](#org7d0e7df)
-2.  [Beginning at the End](#org4cfe73f)
-3.  [What This Is](#org35c3886)
-4.  [What This Isn&rsquo;t](#orgec5e1dd)
-5.  [Prelude](#org3bcf966)
-6.  [Strategy](#orgb51717d)
-7.  [Imports and Dependencies](#org3e18fc8)
-8.  [Establishing the Grid](#org63a248a)
-9.  [Making Some Tetrominos](#org6137054)
-10. [Rotations](#org6d91edc)
-11. [Placing Pieces on the Grid](#org9286a7a)
-12. [Representing the Game State](#orgce89603)
+1.  [TO DO](#orge9872b0)
+2.  [Beginning at the End](#orgea037ef)
+3.  [What This Is](#org3255312)
+4.  [What This Isn&rsquo;t](#org5d018f9)
+5.  [Prelude](#org9bc107c)
+6.  [Strategy](#orgf89839d)
+7.  [Imports and Dependencies](#org4a6de5a)
+8.  [Establishing the Grid](#orgf476b16)
+9.  [Making Some Tetrominos](#org63b0af2)
+10. [Rotations](#orgc4bce14)
+11. [Placing Pieces on the Grid](#org01499f1)
+12. [Representing the Game State](#org13e728d)
 
 
-<a id="org7d0e7df"></a>
+<a id="orge9872b0"></a>
 
 # TO DO
 
@@ -31,9 +30,11 @@ tags:
 -   [ ] adding borders would make this way nicer
 -   [ ] figure out colour block display
 -   [ ] Figure out ghci :{ :} preamble
+-   [ ] Start with the bot and go to user input afterwards; or just stop with the botA
+-   [ ] remov dot background and add borders early on
 
 
-<a id="org4cfe73f"></a>
+<a id="orgea037ef"></a>
 
 # Beginning at the End
 
@@ -42,7 +43,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org35c3886"></a>
+<a id="org3255312"></a>
 
 # What This Is
 
@@ -53,7 +54,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orgec5e1dd"></a>
+<a id="org5d018f9"></a>
 
 # What This Isn&rsquo;t
 
@@ -64,7 +65,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org3bcf966"></a>
+<a id="org9bc107c"></a>
 
 # Prelude
 
@@ -75,7 +76,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgb51717d"></a>
+<a id="orgf89839d"></a>
 
 # Strategy
 
@@ -92,7 +93,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org3e18fc8"></a>
+<a id="org4a6de5a"></a>
 
 # Imports and Dependencies
 
@@ -190,7 +191,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org63a248a"></a>
+<a id="orgf476b16"></a>
 
 # Establishing the Grid
 
@@ -298,13 +299,33 @@ instance Pretty Colour where
 {% highlight haskell %}
 :{
 instance Pretty Cell where
-  pretty Empty = pretty Black <> "." <> pretty ColourEnd
+  pretty Empty = " "
   pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
   pretty (BlockChar c) = [c]
 :}
 {% endhighlight %}
 
 The `<>` is shorthand for `mconcat` - a member of the `Monoid` typeclass, which roughly represents things that can be empty, and can be joined together. `String` is a `Monoid` so `<>` just concatenates them.
+
+Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use `BlockChar` with Unicode line and corner chars to surround a grid:
+
+{% highlight haskell %}
+:{
+addBorder :: Grid -> Grid
+addBorder grid = Grid (width + 2) (height + 2) borderedMap
+  where
+    Grid width height gridMap = grid
+    borderedMap = M.union
+                    (M.fromList border)
+                    ((first (+1) . second (+1)) `M.mapKeys` gridMap)
+    border =
+      [ ((x+1, y+1), BlockChar '─')
+        | x <- [-1 .. width]
+        , y <- [-1 .. height]
+        , x == -1 || x == width || y == -1 || y == height
+      ]
+:}
+{% endhighlight %}
 
 We&rsquo;re ready to prettify our `Grid`. Since we&rsquo;re operating over collections of things, we can start using higher-order functions; in Haskell, `fmap` from the `Functor` typeclass lets you apply a function to the inhabitants of any instance of a given `Functor`. A list is an instance of `Functor`, and so for some list `xs`, `fmap f xs` just operates like the `map(f, xs)` function you find over lists in most other languages.
 
@@ -315,8 +336,9 @@ We use `M.!` to look up keys in our grid; this is unsafe, and can throw an error
 {% highlight haskell %}
 :{
 instance Pretty Grid where
-  pretty (Grid width height grid) = intercalate "\n" (prettyRow <$> rows) -- <$> is just an inline fmap
+  pretty g = intercalate "\n" (prettyRow <$> rows)
     where
+      (Grid width height grid) = addBorder g
       rows :: [[Cell]]
       rows = [[grid M.! (x, y) | x <- [0 .. width - 1]] | y <- [0 .. height - 1]]
       prettyRow :: [Cell] -> String
@@ -343,37 +365,39 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 :}
 {% endhighlight %}
 
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
+    ────────────
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ────────────
 
 Alright!
 
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org6137054"></a>
+<a id="org63b0af2"></a>
 
 # Making Some Tetrominos
 
@@ -529,26 +553,28 @@ do
 :}
 {% endhighlight %}
 
-    .................█..........
-    .█..██...██..██..█...██..█..
-    .█...██..█...██..█..██..███.
-    .██......█.......█..........
-    .............█..............
-    ██...█...██..█...██..██..█..
-    .██.███..██..█..██...█...█..
-    .............█.......█...██.
-    .....█......................
-    .█...█..██...█...██..██..██.
-    ███..█...██..█..██...█...██.
-    .....█.......██......█......
-    .....................█......
-    .██..█...█..██...██..█...██.
-    ██...█..███..██..█...█...██.
-    .....██..........█...█......
-    .....................█......
-    .█...██..█...██..██..█..██..
-    .█...█..███..██.██...█...██.
-    .██..█...............█......
+    ──────────────────────────────
+    ─                 █          ─
+    ─██   █   ██  ██  █   █   ██ ─
+    ─ ██ ███  █  ██   █   █   ██ ─
+    ─         █       █   ██     ─
+    ─     █                      ─
+    ─ █   █   ██  █  ██   ██  ██ ─
+    ─ █   █   █  ███  ██  ██ ██  ─
+    ─ ██  █   █                  ─
+    ─             █              ─
+    ─██   ██  █   █   ██  █   ██ ─
+    ─ ██  ██ ███  █  ██   █   █  ─
+    ─             █       ██  █  ─
+    ─                     █      ─
+    ─ ██  ██  █  ██   ██  █   █  ─
+    ─ █   ██  █   ██ ██   █  ███ ─
+    ─ █       ██          █      ─
+    ─                     █      ─
+    ─ ██ ██   ██  █   █   █   ██ ─
+    ─██   ██  █   █  ███  █   ██ ─
+    ─         █   ██      █      ─
+    ──────────────────────────────
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -557,7 +583,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="org6d91edc"></a>
+<a id="orgc4bce14"></a>
 
 # Rotations
 
@@ -591,39 +617,53 @@ forM_ allPieces
 :}
 {% endhighlight %}
 
-    .........██.....
-    .█..███...█....█
-    .█..█.....█..███
-    .██.............
-    ..........█.....
-    .██.███...█..█..
-    .█....█..██..███
-    .█..............
-    ................
-    .██..██..██..██.
-    .██..██..██..██.
-    ................
-    .....█..........
-    .██..██...██.█..
-    ██....█..██..██.
-    ..............█.
-    ......█.........
-    ██...██..██...█.
-    .██..█....██.██.
-    .............█..
-    .....█..........
-    .█...██..███..█.
-    ███..█....█..██.
-    ..............█.
-    .█........█.....
-    .█..████..█.....
-    .█........█.████
-    .█........█.....
+    ──────────────────
+    ─         ██     ─
+    ─ █  ███   █    █─
+    ─ █  █     █  ███─
+    ─ ██             ─
+    ──────────────────
+    ──────────────────
+    ─          █     ─
+    ─ ██ ███   █  █  ─
+    ─ █    █  ██  ███─
+    ─ █              ─
+    ──────────────────
+    ──────────────────
+    ─                ─
+    ─ ██  ██  ██  ██ ─
+    ─ ██  ██  ██  ██ ─
+    ─                ─
+    ──────────────────
+    ──────────────────
+    ─     █          ─
+    ─ ██  ██   ██ █  ─
+    ─██    █  ██  ██ ─
+    ─              █ ─
+    ──────────────────
+    ──────────────────
+    ─      █         ─
+    ─██   ██  ██   █ ─
+    ─ ██  █    ██ ██ ─
+    ─             █  ─
+    ──────────────────
+    ──────────────────
+    ─     █          ─
+    ─ █   ██  ███  █ ─
+    ─███  █    █  ██ ─
+    ─              █ ─
+    ──────────────────
+    ──────────────────
+    ─ █        █     ─
+    ─ █  ████  █     ─
+    ─ █        █ ████─
+    ─ █        █     ─
+    ──────────────────
 
 I&rsquo;m almsot sure it&rsquo;s not regulation, but it&rsquo;ll do.
 
 
-<a id="org9286a7a"></a>
+<a id="org01499f1"></a>
 
 # Placing Pieces on the Grid
 
@@ -652,41 +692,43 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 :}
 {% endhighlight %}
 
-    ..........
-    ..........
-    ....██....
-    ...██.....
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
-    ..........
+    ────────────
+    ─          ─
+    ─          ─
+    ─    ██    ─
+    ─   ██     ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ─          ─
+    ────────────
 
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgce89603"></a>
+<a id="org13e728d"></a>
 
 # Representing the Game State
 
 Now we&rsquo;ll create the type we&rsquo;ll be using to store all state about the ongoing game. Note that we still keep this outside of `IO`, requiring that a source of randomness is piped in to create this state.
 
-We&rsquo;re going to implement piece holding - since there might not be a held piece, we&rsquo;ll represent this using `Maybe`. This is a Haksell staple, defined as `data Maybe a = Just a | Nothing`. It&rsquo;s like Rust&rsquo;s `Option<a>` and there are analogues in most languages. It forces you to consider both cases when you may or may not have a value.
+We&rsquo;re going to implement piece holding - since there might not be a held piece, we&rsquo;ll represent this using `Maybe`. This is a Haskell staple, defined as `data Maybe a = Just a | Nothing`. It&rsquo;s like Rust&rsquo;s `Option<a>` and there are analogues in most languages. It forces you to consider both cases when you may or may not have a value.
 
 {% highlight haskell %}
 :{
@@ -760,27 +802,29 @@ do
 :}
 {% endhighlight %}
 
-    Score: 0.......
-    ...............
-    ....█..........
-    ....█..........
-    ....██.........
-    ..........Next:
-    ...............
-    ..........██...
-    ...........██..
-    ...............
-    ..........Held:
-    ...............
-    ...........██..
-    ...........██..
-    ...............
-    ...............
-    ...............
-    ...............
-    ...............
-    ...............
-    ...............
+    ─────────────────
+    ─Score: 0       ─
+    ─    █          ─
+    ─    █          ─
+    ─    █          ─
+    ─    █          ─
+    ─          Next:─
+    ─               ─
+    ─           ██  ─
+    ─          ██   ─
+    ─               ─
+    ─          Held:─
+    ─               ─
+    ─           ██  ─
+    ─           ██  ─
+    ─               ─
+    ─               ─
+    ─               ─
+    ─               ─
+    ─               ─
+    ─               ─
+    ─               ─
+    ─────────────────
 
 We can see the buffer zone at the top with the falling piece, the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 

@@ -11,6 +11,7 @@
 - [ ] Figure out ghci :{ :} preamble
 - [ ] Start with the bot and go to user input afterwards; or just stop with the botA
 - [ ] remov dot background and add borders early on
+- [ ] prettier better commented borders
 
 #+BEGIN_SRC haskell :exports none :results output
 :set prompt-cont ""
@@ -302,7 +303,7 @@ instance Pretty Colour where
 #+BEGIN_SRC haskell :exports code
 :{
 instance Pretty Cell where
-  pretty Empty = pretty Black <> "." <> pretty ColourEnd
+  pretty Empty = " "
   pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
   pretty (BlockChar c) = [c]
 :}
@@ -311,6 +312,28 @@ instance Pretty Cell where
 #+RESULTS:
 
 The ~<>~ is shorthand for ~mconcat~ - a member of the ~Monoid~ typeclass, which roughly represents things that can be empty, and can be joined together. ~String~ is a ~Monoid~ so ~<>~ just concatenates them.
+
+Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use ~BlockChar~ with Unicode line and corner chars to surround a grid:
+
+#+BEGIN_SRC haskell :exports code
+:{
+addBorder :: Grid -> Grid
+addBorder grid = Grid (width + 2) (height + 2) borderedMap
+  where
+    Grid width height gridMap = grid
+    borderedMap = M.union
+                    (M.fromList border)
+                    ((first (+1) . second (+1)) `M.mapKeys` gridMap)
+    border =
+      [ ((x+1, y+1), BlockChar '─')
+        | x <- [-1 .. width]
+        , y <- [-1 .. height]
+        , x == -1 || x == width || y == -1 || y == height
+      ]
+:}
+#+END_SRC
+
+#+RESULTS:
 
 We're ready to prettify our ~Grid~. Since we're operating over collections of things, we can start using higher-order functions; in Haskell, ~fmap~ from the ~Functor~ typeclass lets you apply a function to the inhabitants of any instance of a given ~Functor~. A list is an instance of ~Functor~, and so for some list ~xs~, ~fmap f xs~ just operates like the ~map(f, xs)~ function you find over lists in most other languages.
 
@@ -321,8 +344,9 @@ We use ~M.!~ to look up keys in our grid; this is unsafe, and can throw an error
 #+BEGIN_SRC haskell :exports code
 :{
 instance Pretty Grid where
-  pretty (Grid width height grid) = intercalate "\n" (prettyRow <$> rows) -- <$> is just an inline fmap
+  pretty g = intercalate "\n" (prettyRow <$> rows)
     where
+      (Grid width height grid) = addBorder g
       rows :: [[Cell]]
       rows = [[grid M.! (x, y) | x <- [0 .. width - 1]] | y <- [0 .. height - 1]]
       prettyRow :: [Cell] -> String
@@ -353,30 +377,32 @@ putStrLn $ pretty (mkEmptyGrid 10 24)
 
 #+RESULTS:
 #+begin_example
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
+────────────
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+────────────
 #+end_example
 
 Alright!
@@ -557,26 +583,28 @@ do
 
 #+RESULTS:
 #+begin_example
-.....................█......
-.█..██...██..██..██..█...█..
-███..██..█...██.██...█...█..
-.........█...........█...██.
-.....................█......
-██...██..█...██..██..█...█..
-.██..█...█..██...██..█..███.
-.....█...██..........█......
-.█..........................
-.█...██.██...██..█...██..█..
-.█...██..██.██..███..█...█..
-.█...................█...██.
-.........................█..
-.██..██.██...█...██..█...█..
-.██.██...██..█...█..███..█..
-.............██..█.......█..
-.........................█..
-.██.██...█...██..█...██..█..
-██...██.███..█...█...██..█..
-.............█...██......█..
+──────────────────────────────
+─                     █      ─
+─██   ██  █   ██  ██  █   █  ─
+─ ██  █   █  ██   ██  █  ███ ─
+─     █   ██          █      ─
+─                 █          ─
+─██   ██  █   ██  █   ██  █  ─
+─ ██  █  ███ ██   █   ██  █  ─
+─     █           █       ██ ─
+─                         █  ─
+─ ██  ██  █   █   ██ ██   █  ─
+─ █   ██ ███  █  ██   ██  █  ─
+─ █           ██          █  ─
+─                         █  ─
+─ ██ ██   █   ██  █   ██  █  ─
+─ █   ██ ███ ██   █   ██  █  ─
+─ █               ██      █  ─
+─                         █  ─
+─ █   ██  █  ██   ██  ██  █  ─
+─███ ██   █   ██  █   ██  █  ─
+─         ██      █       █  ─
+──────────────────────────────
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -624,34 +652,48 @@ forM_ allPieces
 
 #+RESULTS:
 #+begin_example
-.........██.....
-.█..███...█....█
-.█..█.....█..███
-.██.............
-..........█.....
-.██.███...█..█..
-.█....█..██..███
-.█..............
-................
-.██..██..██..██.
-.██..██..██..██.
-................
-.....█..........
-.██..██...██.█..
-██....█..██..██.
-..............█.
-......█.........
-██...██..██...█.
-.██..█....██.██.
-.............█..
-.....█..........
-.█...██..███..█.
-███..█....█..██.
-..............█.
-.█........█.....
-.█..████..█.....
-.█........█.████
-.█........█.....
+──────────────────
+─         ██     ─
+─ █  ███   █    █─
+─ █  █     █  ███─
+─ ██             ─
+──────────────────
+──────────────────
+─          █     ─
+─ ██ ███   █  █  ─
+─ █    █  ██  ███─
+─ █              ─
+──────────────────
+──────────────────
+─                ─
+─ ██  ██  ██  ██ ─
+─ ██  ██  ██  ██ ─
+─                ─
+──────────────────
+──────────────────
+─     █          ─
+─ ██  ██   ██ █  ─
+─██    █  ██  ██ ─
+─              █ ─
+──────────────────
+──────────────────
+─      █         ─
+─██   ██  ██   █ ─
+─ ██  █    ██ ██ ─
+─             █  ─
+──────────────────
+──────────────────
+─     █          ─
+─ █   ██  ███  █ ─
+─███  █    █  ██ ─
+─              █ ─
+──────────────────
+──────────────────
+─ █        █     ─
+─ █  ████  █     ─
+─ █        █ ████─
+─ █        █     ─
+──────────────────
 #+end_example
 
 I'm almsot sure it's not regulation, but it'll do.
@@ -686,30 +728,32 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 
 #+RESULTS:
 #+begin_example
-..........
-..........
-....██....
-...██.....
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
-..........
+────────────
+─          ─
+─          ─
+─    ██    ─
+─   ██     ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+─          ─
+────────────
 #+end_example
 
 Looks solid - one step of gravity after this, and the piece will become visible.
@@ -799,27 +843,29 @@ do
 
 #+RESULTS:
 #+begin_example
-Score: 0.......
-...............
-...............
-....██.........
-...██..........
-..........Next:
-...............
-...........██..
-...........██..
-...............
-..........Held:
-...............
-...........██..
-...........██..
-...............
-...............
-...............
-...............
-...............
-...............
-...............
+─────────────────
+─Score: 0       ─
+─    █          ─
+─    █          ─
+─    █          ─
+─    █          ─
+─          Next:─
+─               ─
+─           ██  ─
+─           ██  ─
+─               ─
+─          Held:─
+─               ─
+─           ██  ─
+─           ██  ─
+─               ─
+─               ─
+─               ─
+─               ─
+─               ─
+─               ─
+─               ─
+─────────────────
 #+end_example
 
 We can see the buffer zone at the top with the falling piece, the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
