@@ -193,12 +193,12 @@ We'll need a 2D grid of cells, each of which can be empty or filled with a block
 -- Yes, we'll be using British English.
 -- We include black for background elements, and an end-code since these will map to
 -- ANSI escape codes.
-data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | ColourEnd
+data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | White |  ColourEnd
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
 -- We also insert the ability to display a char here because later, we'll use this
 -- to compose some basic UI elements.
-data Cell = Block Colour | BlockChar Char | Empty
+data Cell = Block Colour | BlockChar Colour Char | Empty
 :}
 #+END_SRC
 
@@ -294,6 +294,7 @@ instance Pretty Colour where
   pretty Purple = "\x1b[35m"
   pretty Orange = "\x1b[37m"
   pretty Black = "\x1b[30m"
+  pretty White = "\x1b[97m"
   pretty ColourEnd = "\x1b[0m"
 :}
 #+END_SRC
@@ -305,7 +306,7 @@ instance Pretty Colour where
 instance Pretty Cell where
   pretty Empty = " "
   pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
-  pretty (BlockChar c) = [c]
+  pretty (BlockChar colour c) = pretty colour <> [c] <> pretty ColourEnd
 :}
 #+END_SRC
 
@@ -313,23 +314,37 @@ instance Pretty Cell where
 
 The ~<>~ is shorthand for ~mconcat~ - a member of the ~Monoid~ typeclass, which roughly represents things that can be empty, and can be joined together. ~String~ is a ~Monoid~ so ~<>~ just concatenates them.
 
-Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use ~BlockChar~ with Unicode line and corner chars to surround a grid:
+Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use ~BlockChar~ with Unicode line and corner chars to surround a grid. Let's make this a typeclass too! That way, we can add borders to regular grid, but also to UI elements.
 
 #+BEGIN_SRC haskell :exports code
 :{
-addBorder :: Grid -> Grid
-addBorder grid = Grid (width + 2) (height + 2) borderedMap
-  where
-    Grid width height gridMap = grid
-    borderedMap = M.union
-                    (M.fromList border)
-                    ((first (+1) . second (+1)) `M.mapKeys` gridMap)
-    border =
-      [ ((x+1, y+1), BlockChar '─')
-        | x <- [-1 .. width]
-        , y <- [-1 .. height]
-        , x == -1 || x == width || y == -1 || y == height
-      ]
+
+class Borderable a where
+  withBorder :: a -> a
+
+instance Borderable Grid where
+  withBorder (Grid width height grid) =
+    Grid (width + 2) (height + 2)
+      (grid
+      & M.mapKeys (first (+1) . second (+1))
+      & withLeftBorder
+      & withRightBorder
+      & withTopBorder
+      & withBottomBorder
+      & withCorners)
+    where
+      withLeftBorder = M.union (M.fromList [((0, y), BlockChar Black '│')
+                                          | y <- [0 .. height + 1]])
+      withRightBorder = M.union (M.fromList [((width + 1, y), BlockChar Black '│')
+                                          | y <- [0 .. height + 1]])
+      withTopBorder = M.union (M.fromList [((x, 0), BlockChar Black '─')
+                                          | x <- [0 .. width + 1]])
+      withBottomBorder = M.union (M.fromList [((x, height + 1), BlockChar Black '─')
+                                              | x <- [0 .. width + 1]])
+      withCorners = M.insert (0, 0) (BlockChar Black '┌')
+                  . M.insert (width + 1, 0) (BlockChar Black '┐')
+                  . M.insert (0, height + 1) (BlockChar Black '└')
+                  . M.insert (width + 1, height + 1) (BlockChar Black '┘')
 :}
 #+END_SRC
 
@@ -344,9 +359,8 @@ We use ~M.!~ to look up keys in our grid; this is unsafe, and can throw an error
 #+BEGIN_SRC haskell :exports code
 :{
 instance Pretty Grid where
-  pretty g = intercalate "\n" (prettyRow <$> rows)
+  pretty (Grid width height grid) = intercalate "\n" (prettyRow <$> rows)
     where
-      (Grid width height grid) = addBorder g
       rows :: [[Cell]]
       rows = [[grid M.! (x, y) | x <- [0 .. width - 1]] | y <- [0 .. height - 1]]
       prettyRow :: [Cell] -> String
@@ -371,38 +385,38 @@ We can finally print our grid! It's nothing special, but here we go:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn $ pretty (mkEmptyGrid 10 24)
+putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 :}
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-────────────
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-────────────
+┌──────────┐
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+└──────────┘
 #+end_example
 
 Alright!
@@ -465,9 +479,13 @@ Now we need some functions for composing a ~Piece~ and a ~Grid~, both for inspec
 -- function; this is a new function of type `Grid -> V2 -> Grid` which is
 -- exactly what we need for our fold. It's a bit of an awkward argument
 -- ordering for anything other than a fold.
+
+-- Note that if the block is outside of bounds, we just don't render it.
+-- This will make hiding the top rows easier later on.
 withBlock :: Colour -> Grid -> V2 -> Grid
-withBlock colour (Grid width height grid) xy =
-  Grid width height (M.insert xy (Block colour) grid)
+withBlock colour original@(Grid width height grid) (x, y)
+  | x < 0 || x >= width || y < 0 || y >= height = original
+  | otherwise = Grid width height $ M.insert (x, y) (Block colour) grid
 
 -- Adds a whole piece to the grid one block at a time
 withPiece :: Piece -> Grid -> Grid
@@ -583,28 +601,26 @@ do
 
 #+RESULTS:
 #+begin_example
-──────────────────────────────
-─                     █      ─
-─██   ██  █   ██  ██  █   █  ─
-─ ██  █   █  ██   ██  █  ███ ─
-─     █   ██          █      ─
-─                 █          ─
-─██   ██  █   ██  █   ██  █  ─
-─ ██  █  ███ ██   █   ██  █  ─
-─     █           █       ██ ─
-─                         █  ─
-─ ██  ██  █   █   ██ ██   █  ─
-─ █   ██ ███  █  ██   ██  █  ─
-─ █           ██          █  ─
-─                         █  ─
-─ ██ ██   █   ██  █   ██  █  ─
-─ █   ██ ███ ██   █   ██  █  ─
-─ █               ██      █  ─
-─                         █  ─
-─ █   ██  █  ██   ██  ██  █  ─
-─███ ██   █   ██  █   ██  █  ─
-─         ██      █       █  ─
-──────────────────────────────
+█
+ █  ██   █   ██  ██  ██  █
+ █   ██ ███  ██  █  ██   █
+ ██              █       █
+ █
+ █   █   ██ ██   ██  ██  █
+ █   █   █   ██  ██ ██  ███
+ █   ██  █
+                 █
+ █   ██  ██  █   █   ██ ██
+ █  ██   ██ ███  █   █   ██
+ ██              █   █
+     █
+ ██  █   █  ██   █   ██  ██
+ █   █   █   ██ ███  ██ ██
+ █   █   ██
+                 █
+ ██  █  ██   ██  █   ██  █
+ ██ ███  ██  █   █  ██   █
+             █   █       ██
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -652,51 +668,37 @@ forM_ allPieces
 
 #+RESULTS:
 #+begin_example
-──────────────────
-─         ██     ─
-─ █  ███   █    █─
-─ █  █     █  ███─
-─ ██             ─
-──────────────────
-──────────────────
-─          █     ─
-─ ██ ███   █  █  ─
-─ █    █  ██  ███─
-─ █              ─
-──────────────────
-──────────────────
-─                ─
-─ ██  ██  ██  ██ ─
-─ ██  ██  ██  ██ ─
-─                ─
-──────────────────
-──────────────────
-─     █          ─
-─ ██  ██   ██ █  ─
-─██    █  ██  ██ ─
-─              █ ─
-──────────────────
-──────────────────
-─      █         ─
-─██   ██  ██   █ ─
-─ ██  █    ██ ██ ─
-─             █  ─
-──────────────────
-──────────────────
-─     █          ─
-─ █   ██  ███  █ ─
-─███  █    █  ██ ─
-─              █ ─
-──────────────────
-──────────────────
-─ █        █     ─
-─ █  ████  █     ─
-─ █        █ ████─
-─ █        █     ─
-──────────────────
+██
+ █  ███   █    █
+ █  █     █  ███
+ ██
+          █
+ ██ ███   █  █
+ █    █  ██  ███
+ █
+
+ ██  ██  ██  ██
+ ██  ██  ██  ██
+
+     █
+ ██  ██   ██ █
+██    █  ██  ██
+              █
+      █
+██   ██  ██   █
+ ██  █    ██ ██
+             █
+     █
+ █   ██  ███  █
+███  █    █  ██
+              █
+ █        █
+ █  ████  █
+ █        █ ████
+ █        █
 #+end_example
 
-I'm almsot sure it's not regulation, but it'll do.
+I'm almsot sure it's not *Regulation*, but it'll do.
 
 * Placing Pieces on the Grid
 Let's start by placing a piece in that buffer zone at the top of the grid (which we'll eventually hide).
@@ -727,34 +729,8 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 #+END_SRC
 
 #+RESULTS:
-#+begin_example
-────────────
-─          ─
-─          ─
-─    ██    ─
-─   ██     ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-─          ─
-────────────
-#+end_example
+: ██
+:    ██
 
 Looks solid - one step of gravity after this, and the piece will become visible.
 
@@ -797,33 +773,44 @@ Alright - now we're in a position to render our rudimentary UI by stitching thes
 
 #+BEGIN_SRC haskell :exports both
 :{
--- Bump a grid down by concatenating empty space above.
--- Used to take UI elements below our 4-line hidden buffer.
-lowerGrid :: Int -> Grid -> Grid
-lowerGrid n grid = unHGrid $ (HGrid $ mkEmptyGrid 1 n) <> (HGrid grid)
+-- Let's make sure we can add borders to our composable UI elements:
+instance Borderable VGrid where
+    withBorder (VGrid grid) = VGrid $ withBorder grid
+
+instance Borderable HGrid where
+    withBorder (HGrid grid) = HGrid $ withBorder grid
+
+-- Let's also just make it easy to pretty-print our UI elements:
+instance Pretty VGrid where
+    pretty (VGrid grid) = pretty grid
+
+instance Pretty HGrid where
+    pretty (HGrid grid) = pretty grid
 
 -- Turn a string into a grid for composability
 -- Only supports single lines.
 sToG :: String -> Grid
-sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar c) | (x, c) <- zip [0..] s]
+sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
 
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
+-- TODO: comment line by line
 instance Pretty Game where
   pretty game =
     let (Grid width height fullGrid) = grid game
-        grid' = Grid width (height - 4)
-                  $ M.fromList [((x, y), v) | ((x, y), v) <- M.toList fullGrid, y > 3]
-        scoreGrid = HGrid (sToG $ "Score: " <> show (score game))
-        lhs = VGrid $ grid' & withPiece (currentPiece game)
+        -- Drop the first four lines to hide the buffer zone
+        -- TODO: actually hide the buffer zone
+        grid' = (Grid width height fullGrid)
+        scoreGrid = withBorder $ HGrid (sToG $ "Score: " <> show (score game))
+        lhs = withBorder $ VGrid $ grid' & withPiece (currentPiece game)
         nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
         held = HGrid (sToG "Held:") <> (HGrid $ case heldPiece game of
                  Nothing -> mkEmptyGrid 4 4
                  Just piece -> mkPieceGrid piece)
-        rhs = nextPiece <> held
-        playArea = HGrid . unVGrid $ lhs <> VGrid (lowerGrid 4 $ unHGrid rhs)
+        rhs = withBorder nextPiece <> withBorder held
+        playArea = HGrid . unVGrid $ lhs <> VGrid (unHGrid rhs)
         withScore = scoreGrid <> playArea
-     in pretty (unHGrid withScore)
+     in pretty withScore
 :}
 #+END_SRC
 
@@ -835,7 +822,7 @@ We can preview this as so:
 #+BEGIN_SRC haskell :exports both
 :{
 do
-  g <- getStdGen
+  g <- newStdGen
   let game = (mkGame g) {heldPiece = Just pieceSquare}
   putStrLn (pretty game)
 :}
@@ -843,29 +830,35 @@ do
 
 #+RESULTS:
 #+begin_example
-─────────────────
-─Score: 0       ─
-─    █          ─
-─    █          ─
-─    █          ─
-─    █          ─
-─          Next:─
-─               ─
-─           ██  ─
-─           ██  ─
-─               ─
-─          Held:─
-─               ─
-─           ██  ─
-─           ██  ─
-─               ─
-─               ─
-─               ─
-─               ─
-─               ─
-─               ─
-─               ─
-─────────────────
+┌────────┐
+│Score: 0│
+└────────┘
+┌──────────┐┌─────┐
+│          ││Next:│
+│          ││     │
+│   ██     ││ █   │
+│    ██    ││███  │
+│          ││     │
+│          │└─────┘
+│          │┌─────┐
+│          ││Held:│
+│          ││     │
+│          ││ ██  │
+│          ││ ██  │
+│          ││     │
+│          │└─────┘
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+└──────────┘
 #+end_example
 
 We can see the buffer zone at the top with the falling piece, the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
