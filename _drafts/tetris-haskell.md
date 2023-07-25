@@ -9,21 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org31460de)
-2.  [Beginning at the End](#org5e61b9a)
-3.  [What This Is](#org3c4765c)
-4.  [What This Isn&rsquo;t](#org731dc6d)
-5.  [Prelude](#orgba4e903)
-6.  [Strategy](#org7a654ca)
-7.  [Imports and Dependencies](#orgbc07d92)
-8.  [Establishing the Grid](#org6b05edf)
-9.  [Making Some Tetrominos](#org0259f91)
-10. [Rotations](#org2ba9ba4)
-11. [Placing Pieces on the Grid](#orgb4b0541)
-12. [Representing the Game State](#org6e04a68)
+1.  [TO DO](#org1b2b33f)
+2.  [Beginning at the End](#orgd01d58e)
+3.  [What This Is](#org75c525b)
+4.  [What This Isn&rsquo;t](#org4eecfe4)
+5.  [Prelude](#orgee2f5ec)
+6.  [Strategy](#orgb596bf8)
+7.  [Imports and Dependencies](#org74eca43)
+8.  [Establishing the Grid](#org290f58f)
+9.  [Making Some Tetrominos](#org662f912)
+10. [Rotations](#orgb0aa3c4)
+11. [Placing Pieces on the Grid](#org3ff2f6a)
+12. [Representing the Game State](#org33c3632)
 
 
-<a id="org31460de"></a>
+<a id="org1b2b33f"></a>
 
 # TO DO
 
@@ -36,7 +36,7 @@ tags:
 -   [ ] prettier better commented borders
 
 
-<a id="org5e61b9a"></a>
+<a id="orgd01d58e"></a>
 
 # Beginning at the End
 
@@ -45,7 +45,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org3c4765c"></a>
+<a id="org75c525b"></a>
 
 # What This Is
 
@@ -56,7 +56,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org731dc6d"></a>
+<a id="org4eecfe4"></a>
 
 # What This Isn&rsquo;t
 
@@ -67,7 +67,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgba4e903"></a>
+<a id="orgee2f5ec"></a>
 
 # Prelude
 
@@ -78,7 +78,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org7a654ca"></a>
+<a id="orgb596bf8"></a>
 
 # Strategy
 
@@ -95,7 +95,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgbc07d92"></a>
+<a id="org74eca43"></a>
 
 # Imports and Dependencies
 
@@ -193,7 +193,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org6b05edf"></a>
+<a id="org290f58f"></a>
 
 # Establishing the Grid
 
@@ -413,7 +413,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org0259f91"></a>
+<a id="org662f912"></a>
 
 # Making Some Tetrominos
 
@@ -574,25 +574,25 @@ do
 {% endhighlight %}
 
     █                          
-     █   ██  █   █   ██  ██ ██  
-     █   ██  █  ███ ██   █   ██ 
-     █       ██          █      
-                 █              
-     █   ██  ██  █  ██   ██  █  
-     █  ██   ██  █   ██  █  ███ 
-     ██          █       █      
-     █                          
-     █   █   ██  ██ ██   █   ██ 
-     █  ███  ██ ██   ██  █   █  
-     █                   ██  █  
+     █   █  ██   █   ██  ██  ██ 
+     █  ███  ██  █  ██   ██  █  
+     █           ██          █  
              █                  
-     ██ ██   █   ██  ██  █   █  
-     ██  ██  █   █  ██  ███  █  
-             █   █           ██ 
-                     █          
-     ██  █   ██ ██   █   ██  █  
-    ██   █   ██  ██  █   █  ███ 
-         ██          █   █
+     █   ██  █   ██  ██  █  ██  
+     █  ██   █   █   ██ ███  ██ 
+     ██      █   █              
+     █                          
+     █   ██ ██   ██  █   ██  █  
+     █   ██  ██ ██   █   █  ███ 
+     █               ██  █      
+                 █              
+    ██   ██  ██  █   ██  █   █  
+     ██ ██   █   █   ██  █  ███ 
+             █   █       ██     
+                         █      
+     █   ██ ██   █   ██  █   ██ 
+     █   █   ██ ███  ██  █  ██  
+     ██  █               █
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -601,7 +601,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="org2ba9ba4"></a>
+<a id="orgb0aa3c4"></a>
 
 # Rotations
 
@@ -667,7 +667,7 @@ forM_ allPieces
 I&rsquo;m almsot sure it&rsquo;s not **Regulation**, but it&rsquo;ll do.
 
 
-<a id="orgb4b0541"></a>
+<a id="org3ff2f6a"></a>
 
 # Placing Pieces on the Grid
 
@@ -702,7 +702,7 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org6e04a68"></a>
+<a id="org33c3632"></a>
 
 # Representing the Game State
 
@@ -767,6 +767,7 @@ instance Pretty Game where
   pretty game =
     let (Grid width height fullGrid) = grid game
         -- Drop the first four lines to hide the buffer zone
+        -- TODO: actually hide the buffer zone
         grid' = (Grid width height fullGrid)
         scoreGrid = withBorder $ HGrid (sToG $ "Score: " <> show (score game))
         lhs = withBorder $ VGrid $ grid' & withPiece (currentPiece game)
@@ -797,10 +798,10 @@ do
     └────────┘         
     ┌──────────┐┌─────┐
     │          ││Next:│
-    │    ██    ││     │
-    │    █     ││██   │
-    │    █     ││ ██  │
     │          ││     │
+    │    ██    ││ ██  │
+    │   ██     ││ █   │
+    │          ││ █   │
     │          │└─────┘
     │          │┌─────┐
     │          ││Held:│
