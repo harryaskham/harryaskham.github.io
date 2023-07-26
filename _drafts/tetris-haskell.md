@@ -9,21 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org9c95667)
-2.  [Beginning at the End](#org410dc98)
-3.  [What This Is](#org01afcac)
-4.  [What This Isn&rsquo;t](#orgaa29fc1)
-5.  [Prelude](#org31b0c93)
-6.  [Strategy](#orga4d4374)
-7.  [Imports and Dependencies](#org82e285c)
-8.  [Establishing the Grid](#org1432372)
-9.  [Making Some Tetrominos](#org56e5344)
-10. [Rotations](#org3ab9cbf)
-11. [Placing Pieces on the Grid](#orgede0e2a)
-12. [Representing the Game State](#org338e9a7)
+1.  [TO DO](#orge2ae495)
+2.  [Beginning at the End](#org2200ba9)
+3.  [What This Is](#org24a55d6)
+4.  [What This Isn&rsquo;t](#org193b53e)
+5.  [Prelude](#org610fe25)
+6.  [Strategy](#orgbe44d48)
+7.  [Imports and Dependencies](#orgf45295e)
+8.  [Establishing the Grid](#org82b8fce)
+9.  [Making Some Tetrominos](#org723ed6d)
+10. [Rotations](#org2a5b3ea)
+11. [Placing Pieces on the Grid](#org24096f5)
+12. [Representing the Game State](#orgba366bd)
 
 
-<a id="org9c95667"></a>
+<a id="orge2ae495"></a>
 
 # TO DO
 
@@ -36,7 +36,7 @@ tags:
 -   [ ] prettier better commented borders
 
 
-<a id="org410dc98"></a>
+<a id="org2200ba9"></a>
 
 # Beginning at the End
 
@@ -45,7 +45,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org01afcac"></a>
+<a id="org24a55d6"></a>
 
 # What This Is
 
@@ -56,7 +56,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orgaa29fc1"></a>
+<a id="org193b53e"></a>
 
 # What This Isn&rsquo;t
 
@@ -67,7 +67,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org31b0c93"></a>
+<a id="org610fe25"></a>
 
 # Prelude
 
@@ -78,7 +78,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orga4d4374"></a>
+<a id="orgbe44d48"></a>
 
 # Strategy
 
@@ -95,7 +95,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org82e285c"></a>
+<a id="orgf45295e"></a>
 
 # Imports and Dependencies
 
@@ -193,7 +193,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org1432372"></a>
+<a id="org82b8fce"></a>
 
 # Establishing the Grid
 
@@ -413,7 +413,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org56e5344"></a>
+<a id="org723ed6d"></a>
 
 # Making Some Tetrominos
 
@@ -564,35 +564,45 @@ do
   g <- newStdGen
   -- Create a stream of pieces wrapped in our VGrid Monoid.
   let vStream = VGrid . mkPieceGrid <$> pieceStream g
-  -- We create an infinite stream of batches, each stitched together.
-  let rows pieces = mconcat (take 7 pieces) : rows (drop 7 pieces)
+  -- We create an infinite stream of batches, each stitched together with a border.
+  let rows pieces = (mconcat $ take 7 pieces) : rows (drop 7 pieces)
   -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
-  let grid = unHGrid $ mconcat (HGrid . unVGrid <$> take 5 (rows vStream))
+  let grid = unHGrid $ mconcat (HGrid . withBorder . unVGrid <$> take 5 (rows vStream))
   -- Finally we can print the underlying, unwrapped grid.
   putStrLn (pretty grid)
 :}
 {% endhighlight %}
 
-    █      
-    ██   ██  ██  ██  █   █   █  
-     ██  █   ██ ██   █   █  ███ 
-         █           ██  █      
-         █                      
-     ██  █   █   █   ██  ██ ██  
-    ██   █   █  ███  █   ██  ██ 
-         █   ██      █          
-                         █      
-     █   ██ ██   ██  █   █   ██ 
-     █   ██  ██  █  ███  █  ██  
-     ██          █       █      
-                 █              
-     ██ ██   ██  █   ██  █   █  
-     ██  ██ ██   █   █   █  ███ 
-                 █   █   ██     
-                             █  
-     ██ ██   █   ██  █   ██  █  
-     █   ██  █   ██ ███ ██   █  
-     █       ██              █
+    ┌────────────────────────────┐
+    │         █                  │
+    │ ██  █   █   ██  ██ ██   █  │
+    │██  ███  █   ██  █   ██  █  │
+    │         █       █       ██ │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │                     █      │
+    │ ██  █  ██   ██  ██  █   █  │
+    │ ██ ███  ██ ██   █   █   █  │
+    │                 █   █   ██ │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │     █                      │
+    │ █   █  ██   ██  █   ██  ██ │
+    │███  █   ██  ██  █   █  ██  │
+    │     █           ██  █      │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │             █              │
+    │ █   █  ██   █   ██  ██  ██ │
+    │███  █   ██  █  ██   █   ██ │
+    │     ██      █       █      │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │                 █          │
+    │ ██  █   ██  █   █   ██ ██  │
+    │██   █   ██ ███  █   █   ██ │
+    │     ██          █   █      │
+    └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -601,7 +611,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="org3ab9cbf"></a>
+<a id="org2a5b3ea"></a>
 
 # Rotations
 
@@ -667,7 +677,7 @@ forM_ allPieces
 I&rsquo;m almsot sure it&rsquo;s not **Regulation**, but it&rsquo;ll do.
 
 
-<a id="orgede0e2a"></a>
+<a id="org24096f5"></a>
 
 # Placing Pieces on the Grid
 
@@ -702,7 +712,7 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org338e9a7"></a>
+<a id="orgba366bd"></a>
 
 # Representing the Game State
 
@@ -797,11 +807,11 @@ do
     │Score: 0│         
     └────────┘         
     ┌──────────┐┌─────┐
-    │          ││Next:│
-    │    ██    ││     │
+    │    █     ││Next:│
+    │    █     ││     │
+    │    █     ││ ██  │
     │    █     ││ █   │
-    │    █     ││███  │
-    │          ││     │
+    │          ││ █   │
     │          │└─────┘
     │          │┌─────┐
     │          ││Held:│
