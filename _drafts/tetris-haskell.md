@@ -9,21 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#orge2ae495)
-2.  [Beginning at the End](#org2200ba9)
-3.  [What This Is](#org24a55d6)
-4.  [What This Isn&rsquo;t](#org193b53e)
-5.  [Prelude](#org610fe25)
-6.  [Strategy](#orgbe44d48)
-7.  [Imports and Dependencies](#orgf45295e)
-8.  [Establishing the Grid](#org82b8fce)
-9.  [Making Some Tetrominos](#org723ed6d)
-10. [Rotations](#org2a5b3ea)
-11. [Placing Pieces on the Grid](#org24096f5)
-12. [Representing the Game State](#orgba366bd)
+1.  [TO DO](#org09ede7c)
+2.  [Beginning at the End](#org651f6c6)
+3.  [What This Is](#org73d5e75)
+4.  [What This Isn&rsquo;t](#org2b43717)
+5.  [Prelude](#orgacee085)
+6.  [Strategy](#org166df07)
+7.  [Imports and Dependencies](#org475b29a)
+8.  [Establishing the Grid](#org61a16b1)
+9.  [Making Some Tetrominos](#orgf9cc1de)
+10. [Rotations](#orgd4e3257)
+11. [Placing Pieces on the Grid](#orgd1aaf8e)
+12. [Representing the Game State](#orgcc62f42)
 
 
-<a id="orge2ae495"></a>
+<a id="org09ede7c"></a>
 
 # TO DO
 
@@ -36,7 +36,7 @@ tags:
 -   [ ] prettier better commented borders
 
 
-<a id="org2200ba9"></a>
+<a id="org651f6c6"></a>
 
 # Beginning at the End
 
@@ -45,7 +45,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org24a55d6"></a>
+<a id="org73d5e75"></a>
 
 # What This Is
 
@@ -56,7 +56,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org193b53e"></a>
+<a id="org2b43717"></a>
 
 # What This Isn&rsquo;t
 
@@ -67,7 +67,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org610fe25"></a>
+<a id="orgacee085"></a>
 
 # Prelude
 
@@ -78,7 +78,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgbe44d48"></a>
+<a id="org166df07"></a>
 
 # Strategy
 
@@ -95,7 +95,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgf45295e"></a>
+<a id="org475b29a"></a>
 
 # Imports and Dependencies
 
@@ -193,7 +193,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org82b8fce"></a>
+<a id="org61a16b1"></a>
 
 # Establishing the Grid
 
@@ -413,7 +413,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org723ed6d"></a>
+<a id="orgf9cc1de"></a>
 
 # Making Some Tetrominos
 
@@ -574,34 +574,34 @@ do
 {% endhighlight %}
 
     ┌────────────────────────────┐
-    │         █                  │
-    │ ██  █   █   ██  ██ ██   █  │
-    │██  ███  █   ██  █   ██  █  │
-    │         █       █       ██ │
+    │             █              │
+    │ ██ ██   █   █   ██  ██  █  │
+    │ █   ██  █   █  ██   ██ ███ │
+    │ █       ██  █              │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │                     █      │
-    │ ██  █  ██   ██  ██  █   █  │
-    │ ██ ███  ██ ██   █   █   █  │
-    │                 █   █   ██ │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │     █                      │
-    │ █   █  ██   ██  █   ██  ██ │
-    │███  █   ██  ██  █   █  ██  │
-    │     █           ██  █      │
+    │██   ██  ██  ██  █   █   █  │
+    │ ██ ██   ██  █  ███  █   █  │
+    │             █       █   ██ │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │             █              │
-    │ █   █  ██   █   ██  ██  ██ │
-    │███  █   ██  █  ██   █   ██ │
-    │     ██      █       █      │
+    │ █   █   ██  █   ██ ██   ██ │
+    │███  █   █   █  ██   ██  ██ │
+    │     ██  █   █              │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │                 █          │
-    │ ██  █   ██  █   █   ██ ██  │
-    │██   █   ██ ███  █   █   ██ │
-    │     ██          █   █      │
+    │             █              │
+    │ ██  ██  █   █   █  ██   ██ │
+    │ ██ ██  ███  █   █   ██  █  │
+    │             █   ██      █  │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │                     █      │
+    │ █  ██   ██  ██  █   █   ██ │
+    │ █   ██  ██  █  ███  █  ██  │
+    │ ██          █       █      │
     └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -611,7 +611,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="org2a5b3ea"></a>
+<a id="orgd4e3257"></a>
 
 # Rotations
 
@@ -639,9 +639,9 @@ forM_ allPieces
         putStrLn
         . pretty
         . unVGrid
-        . mconcat
-        . take 4
-        $ VGrid . mkPieceGrid <$> iterate rotateCW piece)
+        . (\pieces8 -> mconcat $ take 4 pieces8)
+        . take 8
+        $ VGrid . mkPieceGrid <$> iterate rotateCW piece <> iterate rotateCCW piece)
 :}
 {% endhighlight %}
 
@@ -677,7 +677,7 @@ forM_ allPieces
 I&rsquo;m almsot sure it&rsquo;s not **Regulation**, but it&rsquo;ll do.
 
 
-<a id="org24096f5"></a>
+<a id="orgd1aaf8e"></a>
 
 # Placing Pieces on the Grid
 
@@ -712,7 +712,7 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgba366bd"></a>
+<a id="orgcc62f42"></a>
 
 # Representing the Game State
 
@@ -807,9 +807,9 @@ do
     │Score: 0│         
     └────────┘         
     ┌──────────┐┌─────┐
-    │    █     ││Next:│
-    │    █     ││     │
-    │    █     ││ ██  │
+    │          ││Next:│
+    │    ██    ││ █   │
+    │    █     ││ █   │
     │    █     ││ █   │
     │          ││ █   │
     │          │└─────┘
@@ -853,4 +853,4 @@ We can see the buffer zone at the top with the falling piece, the next piece dis
 
 <sup><a id="fn.8" href="#fnr.8">8</a></sup> Note that when referring to operators both in code and prose, it&rsquo;s typical to refer to them in parentheses. `(+) 1 2` is the same as `1 + 2`.
 
-<sup><a id="fn.9" href="#fnr.9">9</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3` and so on exist).
+<sup><a id="fn.9" href="#fnr.9">9</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3 f (a, b c) = f a b c` and so on exist but there&rsquo;s no way to write generic `uncurryN` without resorting to `TemplateHaskell` to the best of my knowledge).
