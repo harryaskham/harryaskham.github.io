@@ -9,21 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org09ede7c)
-2.  [Beginning at the End](#org651f6c6)
-3.  [What This Is](#org73d5e75)
-4.  [What This Isn&rsquo;t](#org2b43717)
-5.  [Prelude](#orgacee085)
-6.  [Strategy](#org166df07)
-7.  [Imports and Dependencies](#org475b29a)
-8.  [Establishing the Grid](#org61a16b1)
-9.  [Making Some Tetrominos](#orgf9cc1de)
-10. [Rotations](#orgd4e3257)
-11. [Placing Pieces on the Grid](#orgd1aaf8e)
-12. [Representing the Game State](#orgcc62f42)
+1.  [TO DO](#org2068d58)
+2.  [Beginning at the End](#org1a36eeb)
+3.  [What This Is](#org4c7c0a8)
+4.  [What This Isn&rsquo;t](#org1a747bc)
+5.  [Prelude](#orgcbc9011)
+6.  [Strategy](#org1423bec)
+7.  [Imports and Dependencies](#orgc8723ef)
+8.  [Establishing the Grid](#orgc0e9c0a)
+9.  [Making Some Tetrominos](#org5730a41)
+10. [Rotations](#org8150a8b)
+11. [Placing Pieces on the Grid](#org04f84a5)
+12. [Representing the Game State](#orgdee68e6)
 
 
-<a id="org09ede7c"></a>
+<a id="org2068d58"></a>
 
 # TO DO
 
@@ -36,7 +36,7 @@ tags:
 -   [ ] prettier better commented borders
 
 
-<a id="org651f6c6"></a>
+<a id="org1a36eeb"></a>
 
 # Beginning at the End
 
@@ -45,7 +45,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org73d5e75"></a>
+<a id="org4c7c0a8"></a>
 
 # What This Is
 
@@ -56,7 +56,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org2b43717"></a>
+<a id="org1a747bc"></a>
 
 # What This Isn&rsquo;t
 
@@ -67,7 +67,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgacee085"></a>
+<a id="orgcbc9011"></a>
 
 # Prelude
 
@@ -78,7 +78,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org166df07"></a>
+<a id="org1423bec"></a>
 
 # Strategy
 
@@ -95,7 +95,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org475b29a"></a>
+<a id="orgc8723ef"></a>
 
 # Imports and Dependencies
 
@@ -193,7 +193,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org61a16b1"></a>
+<a id="orgc0e9c0a"></a>
 
 # Establishing the Grid
 
@@ -413,7 +413,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="orgf9cc1de"></a>
+<a id="org5730a41"></a>
 
 # Making Some Tetrominos
 
@@ -574,34 +574,34 @@ do
 {% endhighlight %}
 
     ┌────────────────────────────┐
-    │             █              │
-    │ ██ ██   █   █   ██  ██  █  │
-    │ █   ██  █   █  ██   ██ ███ │
-    │ █       ██  █              │
+    │     █                      │
+    │██   █   █   ██  ██  ██  █  │
+    │ ██  █   █   █  ██   ██ ███ │
+    │     █   ██  █              │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │                     █      │
-    │██   ██  ██  ██  █   █   █  │
-    │ ██ ██   ██  █  ███  █   █  │
-    │             █       █   ██ │
+    │ █                          │
+    │ █   ██ ██   █   ██  ██  █  │
+    │ █  ██   ██ ███  █   ██  █  │
+    │ █               █       ██ │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │                 █          │
+    │██   ██  █   ██  █   █   ██ │
+    │ ██  █   █   ██  █  ███ ██  │
+    │     █   ██      █          │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │             █              │
-    │ █   █   ██  █   ██ ██   ██ │
-    │███  █   █   █  ██   ██  ██ │
-    │     ██  █   █              │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │             █              │
-    │ ██  ██  █   █   █  ██   ██ │
-    │ ██ ██  ███  █   █   ██  █  │
+    │██   ██  █   █   █   ██  ██ │
+    │ ██  ██ ███  █   █  ██   █  │
     │             █   ██      █  │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │                     █      │
-    │ █  ██   ██  ██  █   █   ██ │
-    │ █   ██  ██  █  ███  █  ██  │
-    │ ██          █       █      │
+    │             █              │
+    │ █   ██  ██  █  ██   ██  █  │
+    │ █  ██   █   █   ██  ██ ███ │
+    │ ██      █   █              │
     └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -611,7 +611,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="orgd4e3257"></a>
+<a id="org8150a8b"></a>
 
 # Rotations
 
@@ -630,54 +630,128 @@ rotateCCW = rotateCW . rotateCW . rotateCW
 :}
 {% endhighlight %}
 
-Let&rsquo;s take a look at these rotations:
+Let&rsquo;s take a look at these rotations with a helper:
 
 {% highlight haskell %}
 :{
-forM_ allPieces
-  $ (\piece ->
-        putStrLn
-        . pretty
-        . unVGrid
-        . (\pieces8 -> mconcat $ take 4 pieces8)
-        . take 8
-        $ VGrid . mkPieceGrid <$> iterate rotateCW piece <> iterate rotateCCW piece)
+showRotations rotate =
+    forM_ allPieces
+    $ (\piece ->
+            putStrLn
+            . pretty
+            . (\ps -> mconcat (take 4 ps) & unVGrid & withBorder)
+            $ VGrid . mkPieceGrid <$> iterate rotate piece)
 :}
 {% endhighlight %}
 
-    ██     
-     █  ███   █    █
-     █  █     █  ███
-     ██             
-              █     
-     ██ ███   █  █  
-     █    █  ██  ███
-     █              
-                    
-     ██  ██  ██  ██ 
-     ██  ██  ██  ██ 
-                    
-         █          
-     ██  ██   ██ █  
-    ██    █  ██  ██ 
-                  █ 
-          █         
-    ██   ██  ██   █ 
-     ██  █    ██ ██ 
-                 █  
-         █          
-     █   ██  ███  █ 
-    ███  █    █  ██ 
-                  █ 
-     █        █     
-     █  ████  █     
-     █        █ ████
-     █        █
+First clockwise:
+
+{% highlight haskell %}
+:{
+showRotations rotateCW
+:}
+{% endhighlight %}
+
+    ┌────────────────┐
+    │         ██     │
+    │ █  ███   █    █│
+    │ █  █     █  ███│
+    │ ██             │
+    └────────────────┘
+    ┌────────────────┐
+    │          █     │
+    │ ██ ███   █  █  │
+    │ █    █  ██  ███│
+    │ █              │
+    └────────────────┘
+    ┌────────────────┐
+    │                │
+    │ ██  ██  ██  ██ │
+    │ ██  ██  ██  ██ │
+    │                │
+    └────────────────┘
+    ┌────────────────┐
+    │     █          │
+    │ ██  ██   ██ █  │
+    │██    █  ██  ██ │
+    │              █ │
+    └────────────────┘
+    ┌────────────────┐
+    │      █         │
+    │██   ██  ██   █ │
+    │ ██  █    ██ ██ │
+    │             █  │
+    └────────────────┘
+    ┌────────────────┐
+    │     █          │
+    │ █   ██  ███  █ │
+    │███  █    █  ██ │
+    │              █ │
+    └────────────────┘
+    ┌────────────────┐
+    │ █        █     │
+    │ █  ████  █     │
+    │ █        █ ████│
+    │ █        █     │
+    └────────────────┘
+
+And counterclockwise:
+
+First clockwise:
+
+{% highlight haskell %}
+:{
+showRotations rotateCCW
+:}
+{% endhighlight %}
+
+    ┌────────────────┐
+    │         ██     │
+    │ █     █  █ ███ │
+    │ █   ███  █ █   │
+    │ ██             │
+    └────────────────┘
+    ┌────────────────┐
+    │          █     │
+    │ ██  █    █ ███ │
+    │ █   ███ ██   █ │
+    │ █              │
+    └────────────────┘
+    ┌────────────────┐
+    │                │
+    │ ██  ██  ██  ██ │
+    │ ██  ██  ██  ██ │
+    │                │
+    └────────────────┘
+    ┌────────────────┐
+    │             █  │
+    │ ██  █    ██ ██ │
+    │██   ██  ██   █ │
+    │      █         │
+    └────────────────┘
+    ┌────────────────┐
+    │              █ │
+    │██    █  ██  ██ │
+    │ ██  ██   ██ █  │
+    │     █          │
+    └────────────────┘
+    ┌────────────────┐
+    │             █  │
+    │ █    █  ███ ██ │
+    │███  ██   █  █  │
+    │      █         │
+    └────────────────┘
+    ┌────────────────┐
+    │ █        █     │
+    │ █        █ ████│
+    │ █  ████  █     │
+    │ █        █     │
+    └────────────────┘
 
 I&rsquo;m almsot sure it&rsquo;s not **Regulation**, but it&rsquo;ll do.
 
 
-<a id="orgd1aaf8e"></a>
+<a id="org04f84a5"></a>
 
 # Placing Pieces on the Grid
 
@@ -712,7 +786,7 @@ putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgcc62f42"></a>
+<a id="orgdee68e6"></a>
 
 # Representing the Game State
 
@@ -808,10 +882,10 @@ do
     └────────┘         
     ┌──────────┐┌─────┐
     │          ││Next:│
-    │    ██    ││ █   │
-    │    █     ││ █   │
-    │    █     ││ █   │
-    │          ││ █   │
+    │          ││     │
+    │    ██    ││ ██  │
+    │   ██     ││ ██  │
+    │          ││     │
     │          │└─────┘
     │          │┌─────┐
     │          ││Held:│
