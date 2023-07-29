@@ -639,7 +639,7 @@ We introduced a number of new concepts here; we secretly entered a monad (~IO~, 
 
 We also introduced ~uncurry~ - we wanted to pass the tuples of form ~f (1, batch1)~ we'd created via ~zip~ into a function that wanted arguments ~f 1 batch1~ - ~uncurry~ will convert a function that wants two arguments into a function that wants a tuple of those two arguments[fn:uncurry].
 
-[fn:uncurry] It gets more complex when you're dealing with more arguments (~uncurry3~ and so on exist).
+[fn:uncurry] It gets more complex when you're dealing with more arguments (~uncurry3 f (a, b c) = f a b c~ and so on exist but there's no way to write generic ~uncurryN~ without resorting to ~TemplateHaskell~ to the best of my knowledge).
 
 
 * Rotations
