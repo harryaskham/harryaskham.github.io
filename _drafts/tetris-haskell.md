@@ -9,43 +9,29 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#orgfb2610e)
-2.  [Beginning at the End](#org8629f81)
-3.  [What This Is](#org8e9146c)
-4.  [What This Isn&rsquo;t](#orgc9f3d47)
-5.  [Prelude](#org75fc51d)
-6.  [Strategy](#org58e42c9)
-7.  [Imports and Dependencies](#org7a48557)
-8.  [Establishing the Grid](#orga4b5f66)
-9.  [Making Some Tetrominos](#org1c0c921)
-10. [Rotations](#orgbf4c9cb)
-11. [Placing Pieces on the Grid](#org737c653)
-12. [Representing the Game State](#org8599dc0)
+1.  [Beginning at the End](#org3fa9784)
+2.  [What This Is](#org48cb61c)
+3.  [What This Isn&rsquo;t](#org333259b)
+4.  [Prelude](#orgfde0593)
+5.  [Strategy](#org0997209)
+6.  [Imports and Dependencies](#orgc9aad82)
+7.  [Establishing the Grid](#org5922e95)
+8.  [Making Some Tetrominos](#org245c843)
+9.  [Rotations](#org83389ab)
+10. [Placing Pieces on the Grid](#orgea336bf)
+11. [Representing the Game State](#org2872974)
 
 
-<a id="orgfb2610e"></a>
-
-# TO DO
-
--   [ ] grep for TODO and resolve
--   [ ] adding borders would make this way nicer
--   [ ] figure out colour block display
--   [ ] Figure out ghci :{ :} preamble
--   [ ] Start with the bot and go to user input afterwards; or just stop with the botA
--   [ ] remov dot background and add borders early on
--   [ ] prettier better commented borders
-
-
-<a id="org8629f81"></a>
+<a id="org3fa9784"></a>
 
 # Beginning at the End
 
 ![img](/img/tetriskell.gif)  
 
-This is what we&rsquo;ll build over the course of this post.
+This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org8e9146c"></a>
+<a id="org48cb61c"></a>
 
 # What This Is
 
@@ -56,18 +42,18 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orgc9f3d47"></a>
+<a id="org333259b"></a>
 
 # What This Isn&rsquo;t
 
-I won&rsquo;t touch on package management or project structure - in fact, this post is a literate<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> Haskell file, and the concatenated code blocks (if written to `tetris.hs`) can be run via `runhaskell tetris.hs`. There are plenty of tutorials on package managers like Stack and Cabal, and on general project management out there - for now, all you need is whatever Haskell distribution your machine uses. [GHCup](https://www.haskell.org/ghcup/) is as good a place to start as any. You might already even have `runhaskell` on your machine.
+I won&rsquo;t touch on package management or project structure - in fact, this post is a literate<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> Haskell file, and the concatenated code blocks (if written to `tetris.hs`) can be run via `runhaskell tetris.hs`. There are plenty of tutorials on package managers like Stack and Cabal, and on general project management out there - for now, all you need is whatever Haskell distribution your machine uses. [GHCup](https://www.haskell.org/ghcup/) is as good a place to start as any. You might already even have `runhaskell` on your machine.
 
 We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t use any language extensions.
 
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org75fc51d"></a>
+<a id="orgfde0593"></a>
 
 # Prelude
 
@@ -78,7 +64,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org58e42c9"></a>
+<a id="org0997209"></a>
 
 # Strategy
 
@@ -95,7 +81,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org7a48557"></a>
+<a id="orgc9aad82"></a>
 
 # Imports and Dependencies
 
@@ -112,7 +98,7 @@ If you&rsquo;re following along, you&rsquo;ll want to install them all:
 
 `cabal install --lib base containers random random-shuffle`
 
-Versioning is a whole other topic. We aren&rsquo;t using any unstable features of these packages, so I&rsquo;ve not suggested pinning any particular versions, but just know it&rsquo;s often useful to do so do avoid dependency hell in a real project. A good package manager<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> (Cabal, Stack, Nix, others) will help you here.
+Versioning is a whole other topic. We aren&rsquo;t using any unstable features of these packages, so I&rsquo;ve not suggested pinning any particular versions, but just know it&rsquo;s often useful to do so do avoid dependency hell in a real project. A good package manager<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> (Cabal, Stack, Nix, others) will help you here.
 
 Alright, so say we&rsquo;ve got our `tetris.hs` blank slate. This is going to be a single-file program, so we&rsquo;ll put everything into a monolithic `Main` module. This isn&rsquo;t great practice for serious projects, but for our purposes we can keep everything in `Main`.
 
@@ -127,7 +113,7 @@ module Main where
 :}
 {% endhighlight %}
 
-I&rsquo;ll spell out each import we&rsquo;re using explicitly<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup>:
+I&rsquo;ll spell out each import we&rsquo;re using explicitly<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>:
 
 {% highlight haskell %}
 :{
@@ -193,7 +179,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orga4b5f66"></a>
+<a id="org5922e95"></a>
 
 # Establishing the Grid
 
@@ -270,7 +256,7 @@ mkEmptyGrid width height =
 :}
 {% endhighlight %}
 
-Let&rsquo;s get some output going. We&rsquo;re going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We&rsquo;ll define a `Pretty` typeclass - any type that implements this will be convertable to a nicely formatted `String`<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> which we can later print to the screen<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>.
+Let&rsquo;s get some output going. We&rsquo;re going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We&rsquo;ll define a `Pretty` typeclass - any type that implements this will be convertable to a nicely formatted `String`<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup> which we can later print to the screen<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup>.
 
 Here `a` is a placeholder for the type that will implement the `Pretty` class. We&rsquo;re simply saying that anything prettifiable must define a `pretty` function that spits out a nice `String` representation. Very hand-wavily, Haskell&rsquo;s type signatures are written this way as all functions can be partially applied and are curried by default; for now, a function with a signature of `foo :: a -> b -> c -> d` can be thought of as a three argument function taking an `a`, a `b`, a `c` and returning a `d`.
 
@@ -415,7 +401,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org1c0c921"></a>
+<a id="org245c843"></a>
 
 # Making Some Tetrominos
 
@@ -500,7 +486,7 @@ instance Pretty Piece where
 :}
 {% endhighlight %}
 
-Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell&rsquo;s functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup>
+Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell&rsquo;s functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.<sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup>
 
 Let&rsquo;s see if we got that right by pretty-printing these pieces.
 
@@ -509,7 +495,7 @@ For fun, we&rsquo;ll implement `Monoid` for `Grid`; this just means defining wha
 -   `Sum 2 <> Sum 3 == Sum 5`
 -   `Product 2 <> Product 3 == Product 6`
 
-There&rsquo;s a practical use here; we&rsquo;ll use these `Monoid` instances to compose UI elements like the grid, the next piece preview, and the display of the held piece. When we concatenate two grids along an edge, we&rsquo;ll grow the shorter grid to match it. This is a design choice; if we didn&rsquo;t do this, we&rsquo;d still have a [lawful `Monoid`](https://en.wikibooks.org/wiki/Haskell/Monoids#Monoid_laws)<sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup>, but it wouldn&rsquo;t be as useful for us.
+There&rsquo;s a practical use here; we&rsquo;ll use these `Monoid` instances to compose UI elements like the grid, the next piece preview, and the display of the held piece. When we concatenate two grids along an edge, we&rsquo;ll grow the shorter grid to match it. This is a design choice; if we didn&rsquo;t do this, we&rsquo;d still have a [lawful `Monoid`](https://en.wikibooks.org/wiki/Haskell/Monoids#Monoid_laws)<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>, but it wouldn&rsquo;t be as useful for us.
 
 A detail; a `Semigroup` is something that can be associatively combined - that&rsquo;s where the `<>` comes from (shorthand for `mconcat`). A `Monoid` is a `Semigroup` with an identity element (e.g. the empty grid - something you can combine either on the left or right, and get the same thing back). So to make something a `Monoid`, we first make it a `Semigroup`, then simply define what an empty one looks like. It goes like this:
 
@@ -540,7 +526,7 @@ Then we `M.unionWith` the original grid, copying over its elements.
 
 Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations.
 
-Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
+Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 Let&rsquo;s just test this quickly:
 
@@ -618,44 +604,44 @@ do
 {% endhighlight %}
 
     ┌────────────────────────────┐
+    │         █                  │
+    │ ██  ██  █   █   █  ██   ██ │
+    │ ██  █   █  ███  █   ██ ██  │
+    │     █   █       ██         │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
     │                 █          │
-    │ █   ██  █  ██   █   ██  ██ │
-    │ █   ██ ███  ██  █   █  ██  │
-    │ ██              █   █      │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │     █                      │
-    │██   █   ██  █   ██  ██  █  │
-    │ ██  █  ██  ███  █   ██  █  │
-    │     █           █       ██ │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │ █                          │
-    │ █   █  ██   ██  ██  █   ██ │
-    │ █  ███  ██  ██ ██   █   █  │
-    │ █                   ██  █  │
+    │ ██  ██  █  ██   █   █   ██ │
+    │ ██  █   █   ██  █  ███ ██  │
+    │     █   ██      █          │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │         █                  │
-    │ ██  █   █   █   ██ ██   ██ │
-    │ ██  █   █  ███ ██   ██  █  │
-    │     ██  █               █  │
+    │ █   ██  █   █  ██   ██  ██ │
+    │ █  ██   █  ███  ██  █   ██ │
+    │ ██      █           █      │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │ █                          │
-    │ █   █   ██ ██   ██  █   ██ │
-    │ █   █   ██  ██ ██  ███  █  │
-    │ █   ██                  █  │
+    │ █  ██   ██  ██  █   ██  █  │
+    │ █   ██ ██   ██ ███  █   █  │
+    │ █                   █   ██ │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │                 █          │
+    │ ██  █   ██ ██   █   ██  █  │
+    │██  ███  █   ██  █   ██  █  │
+    │         █       █       ██ │
     └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
 We introduced a number of new concepts here; we secretly entered a monad (`IO`, specifically), enabling the `do`-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we&rsquo;ve been doing this all along with every call to `putStrLn`. We&rsquo;ll get into `IO` more later when we start dealing with user input and multiprocessing.
 
-We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
+We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.10" class="footref" href="#fn.10" role="doc-backlink">10</a></sup>.
 
 
-<a id="orgbf4c9cb"></a>
+<a id="org83389ab"></a>
 
 # Rotations
 
@@ -795,7 +781,7 @@ showRotations rotateCCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="org737c653"></a>
+<a id="orgea336bf"></a>
 
 # Placing Pieces on the Grid
 
@@ -854,7 +840,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org8599dc0"></a>
+<a id="org2872974"></a>
 
 # Representing the Game State
 
@@ -1003,20 +989,22 @@ This is looking a bit like Tetris! We can no longer see the buffer zone at the t
 
 # Footnotes
 
-<sup><a id="fn.1" href="#fnr.1">1</a></sup> Okay, not quite. I&rsquo;m writing this in Emacs, where `org-babel` will run each block in GHCi, a Haskell interpreter, with `set +m` enabled to allow multiline blocks. The whole thing gets compiled to Markdown via `org-jekyll`. The end result is the same, more or less, as writing actual literate code, with some of the advantages of a Jupyter-style workflow.
+<sup><a id="fn.1" href="#fnr.1">1</a></sup> Okay, for now this is actually a version I build ages ago. I&rsquo;m rewriting this from scratch for this post, so ours will look a little different, and hopefully better!
 
-<sup><a id="fn.2" href="#fnr.2">2</a></sup> I use Cabal&rsquo;s Nix integration for anything serious.
+<sup><a id="fn.2" href="#fnr.2">2</a></sup> Okay, not quite. I&rsquo;m writing this in Emacs, where `org-babel` will run each block in GHCi, a Haskell interpreter, with `set +m` enabled to allow multiline blocks. The whole thing gets compiled to Markdown via `org-jekyll`. The end result is the same, more or less, as writing actual literate code, with some of the advantages of a Jupyter-style workflow.
 
-<sup><a id="fn.3" href="#fnr.3">3</a></sup> Also because for whatever reason, I can&rsquo;t get `org-babel` to accept more than one import per code block and I really want to be able to run this entire post as a single notebook-style program.
+<sup><a id="fn.3" href="#fnr.3">3</a></sup> I use Cabal&rsquo;s Nix integration for anything serious.
 
-<sup><a id="fn.4" href="#fnr.4">4</a></sup> You&rsquo;ll typically be recommended to eschew `String` (which is a linked list of characters) for the more efficient `Text` type; we don&rsquo;t need to worry about this for a toy application.
+<sup><a id="fn.4" href="#fnr.4">4</a></sup> Also because for whatever reason, I can&rsquo;t get `org-babel` to accept more than one import per code block and I really want to be able to run this entire post as a single notebook-style program.
 
-<sup><a id="fn.5" href="#fnr.5">5</a></sup> There&rsquo;s already the `Show` typeclass that does exactly this, and which can be automatically derived for many types, but I tend to think of it as for debugging and inspection purposes - I prefer a separate typeclass for representations intended to be user-facing.
+<sup><a id="fn.5" href="#fnr.5">5</a></sup> You&rsquo;ll typically be recommended to eschew `String` (which is a linked list of characters) for the more efficient `Text` type; we don&rsquo;t need to worry about this for a toy application.
 
-<sup><a id="fn.6" href="#fnr.6">6</a></sup> The use of `foldl'` here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don&rsquo;t accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
+<sup><a id="fn.6" href="#fnr.6">6</a></sup> There&rsquo;s already the `Show` typeclass that does exactly this, and which can be automatically derived for many types, but I tend to think of it as for debugging and inspection purposes - I prefer a separate typeclass for representations intended to be user-facing.
 
-<sup><a id="fn.7" href="#fnr.7">7</a></sup> That is, associative, and with a left and right identity (the empty grid in both cases).
+<sup><a id="fn.7" href="#fnr.7">7</a></sup> The use of `foldl'` here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don&rsquo;t accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
 
-<sup><a id="fn.8" href="#fnr.8">8</a></sup> Note that when referring to operators both in code and prose, it&rsquo;s typical to refer to them in parentheses. `(+) 1 2` is the same as `1 + 2`.
+<sup><a id="fn.8" href="#fnr.8">8</a></sup> That is, associative, and with a left and right identity (the empty grid in both cases).
 
-<sup><a id="fn.9" href="#fnr.9">9</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3 f (a, b c) = f a b c` and so on exist but there&rsquo;s no way to write generic `uncurryN` without resorting to `TemplateHaskell` to the best of my knowledge).
+<sup><a id="fn.9" href="#fnr.9">9</a></sup> Note that when referring to operators both in code and prose, it&rsquo;s typical to refer to them in parentheses. `(+) 1 2` is the same as `1 + 2`.
+
+<sup><a id="fn.10" href="#fnr.10">10</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3 f (a, b c) = f a b c` and so on exist but there&rsquo;s no way to write generic `uncurryN` without resorting to `TemplateHaskell` to the best of my knowledge).

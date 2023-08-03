@@ -4,14 +4,11 @@
 #+OPTIONS: toc:t
 
 
-* TO DO
-- [ ] grep for TODO and resolve
-- [ ] adding borders would make this way nicer
-- [ ] figure out colour block display
-- [ ] Figure out ghci :{ :} preamble
-- [ ] Start with the bot and go to user input afterwards; or just stop with the botA
-- [ ] remov dot background and add borders early on
-- [ ] prettier better commented borders
+#+BEGIN_COMMENT
+- Figure out colour block display
+- Figure out preprocessing to remove the ghci :{ :} preamble
+- Start with the bot and go to user input afterwards; or just stop with the botA
+#+END_COMMENT
 
 #+BEGIN_SRC haskell :exports none :results output
 :set prompt-cont ""
@@ -25,7 +22,11 @@
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
 
-This is what we'll build over the course of this post.
+This is what we'll build over the course of this post[fn:gif].
+
+[fn:gif] Okay, for now this is actually a version I build ages ago. I'm rewriting this from scratch for this post, so ours will look a little different, and hopefully better!
+
+
 * What This Is
 This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that's how I first learnt the basics. I'll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.
 
@@ -650,34 +651,34 @@ do
 #+RESULTS:
 #+begin_example
 ┌────────────────────────────┐
-│                     █      │
-│ █   ██  █   ██  ██  █  ██  │
-│ █   █  ███ ██   ██  █   ██ │
-│ ██  █               █      │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                     █      │
-│██   ██  █   █   ██  █   ██ │
-│ ██  ██  █  ███ ██   █   █  │
-│         ██          █   █  │
-└────────────────────────────┘
-┌────────────────────────────┐
-│         █                  │
-│ ██ ██   █   ██  █   █   ██ │
-│██   ██  █   ██  █  ███  █  │
-│         █       ██      █  │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                         █  │
-│ ██ ██   ██  █   ██  █   █  │
-│ █   ██  ██  █  ██  ███  █  │
-│ █           ██          █  │
-└────────────────────────────┘
-┌────────────────────────────┐
-│ █                          │
-│ █  ██   █   ██  █   ██  ██ │
-│ █   ██ ███  █   █   ██ ██  │
+│             █              │
+│ ██  ██  ██  █   █  ██   █  │
+│ █   ██ ██   █   █   ██ ███ │
 │ █           █   ██         │
+└────────────────────────────┘
+┌────────────────────────────┐
+│                     █      │
+│██   █   ██  █   ██  █   ██ │
+│ ██  █  ██  ███  ██  █   █  │
+│     ██              █   █  │
+└────────────────────────────┘
+┌────────────────────────────┐
+│             █              │
+│ ██  ██  █   █  ██   █   ██ │
+│ █  ██  ███  █   ██  █   ██ │
+│ █           █       ██     │
+└────────────────────────────┘
+┌────────────────────────────┐
+│             █              │
+│ ██  ██  █   █   ██ ██   █  │
+│ ██  █  ███  █  ██   ██  █  │
+│     █       █           ██ │
+└────────────────────────────┘
+┌────────────────────────────┐
+│                 █          │
+│ █   ██  █   ██  █   ██ ██  │
+│███  █   █   ██  █  ██   ██ │
+│     █   ██      █          │
 └────────────────────────────┘
 #+end_example
 
@@ -687,7 +688,7 @@ We introduced a number of new concepts here; we secretly entered a monad (~IO~, 
 
 We also introduced ~uncurry~ - we wanted to pass the tuples of form ~f (1, batch1)~ we'd created via ~zip~ into a function that wanted arguments ~f 1 batch1~ - ~uncurry~ will convert a function that wants two arguments into a function that wants a tuple of those two arguments[fn:uncurry].
 
-[fn:uncurry] It gets more complex when you're dealing with more arguments (~uncurry3 f (a, b c) = f a b c~ and so on exist but there's no way to write generic ~uncurryN~ without resorting to ~TemplateHaskell~ to the best of my knowledge).
+[fn:uncurry] It gets more complex when you're dealing with more arguments - ~uncurry3 f (a, b c) = f a b c~ and so on exist but there's no way to write generic ~uncurryN~ without resorting to ~TemplateHaskell~ to the best of my knowledge. Tweet at me if I'm wrong please.
 
 
 * Rotations
