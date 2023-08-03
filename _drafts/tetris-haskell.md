@@ -9,21 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#org2068d58)
-2.  [Beginning at the End](#org1a36eeb)
-3.  [What This Is](#org4c7c0a8)
-4.  [What This Isn&rsquo;t](#org1a747bc)
-5.  [Prelude](#orgcbc9011)
-6.  [Strategy](#org1423bec)
-7.  [Imports and Dependencies](#orgc8723ef)
-8.  [Establishing the Grid](#orgc0e9c0a)
-9.  [Making Some Tetrominos](#org5730a41)
-10. [Rotations](#org8150a8b)
-11. [Placing Pieces on the Grid](#org04f84a5)
-12. [Representing the Game State](#orgdee68e6)
+1.  [TO DO](#orgaf4afab)
+2.  [Beginning at the End](#org465d3ad)
+3.  [What This Is](#org190d920)
+4.  [What This Isn&rsquo;t](#org4465be9)
+5.  [Prelude](#org6d63cf8)
+6.  [Strategy](#orgae892e1)
+7.  [Imports and Dependencies](#org3b46673)
+8.  [Establishing the Grid](#org2bbf87f)
+9.  [Making Some Tetrominos](#org41c808e)
+10. [Rotations](#org3cfd799)
+11. [Placing Pieces on the Grid](#orgcf76bda)
+12. [Representing the Game State](#orgfcbdff9)
 
 
-<a id="org2068d58"></a>
+<a id="orgaf4afab"></a>
 
 # TO DO
 
@@ -36,7 +36,7 @@ tags:
 -   [ ] prettier better commented borders
 
 
-<a id="org1a36eeb"></a>
+<a id="org465d3ad"></a>
 
 # Beginning at the End
 
@@ -45,7 +45,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org4c7c0a8"></a>
+<a id="org190d920"></a>
 
 # What This Is
 
@@ -56,7 +56,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org1a747bc"></a>
+<a id="org4465be9"></a>
 
 # What This Isn&rsquo;t
 
@@ -67,7 +67,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="orgcbc9011"></a>
+<a id="org6d63cf8"></a>
 
 # Prelude
 
@@ -78,7 +78,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org1423bec"></a>
+<a id="orgae892e1"></a>
 
 # Strategy
 
@@ -95,7 +95,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgc8723ef"></a>
+<a id="org3b46673"></a>
 
 # Imports and Dependencies
 
@@ -193,7 +193,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orgc0e9c0a"></a>
+<a id="org2bbf87f"></a>
 
 # Establishing the Grid
 
@@ -320,23 +320,25 @@ class Borderable a where
 
 instance Borderable Grid where
   withBorder (Grid width height grid) =
+    -- Create a new Grid with enough room for the UI elements
     Grid (width + 2) (height + 2)
       (grid
-      & M.mapKeys (first (+1) . second (+1))
+      & M.mapKeys (first (+1) . second (+1))  -- Shift every coordinate by (+1, +1)
+      -- Then we insert the elements using the helpers below
       & withLeftBorder
       & withRightBorder
       & withTopBorder
       & withBottomBorder
       & withCorners)
     where
-      withLeftBorder = M.union (M.fromList [((0, y), BlockChar Black '│')
-                                          | y <- [0 .. height + 1]])
-      withRightBorder = M.union (M.fromList [((width + 1, y), BlockChar Black '│')
-                                          | y <- [0 .. height + 1]])
-      withTopBorder = M.union (M.fromList [((x, 0), BlockChar Black '─')
-                                          | x <- [0 .. width + 1]])
-      withBottomBorder = M.union (M.fromList [((x, height + 1), BlockChar Black '─')
-                                              | x <- [0 .. width + 1]])
+      -- First a helper to insert black characters at the given coordinates
+      insertBlackChars char coordinates =
+        M.union (M.fromList (zip coordinates (repeat (BlockChar Black char))))
+      -- And now we use this over the four sides of the grid and the corner pieces.
+      withLeftBorder = insertBlackChars '│' [(0, y) | y <- [0 .. height + 1]]
+      withRightBorder = insertBlackChars '│' [(width + 1, y) | y <- [0 .. height + 1]]
+      withTopBorder = insertBlackChars '─' [(x, 0) | x <- [0 .. width + 1]]
+      withBottomBorder = insertBlackChars '─' [(x, height + 1) | x <- [0 .. width + 1]]
       withCorners = M.insert (0, 0) (BlockChar Black '┌')
                   . M.insert (width + 1, 0) (BlockChar Black '┐')
                   . M.insert (0, height + 1) (BlockChar Black '└')
@@ -413,7 +415,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org5730a41"></a>
+<a id="org41c808e"></a>
 
 # Making Some Tetrominos
 
@@ -513,9 +515,13 @@ A detail; a `Semigroup` is something that can be associatively combined - that&r
 
 {% highlight haskell %}
 :{
+-- This wrapper will represent the stitching of grids along the horizontal side.
+-- That is, grid B is placed underneath grid A
 newtype HGrid = HGrid { unHGrid :: Grid }
 
 instance Semigroup HGrid where
+  -- First we make a new empty grid with the correct dimensions
+  -- Then we stitch the first grid with the second shifted down by the height of the first
   (HGrid (Grid widthA heightA gridA)) <> (HGrid (Grid widthB heightB gridB)) =
     let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
         combinedGrid = grid
@@ -536,6 +542,28 @@ Finally, we copy over the second grid - but this time, we increase all y-coordin
 
 Note that we use backticks to inline the function, since it&rsquo;s kind of standing in place of the `fmap` operator `(<$>)`<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>.
 
+Let&rsquo;s just test this quickly:
+
+{% highlight haskell %}
+:{
+putStrLn . pretty . unHGrid $
+  HGrid (withBorder $ mkPieceGrid pieceL) <> HGrid (withBorder $ mkPieceGrid pieceR)
+:}
+{% endhighlight %}
+
+    ┌────┐
+    │    │
+    │ █  │
+    │ █  │
+    │ ██ │
+    └────┘
+    ┌────┐
+    │    │
+    │ ██ │
+    │ █  │
+    │ █  │
+    └────┘
+
 Now the same for the `VGrid`:
 
 {% highlight haskell %}
@@ -554,6 +582,22 @@ instance Monoid VGrid where
   mempty = VGrid $ mkEmptyGrid 0 0
 :}
 {% endhighlight %}
+
+Again, always worth testing:
+
+{% highlight haskell %}
+:{
+putStrLn . pretty . unVGrid $
+  VGrid (withBorder $ mkPieceGrid pieceL) <> VGrid (withBorder $ mkPieceGrid pieceR)
+:}
+{% endhighlight %}
+
+    ┌────┐┌────┐
+    │    ││    │
+    │ █  ││ ██ │
+    │ █  ││ █  │
+    │ ██ ││ █  │
+    └────┘└────┘
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -574,34 +618,34 @@ do
 {% endhighlight %}
 
     ┌────────────────────────────┐
-    │     █                      │
-    │██   █   █   ██  ██  ██  █  │
-    │ ██  █   █   █  ██   ██ ███ │
-    │     █   ██  █              │
+    │             █              │
+    │██   ██  ██  █   █   ██  █  │
+    │ ██  ██  █   █   █  ██  ███ │
+    │         █   █   ██         │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │ █                          │
-    │ █   ██ ██   █   ██  ██  █  │
-    │ █  ██   ██ ███  █   ██  █  │
-    │ █               █       ██ │
+    │             █              │
+    │ █   ██  ██  █  ██   █   ██ │
+    │ █   ██ ██   █   ██ ███  █  │
+    │ ██          █           █  │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │                 █          │
-    │██   ██  █   ██  █   █   ██ │
-    │ ██  █   █   ██  █  ███ ██  │
-    │     █   ██      █          │
+    │ ██  █   ██ ██   █   █   ██ │
+    │ █  ███  ██  ██  █   █  ██  │
+    │ █               █   ██     │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │                 █          │
+    │ █   ██  █  ██   █   ██  ██ │
+    │ █   ██ ███  ██  █  ██   █  │
+    │ ██              █       █  │
     └────────────────────────────┘
     ┌────────────────────────────┐
     │             █              │
-    │██   ██  █   █   █   ██  ██ │
-    │ ██  ██ ███  █   █  ██   █  │
-    │             █   ██      █  │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │             █              │
-    │ █   ██  ██  █  ██   ██  █  │
-    │ █  ██   █   █   ██  ██ ███ │
-    │ ██      █   █              │
+    │██   █   █   █   ██  ██  ██ │
+    │ ██  █  ███  █  ██   ██  █  │
+    │     ██      █           █  │
     └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -611,7 +655,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="org8150a8b"></a>
+<a id="org3cfd799"></a>
 
 # Rotations
 
@@ -624,23 +668,23 @@ rotateCW :: Piece -> Piece
 rotateCW (Piece colour coordinates) =
   Piece colour $ (\(x, y) -> (3 - y, x)) <$> coordinates
 
--- Lol. Lmao even.
+-- Lol. Lmao even. But it works.
 rotateCCW :: Piece -> Piece
 rotateCCW = rotateCW . rotateCW . rotateCW
 :}
 {% endhighlight %}
 
-Let&rsquo;s take a look at these rotations with a helper:
+Let&rsquo;s take a look at these rotations with a helper - the lambda syntax used here twice nested makes e.g. `(\a b -> a + b)` equivalent to `(+)`.
 
 {% highlight haskell %}
 :{
-showRotations rotate =
+showRotations rotateFn =
     forM_ allPieces
     $ (\piece ->
             putStrLn
             . pretty
             . (\ps -> mconcat (take 4 ps) & unVGrid & withBorder)
-            $ VGrid . mkPieceGrid <$> iterate rotate piece)
+            $ VGrid . mkPieceGrid <$> iterate rotateFn piece)
 :}
 {% endhighlight %}
 
@@ -748,10 +792,10 @@ showRotations rotateCCW
     │ █        █     │
     └────────────────┘
 
-I&rsquo;m almsot sure it&rsquo;s not **Regulation**, but it&rsquo;ll do.
+I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="org04f84a5"></a>
+<a id="orgcf76bda"></a>
 
 # Placing Pieces on the Grid
 
@@ -776,17 +820,41 @@ And let&rsquo;s test this, as ever:
 
 {% highlight haskell %}
 :{
-putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
+putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 :}
 {% endhighlight %}
 
-    ██    
-       ██
+    ┌──────────┐
+    │          │
+    │          │
+    │    ██    │
+    │   ██     │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    └──────────┘
 
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgdee68e6"></a>
+<a id="orgfcbdff9"></a>
 
 # Representing the Game State
 
@@ -840,29 +908,37 @@ instance Pretty HGrid where
     pretty (HGrid grid) = pretty grid
 
 -- Turn a string into a grid for composability
--- Only supports single lines.
+-- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
 sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
 
+-- Let's make a helper to hide the buffer zone.
+hideBuffer :: Grid -> Grid
+hideBuffer (Grid width height fullGrid) =
+  Grid width (height - 4) $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
--- TODO: comment line by line
 instance Pretty Game where
   pretty game =
-    let (Grid width height fullGrid) = grid game
-        -- Drop the first four lines to hide the buffer zone
-        -- TODO: actually hide the buffer zone
-        grid' = (Grid width height fullGrid)
+    let -- Let's add a label at the top to display the score.
         scoreGrid = withBorder . HGrid . sToG $ "Score: " <> show (score game)
-        lhs = withBorder . VGrid $ grid' & withPiece (currentPiece game)
+        -- Now the left hand side; the grid with the current piece, but the top four lines hidden.
+        lhs = withBorder . VGrid . hideBuffer $ grid game & withPiece (currentPiece game)
+        -- Create a preview with a label above it showing the next piece
         nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
-        held = HGrid (sToG "Held:") <> (HGrid $ case heldPiece game of
-                 Nothing -> mkEmptyGrid 4 4
-                 Just piece -> mkPieceGrid piece)
+        -- Now we show the held piece; it might not exist, so we need to handle that case.
+        held = HGrid (sToG "Held:") <>
+               (HGrid $ case heldPiece game of
+                          Nothing -> mkEmptyGrid 4 4
+                          Just piece -> mkPieceGrid piece)
+        -- To construct the RHS we can just add borders and mconcat them with <>
         rhs = withBorder nextPiece <> withBorder held
+        -- It's a little clumsy to stitch an HGrid and VGrid, but it works.
         playArea = HGrid . unVGrid $ lhs <> VGrid (unHGrid rhs)
-        withScore = scoreGrid <> playArea
-     in pretty withScore
+        -- Finally, we can stitch it all together
+        gameInterface = scoreGrid <> playArea
+     in pretty gameInterface
 :}
 {% endhighlight %}
 
@@ -883,8 +959,8 @@ do
     ┌──────────┐┌─────┐
     │          ││Next:│
     │          ││     │
-    │    ██    ││ ██  │
-    │   ██     ││ ██  │
+    │          ││ █   │
+    │          ││███  │
     │          ││     │
     │          │└─────┘
     │          │┌─────┐
@@ -894,10 +970,6 @@ do
     │          ││ ██  │
     │          ││     │
     │          │└─────┘
-    │          │       
-    │          │       
-    │          │       
-    │          │       
     │          │       
     │          │       
     │          │       

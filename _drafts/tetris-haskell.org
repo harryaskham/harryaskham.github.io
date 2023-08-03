@@ -324,23 +324,25 @@ class Borderable a where
 
 instance Borderable Grid where
   withBorder (Grid width height grid) =
+    -- Create a new Grid with enough room for the UI elements
     Grid (width + 2) (height + 2)
       (grid
-      & M.mapKeys (first (+1) . second (+1))
+      & M.mapKeys (first (+1) . second (+1))  -- Shift every coordinate by (+1, +1)
+      -- Then we insert the elements using the helpers below
       & withLeftBorder
       & withRightBorder
       & withTopBorder
       & withBottomBorder
       & withCorners)
     where
-      withLeftBorder = M.union (M.fromList [((0, y), BlockChar Black '│')
-                                          | y <- [0 .. height + 1]])
-      withRightBorder = M.union (M.fromList [((width + 1, y), BlockChar Black '│')
-                                          | y <- [0 .. height + 1]])
-      withTopBorder = M.union (M.fromList [((x, 0), BlockChar Black '─')
-                                          | x <- [0 .. width + 1]])
-      withBottomBorder = M.union (M.fromList [((x, height + 1), BlockChar Black '─')
-                                              | x <- [0 .. width + 1]])
+      -- First a helper to insert black characters at the given coordinates
+      insertBlackChars char coordinates =
+        M.union (M.fromList (zip coordinates (repeat (BlockChar Black char))))
+      -- And now we use this over the four sides of the grid and the corner pieces.
+      withLeftBorder = insertBlackChars '│' [(0, y) | y <- [0 .. height + 1]]
+      withRightBorder = insertBlackChars '│' [(width + 1, y) | y <- [0 .. height + 1]]
+      withTopBorder = insertBlackChars '─' [(x, 0) | x <- [0 .. width + 1]]
+      withBottomBorder = insertBlackChars '─' [(x, height + 1) | x <- [0 .. width + 1]]
       withCorners = M.insert (0, 0) (BlockChar Black '┌')
                   . M.insert (width + 1, 0) (BlockChar Black '┐')
                   . M.insert (0, height + 1) (BlockChar Black '└')
@@ -532,9 +534,13 @@ A detail; a ~Semigroup~ is something that can be associatively combined - that's
 
 #+BEGIN_SRC haskell :exports both
 :{
+-- This wrapper will represent the stitching of grids along the horizontal side.
+-- That is, grid B is placed underneath grid A
 newtype HGrid = HGrid { unHGrid :: Grid }
 
 instance Semigroup HGrid where
+  -- First we make a new empty grid with the correct dimensions
+  -- Then we stitch the first grid with the second shifted down by the height of the first
   (HGrid (Grid widthA heightA gridA)) <> (HGrid (Grid widthB heightB gridB)) =
     let (Grid width height grid) = mkEmptyGrid (max widthA widthB) (heightA + heightB)
         combinedGrid = grid
@@ -560,6 +566,31 @@ Note that we use backticks to inline the function, since it's kind of standing i
 [fn:operator] Note that when referring to operators both in code and prose, it's typical to refer to them in parentheses. ~(+) 1 2~ is the same as ~1 + 2~.
 
 
+Let's just test this quickly:
+
+#+BEGIN_SRC haskell :exports both
+:{
+putStrLn . pretty . unHGrid $
+  HGrid (withBorder $ mkPieceGrid pieceL) <> HGrid (withBorder $ mkPieceGrid pieceR)
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+┌────┐
+│    │
+│ █  │
+│ █  │
+│ ██ │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│ █  │
+│ █  │
+└────┘
+#+end_example
+
 Now the same for the ~VGrid~:
 
 #+BEGIN_SRC haskell :exports both
@@ -580,6 +611,23 @@ instance Monoid VGrid where
 #+END_SRC
 
 #+RESULTS:
+
+Again, always worth testing:
+
+#+BEGIN_SRC haskell :exports both
+:{
+putStrLn . pretty . unVGrid $
+  VGrid (withBorder $ mkPieceGrid pieceL) <> VGrid (withBorder $ mkPieceGrid pieceR)
+:}
+#+END_SRC
+
+#+RESULTS:
+: ┌────┐┌────┐
+: │    ││    │
+: │ █  ││ ██ │
+: │ █  ││ █  │
+: │ ██ ││ █  │
+: └────┘└────┘
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -602,34 +650,34 @@ do
 #+RESULTS:
 #+begin_example
 ┌────────────────────────────┐
-│                 █          │
-│ ██ ██   ██  █   █   ██  █  │
-│ █   ██  ██  █   █  ██  ███ │
-│ █           ██  █          │
-└────────────────────────────┘
-┌────────────────────────────┐
-│         █                  │
-│ ██ ██   █   █   ██  █   ██ │
-│██   ██  █   █   ██ ███  █  │
-│         █   ██          █  │
-└────────────────────────────┘
-┌────────────────────────────┐
-│         █                  │
-│ ██  ██  █   █   █   ██ ██  │
-│ ██ ██   █   █  ███  █   ██ │
-│         █   ██      █      │
-└────────────────────────────┘
-┌────────────────────────────┐
 │                         █  │
-│ ██ ██   █   ██  █   ██  █  │
-│ ██  ██  █  ██  ███  █   █  │
-│         ██          █   █  │
+│██   ██  ██  ██  █   █   █  │
+│ ██  ██ ██   █   █  ███  █  │
+│             █   ██      █  │
 └────────────────────────────┘
 ┌────────────────────────────┐
 │ █                          │
-│ █   ██  █   ██  ██  █  ██  │
-│ █  ██  ███  █   ██  █   ██ │
-│ █           █       ██     │
+│ █  ██   █   █   ██  ██  ██ │
+│ █   ██  █  ███  █   ██ ██  │
+│ █       ██      █          │
+└────────────────────────────┘
+┌────────────────────────────┐
+│                 █          │
+│ █  ██   ██  ██  █   █   ██ │
+│███  ██ ██   █   █   █   ██ │
+│             █   █   ██     │
+└────────────────────────────┘
+┌────────────────────────────┐
+│                 █          │
+│ ██  █   █   ██  █  ██   ██ │
+│ █   █  ███  ██  █   ██ ██  │
+│ █   ██          █          │
+└────────────────────────────┘
+┌────────────────────────────┐
+│                         █  │
+│██   ██  █   ██  ██  █   █  │
+│ ██ ██  ███  █   ██  █   █  │
+│             █       ██  █  │
 └────────────────────────────┘
 #+end_example
 
@@ -653,7 +701,7 @@ rotateCW :: Piece -> Piece
 rotateCW (Piece colour coordinates) =
   Piece colour $ (\(x, y) -> (3 - y, x)) <$> coordinates
 
--- Lol. Lmao even.
+-- Lol. Lmao even. But it works.
 rotateCCW :: Piece -> Piece
 rotateCCW = rotateCW . rotateCW . rotateCW
 :}
@@ -661,17 +709,17 @@ rotateCCW = rotateCW . rotateCW . rotateCW
 
 #+RESULTS:
 
-Let's take a look at these rotations with a helper:
+Let's take a look at these rotations with a helper - the lambda syntax used here twice nested makes e.g. ~(\a b -> a + b)~ equivalent to ~(+)~.
 
 #+BEGIN_SRC haskell :exports both
 :{
-showRotations rotate =
+showRotations rotateFn =
     forM_ allPieces
     $ (\piece ->
             putStrLn
             . pretty
             . (\ps -> mconcat (take 4 ps) & unVGrid & withBorder)
-            $ VGrid . mkPieceGrid <$> iterate rotate piece)
+            $ VGrid . mkPieceGrid <$> iterate rotateFn piece)
 :}
 #+END_SRC
 
@@ -788,7 +836,7 @@ showRotations rotateCCW
 └────────────────┘
 #+end_example
 
-I'm almsot sure it's not *Regulation*, but it'll do.
+I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
 
 * Placing Pieces on the Grid
 Let's start by placing a piece in that buffer zone at the top of the grid (which we'll eventually hide).
@@ -814,13 +862,39 @@ And let's test this, as ever:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn . pretty $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
+putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
 :}
 #+END_SRC
 
 #+RESULTS:
-: ██
-:    ██
+#+begin_example
+┌──────────┐
+│          │
+│          │
+│    ██    │
+│   ██     │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+└──────────┘
+#+end_example
 
 Looks solid - one step of gravity after this, and the piece will become visible.
 
@@ -878,29 +952,37 @@ instance Pretty HGrid where
     pretty (HGrid grid) = pretty grid
 
 -- Turn a string into a grid for composability
--- Only supports single lines.
+-- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
 sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
 
+-- Let's make a helper to hide the buffer zone.
+hideBuffer :: Grid -> Grid
+hideBuffer (Grid width height fullGrid) =
+  Grid width (height - 4) $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
--- TODO: comment line by line
 instance Pretty Game where
   pretty game =
-    let (Grid width height fullGrid) = grid game
-        -- Drop the first four lines to hide the buffer zone
-        -- TODO: actually hide the buffer zone
-        grid' = (Grid width height fullGrid)
+    let -- Let's add a label at the top to display the score.
         scoreGrid = withBorder . HGrid . sToG $ "Score: " <> show (score game)
-        lhs = withBorder . VGrid $ grid' & withPiece (currentPiece game)
+        -- Now the left hand side; the grid with the current piece, but the top four lines hidden.
+        lhs = withBorder . VGrid . hideBuffer $ grid game & withPiece (currentPiece game)
+        -- Create a preview with a label above it showing the next piece
         nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
-        held = HGrid (sToG "Held:") <> (HGrid $ case heldPiece game of
-                 Nothing -> mkEmptyGrid 4 4
-                 Just piece -> mkPieceGrid piece)
+        -- Now we show the held piece; it might not exist, so we need to handle that case.
+        held = HGrid (sToG "Held:") <>
+               (HGrid $ case heldPiece game of
+                          Nothing -> mkEmptyGrid 4 4
+                          Just piece -> mkPieceGrid piece)
+        -- To construct the RHS we can just add borders and mconcat them with <>
         rhs = withBorder nextPiece <> withBorder held
+        -- It's a little clumsy to stitch an HGrid and VGrid, but it works.
         playArea = HGrid . unVGrid $ lhs <> VGrid (unHGrid rhs)
-        withScore = scoreGrid <> playArea
-     in pretty withScore
+        -- Finally, we can stitch it all together
+        gameInterface = scoreGrid <> playArea
+     in pretty gameInterface
 :}
 #+END_SRC
 
@@ -926,9 +1008,9 @@ do
 ┌──────────┐┌─────┐
 │          ││Next:│
 │          ││     │
-│    █     ││ ██  │
-│   ███    ││██   │
-│          ││     │
+│          ││ █   │
+│          ││ █   │
+│          ││ ██  │
 │          │└─────┘
 │          │┌─────┐
 │          ││Held:│
@@ -944,11 +1026,7 @@ do
 │          │
 │          │
 │          │
-│          │
-│          │
-│          │
-│          │
 └──────────┘
 #+end_example
 
-We can see the buffer zone at the top with the falling piece, the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
+We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
