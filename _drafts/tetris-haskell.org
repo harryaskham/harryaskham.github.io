@@ -146,7 +146,7 @@ import Data.Function ((&))
 #+BEGIN_SRC haskell :exports code
 :{
 -- Provides access to system pseudorandomness and control over setting random seeds.
-import System.Random (RandomGen, split, newStdGen, getStdGen)
+import System.Random (RandomGen, split, newStdGen, getStdGen, mkStdGen)
 :}
 #+END_SRC
 
@@ -650,34 +650,34 @@ do
 #+RESULTS:
 #+begin_example
 ┌────────────────────────────┐
+│                     █      │
+│ █   ██  █   ██  ██  █  ██  │
+│ █   █  ███ ██   ██  █   ██ │
+│ ██  █               █      │
+└────────────────────────────┘
+┌────────────────────────────┐
+│                     █      │
+│██   ██  █   █   ██  █   ██ │
+│ ██  ██  █  ███ ██   █   █  │
+│         ██          █   █  │
+└────────────────────────────┘
+┌────────────────────────────┐
+│         █                  │
+│ ██ ██   █   ██  █   █   ██ │
+│██   ██  █   ██  █  ███  █  │
+│         █       ██      █  │
+└────────────────────────────┘
+┌────────────────────────────┐
 │                         █  │
-│██   ██  ██  ██  █   █   █  │
-│ ██  ██ ██   █   █  ███  █  │
-│             █   ██      █  │
+│ ██ ██   ██  █   ██  █   █  │
+│ █   ██  ██  █  ██  ███  █  │
+│ █           ██          █  │
 └────────────────────────────┘
 ┌────────────────────────────┐
 │ █                          │
-│ █  ██   █   █   ██  ██  ██ │
-│ █   ██  █  ███  █   ██ ██  │
-│ █       ██      █          │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                 █          │
-│ █  ██   ██  ██  █   █   ██ │
-│███  ██ ██   █   █   █   ██ │
-│             █   █   ██     │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                 █          │
-│ ██  █   █   ██  █  ██   ██ │
-│ █   █  ███  ██  █   ██ ██  │
-│ █   ██          █          │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                         █  │
-│██   ██  █   ██  ██  █   █  │
-│ ██ ██  ███  █   ██  █   █  │
-│             █       ██  █  │
+│ █  ██   █   ██  █   ██  ██ │
+│ █   ██ ███  █   █   ██ ██  │
+│ █           █   ██         │
 └────────────────────────────┘
 #+end_example
 
@@ -950,17 +950,41 @@ instance Pretty VGrid where
 
 instance Pretty HGrid where
     pretty (HGrid grid) = pretty grid
+:}
+#+END_SRC
 
+#+RESULTS:
+
+We'll need a way of adding string labels to our UI:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- Turn a string into a grid for composability
 -- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
 sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
+:}
+#+END_SRC
 
+#+RESULTS:
+
+And a way of hiding the buffer zone:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- Let's make a helper to hide the buffer zone.
 hideBuffer :: Grid -> Grid
 hideBuffer (Grid width height fullGrid) =
   Grid width (height - 4) $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+:}
+#+END_SRC
 
+#+RESULTS:
+
+Now finally we can put it all together:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
 instance Pretty Game where
@@ -994,7 +1018,9 @@ We can preview this as so:
 #+BEGIN_SRC haskell :exports both
 :{
 do
-  g <- newStdGen
+  -- g <- newStdGen -- This would be system-random; for now we'll set a seed
+  let g = mkStdGen 42 -- This sets our random seed.
+  -- Create a new Game with one of its records set so we have a held piece to show
   let game = (mkGame g) {heldPiece = Just pieceSquare}
   putStrLn (pretty game)
 :}
@@ -1008,9 +1034,9 @@ do
 ┌──────────┐┌─────┐
 │          ││Next:│
 │          ││     │
-│          ││ █   │
-│          ││ █   │
 │          ││ ██  │
+│          ││ █   │
+│          ││ █   │
 │          │└─────┘
 │          │┌─────┐
 │          ││Held:│
@@ -1029,4 +1055,4 @@ do
 └──────────┘
 #+end_example
 
-We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
+This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.

@@ -9,21 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [TO DO](#orgaf4afab)
-2.  [Beginning at the End](#org465d3ad)
-3.  [What This Is](#org190d920)
-4.  [What This Isn&rsquo;t](#org4465be9)
-5.  [Prelude](#org6d63cf8)
-6.  [Strategy](#orgae892e1)
-7.  [Imports and Dependencies](#org3b46673)
-8.  [Establishing the Grid](#org2bbf87f)
-9.  [Making Some Tetrominos](#org41c808e)
-10. [Rotations](#org3cfd799)
-11. [Placing Pieces on the Grid](#orgcf76bda)
-12. [Representing the Game State](#orgfcbdff9)
+1.  [TO DO](#orgfb2610e)
+2.  [Beginning at the End](#org8629f81)
+3.  [What This Is](#org8e9146c)
+4.  [What This Isn&rsquo;t](#orgc9f3d47)
+5.  [Prelude](#org75fc51d)
+6.  [Strategy](#org58e42c9)
+7.  [Imports and Dependencies](#org7a48557)
+8.  [Establishing the Grid](#orga4b5f66)
+9.  [Making Some Tetrominos](#org1c0c921)
+10. [Rotations](#orgbf4c9cb)
+11. [Placing Pieces on the Grid](#org737c653)
+12. [Representing the Game State](#org8599dc0)
 
 
-<a id="orgaf4afab"></a>
+<a id="orgfb2610e"></a>
 
 # TO DO
 
@@ -36,7 +36,7 @@ tags:
 -   [ ] prettier better commented borders
 
 
-<a id="org465d3ad"></a>
+<a id="org8629f81"></a>
 
 # Beginning at the End
 
@@ -45,7 +45,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post.
 
 
-<a id="org190d920"></a>
+<a id="org8e9146c"></a>
 
 # What This Is
 
@@ -56,7 +56,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org4465be9"></a>
+<a id="orgc9f3d47"></a>
 
 # What This Isn&rsquo;t
 
@@ -67,7 +67,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
 
 
-<a id="org6d63cf8"></a>
+<a id="org75fc51d"></a>
 
 # Prelude
 
@@ -78,7 +78,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgae892e1"></a>
+<a id="org58e42c9"></a>
 
 # Strategy
 
@@ -95,7 +95,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org3b46673"></a>
+<a id="org7a48557"></a>
 
 # Imports and Dependencies
 
@@ -165,7 +165,7 @@ import Data.Function ((&))
 {% highlight haskell %}
 :{
 -- Provides access to system pseudorandomness and control over setting random seeds.
-import System.Random (RandomGen, split, newStdGen, getStdGen)
+import System.Random (RandomGen, split, newStdGen, getStdGen, mkStdGen)
 :}
 {% endhighlight %}
 
@@ -193,7 +193,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org2bbf87f"></a>
+<a id="orga4b5f66"></a>
 
 # Establishing the Grid
 
@@ -415,7 +415,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org41c808e"></a>
+<a id="org1c0c921"></a>
 
 # Making Some Tetrominos
 
@@ -618,34 +618,34 @@ do
 {% endhighlight %}
 
     ┌────────────────────────────┐
-    │             █              │
-    │██   ██  ██  █   █   ██  █  │
-    │ ██  ██  █   █   █  ██  ███ │
-    │         █   █   ██         │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │             █              │
-    │ █   ██  ██  █  ██   █   ██ │
-    │ █   ██ ██   █   ██ ███  █  │
-    │ ██          █           █  │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
-    │                 █          │
-    │ ██  █   ██ ██   █   █   ██ │
-    │ █  ███  ██  ██  █   █  ██  │
-    │ █               █   ██     │
-    └────────────────────────────┘
-    ┌────────────────────────────┐
     │                 █          │
     │ █   ██  █  ██   █   ██  ██ │
-    │ █   ██ ███  ██  █  ██   █  │
-    │ ██              █       █  │
+    │ █   ██ ███  ██  █   █  ██  │
+    │ ██              █   █      │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │             █              │
-    │██   █   █   █   ██  ██  ██ │
-    │ ██  █  ███  █  ██   ██  █  │
-    │     ██      █           █  │
+    │     █                      │
+    │██   █   ██  █   ██  ██  █  │
+    │ ██  █  ██  ███  █   ██  █  │
+    │     █           █       ██ │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │ █                          │
+    │ █   █  ██   ██  ██  █   ██ │
+    │ █  ███  ██  ██ ██   █   █  │
+    │ █                   ██  █  │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │         █                  │
+    │ ██  █   █   █   ██ ██   ██ │
+    │ ██  █   █  ███ ██   ██  █  │
+    │     ██  █               █  │
+    └────────────────────────────┘
+    ┌────────────────────────────┐
+    │ █                          │
+    │ █   █   ██ ██   ██  █   ██ │
+    │ █   █   ██  ██ ██  ███  █  │
+    │ █   ██                  █  │
     └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -655,7 +655,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>.
 
 
-<a id="org3cfd799"></a>
+<a id="orgbf4c9cb"></a>
 
 # Rotations
 
@@ -795,7 +795,7 @@ showRotations rotateCCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="orgcf76bda"></a>
+<a id="org737c653"></a>
 
 # Placing Pieces on the Grid
 
@@ -854,7 +854,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgfcbdff9"></a>
+<a id="org8599dc0"></a>
 
 # Representing the Game State
 
@@ -906,17 +906,35 @@ instance Pretty VGrid where
 
 instance Pretty HGrid where
     pretty (HGrid grid) = pretty grid
+:}
+{% endhighlight %}
 
+We&rsquo;ll need a way of adding string labels to our UI:
+
+{% highlight haskell %}
+:{
 -- Turn a string into a grid for composability
 -- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
 sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
+:}
+{% endhighlight %}
 
+And a way of hiding the buffer zone:
+
+{% highlight haskell %}
+:{
 -- Let's make a helper to hide the buffer zone.
 hideBuffer :: Grid -> Grid
 hideBuffer (Grid width height fullGrid) =
   Grid width (height - 4) $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+:}
+{% endhighlight %}
 
+Now finally we can put it all together:
+
+{% highlight haskell %}
+:{
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
 instance Pretty Game where
@@ -947,7 +965,9 @@ We can preview this as so:
 {% highlight haskell %}
 :{
 do
-  g <- newStdGen
+  -- g <- newStdGen -- This would be system-random; for now we'll set a seed
+  let g = mkStdGen 42 -- This sets our random seed.
+  -- Create a new Game with one of its records set so we have a held piece to show
   let game = (mkGame g) {heldPiece = Just pieceSquare}
   putStrLn (pretty game)
 :}
@@ -959,9 +979,9 @@ do
     ┌──────────┐┌─────┐
     │          ││Next:│
     │          ││     │
+    │          ││ ██  │
     │          ││ █   │
-    │          ││███  │
-    │          ││     │
+    │          ││ █   │
     │          │└─────┘
     │          │┌─────┐
     │          ││Held:│
@@ -979,7 +999,7 @@ do
     │          │       
     └──────────┘
 
-We can see the buffer zone at the top with the falling piece, the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
+This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 # Footnotes
 
