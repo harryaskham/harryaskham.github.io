@@ -5,7 +5,9 @@
 
 
 #+BEGIN_COMMENT
+- Fix rotations
 - Figure out colour block display
+- Figure out time display in website export
 - Figure out preprocessing to remove the ghci :{ :} preamble
 - Start with the bot and go to user input afterwards; or just stop with the botA
 #+END_COMMENT
@@ -18,6 +20,10 @@
 #+END_SRC
 
 #+RESULTS:
+: ghc
+: Ok, no modules loaded.
+: ghci
+: ghci>
 
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
@@ -130,6 +136,15 @@ import Data.Map.Strict (Map)
 -- `intercalate` is similar to Python's `x.join()`
 -- `foldl'` is similar to Python's `reduce(f, xs)`
 import Data.List (intercalate, foldl')
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- This will let us easily modify 2-tuples (i.e. our coordinates)
+import Data.Bifunctor (bimap)
 :}
 #+END_SRC
 
@@ -428,7 +443,6 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
-ghci
 #+end_example
 
 Alright!
@@ -503,6 +517,7 @@ pieceStream g =
 #+END_SRC
 
 #+RESULTS:
+: gh
 
 We will also need some notion of a falling piece; something combining colour and location:
 
@@ -598,6 +613,15 @@ instance Semigroup HGrid where
 
 instance Monoid HGrid where
   mempty = HGrid $ mkEmptyGrid 0 0
+
+-- Let's make sure we can add borders to our composable UI elements:
+-- Note that we could do this using Monofunctor and omap, but we'll be explicit.
+instance Borderable HGrid where
+    withBorder (HGrid grid) = HGrid $ withBorder grid
+
+-- Let's also just make it easy to pretty-print our UI elements:
+instance Pretty HGrid where
+    pretty (HGrid grid) = pretty grid
 :}
 #+END_SRC
 
@@ -618,8 +642,8 @@ Let's just test this quickly:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn . pretty . unHGrid $
-  mconcat (HGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS])
+putStrLn . pretty . mconcat
+  $ HGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS]
 :}
 #+END_SRC
 
@@ -643,7 +667,6 @@ putStrLn . pretty . unHGrid $
 │██  │
 │    │
 └────┘
-ghc
 #+end_example
 
 Now the same for the ~VGrid~:
@@ -662,6 +685,12 @@ instance Semigroup VGrid where
 
 instance Monoid VGrid where
   mempty = VGrid $ mkEmptyGrid 0 0
+
+instance Borderable VGrid where
+    withBorder (VGrid grid) = VGrid $ withBorder grid
+
+instance Pretty VGrid where
+    pretty (VGrid grid) = pretty grid
 :}
 #+END_SRC
 
@@ -671,12 +700,19 @@ Again, always worth testing:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn . pretty . unVGrid $
-  mconcat (VGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS])
+putStrLn . pretty . mconcat
+  $ VGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS]
 :}
 #+END_SRC
 
 #+RESULTS:
+: ┌────┐┌────┐┌────┐
+: │    ││    ││    │
+: │ █  ││ ██ ││ ██ │
+: │ █  ││ █  ││██  │
+: │ ██ ││ █  ││    │
+: └────┘└────┘└────┘
+: g
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -686,7 +722,7 @@ do
   -- Get the system source of randomness
   g <- newStdGen
   -- Create a stream of pieces wrapped in our VGrid Monoid.
-  let vStream = VGrid . mkPieceGrid <$> pieceStream g
+  let vStream = VGrid . withBorder . mkPieceGrid <$> pieceStream g
   -- We create an infinite stream of batches, each stitched together with a border.
   let rows pieces = (mconcat $ take 7 pieces) : rows (drop 7 pieces)
   -- Now we can take 5 of these rows, unwrap them, rewrap as VGrid, and stitch them again.
@@ -698,36 +734,46 @@ do
 
 #+RESULTS:
 #+begin_example
-┌────────────────────────────┐
-│                            │
-│ ██  █   █  ██   ██  ██     │
-│ █   █  ███  ██ ██   ██     │
-│ █   ██                 ████│
-└────────────────────────────┘
-┌────────────────────────────┐
-│                            │
-│ █   ██ ██   ██  █       ██ │
-│███ ██   ██  █   █       ██ │
-│             █   ██ ████    │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                            │
-│██   ██      █   █   ██  ██ │
-│ ██  █      ███  █  ██   ██ │
-│     █  ████     ██         │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                            │
-│ █   ██ ██   █   ██      ██ │
-│███  █   ██  █  ██       ██ │
-│     █       ██     ████    │
-└────────────────────────────┘
-┌────────────────────────────┐
-│                            │
-│ ██  █  ██   ██  █   ██     │
-│ █  ███  ██ ██   █   ██     │
-│ █               ██     ████│
-└────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││██  ││ ██ ││ ██ ││ ██ ││    ││ █  ││ █  ││
+││ ██ ││██  ││ ██ ││ █  ││    ││███ ││ █  ││
+││    ││    ││    ││ █  ││████││    ││ ██ ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ ██ ││ ██ ││ ██ ││ █  ││ █  ││██  ││    ││
+││ ██ ││ █  ││██  ││ █  ││███ ││ ██ ││    ││
+││    ││ █  ││    ││ ██ ││    ││    ││████││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││    ││██  ││ ██ ││ █  ││ ██ ││ █  ││ ██ ││
+││    ││ ██ ││ █  ││███ ││██  ││ █  ││ ██ ││
+││████││    ││ █  ││    ││    ││ ██ ││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ ██ ││ █  ││    ││ ██ ││██  ││ ██ ││ █  ││
+││ █  ││ █  ││    ││██  ││ ██ ││ ██ ││███ ││
+││ █  ││ ██ ││████││    ││    ││    ││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ ██ ││    ││ ██ ││ █  ││██  ││ ██ ││ █  ││
+││ ██ ││    ││ █  ││███ ││ ██ ││██  ││ █  ││
+││    ││████││ █  ││    ││    ││    ││ ██ ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -741,21 +787,18 @@ We also introduced ~uncurry~ - we wanted to pass the tuples of form ~f (1, batch
 
 * Rotations
 
-While we're here, let's implement piece rotation. We can just rotate the entire 4x4 grid, and apply thrice to get the reverse direction:
+While we're here, let's implement piece rotation. We'd like to handle a single coordinate at a time, which means we'll also need to pass in information about the bounding box within which we're rotating.
 
 #+BEGIN_SRC haskell :exports code
 :{
 data Rotation = CW | CCW
 
--- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
--- Here minX and minY will be supplied based on the frame of reference of the rotation.
--- This will usually be the piece's bounding box
-rotate :: Rotation -> Int -> Int -> V2 -> V2
-rotate CW minX minY (x, y) =
-  let x' = x - minX
-      y' = y - minY
-   in (-y' + minX, x' + minX)
-rotate CCW minX minY (x, y) = iterate (rotate CW minX minY) (x, y) !! 3
+-- Here we apply e.g. a (-y, x) rotation but offset back
+-- Here bounds will be supplied based on the frame of reference of the rotation.
+-- This will usually be the piece's bounding box.
+rotate :: Rotation -> V2 -> V2 -> V2 -> V2
+rotate CW (minX, minY) (maxX, maxY) (x, y) = (-y + (maxX - minX), x)
+rotate CCW (minX, minY) (maxX, maxY) (x, y) = (y, -x + (maxY - minY))
 
 -- This will let us rotate an entire grid by supplying the
 -- appropriate rotation function. We convert the grid to a list briefly,
@@ -765,7 +808,9 @@ rotateGrid :: Rotation -> Grid -> Grid
 rotateGrid rotation (Grid width height grid) =
   let minX = minimum $ fst <$> M.keys grid
       minY = minimum $ snd <$> M.keys grid
-      rotateFn = rotate rotation minX minY
+      maxX = maximum $ fst <$> M.keys grid
+      maxY = maximum $ snd <$> M.keys grid
+      rotateFn = rotate rotation (minX, minY) (maxX, maxY)
    in Grid width height (M.mapKeys rotateFn grid)
 :}
 
@@ -775,7 +820,10 @@ rotateGrid rotation (Grid width height grid) =
 
 Now we can rotate coordinates, but we want to rotate pieces themselves.
 
-Let's take a look at these rotations with a helper - the lambda syntax used here twice nested makes e.g. ~(\a b -> a + b)~ equivalent to ~(+)~.
+Let's take a look at these rotations with a helper:[fn:lambda]
+
+[fn:lambda] The lambda syntax used here twice nested makes e.g. ~(\a b -> a + b)~ equivalent to ~(+)~.
+
 
 #+BEGIN_SRC haskell :exports both
 :{
@@ -806,54 +854,51 @@ showRotations CW
 
 #+RESULTS:
 #+begin_example
-┌────┐┌  █ ┐┌────┐┌────┐
-│     │    ││    ││    │
-│ █ ██│    ││    ││    │
-│ █ █ │    ││    ││    │
-│ ██  │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││ ██ ││    │
+│ █  ││███ ││  █ ││   █│
+│ █  ││█   ││  █ ││ ███│
+│ ██ ││    ││    ││    │
 └────┘└────┘└────┘└────┘
-┌────┐┌ ██ ┐┌────┐┌────┐
-│     │    ││    ││    │
-│ ████│    ││    ││    │
-│ █   │    ││    ││    │
-│ █   │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││  █ ││    │
+│ ██ ││███ ││  █ ││ █  │
+│ █  ││  █ ││ ██ ││ ███│
+│ █  ││    ││    ││    │
 └────┘└────┘└────┘└────┘
-┌────┐┌ ██ ┐┌────┐┌────┐
-│     │    ││    ││    │
-│ ██ █│    ││    ││    │
-│ ██ █│    ││    ││    │
-│     │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│    ││    ││    ││    │
 └────┘└────┘└────┘└────┘
-┌────┐┌ ██ ┐┌────┐┌────┐
-│    █│    ││    ││    │
-│ ██ █│    ││    ││    │
-│██   │    ││    ││    │
-│     │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ ██ ││ ██ ││  ██││ █  │
+│██  ││  █ ││ ██ ││ ██ │
+│    ││    ││    ││  █ │
 └────┘└────┘└────┘└────┘
-┌────┐┌  ██┐┌────┐┌────┐
-│     │    ││    ││    │
-│██  █│    ││    ││    │
-│ ██ █│    ││    ││    │
-│     │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││  █ ││    ││    │
+│██  ││ ██ ││ ██ ││  █ │
+│ ██ ││ █  ││  ██││ ██ │
+│    ││    ││    ││ █  │
 └────┘└────┘└────┘└────┘
-┌────┐┌  █ ┐┌────┐┌────┐
-│    █│    ││    ││    │
-│ █  █│    ││    ││    │
-│███ █│    ││    ││    │
-│     │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ █  ││ ██ ││ ███││  █ │
+│███ ││ █  ││  █ ││ ██ │
+│    ││    ││    ││  █ │
 └────┘└────┘└────┘└────┘
-┌────┐┌    ┐┌────┐┌────┐
-│   █ │    ││    ││    │
-│   █ │    ││    ││    │
-│   █ │    ││    ││    │
-│████ │    ││    ││    │
+┌────┐┌────┐┌────┐┌────┐
+│    ││█   ││████││   █│
+│    ││█   ││    ││   █│
+│    ││█   ││    ││   █│
+│████││█   ││    ││   █│
 └────┘└────┘└────┘└────┘
 #+end_example
 
 And counterclockwise:
-
-
-First clockwise:
 
 #+BEGIN_SRC haskell :exports both
 :{
@@ -864,46 +909,46 @@ showRotations CCW
 #+RESULTS:
 #+begin_example
 ┌────┐┌────┐┌────┐┌────┐
-│    ││    ││    ││    │
-│ █  ││    ││    ││    │
-│ █  ││    ││    ││    │
+│    ││    ││ ██ ││    │
+│ █  ││   █││  █ ││███ │
+│ █  ││ ███││  █ ││█   │
 │ ██ ││    ││    ││    │
 └────┘└────┘└────┘└────┘
 ┌────┐┌────┐┌────┐┌────┐
-│    ││    ││    ││    │
-│ ██ ││    ││    ││    │
-│ █  ││    ││    ││    │
+│    ││    ││  █ ││    │
+│ ██ ││ █  ││  █ ││███ │
+│ █  ││ ███││ ██ ││  █ │
 │ █  ││    ││    ││    │
 └────┘└────┘└────┘└────┘
 ┌────┐┌────┐┌────┐┌────┐
 │    ││    ││    ││    │
-│ ██ ││    ││    ││    │
-│ ██ ││    ││    ││    │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│ ██ ││ ██ ││ ██ ││ ██ │
 │    ││    ││    ││    │
 └────┘└────┘└────┘└────┘
 ┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││ █  │
+│ ██ ││ █  ││  ██││ ██ │
+│██  ││ ██ ││ ██ ││  █ │
 │    ││  █ ││    ││    │
-│ ██ ││    ││    ││    │
-│██  ││    ││    ││    │
-│    ││    ││    ││    │
 └────┘└────┘└────┘└────┘
 ┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││  █ │
+│██  ││  █ ││ ██ ││ ██ │
+│ ██ ││ ██ ││  ██││ █  │
 │    ││ █  ││    ││    │
-│██  ││    ││    ││    │
-│ ██ ││    ││    ││    │
-│    ││    ││    ││    │
 └────┘└────┘└────┘└────┘
 ┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││ █  │
+│ █  ││  █ ││ ███││ ██ │
+│███ ││ ██ ││  █ ││ █  │
 │    ││  █ ││    ││    │
-│ █  ││    ││    ││    │
-│███ ││    ││    ││    │
-│    ││    ││    ││    │
 └────┘└────┘└────┘└────┘
 ┌────┐┌────┐┌────┐┌────┐
-│    ││   █││    ││    │
-│    ││    ││    ││    │
-│    ││    ││    ││    │
-│████││    ││    ││    │
+│    ││   █││████││█   │
+│    ││   █││    ││█   │
+│    ││   █││    ││█   │
+│████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
 #+end_example
 
@@ -1006,24 +1051,6 @@ Note each field of this record type (essentially a Haskell product type with nam
 
 Alright - now we're in a position to render our rudimentary UI by stitching these things together. On the left we'll have our grid, and on the right we'll have our next piece on the top, and our held piece on the bottom:
 
-#+BEGIN_SRC haskell :exports both
-:{
--- Let's make sure we can add borders to our composable UI elements:
-instance Borderable VGrid where
-    withBorder (VGrid grid) = VGrid $ withBorder grid
-
-instance Borderable HGrid where
-    withBorder (HGrid grid) = HGrid $ withBorder grid
-
--- Let's also just make it easy to pretty-print our UI elements:
-instance Pretty VGrid where
-    pretty (VGrid grid) = pretty grid
-
-instance Pretty HGrid where
-    pretty (HGrid grid) = pretty grid
-:}
-#+END_SRC
-
 #+RESULTS:
 
 We'll need a way of adding string labels to our UI:
@@ -1046,13 +1073,17 @@ And a way of hiding the buffer zone:
 #+BEGIN_SRC haskell :exports code
 :{
 hideBuffer :: Grid -> Grid
-hideBuffer (Grid width height fullGrid) =
-  Grid width (height - 4)
-    $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+hideBuffer (Grid width height grid) = Grid width (height - 4) grid'
+  where
+    grid' =
+      grid
+        & M.mapKeys (second (subtract 4))
+        & M.filterWithKey (\(_, y) _ -> y >= 0)
 :}
 #+END_SRC
 
 #+RESULTS:
+: ghc
 
 Now finally we can put it all together:
 
@@ -1060,27 +1091,31 @@ Now finally we can put it all together:
 :{
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
+gameGrid :: Game -> Grid
+gameGrid game =
+  let -- Let's add a label at the top to display the score.
+      scoreGrid = withBorder . HGrid . sToG $ "Score: " <> show (score game)
+      -- Now the left hand side; the grid with the current piece,
+      -- but the top four lines hidden.
+      lhs = withBorder . VGrid . hideBuffer $ grid game & withPiece (currentPiece game)
+      -- Create a preview with a label above it showing the next piece
+      nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
+      -- Now we show the held piece; it might not exist, so we need to handle that case.
+      held = HGrid (sToG "Held:") <>
+             (HGrid $ case heldPiece game of
+                        Nothing -> mkEmptyGrid 4 4
+                        Just piece -> mkPieceGrid piece)
+      -- To construct the RHS we can just add borders and mconcat them with <>
+      rhs = withBorder nextPiece <> withBorder held
+      -- It's a little clumsy to stitch an HGrid and VGrid, but it works.
+      playArea = HGrid . unVGrid $ lhs <> VGrid (unHGrid rhs)
+      -- Finally, we can stitch it all together
+      gameInterface = scoreGrid <> playArea
+   in unHGrid gameInterface
+
+-- Finally we just pretty-print the game grid itself
 instance Pretty Game where
-  pretty game =
-    let -- Let's add a label at the top to display the score.
-        scoreGrid = withBorder . HGrid . sToG $ "Score: " <> show (score game)
-        -- Now the left hand side; the grid with the current piece,
-        -- but the top four lines hidden.
-        lhs = withBorder . VGrid . hideBuffer $ grid game & withPiece (currentPiece game)
-        -- Create a preview with a label above it showing the next piece
-        nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
-        -- Now we show the held piece; it might not exist, so we need to handle that case.
-        held = HGrid (sToG "Held:") <>
-               (HGrid $ case heldPiece game of
-                          Nothing -> mkEmptyGrid 4 4
-                          Just piece -> mkPieceGrid piece)
-        -- To construct the RHS we can just add borders and mconcat them with <>
-        rhs = withBorder nextPiece <> withBorder held
-        -- It's a little clumsy to stitch an HGrid and VGrid, but it works.
-        playArea = HGrid . unVGrid $ lhs <> VGrid (unHGrid rhs)
-        -- Finally, we can stitch it all together
-        gameInterface = scoreGrid <> playArea
-     in pretty gameInterface
+  pretty = pretty . gameGrid
 :}
 #+END_SRC
 
@@ -1101,34 +1136,6 @@ do
 #+END_SRC
 
 #+RESULTS:
-#+begin_example
-┌────────┐
-│Score: 0│
-└────────┘
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││ ██  │
-│          ││██   │
-│          ││     │
-│          │└─────┘
-│          │
-│          │
-│          │
-│          │
-│          │
-│          │
-│          │
-└──────────┘
-ghc
-#+end_example
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
 
@@ -1142,4 +1149,74 @@ To make this work, we'll need a way to:
 - Fix pieces in place when they hit the bottom
 - Pulls a new piece from the infinite stream and places it at the top
 
-We'll build a ~step~ function that does all of this.
+We'll build a ~step~ function that does all of this at once, but first let's implement gravity.
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- We need a way to translate a piece
+-- bimap comes because a tuple is a Bifunctor,
+-- letting us map over both elements at once.
+movePiece :: V2 -> ActivePiece -> ActivePiece
+movePiece (x, y) (ActivePiece colour coords) =
+  ActivePiece colour (bimap (+x) (+y) <$> coords)
+
+-- Here we use record update syntax to edit just one field.
+applyGravity :: Game -> Game
+applyGravity game = game { currentPiece = movePiece (0, 1) (currentPiece game) }
+:}
+#+END_SRC
+
+#+RESULTS:
+
+So let's test this out a few times - for now we'll represent the passage of time horizontally, so we'll make a few game states, pull out the grids, and stitch them side by side.
+
+#+BEGIN_SRC haskell :exports code
+:{
+debugGravity :: String
+debugGravity =
+  let game = mkGame (mkStdGen 42)
+      states = withBorder . VGrid . gameGrid <$> iterate applyGravity game
+   in pretty (mconcat $ take 24 states)
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports both
+:{
+putStrLn debugGravity
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐
+│┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         │
+││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │
+│└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         │
+│┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+││          ││Next:││││    ██    ││Next:││││    █     ││Next:││││    █     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││
+││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││    ██    ││ ██  ││││    █     ││ ██  ││││    █     ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││
+││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│
+││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││    █     ││Held:││││    █     ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │
+│└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
+└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
+#+end_example
+
+Oh dear - of course, the piece just falls off the bottom of the play area.
