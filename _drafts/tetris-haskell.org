@@ -39,7 +39,7 @@ I won't touch on package management or project structure - in fact, this post is
 
 We'll try to use as few external dependencies as possible, and won't use any language extensions.
 
-There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like ~StateT~, being more careful around the use of strictness versus laziness, and so on - I'm considering this out of scope and will try keep it as simple as I can.
+There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like ~StateT~, being more careful around the use of strictness versus laziness, and so on - I'm considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 [fn:literate] Okay, not quite. I'm writing this in Emacs, where ~org-babel~ will run each block in GHCi, a Haskell interpreter, with ~set +m~ enabled to allow multiline blocks. The whole thing gets compiled to Markdown via ~org-jekyll~. The end result is the same, more or less, as writing actual literate code, with some of the advantages of a Jupyter-style workflow.
 
@@ -192,9 +192,15 @@ We'll need a 2D grid of cells, each of which can be empty or filled with a block
 :{
 -- This is a sum type; we can now use these colour values directly in our code.
 -- Yes, we'll be using British English.
--- We include black for background elements, and an end-code since these will map to
--- ANSI escape codes.
-data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | White |  ColourEnd
+data Colour = Blue
+            | Orange
+            | Yellow
+            | Green
+            | Purple
+            | Red
+            | Cyan
+            | Black
+            | White
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
 -- We also insert the ability to display a char here because later, we'll use this
@@ -296,7 +302,6 @@ instance Pretty Colour where
   pretty Orange = "\x1b[37m"
   pretty Black = "\x1b[30m"
   pretty White = "\x1b[97m"
-  pretty ColourEnd = "\x1b[0m"
 :}
 #+END_SRC
 
@@ -304,10 +309,13 @@ instance Pretty Colour where
 
 #+BEGIN_SRC haskell :exports code
 :{
+ansiColorEnd :: String
+ansiColorEnd = "\x1b[0m"
+
 instance Pretty Cell where
   pretty Empty = " "
-  pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
-  pretty (BlockChar colour c) = pretty colour <> [c] <> pretty ColourEnd
+  pretty (Block colour) = pretty colour <> "█" <> ansiColorEnd
+  pretty (BlockChar colour c) = pretty colour <> [c] <> ansiColorEnd
 :}
 #+END_SRC
 
@@ -420,6 +428,7 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
+ghci
 #+end_example
 
 Alright!
@@ -433,32 +442,53 @@ We'll encode the actual shapes by the coordinates of their full blocks, letting 
 
 #+BEGIN_SRC haskell :exports code
 :{
-data Piece = Piece Colour [V2]
+data Piece = PieceL
+           | PieceR
+           | PieceSquare
+           | PieceS
+           | PieceZ
+           | PieceT
+           | PieceLine
+           deriving (Enum, Bounded)
 
-pieceL :: Piece
-pieceL = Piece Orange [(1, 3), (1, 2), (1, 1), (2, 3)]
-
-pieceR :: Piece
-pieceR = Piece Blue [(1, 3), (1, 2), (1, 1), (2, 1)]
-
-pieceSquare :: Piece
-pieceSquare = Piece Yellow [(1, 2), (1, 1), (2, 2), (2, 1)]
-
-pieceS :: Piece
-pieceS = Piece Green [(0, 2), (1, 2), (1, 1), (2, 1)]
-
-pieceZ :: Piece
-pieceZ = Piece Red [(0, 1), (1, 1), (1, 2), (2, 2)]
-
-pieceT :: Piece
-pieceT = Piece Purple [(0, 2), (1, 2), (2, 2), (1, 1)]
-
-pieceLine :: Piece
-pieceLine = Piece Cyan [(1, 3), (1, 2), (1, 1), (1, 0)]
-
+-- We get this nicely for free from the Enum and Bounded instances.
 allPieces :: [Piece]
-allPieces = [pieceL, pieceR, pieceSquare, pieceS, pieceZ, pieceT, pieceLine]
+allPieces = [minBound .. maxBound]
+:}
+#+END_SRC
 
+#+RESULTS:
+
+Now we can specify piece properties using simple pattern-matched functions:
+
+#+BEGIN_SRC haskell :exports code
+:{
+pieceColour :: Piece -> Colour
+pieceColour PieceL = Orange
+pieceColour PieceR = Blue
+pieceColour PieceSquare = Yellow
+pieceColour PieceS = Green
+pieceColour PieceZ = Red
+pieceColour PieceT = Purple
+pieceColour PieceLine = Cyan
+
+pieceCoords :: Piece -> [V2]
+pieceCoords PieceL = [(1, 3), (1, 2), (1, 1), (2, 3)]
+pieceCoords PieceR = [(1, 3), (1, 2), (1, 1), (2, 1)]
+pieceCoords PieceSquare = [(1, 2), (1, 1), (2, 2), (2, 1)]
+pieceCoords PieceS = [(0, 2), (1, 2), (1, 1), (2, 1)]
+pieceCoords PieceZ = [(0, 1), (1, 1), (1, 2), (2, 2)]
+pieceCoords PieceT = [(0, 2), (1, 2), (2, 2), (1, 1)]
+pieceCoords PieceLine = [(0, 3), (1, 3), (2, 3), (3, 3)]
+:}
+#+END_SRC
+
+#+RESULTS:
+
+And now we can generate our infinite stream of pieces lazily:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- Here we have a lazy infinite list of pieces.
 -- To avoid requiring side-effects here, we take a random state as an argument.
 -- Later, when we're inside the IO monad, we can hook into this source of randomness
@@ -474,7 +504,24 @@ pieceStream g =
 
 #+RESULTS:
 
-Now we need some functions for composing a ~Piece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
+We will also need some notion of a falling piece; something combining colour and location:
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- We need a type to represent the actively falling piece that combines colour and coordinates.
+data ActivePiece = ActivePiece Colour [V2]
+
+-- We also want some way of converting a piece into an active piece, which can be
+-- placed on a grid.
+initPiece :: Piece -> ActivePiece
+initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
+:}
+#+END_SRC
+
+#+RESULTS:
+
+
+Now we need some functions for composing an ~ActivePiece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -491,13 +538,13 @@ withBlock colour original@(Grid width height grid) (x, y)
   | otherwise = Grid width height $ M.insert (x, y) (Block colour) grid
 
 -- Adds a whole piece to the grid one block at a time
-withPiece :: Piece -> Grid -> Grid
-withPiece (Piece colour coordinates) grid = foldl' (withBlock colour) grid coordinates
+withPiece :: ActivePiece -> Grid -> Grid
+withPiece (ActivePiece colour coords) grid = foldl' (withBlock colour) grid coords
 
 -- Here the (&) operator is just the reverse of ($) - everything to the
 -- right is applied to the left. Useful for builder functions like these.
 mkPieceGrid :: Piece -> Grid
-mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece piece)
+mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece $ initPiece piece)
 :}
 #+END_SRC
 
@@ -572,7 +619,7 @@ Let's just test this quickly:
 #+BEGIN_SRC haskell :exports both
 :{
 putStrLn . pretty . unHGrid $
-  HGrid (withBorder $ mkPieceGrid pieceL) <> HGrid (withBorder $ mkPieceGrid pieceR)
+  mconcat (HGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS])
 :}
 #+END_SRC
 
@@ -590,6 +637,13 @@ putStrLn . pretty . unHGrid $
 │ █  │
 │ █  │
 └────┘
+┌────┐
+│    │
+│ ██ │
+│██  │
+│    │
+└────┘
+ghc
 #+end_example
 
 Now the same for the ~VGrid~:
@@ -618,17 +672,11 @@ Again, always worth testing:
 #+BEGIN_SRC haskell :exports both
 :{
 putStrLn . pretty . unVGrid $
-  VGrid (withBorder $ mkPieceGrid pieceL) <> VGrid (withBorder $ mkPieceGrid pieceR)
+  mconcat (VGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS])
 :}
 #+END_SRC
 
 #+RESULTS:
-: ┌────┐┌────┐
-: │    ││    │
-: │ █  ││ ██ │
-: │ █  ││ █  │
-: │ ██ ││ █  │
-: └────┘└────┘
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -651,34 +699,34 @@ do
 #+RESULTS:
 #+begin_example
 ┌────────────────────────────┐
-│             █              │
-│ ██  ██  ██  █   █  ██   █  │
-│ █   ██ ██   █   █   ██ ███ │
-│ █           █   ██         │
+│                            │
+│ ██  █   █  ██   ██  ██     │
+│ █   █  ███  ██ ██   ██     │
+│ █   ██                 ████│
 └────────────────────────────┘
 ┌────────────────────────────┐
-│                     █      │
-│██   █   ██  █   ██  █   ██ │
-│ ██  █  ██  ███  ██  █   █  │
-│     ██              █   █  │
+│                            │
+│ █   ██ ██   ██  █       ██ │
+│███ ██   ██  █   █       ██ │
+│             █   ██ ████    │
 └────────────────────────────┘
 ┌────────────────────────────┐
-│             █              │
-│ ██  ██  █   █  ██   █   ██ │
-│ █  ██  ███  █   ██  █   ██ │
-│ █           █       ██     │
+│                            │
+│██   ██      █   █   ██  ██ │
+│ ██  █      ███  █  ██   ██ │
+│     █  ████     ██         │
 └────────────────────────────┘
 ┌────────────────────────────┐
-│             █              │
-│ ██  ██  █   █   ██ ██   █  │
-│ ██  █  ███  █  ██   ██  █  │
-│     █       █           ██ │
+│                            │
+│ █   ██ ██   █   ██      ██ │
+│███  █   ██  █  ██       ██ │
+│     █       ██     ████    │
 └────────────────────────────┘
 ┌────────────────────────────┐
-│                 █          │
-│ █   ██  █   ██  █   ██ ██  │
-│███  █   █   ██  █  ██   ██ │
-│     █   ██      █          │
+│                            │
+│ ██  █  ██   ██  █   ██     │
+│ █  ███  ██ ██   █   ██     │
+│ █               ██     ████│
 └────────────────────────────┘
 #+end_example
 
@@ -697,30 +745,52 @@ While we're here, let's implement piece rotation. We can just rotate the entire 
 
 #+BEGIN_SRC haskell :exports code
 :{
--- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
-rotateCW :: Piece -> Piece
-rotateCW (Piece colour coordinates) =
-  Piece colour $ (\(x, y) -> (3 - y, x)) <$> coordinates
+data Rotation = CW | CCW
 
--- Lol. Lmao even. But it works.
-rotateCCW :: Piece -> Piece
-rotateCCW = rotateCW . rotateCW . rotateCW
+-- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
+-- Here minX and minY will be supplied based on the frame of reference of the rotation.
+-- This will usually be the piece's bounding box
+rotate :: Rotation -> Int -> Int -> V2 -> V2
+rotate CW minX minY (x, y) =
+  let x' = x - minX
+      y' = y - minY
+   in (-y' + minX, x' + minX)
+rotate CCW minX minY (x, y) = iterate (rotate CW minX minY) (x, y) !! 3
+
+-- This will let us rotate an entire grid by supplying the
+-- appropriate rotation function. We convert the grid to a list briefly,
+-- then convert it back.
+-- This is inefficient in that it scans for the minX and minY each time.
+rotateGrid :: Rotation -> Grid -> Grid
+rotateGrid rotation (Grid width height grid) =
+  let minX = minimum $ fst <$> M.keys grid
+      minY = minimum $ snd <$> M.keys grid
+      rotateFn = rotate rotation minX minY
+   in Grid width height (M.mapKeys rotateFn grid)
 :}
+
 #+END_SRC
 
 #+RESULTS:
+
+Now we can rotate coordinates, but we want to rotate pieces themselves.
 
 Let's take a look at these rotations with a helper - the lambda syntax used here twice nested makes e.g. ~(\a b -> a + b)~ equivalent to ~(+)~.
 
 #+BEGIN_SRC haskell :exports both
 :{
-showRotations rotateFn =
+showRotations rotation =
     forM_ allPieces
     $ (\piece ->
-            putStrLn
-            . pretty
-            . (\ps -> mconcat (take 4 ps) & unVGrid & withBorder)
-            $ VGrid . mkPieceGrid <$> iterate rotateFn piece)
+          piece
+            & mkPieceGrid
+            & iterate (rotateGrid rotation)
+            & take 4
+            & fmap (VGrid . withBorder)
+            & mconcat
+            & unVGrid
+            & pretty
+            & putStrLn)
 :}
 #+END_SRC
 
@@ -730,54 +800,54 @@ First clockwise:
 
 #+BEGIN_SRC haskell :exports both
 :{
-showRotations rotateCW
+showRotations CW
 :}
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-┌────────────────┐
-│         ██     │
-│ █  ███   █    █│
-│ █  █     █  ███│
-│ ██             │
-└────────────────┘
-┌────────────────┐
-│          █     │
-│ ██ ███   █  █  │
-│ █    █  ██  ███│
-│ █              │
-└────────────────┘
-┌────────────────┐
-│                │
-│ ██  ██  ██  ██ │
-│ ██  ██  ██  ██ │
-│                │
-└────────────────┘
-┌────────────────┐
-│     █          │
-│ ██  ██   ██ █  │
-│██    █  ██  ██ │
-│              █ │
-└────────────────┘
-┌────────────────┐
-│      █         │
-│██   ██  ██   █ │
-│ ██  █    ██ ██ │
-│             █  │
-└────────────────┘
-┌────────────────┐
-│     █          │
-│ █   ██  ███  █ │
-│███  █    █  ██ │
-│              █ │
-└────────────────┘
-┌────────────────┐
-│ █        █     │
-│ █  ████  █     │
-│ █        █ ████│
-│ █        █     │
-└────────────────┘
+┌────┐┌  █ ┐┌────┐┌────┐
+│     │    ││    ││    │
+│ █ ██│    ││    ││    │
+│ █ █ │    ││    ││    │
+│ ██  │    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌ ██ ┐┌────┐┌────┐
+│     │    ││    ││    │
+│ ████│    ││    ││    │
+│ █   │    ││    ││    │
+│ █   │    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌ ██ ┐┌────┐┌────┐
+│     │    ││    ││    │
+│ ██ █│    ││    ││    │
+│ ██ █│    ││    ││    │
+│     │    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌ ██ ┐┌────┐┌────┐
+│    █│    ││    ││    │
+│ ██ █│    ││    ││    │
+│██   │    ││    ││    │
+│     │    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌  ██┐┌────┐┌────┐
+│     │    ││    ││    │
+│██  █│    ││    ││    │
+│ ██ █│    ││    ││    │
+│     │    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌  █ ┐┌────┐┌────┐
+│    █│    ││    ││    │
+│ █  █│    ││    ││    │
+│███ █│    ││    ││    │
+│     │    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌    ┐┌────┐┌────┐
+│   █ │    ││    ││    │
+│   █ │    ││    ││    │
+│   █ │    ││    ││    │
+│████ │    ││    ││    │
+└────┘└────┘└────┘└────┘
 #+end_example
 
 And counterclockwise:
@@ -787,54 +857,54 @@ First clockwise:
 
 #+BEGIN_SRC haskell :exports both
 :{
-showRotations rotateCCW
+showRotations CCW
 :}
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-┌────────────────┐
-│         ██     │
-│ █     █  █ ███ │
-│ █   ███  █ █   │
-│ ██             │
-└────────────────┘
-┌────────────────┐
-│          █     │
-│ ██  █    █ ███ │
-│ █   ███ ██   █ │
-│ █              │
-└────────────────┘
-┌────────────────┐
-│                │
-│ ██  ██  ██  ██ │
-│ ██  ██  ██  ██ │
-│                │
-└────────────────┘
-┌────────────────┐
-│             █  │
-│ ██  █    ██ ██ │
-│██   ██  ██   █ │
-│      █         │
-└────────────────┘
-┌────────────────┐
-│              █ │
-│██    █  ██  ██ │
-│ ██  ██   ██ █  │
-│     █          │
-└────────────────┘
-┌────────────────┐
-│             █  │
-│ █    █  ███ ██ │
-│███  ██   █  █  │
-│      █         │
-└────────────────┘
-┌────────────────┐
-│ █        █     │
-│ █        █ ████│
-│ █  ████  █     │
-│ █        █     │
-└────────────────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ █  ││    ││    ││    │
+│ █  ││    ││    ││    │
+│ ██ ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││    ││    ││    │
+│ █  ││    ││    ││    │
+│ █  ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││    ││    ││    │
+│ ██ ││    ││    ││    │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││  █ ││    ││    │
+│ ██ ││    ││    ││    │
+│██  ││    ││    ││    │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│██  ││    ││    ││    │
+│ ██ ││    ││    ││    │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││  █ ││    ││    │
+│ █  ││    ││    ││    │
+│███ ││    ││    ││    │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││   █││    ││    │
+│    ││    ││    ││    │
+│    ││    ││    ││    │
+│████││    ││    ││    │
+└────┘└────┘└────┘└────┘
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -847,13 +917,13 @@ We want it to be anchored to the bottom, so that it immediately starts to become
 #+BEGIN_SRC haskell :exports code
 :{
 -- Ensure the piece is centred and anchored to the top of the viewport.
-initPiece :: Piece -> Piece
-initPiece (Piece colour coordinates) = piece'
+initPiece :: Piece -> ActivePiece
+initPiece piece = ActivePiece (pieceColour piece) coordinates
   where
     -- We need to ensure the largest y-coordinate is 3
-    yOffset = 3 - maximum (snd <$> coordinates)
+    yOffset = 3 - maximum (snd <$> pieceCoords piece)
     -- And we'd like to roughly centre the piece, so we'll offset it by 3
-    piece' = Piece colour $ (\(x, y) -> (x + 3, y + yOffset)) <$> coordinates
+    coordinates = (\(x, y) -> (x + 3, y + yOffset)) <$> pieceCoords piece
 :}
 #+END_SRC
 
@@ -863,7 +933,7 @@ And let's test this, as ever:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
+putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS)
 :}
 #+END_SRC
 
@@ -909,7 +979,7 @@ We're going to implement piece holding - since there might not be a held piece, 
 :{
 data Game = Game {
   grid :: Grid,
-  currentPiece :: Piece,
+  currentPiece :: ActivePiece,
   heldPiece :: Maybe Piece,
   pieces :: [Piece],
   score :: Int
@@ -963,7 +1033,9 @@ We'll need a way of adding string labels to our UI:
 -- Turn a string into a grid for composability
 -- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
-sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
+sToG s =
+  Grid (length s) 1
+    $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
 :}
 #+END_SRC
 
@@ -973,10 +1045,10 @@ And a way of hiding the buffer zone:
 
 #+BEGIN_SRC haskell :exports code
 :{
--- Let's make a helper to hide the buffer zone.
 hideBuffer :: Grid -> Grid
 hideBuffer (Grid width height fullGrid) =
-  Grid width (height - 4) $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+  Grid width (height - 4)
+    $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
 :}
 #+END_SRC
 
@@ -992,7 +1064,8 @@ instance Pretty Game where
   pretty game =
     let -- Let's add a label at the top to display the score.
         scoreGrid = withBorder . HGrid . sToG $ "Score: " <> show (score game)
-        -- Now the left hand side; the grid with the current piece, but the top four lines hidden.
+        -- Now the left hand side; the grid with the current piece,
+        -- but the top four lines hidden.
         lhs = withBorder . VGrid . hideBuffer $ grid game & withPiece (currentPiece game)
         -- Create a preview with a label above it showing the next piece
         nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
@@ -1022,7 +1095,7 @@ do
   -- g <- newStdGen -- This would be system-random; for now we'll set a seed
   let g = mkStdGen 42 -- This sets our random seed.
   -- Create a new Game with one of its records set so we have a held piece to show
-  let game = (mkGame g) {heldPiece = Just pieceSquare}
+  let game = (mkGame g) {heldPiece = Just PieceS}
   putStrLn (pretty game)
 :}
 #+END_SRC
@@ -1043,7 +1116,7 @@ do
 │          ││Held:│
 │          ││     │
 │          ││ ██  │
-│          ││ ██  │
+│          ││██   │
 │          ││     │
 │          │└─────┘
 │          │
@@ -1054,6 +1127,19 @@ do
 │          │
 │          │
 └──────────┘
+ghc
 #+end_example
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
+
+* The Introduction of Time and Logic
+
+Let's ignore user input for now and focus solely on advancing time.
+
+To make this work, we'll need a way to:
+
+- Advance the current piece downwards
+- Fix pieces in place when they hit the bottom
+- Pulls a new piece from the infinite stream and places it at the top
+
+We'll build a ~step~ function that does all of this.

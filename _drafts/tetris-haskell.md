@@ -9,20 +9,21 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#org3fa9784)
-2.  [What This Is](#org48cb61c)
-3.  [What This Isn&rsquo;t](#org333259b)
-4.  [Prelude](#orgfde0593)
-5.  [Strategy](#org0997209)
-6.  [Imports and Dependencies](#orgc9aad82)
-7.  [Establishing the Grid](#org5922e95)
-8.  [Making Some Tetrominos](#org245c843)
-9.  [Rotations](#org83389ab)
-10. [Placing Pieces on the Grid](#orgea336bf)
-11. [Representing the Game State](#org2872974)
+1.  [Beginning at the End](#orgc8aa397)
+2.  [What This Is](#org8f710ea)
+3.  [What This Isn&rsquo;t](#orgb586065)
+4.  [Prelude](#org0ca918b)
+5.  [Strategy](#org5eab8fc)
+6.  [Imports and Dependencies](#orgeb129d5)
+7.  [Establishing the Grid](#org865c661)
+8.  [Making Some Tetrominos](#org3ba792f)
+9.  [Rotations](#org80ac4d1)
+10. [Placing Pieces on the Grid](#orge25f0a4)
+11. [Representing the Game State](#org3b6678e)
+12. [The Introduction of Time and Logic](#org25fdbbc)
 
 
-<a id="org3fa9784"></a>
+<a id="orgc8aa397"></a>
 
 # Beginning at the End
 
@@ -31,7 +32,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org48cb61c"></a>
+<a id="org8f710ea"></a>
 
 # What This Is
 
@@ -42,7 +43,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org333259b"></a>
+<a id="orgb586065"></a>
 
 # What This Isn&rsquo;t
 
@@ -50,10 +51,10 @@ I won&rsquo;t touch on package management or project structure - in fact, this p
 
 We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t use any language extensions.
 
-There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can.
+There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="orgfde0593"></a>
+<a id="org0ca918b"></a>
 
 # Prelude
 
@@ -64,7 +65,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org0997209"></a>
+<a id="org5eab8fc"></a>
 
 # Strategy
 
@@ -81,7 +82,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="orgc9aad82"></a>
+<a id="orgeb129d5"></a>
 
 # Imports and Dependencies
 
@@ -179,7 +180,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org5922e95"></a>
+<a id="org865c661"></a>
 
 # Establishing the Grid
 
@@ -191,9 +192,15 @@ We&rsquo;ll need a 2D grid of cells, each of which can be empty or filled with a
 :{
 -- This is a sum type; we can now use these colour values directly in our code.
 -- Yes, we'll be using British English.
--- We include black for background elements, and an end-code since these will map to
--- ANSI escape codes.
-data Colour = Blue | Orange | Yellow | Green | Purple | Red | Cyan | Black | White |  ColourEnd
+data Colour = Blue
+            | Orange
+            | Yellow
+            | Green
+            | Purple
+            | Red
+            | Cyan
+            | Black
+            | White
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
 -- We also insert the ability to display a char here because later, we'll use this
@@ -281,16 +288,18 @@ instance Pretty Colour where
   pretty Orange = "\x1b[37m"
   pretty Black = "\x1b[30m"
   pretty White = "\x1b[97m"
-  pretty ColourEnd = "\x1b[0m"
 :}
 {% endhighlight %}
 
 {% highlight haskell %}
 :{
+ansiColorEnd :: String
+ansiColorEnd = "\x1b[0m"
+
 instance Pretty Cell where
   pretty Empty = " "
-  pretty (Block colour) = pretty colour <> "█" <> pretty ColourEnd
-  pretty (BlockChar colour c) = pretty colour <> [c] <> pretty ColourEnd
+  pretty (Block colour) = pretty colour <> "█" <> ansiColorEnd
+  pretty (BlockChar colour c) = pretty colour <> [c] <> ansiColorEnd
 :}
 {% endhighlight %}
 
@@ -401,7 +410,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org245c843"></a>
+<a id="org3ba792f"></a>
 
 # Making Some Tetrominos
 
@@ -411,32 +420,49 @@ We&rsquo;ll encode the actual shapes by the coordinates of their full blocks, le
 
 {% highlight haskell %}
 :{
-data Piece = Piece Colour [V2]
+data Piece = PieceL
+           | PieceR
+           | PieceSquare
+           | PieceS
+           | PieceZ
+           | PieceT
+           | PieceLine
+           deriving (Enum, Bounded)
 
-pieceL :: Piece
-pieceL = Piece Orange [(1, 3), (1, 2), (1, 1), (2, 3)]
-
-pieceR :: Piece
-pieceR = Piece Blue [(1, 3), (1, 2), (1, 1), (2, 1)]
-
-pieceSquare :: Piece
-pieceSquare = Piece Yellow [(1, 2), (1, 1), (2, 2), (2, 1)]
-
-pieceS :: Piece
-pieceS = Piece Green [(0, 2), (1, 2), (1, 1), (2, 1)]
-
-pieceZ :: Piece
-pieceZ = Piece Red [(0, 1), (1, 1), (1, 2), (2, 2)]
-
-pieceT :: Piece
-pieceT = Piece Purple [(0, 2), (1, 2), (2, 2), (1, 1)]
-
-pieceLine :: Piece
-pieceLine = Piece Cyan [(1, 3), (1, 2), (1, 1), (1, 0)]
-
+-- We get this nicely for free from the Enum and Bounded instances.
 allPieces :: [Piece]
-allPieces = [pieceL, pieceR, pieceSquare, pieceS, pieceZ, pieceT, pieceLine]
+allPieces = [minBound .. maxBound]
+:}
+{% endhighlight %}
 
+Now we can specify piece properties using simple pattern-matched functions:
+
+{% highlight haskell %}
+:{
+pieceColour :: Piece -> Colour
+pieceColour PieceL = Orange
+pieceColour PieceR = Blue
+pieceColour PieceSquare = Yellow
+pieceColour PieceS = Green
+pieceColour PieceZ = Red
+pieceColour PieceT = Purple
+pieceColour PieceLine = Cyan
+
+pieceCoords :: Piece -> [V2]
+pieceCoords PieceL = [(1, 3), (1, 2), (1, 1), (2, 3)]
+pieceCoords PieceR = [(1, 3), (1, 2), (1, 1), (2, 1)]
+pieceCoords PieceSquare = [(1, 2), (1, 1), (2, 2), (2, 1)]
+pieceCoords PieceS = [(0, 2), (1, 2), (1, 1), (2, 1)]
+pieceCoords PieceZ = [(0, 1), (1, 1), (1, 2), (2, 2)]
+pieceCoords PieceT = [(0, 2), (1, 2), (2, 2), (1, 1)]
+pieceCoords PieceLine = [(0, 3), (1, 3), (2, 3), (3, 3)]
+:}
+{% endhighlight %}
+
+And now we can generate our infinite stream of pieces lazily:
+
+{% highlight haskell %}
+:{
 -- Here we have a lazy infinite list of pieces.
 -- To avoid requiring side-effects here, we take a random state as an argument.
 -- Later, when we're inside the IO monad, we can hook into this source of randomness
@@ -450,7 +476,21 @@ pieceStream g =
 :}
 {% endhighlight %}
 
-Now we need some functions for composing a `Piece` and a `Grid`, both for inspection and later, for placing tetrominos on the playing field.
+We will also need some notion of a falling piece; something combining colour and location:
+
+{% highlight haskell %}
+:{
+-- We need a type to represent the actively falling piece that combines colour and coordinates.
+data ActivePiece = ActivePiece Colour [V2]
+
+-- We also want some way of converting a piece into an active piece, which can be
+-- placed on a grid.
+initPiece :: Piece -> ActivePiece
+initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
+:}
+{% endhighlight %}
+
+Now we need some functions for composing an `ActivePiece` and a `Grid`, both for inspection and later, for placing tetrominos on the playing field.
 
 {% highlight haskell %}
 :{
@@ -467,13 +507,13 @@ withBlock colour original@(Grid width height grid) (x, y)
   | otherwise = Grid width height $ M.insert (x, y) (Block colour) grid
 
 -- Adds a whole piece to the grid one block at a time
-withPiece :: Piece -> Grid -> Grid
-withPiece (Piece colour coordinates) grid = foldl' (withBlock colour) grid coordinates
+withPiece :: ActivePiece -> Grid -> Grid
+withPiece (ActivePiece colour coords) grid = foldl' (withBlock colour) grid coords
 
 -- Here the (&) operator is just the reverse of ($) - everything to the
 -- right is applied to the left. Useful for builder functions like these.
 mkPieceGrid :: Piece -> Grid
-mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece piece)
+mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece $ initPiece piece)
 :}
 {% endhighlight %}
 
@@ -533,7 +573,7 @@ Let&rsquo;s just test this quickly:
 {% highlight haskell %}
 :{
 putStrLn . pretty . unHGrid $
-  HGrid (withBorder $ mkPieceGrid pieceL) <> HGrid (withBorder $ mkPieceGrid pieceR)
+  mconcat (HGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS])
 :}
 {% endhighlight %}
 
@@ -548,6 +588,12 @@ putStrLn . pretty . unHGrid $
     │ ██ │
     │ █  │
     │ █  │
+    └────┘
+    ┌────┐
+    │    │
+    │ ██ │
+    │██  │
+    │    │
     └────┘
 
 Now the same for the `VGrid`:
@@ -574,16 +620,16 @@ Again, always worth testing:
 {% highlight haskell %}
 :{
 putStrLn . pretty . unVGrid $
-  VGrid (withBorder $ mkPieceGrid pieceL) <> VGrid (withBorder $ mkPieceGrid pieceR)
+  mconcat (VGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS])
 :}
 {% endhighlight %}
 
-    ┌────┐┌────┐
-    │    ││    │
-    │ █  ││ ██ │
-    │ █  ││ █  │
-    │ ██ ││ █  │
-    └────┘└────┘
+    ┌────┐┌────┐┌────┐
+    │    ││    ││    │
+    │ █  ││ ██ ││ ██ │
+    │ █  ││ █  ││██  │
+    │ ██ ││ █  ││    │
+    └────┘└────┘└────┘
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -604,34 +650,34 @@ do
 {% endhighlight %}
 
     ┌────────────────────────────┐
-    │         █                  │
-    │ ██  ██  █   █   █  ██   ██ │
-    │ ██  █   █  ███  █   ██ ██  │
-    │     █   █       ██         │
+    │                            │
+    │    ██   █   ██  ██  ██  █  │
+    │     ██  █   ██ ██   █  ███ │
+    │████     ██          █      │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │                 █          │
-    │ ██  ██  █  ██   █   █   ██ │
-    │ ██  █   █   ██  █  ███ ██  │
-    │     █   ██      █          │
+    │                            │
+    │ ██  ██  ██  █   █  ██      │
+    │ █   ██ ██  ███  █   ██     │
+    │ █               ██     ████│
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │         █                  │
-    │ █   ██  █   █  ██   ██  ██ │
-    │ █  ██   █  ███  ██  █   ██ │
-    │ ██      █           █      │
+    │                            │
+    │██   ██  ██  █       █   ██ │
+    │ ██  █  ██  ███      █   ██ │
+    │     █          ████ ██     │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │ █                          │
-    │ █  ██   ██  ██  █   ██  █  │
-    │ █   ██ ██   ██ ███  █   █  │
-    │ █                   █   ██ │
+    │                            │
+    │ ██      █   ██  █  ██   ██ │
+    │ █      ███ ██   █   ██  ██ │
+    │ █  ████         ██         │
     └────────────────────────────┘
     ┌────────────────────────────┐
-    │                 █          │
-    │ ██  █   ██ ██   █   ██  █  │
-    │██  ███  █   ██  █   ██  █  │
-    │         █       █       ██ │
+    │                            │
+    │ ██ ██   ██  ██  █       █  │
+    │ █   ██ ██   ██  █      ███ │
+    │ █               ██ ████    │
     └────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -641,7 +687,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.10" class="footref" href="#fn.10" role="doc-backlink">10</a></sup>.
 
 
-<a id="org83389ab"></a>
+<a id="org80ac4d1"></a>
 
 # Rotations
 
@@ -649,28 +695,50 @@ While we&rsquo;re here, let&rsquo;s implement piece rotation. We can just rotate
 
 {% highlight haskell %}
 :{
--- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
-rotateCW :: Piece -> Piece
-rotateCW (Piece colour coordinates) =
-  Piece colour $ (\(x, y) -> (3 - y, x)) <$> coordinates
+data Rotation = CW | CCW
 
--- Lol. Lmao even. But it works.
-rotateCCW :: Piece -> Piece
-rotateCCW = rotateCW . rotateCW . rotateCW
+-- Offset to the origin, apply the usual (-y, x) rotation, and offset back.
+-- Here minX and minY will be supplied based on the frame of reference of the rotation.
+-- This will usually be the piece's bounding box
+rotate :: Rotation -> Int -> Int -> V2 -> V2
+rotate CW minX minY (x, y) =
+  let x' = x - minX
+      y' = y - minY
+   in (-y' + minX, x' + minX)
+rotate CCW minX minY (x, y) = iterate (rotate CW minX minY) (x, y) !! 3
+
+-- This will let us rotate an entire grid by supplying the
+-- appropriate rotation function. We convert the grid to a list briefly,
+-- then convert it back.
+-- This is inefficient in that it scans for the minX and minY each time.
+rotateGrid :: Rotation -> Grid -> Grid
+rotateGrid rotation (Grid width height grid) =
+  let minX = minimum $ fst <$> M.keys grid
+      minY = minimum $ snd <$> M.keys grid
+      rotateFn = rotate rotation minX minY
+   in Grid width height (M.mapKeys rotateFn grid)
 :}
+
 {% endhighlight %}
+
+Now we can rotate coordinates, but we want to rotate pieces themselves.
 
 Let&rsquo;s take a look at these rotations with a helper - the lambda syntax used here twice nested makes e.g. `(\a b -> a + b)` equivalent to `(+)`.
 
 {% highlight haskell %}
 :{
-showRotations rotateFn =
+showRotations rotation =
     forM_ allPieces
     $ (\piece ->
-            putStrLn
-            . pretty
-            . (\ps -> mconcat (take 4 ps) & unVGrid & withBorder)
-            $ VGrid . mkPieceGrid <$> iterate rotateFn piece)
+          piece
+            & mkPieceGrid
+            & iterate (rotateGrid rotation)
+            & take 4
+            & fmap (VGrid . withBorder)
+            & mconcat
+            & unVGrid
+            & pretty
+            & putStrLn)
 :}
 {% endhighlight %}
 
@@ -678,52 +746,53 @@ First clockwise:
 
 {% highlight haskell %}
 :{
-showRotations rotateCW
+showRotations CW
 :}
 {% endhighlight %}
 
-    ┌────────────────┐
-    │         ██     │
-    │ █  ███   █    █│
-    │ █  █     █  ███│
-    │ ██             │
-    └────────────────┘
-    ┌────────────────┐
-    │          █     │
-    │ ██ ███   █  █  │
-    │ █    █  ██  ███│
-    │ █              │
-    └────────────────┘
-    ┌────────────────┐
-    │                │
-    │ ██  ██  ██  ██ │
-    │ ██  ██  ██  ██ │
-    │                │
-    └────────────────┘
-    ┌────────────────┐
-    │     █          │
-    │ ██  ██   ██ █  │
-    │██    █  ██  ██ │
-    │              █ │
-    └────────────────┘
-    ┌────────────────┐
-    │      █         │
-    │██   ██  ██   █ │
-    │ ██  █    ██ ██ │
-    │             █  │
-    └────────────────┘
-    ┌────────────────┐
-    │     █          │
-    │ █   ██  ███  █ │
-    │███  █    █  ██ │
-    │              █ │
-    └────────────────┘
-    ┌────────────────┐
-    │ █        █     │
-    │ █  ████  █     │
-    │ █        █ ████│
-    │ █        █     │
-    └────────────────┘
+    ┌────┐┌  █ ┐┌────┐┌────┐
+    │     │    ││    ││    │
+    │ █ ██│    ││    ││    │
+    │ █ █ │    ││    ││    │
+    │ ██  │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌ ██ ┐┌────┐┌────┐
+    │     │    ││    ││    │
+    │ ████│    ││    ││    │
+    │ █   │    ││    ││    │
+    │ █   │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌ ██ ┐┌────┐┌────┐
+    │     │    ││    ││    │
+    │ ██ █│    ││    ││    │
+    │ ██ █│    ││    ││    │
+    │     │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌ ██ ┐┌────┐┌────┐
+    │    █│    ││    ││    │
+    │ ██ █│    ││    ││    │
+    │██   │    ││    ││    │
+    │     │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌  ██┐┌────┐┌────┐
+    │     │    ││    ││    │
+    │██  █│    ││    ││    │
+    │ ██ █│    ││    ││    │
+    │     │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌  █ ┐┌────┐┌────┐
+    │    █│    ││    ││    │
+    │ █  █│    ││    ││    │
+    │███ █│    ││    ││    │
+    │     │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌    ┐┌────┐┌────┐
+    │   █ │    ││    ││    │
+    │   █ │    ││    ││    │
+    │   █ │    ││    ││    │
+    │████ │    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    gh
 
 And counterclockwise:
 
@@ -731,57 +800,57 @@ First clockwise:
 
 {% highlight haskell %}
 :{
-showRotations rotateCCW
+showRotations CCW
 :}
 {% endhighlight %}
 
-    ┌────────────────┐
-    │         ██     │
-    │ █     █  █ ███ │
-    │ █   ███  █ █   │
-    │ ██             │
-    └────────────────┘
-    ┌────────────────┐
-    │          █     │
-    │ ██  █    █ ███ │
-    │ █   ███ ██   █ │
-    │ █              │
-    └────────────────┘
-    ┌────────────────┐
-    │                │
-    │ ██  ██  ██  ██ │
-    │ ██  ██  ██  ██ │
-    │                │
-    └────────────────┘
-    ┌────────────────┐
-    │             █  │
-    │ ██  █    ██ ██ │
-    │██   ██  ██   █ │
-    │      █         │
-    └────────────────┘
-    ┌────────────────┐
-    │              █ │
-    │██    █  ██  ██ │
-    │ ██  ██   ██ █  │
-    │     █          │
-    └────────────────┘
-    ┌────────────────┐
-    │             █  │
-    │ █    █  ███ ██ │
-    │███  ██   █  █  │
-    │      █         │
-    └────────────────┘
-    ┌────────────────┐
-    │ █        █     │
-    │ █        █ ████│
-    │ █  ████  █     │
-    │ █        █     │
-    └────────────────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││    ││    ││    │
+    │ █  ││    ││    ││    │
+    │ █  ││    ││    ││    │
+    │ ██ ││    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││    ││    ││    │
+    │ ██ ││    ││    ││    │
+    │ █  ││    ││    ││    │
+    │ █  ││    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││    ││    ││    │
+    │ ██ ││    ││    ││    │
+    │ ██ ││    ││    ││    │
+    │    ││    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││  █ ││    ││    │
+    │ ██ ││    ││    ││    │
+    │██  ││    ││    ││    │
+    │    ││    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││ █  ││    ││    │
+    │██  ││    ││    ││    │
+    │ ██ ││    ││    ││    │
+    │    ││    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││  █ ││    ││    │
+    │ █  ││    ││    ││    │
+    │███ ││    ││    ││    │
+    │    ││    ││    ││    │
+    └────┘└────┘└────┘└────┘
+    ┌────┐┌────┐┌────┐┌────┐
+    │    ││   █││    ││    │
+    │    ││    ││    ││    │
+    │    ││    ││    ││    │
+    │████││    ││    ││    │
+    └────┘└────┘└────┘└────┘
 
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="orgea336bf"></a>
+<a id="orge25f0a4"></a>
 
 # Placing Pieces on the Grid
 
@@ -792,13 +861,13 @@ We want it to be anchored to the bottom, so that it immediately starts to become
 {% highlight haskell %}
 :{
 -- Ensure the piece is centred and anchored to the top of the viewport.
-initPiece :: Piece -> Piece
-initPiece (Piece colour coordinates) = piece'
+initPiece :: Piece -> ActivePiece
+initPiece piece = ActivePiece (pieceColour piece) coordinates
   where
     -- We need to ensure the largest y-coordinate is 3
-    yOffset = 3 - maximum (snd <$> coordinates)
+    yOffset = 3 - maximum (snd <$> pieceCoords piece)
     -- And we'd like to roughly centre the piece, so we'll offset it by 3
-    piece' = Piece colour $ (\(x, y) -> (x + 3, y + yOffset)) <$> coordinates
+    coordinates = (\(x, y) -> (x + 3, y + yOffset)) <$> pieceCoords piece
 :}
 {% endhighlight %}
 
@@ -806,7 +875,7 @@ And let&rsquo;s test this, as ever:
 
 {% highlight haskell %}
 :{
-putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS)
+putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS)
 :}
 {% endhighlight %}
 
@@ -840,7 +909,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece pieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org2872974"></a>
+<a id="org3b6678e"></a>
 
 # Representing the Game State
 
@@ -852,7 +921,7 @@ We&rsquo;re going to implement piece holding - since there might not be a held p
 :{
 data Game = Game {
   grid :: Grid,
-  currentPiece :: Piece,
+  currentPiece :: ActivePiece,
   heldPiece :: Maybe Piece,
   pieces :: [Piece],
   score :: Int
@@ -902,7 +971,9 @@ We&rsquo;ll need a way of adding string labels to our UI:
 -- Turn a string into a grid for composability
 -- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
-sToG s = Grid (length s) 1 $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
+sToG s =
+  Grid (length s) 1
+    $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
 :}
 {% endhighlight %}
 
@@ -910,10 +981,10 @@ And a way of hiding the buffer zone:
 
 {% highlight haskell %}
 :{
--- Let's make a helper to hide the buffer zone.
 hideBuffer :: Grid -> Grid
 hideBuffer (Grid width height fullGrid) =
-  Grid width (height - 4) $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
+  Grid width (height - 4)
+    $ M.filterWithKey (\(_, y) _ -> y >= 4) fullGrid
 :}
 {% endhighlight %}
 
@@ -927,7 +998,8 @@ instance Pretty Game where
   pretty game =
     let -- Let's add a label at the top to display the score.
         scoreGrid = withBorder . HGrid . sToG $ "Score: " <> show (score game)
-        -- Now the left hand side; the grid with the current piece, but the top four lines hidden.
+        -- Now the left hand side; the grid with the current piece,
+        -- but the top four lines hidden.
         lhs = withBorder . VGrid . hideBuffer $ grid game & withPiece (currentPiece game)
         -- Create a preview with a label above it showing the next piece
         nextPiece = HGrid (sToG "Next:") <> HGrid (mkPieceGrid (head (pieces game)))
@@ -954,7 +1026,7 @@ do
   -- g <- newStdGen -- This would be system-random; for now we'll set a seed
   let g = mkStdGen 42 -- This sets our random seed.
   -- Create a new Game with one of its records set so we have a held piece to show
-  let game = (mkGame g) {heldPiece = Just pieceSquare}
+  let game = (mkGame g) {heldPiece = Just PieceS}
   putStrLn (pretty game)
 :}
 {% endhighlight %}
@@ -973,7 +1045,7 @@ do
     │          ││Held:│
     │          ││     │
     │          ││ ██  │
-    │          ││ ██  │
+    │          ││██   │
     │          ││     │
     │          │└─────┘
     │          │       
@@ -986,6 +1058,21 @@ do
     └──────────┘
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
+
+
+<a id="org25fdbbc"></a>
+
+# The Introduction of Time and Logic
+
+Let&rsquo;s ignore user input for now and focus solely on advancing time.
+
+To make this work, we&rsquo;ll need a way to:
+
+-   Advance the current piece downwards
+-   Fix pieces in place when they hit the bottom
+-   Pulls a new piece from the infinite stream and places it at the top
+
+We&rsquo;ll build a `step` function that does all of this.
 
 # Footnotes
 
@@ -1007,4 +1094,4 @@ This is looking a bit like Tetris! We can no longer see the buffer zone at the t
 
 <sup><a id="fn.9" href="#fnr.9">9</a></sup> Note that when referring to operators both in code and prose, it&rsquo;s typical to refer to them in parentheses. `(+) 1 2` is the same as `1 + 2`.
 
-<sup><a id="fn.10" href="#fnr.10">10</a></sup> It gets more complex when you&rsquo;re dealing with more arguments (`uncurry3 f (a, b c) = f a b c` and so on exist but there&rsquo;s no way to write generic `uncurryN` without resorting to `TemplateHaskell` to the best of my knowledge).
+<sup><a id="fn.10" href="#fnr.10">10</a></sup> It gets more complex when you&rsquo;re dealing with more arguments - `uncurry3 f (a, b c) = f a b c` and so on exist but there&rsquo;s no way to write generic `uncurryN` without resorting to `TemplateHaskell` to the best of my knowledge. Tweet at me if I&rsquo;m wrong please.
