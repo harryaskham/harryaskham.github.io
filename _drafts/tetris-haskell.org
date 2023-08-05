@@ -5,7 +5,7 @@
 
 
 #+BEGIN_COMMENT
-- Fix rotations
+- Line clear and scoring
 - Figure out colour block display
 - Figure out time display in website export
 - Figure out preprocessing to remove the ghci :{ :} preamble
@@ -18,14 +18,9 @@
 :r
 :m
 :set +m
-:set -package monad-extras
-:set -hide-package extra
 #+END_SRC
 
 #+RESULTS:
-: Ok, no modules loaded.
-: ghci> ghci> package flags have changed, resetting and loading new packages...
-: package flags have changed, resetting and loading new packages...
 
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
@@ -81,11 +76,10 @@ The full list of packages we need here are:
 - ~containers~
 - ~random~
 - ~random-shuffle~
-- ~monad-extras~
 
 If you're following along, you'll want to install them all:
 
-~cabal install --lib base containers random random-shuffle monad-extras~[fn:cabalhell]
+~cabal install --lib base containers random random-shuffle~[fn:cabalhell]
 
 [fn:cabalhell] Note that in general this is a terrible idea and gave me all kinds of headaches writing this post. Using Cabal in a global manner like this is inviting trouble. Pick and learn a package manager (could still be Cabal, but in the context of a project, not a blog post)
 
@@ -109,6 +103,7 @@ module Main where
 #+END_SRC
 
 #+RESULTS:
+: gh
 
 I'll spell out each import we're using explicitly[fn:babelimport]:
 
@@ -146,6 +141,7 @@ import Data.List (intercalate, foldl', intersect)
 #+END_SRC
 
 #+RESULTS:
+: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -193,15 +189,6 @@ import Control.Monad (forM_)
 
 #+RESULTS:
 
-#+BEGIN_SRC haskell :exports code
-:{
--- This will let us step our game state forward in time in a way that lets us
--- continually check for validity.
-import Control.Monad.Extra (iterateM)
-:}
-#+END_SRC
-
-#+RESULTS:
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -374,13 +361,13 @@ instance Borderable Grid where
     -- Create a new Grid with enough room for the UI elements
     Grid (width + 2) (height + 2)
       (grid
-      & M.mapKeys (first (+1) . second (+1))  -- Shift every coordinate by (+1, +1)
-      -- Then we insert the elements using the helpers below
-      & withLeftBorder
-      & withRightBorder
-      & withTopBorder
-      & withBottomBorder
-      & withCorners)
+        & M.mapKeys (first (+1) . second (+1))  -- Shift every coordinate by (+1, +1)
+        -- Then we insert the elements using the helpers below
+        & withLeftBorder
+        & withRightBorder
+        & withTopBorder
+        & withBottomBorder
+        & withCorners)
     where
       -- First a helper to insert black characters at the given coordinates
       insertBlackChars char coordinates =
@@ -545,11 +532,12 @@ We will also need some notion of a falling piece; something combining colour and
 
 #+BEGIN_SRC haskell :exports code
 :{
--- We need a type to represent the actively falling piece that combines colour and coordinates.
+-- We need a type to represent the actively falling piece that combines
+-- colour and coordinates.
 data ActivePiece = ActivePiece Colour [V2]
 
--- We also want some way of converting a piece into an active piece, which can be
--- placed on a grid.
+-- We also want some way of converting a piece into an active piece, which can
+-- move around and be placed on a grid.
 initPiece :: Piece -> ActivePiece
 initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
 :}
@@ -557,8 +545,12 @@ initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
 
 #+RESULTS:
 
-
 Now we need some functions for composing an ~ActivePiece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
+
+Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell's functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.[fn:foldl]
+
+[fn:foldl] The use of ~foldl'~ here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don't accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
+
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -566,7 +558,6 @@ Now we need some functions for composing an ~ActivePiece~ and a ~Grid~, both for
 -- function; this is a new function of type `Grid -> V2 -> Grid` which is
 -- exactly what we need for our fold. It's a bit of an awkward argument
 -- ordering for anything other than a fold.
-
 -- Note that if the block is outside of bounds, we just don't render it.
 -- This will make hiding the top rows easier later on.
 withBlock :: Colour -> Grid -> V2 -> Grid
@@ -587,23 +578,35 @@ mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece $ initPiece piece)
 
 #+RESULTS:
 
-Whew, okay. Let's give ourselves a nice way of inspecting these pieces - we'll use this for things like next piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The ~(.)~ operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:
+Whew, okay. Let's give ourselves a nice way of inspecting these pieces - we'll use this for things like next-piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The ~(.)~ operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:
 
 #+BEGIN_SRC haskell :exports code
 :{
 instance Pretty Piece where
-  pretty = pretty . mkPieceGrid
+  pretty = pretty . withBorder . mkPieceGrid
 :}
 #+END_SRC
 
 #+RESULTS:
 
-Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell's functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.[fn:foldl]
-
-[fn:foldl] The use of ~foldl'~ here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don't accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.
 
 
-Let's see if we got that right by pretty-printing these pieces.
+Let's see if we got that right by pretty-printing these pieces. First we'll just print one:
+
+#+BEGIN_SRC haskell :exports both
+:{
+putStrLn $ pretty PieceL
+:}
+#+END_SRC
+
+#+RESULTS:
+: ┌────┐
+: │    │
+: │ █  │
+: │ █  │
+: │ ██ │
+: └────┘
+: gh
 
 For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
 
@@ -728,12 +731,6 @@ putStrLn . pretty . mconcat
 #+END_SRC
 
 #+RESULTS:
-: ┌────┐┌────┐┌────┐
-: │    ││    ││    │
-: │ █  ││ ██ ││ ██ │
-: │ █  ││ █  ││██  │
-: │ ██ ││ █  ││    │
-: └────┘└────┘└────┘
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -758,43 +755,44 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││██  ││ █  ││ █  ││ ██ ││    ││ ██ ││
-││██  ││ ██ ││███ ││ █  ││ ██ ││    ││ █  ││
-││    ││    ││    ││ ██ ││    ││████││ █  ││
+││ ██ ││ █  ││ █  ││ ██ ││██  ││ ██ ││    ││
+││ █  ││███ ││ █  ││ ██ ││ ██ ││██  ││    ││
+││ █  ││    ││ ██ ││    ││    ││    ││████││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ ██ ││    ││██  ││ ██ ││ █  ││ █  ││
-││ ██ ││ █  ││    ││ ██ ││██  ││███ ││ █  ││
-││    ││ █  ││████││    ││    ││    ││ ██ ││
+││ █  ││ █  ││    ││ ██ ││ ██ ││ ██ ││██  ││
+││ █  ││███ ││    ││██  ││ █  ││ ██ ││ ██ ││
+││ ██ ││    ││████││    ││ █  ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││██  ││ █  ││ ██ ││ █  ││ ██ ││ ██ ││
-││    ││ ██ ││ █  ││██  ││███ ││ ██ ││ █  ││
-││████││    ││ ██ ││    ││    ││    ││ █  ││
+││    ││ ██ ││ █  ││ ██ ││ █  ││██  ││ ██ ││
+││    ││██  ││███ ││ ██ ││ █  ││ ██ ││ █  ││
+││████││    ││    ││    ││ ██ ││    ││ █  ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││██  ││ ██ ││ ██ ││ █  ││ ██ ││ █  ││    ││
-││ ██ ││ █  ││ ██ ││███ ││██  ││ █  ││    ││
-││    ││ █  ││    ││    ││    ││ ██ ││████││
+││ █  ││ ██ ││    ││ ██ ││ ██ ││ █  ││██  ││
+││ █  ││ █  ││    ││ ██ ││██  ││███ ││ ██ ││
+││ ██ ││ █  ││████││    ││    ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││██  ││ █  ││    ││ ██ ││ █  ││ ██ ││
-││ ██ ││ ██ ││███ ││    ││██  ││ █  ││ █  ││
-││    ││    ││    ││████││    ││ ██ ││ █  ││
+││ ██ ││██  ││ ██ ││ █  ││ █  ││ ██ ││    ││
+││██  ││ ██ ││ ██ ││███ ││ █  ││ █  ││    ││
+││    ││    ││    ││    ││ ██ ││ █  ││████││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
+ghci
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -817,21 +815,25 @@ data Rotation = CW | CCW
 -- Here we apply e.g. a (-y, x) rotation but offset back
 -- Here bounds will be supplied based on the frame of reference of the rotation.
 -- This will usually be the piece's bounding box.
-rotate :: Rotation -> V2 -> V2 -> V2 -> V2
-rotate CW (minX, minY) (maxX, maxY) (x, y) = (-y + (maxX - minX), x)
-rotate CCW (minX, minY) (maxX, maxY) (x, y) = (y, -x + (maxY - minY))
+rotate :: Rotation -> Int -> Int -> V2 -> V2
+rotate CW width height (x, y) = (-y + width, x)
+rotate CCW width height (x, y) = (y, -x + height)
 
 -- This will let us rotate an entire grid by supplying the
 -- appropriate rotation function. We convert the grid to a list briefly,
 -- then convert it back.
--- This is inefficient in that it scans for the minX and minY each time.
+-- This is inefficient in that it scans for the min and max each time,
+-- but at least does so using a single fold.
 rotateGrid :: Rotation -> Grid -> Grid
 rotateGrid rotation (Grid width height grid) =
-  let minX = minimum $ fst <$> M.keys grid
-      minY = minimum $ snd <$> M.keys grid
-      maxX = maximum $ fst <$> M.keys grid
-      maxY = maximum $ snd <$> M.keys grid
-      rotateFn = rotate rotation (minX, minY) (maxX, maxY)
+  let k0 = head $ M.keys grid
+      (minX, maxX, minY, maxY) =
+        foldl'
+          (\(minX, maxX, minY, maxY) (x, y) ->
+              (min minX x, max maxX x, min minY y, max maxY y))
+          (fst k0, fst k0, snd k0, snd k0)
+          (M.keys grid)
+      rotateFn = rotate rotation (maxX - minX) (maxY - minY)
    in Grid width height (M.mapKeys rotateFn grid)
 :}
 
@@ -971,7 +973,6 @@ showRotations CCW
 │    ││   █││    ││█   │
 │████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
-gh
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -1032,7 +1033,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 │          │
 │          │
 └──────────┘
-ghci
+gh
 #+end_example
 
 Looks solid - one step of gravity after this, and the piece will become visible.
