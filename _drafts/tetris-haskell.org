@@ -10,6 +10,7 @@
 - Figure out time display in website export
 - Figure out preprocessing to remove the ghci :{ :} preamble
 - Start with the bot and go to user input afterwards; or just stop with the botA
+- Be consistent with the backticks
 #+END_COMMENT
 
 #+BEGIN_SRC haskell :exports none :results output
@@ -17,12 +18,14 @@
 :r
 :m
 :set +m
+:set -package monad-extras
+:set -hide-package extra
 #+END_SRC
 
 #+RESULTS:
-: gh
 : Ok, no modules loaded.
-: gh
+: ghci> ghci> package flags have changed, resetting and loading new packages...
+: package flags have changed, resetting and loading new packages...
 
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
@@ -78,10 +81,14 @@ The full list of packages we need here are:
 - ~containers~
 - ~random~
 - ~random-shuffle~
+- ~monad-extras~
 
 If you're following along, you'll want to install them all:
 
-~cabal install --lib base containers random random-shuffle~
+~cabal install --lib base containers random random-shuffle monad-extras~[fn:cabalhell]
+
+[fn:cabalhell] Note that in general this is a terrible idea and gave me all kinds of headaches writing this post. Using Cabal in a global manner like this is inviting trouble. Pick and learn a package manager (could still be Cabal, but in the context of a project, not a blog post)
+
 
 Versioning is a whole other topic. We aren't using any unstable features of these packages, so I've not suggested pinning any particular versions, but just know it's often useful to do so do avoid dependency hell in a real project. A good package manager[fn:cabalnix] (Cabal, Stack, Nix, others) will help you here.
 
@@ -102,7 +109,7 @@ module Main where
 #+END_SRC
 
 #+RESULTS:
-: ghc
+: ghci
 
 I'll spell out each import we're using explicitly[fn:babelimport]:
 
@@ -120,7 +127,6 @@ import qualified Data.Map.Strict as M
 #+END_SRC
 
 #+RESULTS:
-: ghc
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -136,12 +142,11 @@ import Data.Map.Strict (Map)
 :{
 -- `intercalate` is similar to Python's `x.join()`
 -- `foldl'` is similar to Python's `reduce(f, xs)`
-import Data.List (intercalate, foldl')
+import Data.List (intercalate, foldl', intersect)
 :}
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -191,6 +196,16 @@ import Control.Monad (forM_)
 
 #+BEGIN_SRC haskell :exports code
 :{
+-- This will let us step our game state forward in time in a way that lets us
+-- continually check for validity.
+import Control.Monad.Extra (iterateM)
+:}
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC haskell :exports code
+:{
 -- We'll use these to make modifications to coordinates as we stick different
 -- UI elements together.
 import Control.Arrow (first, second)
@@ -198,7 +213,6 @@ import Control.Arrow (first, second)
 #+END_SRC
 
 #+RESULTS:
-: ghc
 
 * Establishing the Grid
 
@@ -219,11 +233,14 @@ data Colour = Blue
             | Cyan
             | Black
             | White
+            deriving (Eq)
 
 -- Another sum type; we either have a block of a certain colour, or empty space.
 -- We also insert the ability to display a char here because later, we'll use this
 -- to compose some basic UI elements.
-data Cell = Block Colour | BlockChar Colour Char | Empty
+-- We derive Eq both times here so that we can later check for full cells by
+-- inequality with Empty
+data Cell = Block Colour | BlockChar Colour Char | Empty deriving (Eq)
 :}
 #+END_SRC
 
@@ -249,6 +266,10 @@ type V2 = (Int, Int)
 -- `Map` as its arguments and gives us back a value of type `Grid`. That the
 -- constructor has the same name as the type is just convention.
 data Grid = Grid Int Int (Map V2 Cell)
+
+-- This is just a helper we'll use later to pull out the underlying Map as needed.
+unGrid :: Grid -> Map V2 Cell
+unGrid (Grid _ _ grid) = grid
 :}
 #+END_SRC
 
@@ -446,7 +467,6 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
-ghc
 #+end_example
 
 Alright!
@@ -537,7 +557,6 @@ initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 
 Now we need some functions for composing an ~ActivePiece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
@@ -568,7 +587,6 @@ mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece $ initPiece piece)
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 Whew, okay. Let's give ourselves a nice way of inspecting these pieces - we'll use this for things like next piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The ~(.)~ operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:
 
@@ -672,7 +690,6 @@ putStrLn . pretty . mconcat
 │██  │
 │    │
 └────┘
-ghc
 #+end_example
 
 Now the same for the ~VGrid~:
@@ -718,7 +735,6 @@ putStrLn . pretty . mconcat
 : │ █  ││ █  ││██  │
 : │ ██ ││ █  ││    │
 : └────┘└────┘└────┘
-: ghci
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -743,41 +759,41 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││██  ││ █  ││ █  ││ ██ ││    ││ ██ ││ ██ ││
-││ ██ ││███ ││ █  ││ ██ ││    ││ █  ││██  ││
-││    ││    ││ ██ ││    ││████││ █  ││    ││
+││    ││██  ││ ██ ││ ██ ││ █  ││ ██ ││ █  ││
+││    ││ ██ ││██  ││ ██ ││███ ││ █  ││ █  ││
+││████││    ││    ││    ││    ││ █  ││ ██ ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││ ██ ││ ██ ││██  ││    ││ █  ││
-││ █  ││ █  ││██  ││ ██ ││ ██ ││    ││███ ││
-││ ██ ││ █  ││    ││    ││    ││████││    ││
+││ ██ ││ █  ││ ██ ││    ││██  ││ ██ ││ █  ││
+││ ██ ││███ ││ █  ││    ││ ██ ││██  ││ █  ││
+││    ││    ││ █  ││████││    ││    ││ ██ ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││    ││ ██ ││ ██ ││██  ││ █  ││
-││ █  ││██  ││    ││ █  ││ ██ ││ ██ ││███ ││
-││ ██ ││    ││████││ █  ││    ││    ││    ││
+││ ██ ││ ██ ││ ██ ││ █  ││    ││ █  ││██  ││
+││██  ││ █  ││ ██ ││ █  ││    ││███ ││ ██ ││
+││    ││ █  ││    ││ ██ ││████││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││ █  ││ ██ ││ ██ ││██  ││ █  ││ ██ ││
-││    ││ █  ││ ██ ││██  ││ ██ ││███ ││ █  ││
-││████││ ██ ││    ││    ││    ││    ││ █  ││
+││ ██ ││ █  ││ ██ ││██  ││ █  ││    ││ ██ ││
+││ █  ││ █  ││ ██ ││ ██ ││███ ││    ││██  ││
+││ █  ││ ██ ││    ││    ││    ││████││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││██  ││ █  ││ ██ ││ ██ ││ ██ ││ █  ││    ││
-││ ██ ││ █  ││ █  ││██  ││ ██ ││███ ││    ││
-││    ││ ██ ││ █  ││    ││    ││    ││████││
+││ ██ ││ ██ ││    ││██  ││ █  ││ █  ││ ██ ││
+││ █  ││ ██ ││    ││ ██ ││ █  ││███ ││██  ││
+││ █  ││    ││████││    ││ ██ ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 #+end_example
@@ -859,6 +875,50 @@ showRotations CW
 #+END_SRC
 
 #+RESULTS:
+#+begin_example
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││ ██ ││    │
+│ █  ││███ ││  █ ││   █│
+│ █  ││█   ││  █ ││ ███│
+│ ██ ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││  █ ││    │
+│ ██ ││███ ││  █ ││ █  │
+│ █  ││  █ ││ ██ ││ ███│
+│ █  ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ ██ ││ ██ ││  ██││ █  │
+│██  ││  █ ││ ██ ││ ██ │
+│    ││    ││    ││  █ │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││  █ ││    ││    │
+│██  ││ ██ ││ ██ ││  █ │
+│ ██ ││ █  ││  ██││ ██ │
+│    ││    ││    ││ █  │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ █  ││ ██ ││ ███││  █ │
+│███ ││ █  ││  █ ││ ██ │
+│    ││    ││    ││  █ │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││█   ││████││   █│
+│    ││█   ││    ││   █│
+│    ││█   ││    ││   █│
+│████││█   ││    ││   █│
+└────┘└────┘└────┘└────┘
+#+end_example
 
 And counterclockwise:
 
@@ -1123,7 +1183,7 @@ do
 │          │
 │          │
 └──────────┘
-ghci
+gh
 #+end_example
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
@@ -1138,7 +1198,27 @@ To make this work, we'll need a way to:
 - Fix pieces in place when they hit the bottom
 - Pulls a new piece from the infinite stream and places it at the top
 
-We'll build a ~step~ function that does all of this at once, but first let's implement gravity.
+We'll build a ~step~ function that does all of this at once, but first let's implement gravity. To do this correctly, we also need a way of checking if a game is in a valid state, to stop pieces from falling through the floor.
+
+A valid ~Game~ is one where there are no out of bound blocks, and the current ~ActivePiece~ is not overlapping with any of the existing blocks. By induction, if we start with a valid ~Game~, and only place pieces in valid places, we only need to check the currently active piece:
+
+#+BEGIN_SRC haskell :exports code
+:{
+isValid :: Game -> Bool
+isValid game =
+  let -- We unwrap here to get to activeCoords; libraries like lens make this easier.
+      (ActivePiece _ activeCoords) = currentPiece game
+      -- We use a comprehension to find any non-empty blocks
+      fullCoords = [c | (c, block) <- M.toList (unGrid $ grid game), block /= Empty]
+      -- We'll let ourselves use magic numbers in our bounds checker.
+      outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
+      -- Finally, we ensure there is no overlap and no OOB block.
+      -- We could use Data.Set to make this significantly more efficient.
+   in (null (intersect activeCoords fullCoords)) && (not (any outOfBounds activeCoords))
+:}
+#+END_SRC
+
+#+RESULTS:
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -1150,35 +1230,151 @@ movePiece (x, y) (ActivePiece colour coords) =
   ActivePiece colour (bimap (+x) (+y) <$> coords)
 
 -- Here we use record update syntax to edit just one field.
-applyGravity :: Game -> Game
-applyGravity game = game { currentPiece = movePiece (0, 1) (currentPiece game) }
+-- If applying gravity results in an invalid game, we can represent this by Nothing.
+-- Here we use guard syntax to handle multiple boolean cases.
+applyGravity :: Game -> Maybe Game
+applyGravity game
+  | isValid game' = Just game'
+  | otherwise = Nothing
+  where
+    game' = game { currentPiece = movePiece (0, 1) (currentPiece game) }
 :}
 #+END_SRC
 
 #+RESULTS:
 
-So let's test this out a few times - for now we'll represent the passage of time horizontally, so we'll make a few game states, pull out the grids, and stitch them side by side.
+So let's test this out a few times - for now we'll represent the passage of time horizontally, so we'll make a few game states, pull out the grids, and stitch them side by side. We'd like to keep applying ~applyGravity~ over and over - but each time we take a ~Game~ to a ~Maybe Game~. We want some way of chaining these iterations together - and that's where the fact that ~Maybe~ belongs to the ~Monad~ typeclass comes in.
+
+This is *not* a ~Monad~ tutorial but it's useful to know that this is what's powering the composition[fn:kleisli] of instances of this ~applyGravity~ function together in a type-consistent way.
+
+[fn:kleisli] In this case, Kleisli composition; the ~(>=>)~ operator composes ~a -> m b~ and ~b -> m c~ into ~a -> m c~.
+
 
 #+BEGIN_SRC haskell :exports code
 :{
-debugGravity :: String
+-- Now that we're dealing with Maybe, let's implement a hacky way
+-- to debug print both cases.
+instance Pretty a => Pretty (Maybe a) where
+  pretty Nothing = "Nothing Pretty"
+  pretty (Just a) = pretty a
+
+-- This takes some thinking and is left as an exercise for the reader.
+-- We need to map some functions two Functors deep - the outer layer is the List
+-- and the inner layer is the Maybe.
+-- Having an operator for this is useful.
+infixl 4 <$$>
+(<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
+(<$$>) = fmap . fmap
+
+-- There are monadic library functions that'll do this generically, but let's manually
+-- implement the composition of our Maybes. This will iterate until it hits a Nothing,
+-- and then stop.
+iterateMaybes :: (a -> Maybe a) -> a -> [Maybe a]
+iterateMaybes f a =
+  case f a of
+    Just x -> Just x : iterateMaybes f x
+    Nothing -> [Nothing]
+
+debugGravity :: Maybe String
 debugGravity =
-  let game = mkGame (mkStdGen 42)
-      states = withBorder . VGrid . gameGrid <$> iterate applyGravity game
-   in pretty (mconcat (take 24 states))
+  let games = iterateMaybes applyGravity (mkGame (mkStdGen 42))
+   in fmap (pretty . unVGrid) . mconcat $ (withBorder . VGrid . gameGrid <$$> games)
 :}
 #+END_SRC
 
 #+RESULTS:
+
+Here we unsafely unwrap the ~Maybe String~ since we know it's going to be a ~Just~, but bear in mind that's not great practice in production:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn debugGravity
+let (Just s) = debugGravity in putStrLn s
 :}
 #+END_SRC
 
 #+RESULTS:
-: <interactive>:44161:10-21: error:
-:     Variable not in scope: debugGravity :: String
 
-Oh dear - of course, the piece just falls off the bottom of the play area.
+Sick, we hit the bottom and then we stop.
+
+Let's create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We'll simultaneously draw a new piece from the stream, too.
+
+#+BEGIN_SRC haskell :exports code
+:{
+fixPiece :: Game -> Game
+fixPiece game =
+  game { grid = gridWithPiece
+       , currentPiece = initPiece $ head (pieces game)
+       , pieces = tail (pieces game)
+       }
+  where
+    (ActivePiece colour coords) = currentPiece game
+    (Grid width height g) = grid game
+    gridWithPiece =
+      Grid width height
+        $ foldl' (\g coord -> M.insert coord (Block colour) g) g coords
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Now we can continually apply gravity, and when we reach an invalid state, we can fix the piece instead. The call to ~applyGravity~ lets us look one step ahead and respond accordingly. However, if after fixing a piece, we're still invalid (i.e. we've reached the top of the grid), we can return ~Nothing~ again.
+
+#+BEGIN_SRC haskell :exports code
+:{
+loseTheGame :: Game -> Maybe Game
+loseTheGame game
+  | isValid game =
+      case applyGravity game of
+        Just game' -> Just game'
+        Nothing -> Just (fixPiece game)
+  | otherwise = Nothing
+
+debugLoseTheGame :: Maybe String
+debugLoseTheGame  =
+  let games = iterateMaybes loseTheGame (mkGame (mkStdGen 42))
+   in fmap (pretty . unVGrid) . mconcat $ (withBorder . VGrid . gameGrid <$$> games)
+:}
+#+END_SRC
+
+#+RESULTS:
+
+And so now when we go to print this:
+
+#+BEGIN_SRC haskell :exports both
+:{
+let (Just s) = debugLoseTheGame in putStrLn s
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐
+│┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         │
+││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │
+│└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         │
+│┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+││    ██    ││Next:││││    █     ││Next:││││    █     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││    █     ││Next:││││    █     ││Next:││││    ██    ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││    ██    ││Next:││││   ██     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││   ██     ││Next:││││    ██    ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││    ██    ││Next:││││    ██    ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││   ███    ││Next:││││    █     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││   ████   ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││   ██     ││Next:││││    ██    ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││    █     ││Next:││││    █     ││Next:││││    ██    ││Next:││││    ██    ││Next:││││    ██    ││Next:││
+││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││   ██     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ███    ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ████   ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    █     ││     ││││    █     ││     ││
+││          ││ ██  ││││          ││ ██  ││││    ██    ││ ██  ││││    █     ││ ██  ││││    █     ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││██   ││││          ││██   ││││          ││██   ││││    █     ││██   ││││    █     ││██   ││││    ██    ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││    ██    ││ ██  ││││   ██     ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││   ██     ││ ██  ││││    ██    ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    ██    ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││     ││││          ││     ││││          ││     ││││   ███    ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││   ████   ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││   ██     ││ ██  ││││    ██    ││ ██  ││││          ││ ██  ││││          ││██   ││││          ││██   ││││          ││██   ││││    █     ││██   ││││    █     ││ █   ││││    █     ││     ││
+││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││    █     ││ ██  ││││    █     ││ ██  ││││    ██    ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││    ██    ││██   ││││   ██     ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││   ██     ││ ██  ││││    ██    ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││███  ││││          ││███  ││││          ││███  ││││          ││███  ││││    ██    ││███  ││││    ██    ││███  ││││          ││███  ││││          ││███  ││││          ││███  ││││          ││███  ││││          ││███  ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ███    ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││██   ││││          ││██   ││││          ││██   ││││          ││██   ││││   ████   ││██   ││││          ││██   ││││          ││██   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││   ██     ││ █   ││││    ██    ││ █   ││││    ██    ││ ██  ││││    ██    ││ ██  ││││    ██    ││ ██  ││││    ██    ││ ██  ││││    ██    ││███  ││││    ██    ││     ││
+││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││   ██     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││████ ││││          ││████ ││││          ││████ ││││          ││████ ││││          ││████ ││││   ███    ││████ ││││    █     ││████ ││││          ││████ ││││          ││████ ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ████   ││     ││││          ││     ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││   ██     ││ █   ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││████ ││
+││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││    ██    │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││   ██     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││   ██     │└─────┘│││    ██    │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    ██    │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││   ███    │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│││   ████   │└─────┘│
+││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    ██    │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││   ██     │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││   ██     │┌─────┐│││    ██    │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││    ██    │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││   ███    │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│
+││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││    █     ││Held:││││    █     ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    █     ││Held:││││    █     ││Held:││││    ██    ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││   ██     ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││   ██     ││Held:││││    ██    ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││    ██    ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││││   ███    ││Held:││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││   ██     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││   ██     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││   ██     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││││    ██    ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    █     ││     ││││    █     ││     ││││    ██    ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││   ██     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││││   ██     ││     ││
+││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││    ██    │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│││   ██     │└─────┘│
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    █     │       │││    █     │       │││    ██    │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    █     │       │││    █     │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │││    █     │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │││    ██    │       │
+│└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
+└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
+#+end_example
+
+Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works.
