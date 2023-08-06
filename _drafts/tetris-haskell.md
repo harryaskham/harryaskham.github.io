@@ -9,22 +9,22 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#orgdf216b6)
-2.  [What This Is](#org7cc6526)
-3.  [What This Isn&rsquo;t](#orgd6afcf2)
-4.  [Prelude](#org461da01)
-5.  [Strategy](#orgfd41077)
-6.  [Imports and Dependencies](#org7abed21)
-7.  [Establishing the Grid](#org7fc8734)
-8.  [Making Some Tetrominos](#org622d60b)
-9.  [Rotations](#org6c93a16)
-10. [Placing Pieces on the Grid](#orgc5351b3)
-11. [Representing the Game State](#orga4a7458)
-12. [The Introduction of Time and Logic](#orgc6fc823)
-13. [Incredibly Advanced Tetris AI](#org0c92c4f)
+1.  [Beginning at the End](#orgeda29a7)
+2.  [What This Is](#orgb76ce51)
+3.  [What This Isn&rsquo;t](#org0c5721a)
+4.  [Prelude](#org4ad8974)
+5.  [Strategy](#org1ed8b28)
+6.  [Imports and Dependencies](#org5ed4a3d)
+7.  [Establishing the Grid](#org8488dd9)
+8.  [Making Some Tetrominos](#org6e3c48b)
+9.  [Rotations](#org12e370c)
+10. [Placing Pieces on the Grid](#orge8ba3b6)
+11. [Representing the Game State](#org401853d)
+12. [The Introduction of Time and Logic](#orgf035582)
+13. [Incredibly Advanced Tetris AI](#org2cdb408)
 
 
-<a id="orgdf216b6"></a>
+<a id="orgeda29a7"></a>
 
 # Beginning at the End
 
@@ -33,7 +33,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org7cc6526"></a>
+<a id="orgb76ce51"></a>
 
 # What This Is
 
@@ -44,7 +44,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orgd6afcf2"></a>
+<a id="org0c5721a"></a>
 
 # What This Isn&rsquo;t
 
@@ -55,7 +55,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="org461da01"></a>
+<a id="org4ad8974"></a>
 
 # Prelude
 
@@ -66,7 +66,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgfd41077"></a>
+<a id="org1ed8b28"></a>
 
 # Strategy
 
@@ -83,7 +83,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 
 
-<a id="org7abed21"></a>
+<a id="org5ed4a3d"></a>
 
 # Imports and Dependencies
 
@@ -213,7 +213,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org7fc8734"></a>
+<a id="org8488dd9"></a>
 
 # Establishing the Grid
 
@@ -450,7 +450,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org622d60b"></a>
+<a id="org6e3c48b"></a>
 
 # Making Some Tetrominos
 
@@ -658,7 +658,7 @@ putStrLn . pretty . mconcat
     │██  │
     │    │
     └────┘
-    ghci
+    gh
 
 Now the same for the `VGrid`:
 
@@ -723,41 +723,41 @@ do
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ █  ││ ██ ││██  ││ ██ ││ █  ││ ██ ││    ││
-    ││ █  ││ █  ││ ██ ││ ██ ││███ ││██  ││    ││
-    ││ ██ ││ █  ││    ││    ││    ││    ││████││
+    ││██  ││ █  ││ ██ ││ ██ ││    ││ ██ ││ █  ││
+    ││ ██ ││ █  ││ ██ ││██  ││    ││ █  ││███ ││
+    ││    ││ ██ ││    ││    ││████││ █  ││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││    ││ █  ││ █  ││ ██ ││██  ││ ██ ││
-    ││ █  ││    ││ █  ││███ ││██  ││ ██ ││ ██ ││
-    ││ █  ││████││ ██ ││    ││    ││    ││    ││
+    ││ ██ ││ █  ││ ██ ││██  ││ ██ ││    ││ █  ││
+    ││ ██ ││ █  ││ █  ││ ██ ││██  ││    ││███ ││
+    ││    ││ ██ ││ █  ││    ││    ││████││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ █  ││██  ││ ██ ││ ██ ││ █  ││ ██ ││    ││
-    ││███ ││ ██ ││ █  ││██  ││ █  ││ ██ ││    ││
-    ││    ││    ││ █  ││    ││ ██ ││    ││████││
+    ││ ██ ││    ││ ██ ││ ██ ││██  ││ █  ││ █  ││
+    ││ ██ ││    ││ █  ││██  ││ ██ ││███ ││ █  ││
+    ││    ││████││ █  ││    ││    ││    ││ ██ ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ ██ ││ █  ││ ██ ││██  ││ █  ││    ││
-    ││ █  ││ ██ ││███ ││██  ││ ██ ││ █  ││    ││
-    ││ █  ││    ││    ││    ││    ││ ██ ││████││
+    ││ ██ ││██  ││ █  ││ ██ ││    ││ ██ ││ █  ││
+    ││ ██ ││ ██ ││███ ││ █  ││    ││██  ││ █  ││
+    ││    ││    ││    ││ █  ││████││    ││ ██ ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ █  ││ ██ ││██  ││ ██ ││ ██ ││    ││ █  ││
-    ││ █  ││ █  ││ ██ ││ ██ ││██  ││    ││███ ││
-    ││ ██ ││ █  ││    ││    ││    ││████││    ││
+    ││ ██ ││ ██ ││ ██ ││ █  ││    ││ █  ││██  ││
+    ││██  ││ ██ ││ █  ││ █  ││    ││███ ││ ██ ││
+    ││    ││    ││ █  ││ ██ ││████││    ││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
 
@@ -768,7 +768,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="org6c93a16"></a>
+<a id="org12e370c"></a>
 
 # Rotations
 
@@ -931,7 +931,7 @@ showRotations CCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="orgc5351b3"></a>
+<a id="orge8ba3b6"></a>
 
 # Placing Pieces on the Grid
 
@@ -990,7 +990,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orga4a7458"></a>
+<a id="org401853d"></a>
 
 # Representing the Game State
 
@@ -1101,36 +1101,10 @@ do
 :}
 {% endhighlight %}
 
-    ┌────────┐         
-    │Score: 0│         
-    └────────┘         
-    ┌──────────┐┌─────┐
-    │          ││Next:│
-    │          ││     │
-    │          ││ ██  │
-    │          ││ █   │
-    │          ││ █   │
-    │          │└─────┘
-    │          │┌─────┐
-    │          ││Held:│
-    │          ││     │
-    │          ││ ██  │
-    │          ││██   │
-    │          ││     │
-    │          │└─────┘
-    │          │       
-    │          │       
-    │          │       
-    │          │       
-    │          │       
-    │          │       
-    │          │       
-    └──────────┘
-
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="orgc6fc823"></a>
+<a id="orgf035582"></a>
 
 # The Introduction of Time and Logic
 
@@ -1276,8 +1250,8 @@ stripAnsiCodes s = foldl' (\s code -> replace code "" s) s codes
 
 -- We're going to build up a JS script that will animate our game and then
 -- write it to a file. We'll then just output the container and script tag.
-animate :: String -> [Game] -> IO ()
-animate name games = do
+animate :: Int -> String -> [Game] -> IO ()
+animate delay name games = do
   writeFile (".." ++ scriptPath) animationJs
   putStrLn (containerHtml ++ scriptHtml)
   where
@@ -1293,7 +1267,9 @@ animate name games = do
     animationJs = "var frames = " ++ frameArrayJs ++ ";"
       ++ "setInterval(function(){document.getElementsByClassName('"
       ++ animationName
-      ++ "')[0].innerHTML = frames.shift();frames.push(frames[0]);}, 100);"
+      ++ "')[0].innerHTML = frames.shift();frames.push(frames[0]);}, "
+      ++ show delay
+      ++ ");"
 :}
 {% endhighlight %}
 
@@ -1302,10 +1278,11 @@ Let&rsquo;s test this out:
 {% highlight haskell %}
 :{
   let games = catMaybes $ iterateMaybes applyGravity (mkGame (mkStdGen 42))
-   in animate "one-falling-block" games
+   in animate 100 "one-falling-block" games
 :}
 {% endhighlight %}
 
+<div class='animation-one-falling-block'></div><script src='/scripts/tetris/animation-one-falling-block.js'></script>
 
 Let&rsquo;s create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We&rsquo;ll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We&rsquo;ll implement simple scoring (no T-spins here, although they will be actually be possible).
 
@@ -1392,6 +1369,36 @@ debugLineRemoval
 :}
 {% endhighlight %}
 
+    Full lines detected: [21,23]
+    ┌───────────────────┐┌───────────────────┐
+    │┌────────┐         ││┌──────────┐       │
+    ││Score: 0│         │││Score: 300│       │
+    │└────────┘         ││└──────────┘       │
+    │┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+    ││          ││Next:││││          ││Next:││
+    ││          ││     ││││          ││     ││
+    ││          ││ ██  ││││          ││ ██  ││
+    ││          ││ █   ││││          ││ █   ││
+    ││          ││ █   ││││          ││ █   ││
+    ││          │└─────┘│││          │└─────┘│
+    ││          │┌─────┐│││          │┌─────┐│
+    ││          ││Held:││││          ││Held:││
+    ││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││
+    ││          │└─────┘│││          │└─────┘│
+    ││          │       │││          │       │
+    ││          │       │││          │       │
+    ││          │       │││          │       │
+    ││          │       │││          │       │
+    ││██████████│       │││          │       │
+    ││██████    │       │││          │       │
+    ││██████████│       │││██████    │       │
+    │└──────────┘       ││└──────────┘       │
+    └───────────────────┘└───────────────────┘
+    gh
+
 Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
 
 {% highlight haskell %}
@@ -1431,7 +1438,7 @@ And so now when we go to print this:
 {% highlight haskell %}
 :{
 let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
- in animate "lose-the-game" games
+ in animate 50 "lose-the-game" games
 :}
 {% endhighlight %}
 
@@ -1440,7 +1447,7 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. We&rsquo;re now in a position to write a simple bot to play the game.
 
 
-<a id="org0c92c4f"></a>
+<a id="org2cdb408"></a>
 
 # Incredibly Advanced Tetris AI
 

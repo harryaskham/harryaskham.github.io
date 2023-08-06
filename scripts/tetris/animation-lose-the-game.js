@@ -2518,4 +2518,4 @@ var frames = [`<figure><pre><code>┌────────┐
 │    █     │       
 │    █     │       
 │    ██    │       
-└──────────┘       </code></pre></figure>`];setInterval(function(){document.getElementsByClassName('animation-lose-the-game')[0].innerHTML = frames.shift();frames.push(frames[0]);}, 100);
+└──────────┘       </code></pre></figure>`];setInterval(function(){document.getElementsByClassName('animation-lose-the-game')[0].innerHTML = frames.shift();frames.push(frames[0]);}, 50);

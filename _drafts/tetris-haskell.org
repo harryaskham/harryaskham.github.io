@@ -20,9 +20,6 @@
 #+END_SRC
 
 #+RESULTS:
-: Ok, no modules loaded.
-: ghci>
-: package flags have changed, resetting and loading new packages...
 
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
@@ -144,6 +141,7 @@ import qualified Data.Set as S
 #+END_SRC
 
 #+RESULTS:
+: gh
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -164,7 +162,6 @@ import Data.List.Extra (replace)
 #+END_SRC
 
 #+RESULTS:
-: ghc
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -263,6 +260,7 @@ data Cell = Block Colour | BlockChar Colour Char | Empty deriving (Eq)
 #+END_SRC
 
 #+RESULTS:
+: g
 
 Now we're ready to set up our grid:
 
@@ -417,6 +415,7 @@ instance Borderable Grid where
 #+END_SRC
 
 #+RESULTS:
+: ghc
 
 We're ready to prettify our ~Grid~. Since we're operating over collections of things, we can start using higher-order functions; in Haskell, ~fmap~ from the ~Functor~ typeclass lets you apply a function to the inhabitants of any instance of a given ~Functor~. A list is an instance of ~Functor~, and so for some list ~xs~, ~fmap f xs~ just operates like the ~map(f, xs)~ function you find over lists in most other languages.
 
@@ -485,6 +484,7 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
+ghc
 #+end_example
 
 Alright!
@@ -514,7 +514,6 @@ allPieces = [minBound .. maxBound]
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 Now we can specify piece properties using simple pattern-matched functions:
 
@@ -577,6 +576,7 @@ initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
 #+END_SRC
 
 #+RESULTS:
+: gh
 
 Now we need some functions for composing an ~ActivePiece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
 
@@ -639,6 +639,7 @@ putStrLn $ pretty PieceL
 : │ █  │
 : │ ██ │
 : └────┘
+: gh
 
 For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
 
@@ -706,6 +707,27 @@ putStrLn . pretty . mconcat
 #+END_SRC
 
 #+RESULTS:
+#+begin_example
+┌────┐
+│    │
+│ █  │
+│ █  │
+│ ██ │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│ █  │
+│ █  │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│██  │
+│    │
+└────┘
+ghc
+#+end_example
 
 Now the same for the ~VGrid~:
 
@@ -733,7 +755,6 @@ instance Pretty VGrid where
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 Again, always worth testing:
 
@@ -776,41 +797,41 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││██  ││ ██ ││ ██ ││ █  ││ █  ││ ██ ││
+││    ││██  ││ █  ││ ██ ││ █  ││ ██ ││ ██ ││
 ││    ││ ██ ││ █  ││ ██ ││███ ││ █  ││██  ││
-││████││    ││ █  ││    ││    ││ ██ ││    ││
+││████││    ││ ██ ││    ││    ││ █  ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││██  ││    ││ ██ ││ █  ││ █  ││ ██ ││
-││ █  ││ ██ ││    ││██  ││███ ││ █  ││ ██ ││
-││ █  ││    ││████││    ││    ││ ██ ││    ││
+││██  ││    ││ █  ││ █  ││ ██ ││ ██ ││ ██ ││
+││ ██ ││    ││ █  ││███ ││██  ││ █  ││ ██ ││
+││    ││████││ ██ ││    ││    ││ █  ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││    ││ █  ││ ██ ││ ██ ││██  ││
-││ █  ││██  ││    ││███ ││ ██ ││ █  ││ ██ ││
-││ ██ ││    ││████││    ││    ││ █  ││    ││
+││ ██ ││ █  ││ ██ ││ █  ││ ██ ││    ││██  ││
+││██  ││ █  ││ ██ ││███ ││ █  ││    ││ ██ ││
+││    ││ ██ ││    ││    ││ █  ││████││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││██  ││ █  ││    ││ ██ ││ █  ││ ██ ││ ██ ││
-││ ██ ││ █  ││    ││██  ││███ ││ █  ││ ██ ││
-││    ││ ██ ││████││    ││    ││ █  ││    ││
+││ █  ││ ██ ││ █  ││ ██ ││    ││██  ││ ██ ││
+││███ ││ ██ ││ █  ││██  ││    ││ ██ ││ █  ││
+││    ││    ││ ██ ││    ││████││    ││ █  ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││    ││ ██ ││ █  ││ ██ ││██  ││
-││ █  ││ ██ ││    ││ █  ││███ ││██  ││ ██ ││
-││ ██ ││    ││████││ █  ││    ││    ││    ││
+││ ██ ││ ██ ││ █  ││██  ││ █  ││    ││ ██ ││
+││ ██ ││ █  ││ █  ││ ██ ││███ ││    ││██  ││
+││    ││ █  ││ ██ ││    ││    ││████││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 #+end_example
@@ -896,50 +917,6 @@ showRotations CW
 #+END_SRC
 
 #+RESULTS:
-#+begin_example
-┌────┐┌────┐┌────┐┌────┐
-│    ││    ││ ██ ││    │
-│ █  ││███ ││  █ ││   █│
-│ █  ││█   ││  █ ││ ███│
-│ ██ ││    ││    ││    │
-└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐
-│    ││    ││  █ ││    │
-│ ██ ││███ ││  █ ││ █  │
-│ █  ││  █ ││ ██ ││ ███│
-│ █  ││    ││    ││    │
-└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐
-│    ││    ││    ││    │
-│ ██ ││ ██ ││ ██ ││ ██ │
-│ ██ ││ ██ ││ ██ ││ ██ │
-│    ││    ││    ││    │
-└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐
-│    ││ █  ││    ││    │
-│ ██ ││ ██ ││  ██││ █  │
-│██  ││  █ ││ ██ ││ ██ │
-│    ││    ││    ││  █ │
-└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐
-│    ││  █ ││    ││    │
-│██  ││ ██ ││ ██ ││  █ │
-│ ██ ││ █  ││  ██││ ██ │
-│    ││    ││    ││ █  │
-└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐
-│    ││ █  ││    ││    │
-│ █  ││ ██ ││ ███││  █ │
-│███ ││ █  ││  █ ││ ██ │
-│    ││    ││    ││  █ │
-└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐
-│    ││█   ││████││   █│
-│    ││█   ││    ││   █│
-│    ││█   ││    ││   █│
-│████││█   ││    ││   █│
-└────┘└────┘└────┘└────┘
-#+end_example
 
 And counterclockwise:
 
@@ -1016,6 +993,7 @@ initPiece piece = ActivePiece (pieceColour piece) coordinates
 #+END_SRC
 
 #+RESULTS:
+: ghci
 
 And let's test this, as ever:
 
@@ -1204,7 +1182,6 @@ do
 │          │
 │          │
 └──────────┘
-ghci
 #+end_example
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
@@ -1347,7 +1324,6 @@ let (Just s) = debugIterateMaybe applyGravity in putStrLn s
 ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │
 │└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
 └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
-ghci
 #+end_example
 
 Sick, we hit the bottom and then we stop.
@@ -1366,8 +1342,8 @@ stripAnsiCodes s = foldl' (\s code -> replace code "" s) s codes
 
 -- We're going to build up a JS script that will animate our game and then
 -- write it to a file. We'll then just output the container and script tag.
-animate :: String -> [Game] -> IO ()
-animate name games = do
+animate :: Int -> String -> [Game] -> IO ()
+animate delay name games = do
   writeFile (".." ++ scriptPath) animationJs
   putStrLn (containerHtml ++ scriptHtml)
   where
@@ -1383,7 +1359,9 @@ animate name games = do
     animationJs = "var frames = " ++ frameArrayJs ++ ";"
       ++ "setInterval(function(){document.getElementsByClassName('"
       ++ animationName
-      ++ "')[0].innerHTML = frames.shift();frames.push(frames[0]);}, 100);"
+      ++ "')[0].innerHTML = frames.shift();frames.push(frames[0]);}, "
+      ++ show delay
+      ++ ");"
 :}
 #+END_SRC
 
@@ -1394,7 +1372,7 @@ Let's test this out:
 #+BEGIN_SRC haskell :exports both :results html
 :{
   let games = catMaybes $ iterateMaybes applyGravity (mkGame (mkStdGen 42))
-   in animate "one-falling-block" games
+   in animate 100 "one-falling-block" games
 :}
 #+END_SRC
 
@@ -1530,7 +1508,7 @@ Full lines detected: [21,23]
 ││██████████│       │││██████    │       │
 │└──────────┘       ││└──────────┘       │
 └───────────────────┘└───────────────────┘
-ghci
+ghc
 #+end_example
 
 Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
@@ -1570,20 +1548,20 @@ loseTheGame game
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 And so now when we go to print this:
 
 #+BEGIN_SRC haskell :exports both :results html
 :{
 let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
- in animate "lose-the-game" games
+ in animate 50 "lose-the-game" games
 :}
 #+END_SRC
 
 #+RESULTS:
 #+begin_export html
 <div class='animation-lose-the-game'></div><script src='/scripts/tetris/animation-lose-the-game.js'></script>
+ghci
 #+end_export
 
 Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works. We're now in a position to write a simple bot to play the game.
