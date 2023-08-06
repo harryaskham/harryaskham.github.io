@@ -5,9 +5,9 @@
 
 
 #+BEGIN_COMMENT
-- Line clear and scoring
+- Make more efficient - sets instead of list intersection, etc
 - Figure out colour block display
-- Figure out time display in website export
+- Figure out animation display in website export
 - Figure out preprocessing to remove the ghci :{ :} preamble
 - Start with the bot and go to user input afterwards; or just stop with the botA
 - Be consistent with the backticks
@@ -61,11 +61,11 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 - Pieces themselves will begin life in a 4x4 grid, and remain that way until they get fixed to the board.
   - This lets us implement rotation, collision detection and bounds checks on falling pieces by stepping forward (either by rotating, by translation or by gravity), looking for overlap, and simply rejecting the new game state if we have overlapping blocks.
 - We'll build logic to move the game forward one "step" (apply gravity, fix blocks when they hit bottom, delete full rows, update the score, etc.)
-- Eventually, we'll have three threads running:
+- We'll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
+- Later, when I revisit this post to include human input, we'll have a playable game with three threads running:
   - One to progress the game state
   - One to draw the game to the screen
   - One to accept user input and act on it
-- We'll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 * Imports and Dependencies
 We'll start with the imports we need. Haskell is "batteries included" in so far as there is a rich collection of widely used, canonical core libraries on [[https://hackage.haskell.org/][Hackage]] - but they don't come with the compiler. You need to make them available on your system. For example, we'll be using [[https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html][~Map~]] a lot, which is part of the ~containers~ package. The glorious [[https://www.haskell.org/ghc/][Glasgow Haskell Compiler]] needs you to install these libraries. There are myriad ways of doing this, but simplest might just be running ~cabal install --lib <libname>~.
@@ -167,6 +167,7 @@ import System.Random (RandomGen, split, newStdGen, getStdGen, mkStdGen)
 #+END_SRC
 
 #+RESULTS:
+: ghc
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -451,7 +452,6 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
-gh
 #+end_example
 
 Alright!
@@ -599,12 +599,6 @@ putStrLn $ pretty PieceL
 #+END_SRC
 
 #+RESULTS:
-: ┌────┐
-: │    │
-: │ █  │
-: │ █  │
-: │ ██ │
-: └────┘
 
 For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
 
@@ -735,7 +729,6 @@ putStrLn . pretty . mconcat
 : │ █  ││ █  ││██  │
 : │ ██ ││ █  ││    │
 : └────┘└────┘└────┘
-: g
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -760,41 +753,41 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││ █  ││    ││ ██ ││██  ││ ██ ││
-││ █  ││██  ││███ ││    ││ █  ││ ██ ││ ██ ││
-││ ██ ││    ││    ││████││ █  ││    ││    ││
+││██  ││ ██ ││ █  ││ ██ ││    ││ ██ ││ █  ││
+││ ██ ││██  ││ █  ││ █  ││    ││ ██ ││███ ││
+││    ││    ││ ██ ││ █  ││████││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││    ││ █  ││ ██ ││ ██ ││ █  ││██  ││
-││ ██ ││    ││███ ││ █  ││██  ││ █  ││ ██ ││
-││    ││████││    ││ █  ││    ││ ██ ││    ││
+││    ││ ██ ││ ██ ││██  ││ █  ││ █  ││ ██ ││
+││    ││ █  ││ ██ ││ ██ ││ █  ││███ ││██  ││
+││████││ █  ││    ││    ││ ██ ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││██  ││ ██ ││ █  ││    ││ ██ ││ ██ ││ █  ││
-││ ██ ││ █  ││ █  ││    ││ ██ ││██  ││███ ││
-││    ││ █  ││ ██ ││████││    ││    ││    ││
+││ ██ ││ █  ││ █  ││ ██ ││██  ││ ██ ││    ││
+││██  ││ █  ││███ ││ █  ││ ██ ││ ██ ││    ││
+││    ││ ██ ││    ││ █  ││    ││    ││████││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││ █  ││ ██ ││ ██ ││ ██ ││ █  ││██  ││
-││    ││███ ││██  ││ ██ ││ █  ││ █  ││ ██ ││
-││████││    ││    ││    ││ █  ││ ██ ││    ││
+││██  ││    ││ █  ││ ██ ││ █  ││ ██ ││ ██ ││
+││ ██ ││    ││ █  ││ █  ││███ ││ ██ ││██  ││
+││    ││████││ ██ ││ █  ││    ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││ █  ││ ██ ││ ██ ││██  ││ ██ ││ █  ││
-││    ││███ ││ ██ ││██  ││ ██ ││ █  ││ █  ││
-││████││    ││    ││    ││    ││ █  ││ ██ ││
+││ █  ││ █  ││ ██ ││ ██ ││ ██ ││    ││██  ││
+││███ ││ █  ││ █  ││██  ││ ██ ││    ││ ██ ││
+││    ││ ██ ││ █  ││    ││    ││████││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 #+end_example
@@ -923,6 +916,7 @@ showRotations CW
 │    ││█   ││    ││   █│
 │████││█   ││    ││   █│
 └────┘└────┘└────┘└────┘
+ghc
 #+end_example
 
 And counterclockwise:
@@ -977,7 +971,6 @@ showRotations CCW
 │    ││   █││    ││█   │
 │████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
-ghci
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -1038,7 +1031,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 │          │
 │          │
 └──────────┘
-g
+ghci
 #+end_example
 
 Looks solid - one step of gravity after this, and the piece will become visible.
@@ -1190,6 +1183,7 @@ do
 │          │
 │          │
 └──────────┘
+ghc
 #+end_example
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
@@ -1225,6 +1219,8 @@ isValid game =
 #+END_SRC
 
 #+RESULTS:
+
+Now we're able to use this for a simple implementation of gravity:
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -1327,7 +1323,6 @@ let (Just s) = debugIterateMaybe applyGravity in putStrLn s
 ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │
 │└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
 └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
-gh
 #+end_example
 
 Sick, we hit the bottom and then we stop.
@@ -1372,7 +1367,8 @@ removeLine (Grid width height grid) i = Grid width height grid'
       grid
         -- First move everything down, covering the removed line
         & M.mapKeys (\(x, y) -> if y <= i then (x, y + 1) else (x, y))
-        -- We might have removed the bottom line; if so, get rid of anything under the grid
+        -- We might have removed the bottom line.
+        -- If so, get rid of anything under the grid
         & M.filterWithKey (\(_, y) _ -> y < height)
         -- Now, we need to fill in the top line with empty space
         & M.union (unGrid $ mkEmptyGrid width 1)
@@ -1388,17 +1384,25 @@ removeFullLines game = game { grid = grid', score = score' }
 
 #+RESULTS:
 
-Let's write a way to test this out real quick:
+Let's write a way to test this out real quick:[fn:explicitio]
+
+[fn:explicitio] Note that here I'm being explicit that we're building something of type ~IO ()~, roughly meaning a thing that can have real-world side effects like printing to the screen, but doesn't return anything (or rather, returns the unit value ~()~).
+
 
 #+BEGIN_SRC haskell :exports code
 :{
+debugLineRemoval :: IO ()
 debugLineRemoval = do
   -- Insert two full lines with a partial line inbetween
-  let full =
+  let fullCoords =
         [ (x, 23) | x <- [0 .. 9] ]
         <> [ (x, 22) | x <- [0 .. 5] ]
         <> [ (x, 21) | x <- [0 .. 9] ]
-      fullGrid = foldl' (\g c -> M.insert c (Block Red) g) (unGrid $ mkEmptyGrid 10 24) full
+      fullGrid =
+        foldl'
+          (\g c -> M.insert c (Block Red) g)
+          (unGrid $ mkEmptyGrid 10 24)
+          fullCoords
       game = (mkGame (mkStdGen 42)) { grid = Grid 10 24 fullGrid }
       lhs = gameGrid game
       rhs = gameGrid $ removeFullLines game
@@ -1418,6 +1422,36 @@ debugLineRemoval
 #+END_SRC
 
 #+RESULTS:
+#+begin_example
+Full lines detected: [21,23]
+┌───────────────────┐┌───────────────────┐
+│┌────────┐         ││┌──────────┐       │
+││Score: 0│         │││Score: 300│       │
+│└────────┘         ││└──────────┘       │
+│┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+││          ││Next:││││          ││Next:││
+││          ││     ││││          ││     ││
+││          ││ ██  ││││          ││ ██  ││
+││          ││ █   ││││          ││ █   ││
+││          ││ █   ││││          ││ █   ││
+││          │└─────┘│││          │└─────┘│
+││          │┌─────┐│││          │┌─────┐│
+││          ││Held:││││          ││Held:││
+││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││
+││          │└─────┘│││          │└─────┘│
+││          │       │││          │       │
+││          │       │││          │       │
+││          │       │││          │       │
+││          │       │││          │       │
+││██████████│       │││          │       │
+││██████    │       │││          │       │
+││██████████│       │││██████    │       │
+│└──────────┘       ││└──────────┘       │
+└───────────────────┘└───────────────────┘
+#+end_example
 
 Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
 
