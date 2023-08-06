@@ -9,23 +9,23 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#orgb86c403)
-2.  [What This Is](#org1ee8bfb)
-3.  [What This Isn&rsquo;t](#org98353a3)
-4.  [Prelude](#org2265016)
-5.  [Strategy](#org051060e)
-6.  [Imports and Dependencies](#org996a228)
-7.  [Establishing the Grid](#orgf4ba62c)
-8.  [Making Some Tetrominos](#org7804989)
-9.  [Rotations](#orgbba9699)
-10. [Placing Pieces on the Grid](#org83841cd)
-11. [Representing the Game State](#org24a3ac1)
-12. [The Introduction of Time and Logic](#org075bc04)
-13. [Operating on the Game](#org1bdc91d)
-14. [Super Advanced Tetris AI (SATAI)](#orgb54e52e)
+1.  [Beginning at the End](#org0fb7c50)
+2.  [What This Is](#orgcfc2e8c)
+3.  [What This Isn&rsquo;t](#org66db703)
+4.  [Prelude](#orgda962b9)
+5.  [Strategy](#org2d60c27)
+6.  [Imports and Dependencies](#org00ebbbf)
+7.  [Establishing the Grid](#orge63ce15)
+8.  [Making Some Tetrominos](#orgda163be)
+9.  [Rotations](#orgb4c2935)
+10. [Placing Pieces on the Grid](#org8f56445)
+11. [Representing the Game State](#org9256fd7)
+12. [The Introduction of Time and Logic](#orgdcf5e20)
+13. [Operating on the Game](#org06ca437)
+14. [Super Advanced Tetris AI (SATAI)](#orgaf80673)
 
 
-<a id="orgb86c403"></a>
+<a id="org0fb7c50"></a>
 
 # Beginning at the End
 
@@ -34,7 +34,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org1ee8bfb"></a>
+<a id="orgcfc2e8c"></a>
 
 # What This Is
 
@@ -45,7 +45,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org98353a3"></a>
+<a id="org66db703"></a>
 
 # What This Isn&rsquo;t
 
@@ -56,7 +56,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="org2265016"></a>
+<a id="orgda962b9"></a>
 
 # Prelude
 
@@ -67,7 +67,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org051060e"></a>
+<a id="org2d60c27"></a>
 
 # Strategy
 
@@ -84,7 +84,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 
 
-<a id="org996a228"></a>
+<a id="org00ebbbf"></a>
 
 # Imports and Dependencies
 
@@ -220,7 +220,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orgf4ba62c"></a>
+<a id="orge63ce15"></a>
 
 # Establishing the Grid
 
@@ -425,12 +425,39 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 :}
 {% endhighlight %}
 
+    ┌──────────┐
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    │          │
+    └──────────┘
+
 Alright!
 
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org7804989"></a>
+<a id="orgda163be"></a>
 
 # Making Some Tetrominos
 
@@ -629,6 +656,25 @@ putStrLn . pretty . mconcat
 :}
 {% endhighlight %}
 
+    ┌────┐
+    │    │
+    │ █  │
+    │ █  │
+    │ ██ │
+    └────┘
+    ┌────┐
+    │    │
+    │ ██ │
+    │ █  │
+    │ █  │
+    └────┘
+    ┌────┐
+    │    │
+    │ ██ │
+    │██  │
+    │    │
+    └────┘
+
 Now the same for the `VGrid`:
 
 {% highlight haskell %}
@@ -689,6 +735,47 @@ do
 :}
 {% endhighlight %}
 
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││ █  ││ ██ ││ █  ││ ██ ││ ██ ││██  ││    ││
+    ││ █  ││ ██ ││███ ││ █  ││██  ││ ██ ││    ││
+    ││ ██ ││    ││    ││ █  ││    ││    ││████││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││ ██ ││    ││ ██ ││ █  ││ ██ ││██  ││ █  ││
+    ││██  ││    ││ ██ ││ █  ││ █  ││ ██ ││███ ││
+    ││    ││████││    ││ ██ ││ █  ││    ││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││██  ││ █  ││    ││ ██ ││ ██ ││ █  ││ ██ ││
+    ││ ██ ││███ ││    ││ ██ ││ █  ││ █  ││██  ││
+    ││    ││    ││████││    ││ █  ││ ██ ││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││██  ││ ██ ││ ██ ││    ││ █  ││ █  ││ ██ ││
+    ││ ██ ││ ██ ││ █  ││    ││███ ││ █  ││██  ││
+    ││    ││    ││ █  ││████││    ││ ██ ││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││██  ││ ██ ││ ██ ││ █  ││    ││ █  ││ ██ ││
+    ││ ██ ││ █  ││ ██ ││ █  ││    ││███ ││██  ││
+    ││    ││ █  ││    ││ ██ ││████││    ││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
 We introduced a number of new concepts here; we secretly entered a monad (`IO`, specifically), enabling the `do`-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we&rsquo;ve been doing this all along with every call to `putStrLn`. We&rsquo;ll get into `IO` more later when we start dealing with user input and multiprocessing.
@@ -696,7 +783,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="orgbba9699"></a>
+<a id="orgb4c2935"></a>
 
 # Rotations
 
@@ -820,53 +907,10 @@ showRotations CCW
 :}
 {% endhighlight %}
 
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││    ││ ██ ││    │
-    │ █  ││   █││  █ ││███ │
-    │ █  ││ ███││  █ ││█   │
-    │ ██ ││    ││    ││    │
-    └────┘└────┘└────┘└────┘
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││    ││  █ ││    │
-    │ ██ ││ █  ││  █ ││███ │
-    │ █  ││ ███││ ██ ││  █ │
-    │ █  ││    ││    ││    │
-    └────┘└────┘└────┘└────┘
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││    ││    ││    │
-    │ ██ ││ ██ ││ ██ ││ ██ │
-    │ ██ ││ ██ ││ ██ ││ ██ │
-    │    ││    ││    ││    │
-    └────┘└────┘└────┘└────┘
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││    ││    ││ █  │
-    │ ██ ││ █  ││  ██││ ██ │
-    │██  ││ ██ ││ ██ ││  █ │
-    │    ││  █ ││    ││    │
-    └────┘└────┘└────┘└────┘
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││    ││    ││  █ │
-    │██  ││  █ ││ ██ ││ ██ │
-    │ ██ ││ ██ ││  ██││ █  │
-    │    ││ █  ││    ││    │
-    └────┘└────┘└────┘└────┘
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││    ││    ││ █  │
-    │ █  ││  █ ││ ███││ ██ │
-    │███ ││ ██ ││  █ ││ █  │
-    │    ││  █ ││    ││    │
-    └────┘└────┘└────┘└────┘
-    ┌────┐┌────┐┌────┐┌────┐
-    │    ││   █││████││█   │
-    │    ││   █││    ││█   │
-    │    ││   █││    ││█   │
-    │████││   █││    ││█   │
-    └────┘└────┘└────┘└────┘
-
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="org83841cd"></a>
+<a id="org8f56445"></a>
 
 # Placing Pieces on the Grid
 
@@ -922,7 +966,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop Piece
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org24a3ac1"></a>
+<a id="org9256fd7"></a>
 
 # Representing the Game State
 
@@ -1066,7 +1110,7 @@ do
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="org075bc04"></a>
+<a id="orgdcf5e20"></a>
 
 # The Introduction of Time and Logic
 
@@ -1078,7 +1122,7 @@ To make this work, we&rsquo;ll need a way to:
 -   Fix pieces in place when they hit the bottom
 -   Pulls a new piece from the infinite stream and places it at the top
 
-We&rsquo;ll build a `step` function that does all of this at once, but first let&rsquo;s implement gravity. To do this correctly, we also need a way of checking if a game is in a valid state, to stop pieces from falling through the floor.
+To do all this in a carefree way, we&rsquo;d like a way of checking if a game is in a valid state (at first just to stop pieces from falling through the floor).
 
 A valid `Game` is one where there are no out of bound blocks, we haven&rsquo;t spilled over the top, and the current `ActivePiece` is not overlapping with any of the existing blocks. By induction, if we start with a valid `Game`, and only place pieces in valid places, we only need to check the currently active piece:
 
@@ -1092,7 +1136,8 @@ isValid game =
       -- Intentionally not using bimap here to shake things up.
       pieceGrid' = Grid pw ph $ M.mapKeys (\(x', y') -> (x' + x, y' + y)) pieceGrid
       -- We use a comprehension to create a Set of any non-empty blocks
-      nonEmpty (Grid _ _ grid) = S.fromList [c | (c, block) <- M.toList grid, block /= Empty]
+      nonEmpty (Grid _ _ grid) =
+        S.fromList [c | (c, block) <- M.toList grid, block /= Empty]
       -- Finally, we ensure there is no overlap and no OOB block.
       activeCoords = nonEmpty pieceGrid'
       fullCoords = nonEmpty (grid game)
@@ -1171,6 +1216,34 @@ Here we unsafely unwrap the `Maybe String` since we know it&rsquo;s going to be 
 let (Just s) = debugIterateMaybe applyGravity in putStrLn s
 :}
 {% endhighlight %}
+
+    ┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐
+    │┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         │
+    ││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │
+    │└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         │
+    │┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+    ││    ██    ││Next:││││    █     ││Next:││││    █     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││
+    ││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││ ██  ││││          ││ ██  ││││    ██    ││ ██  ││││    █     ││ ██  ││││    █     ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││
+    ││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+    ││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+    ││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+    ││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│
+    ││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││    █     ││Held:││││    █     ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │
+    │└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
+    └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
 
 Sick, we hit the bottom and then we stop.
 
@@ -1403,7 +1476,7 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. Now we need some sort of way to &ldquo;play the game&rdquo;.
 
 
-<a id="org1bdc91d"></a>
+<a id="org06ca437"></a>
 
 # Operating on the Game
 
@@ -1493,7 +1566,7 @@ let game = mkGame (mkStdGen 42)
 I reckon we can do better than this. Time for a bot.
 
 
-<a id="orgb54e52e"></a>
+<a id="orgaf80673"></a>
 
 # Super Advanced Tetris AI (SATAI)
 
@@ -1546,7 +1619,6 @@ animate 200 "test-possible-states" $ possibleStates (mkGame (mkStdGen 42))
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-possible-states'></code></pre></figure><script src='/scripts/tetris/animation-test-possible-states.js'></script>
-ghci
 
 Let&rsquo;s implement a simple heuristic - the higher the grid ceiling, the worse it is:
 
@@ -1568,8 +1640,11 @@ We can now implement one-step lookahead:
 
 {% highlight haskell %}
 :{
-oneStepBot :: Game -> Game
-oneStepBot game = head $ sortOn heuristic (possibleStates game)
+oneStepBot :: Game -> Maybe Game
+oneStepBot game =
+  case possibleStates game of
+    [] -> Nothing
+    states -> Just . head $ sortOn heuristic states
 :}
 {% endhighlight %}
 
@@ -1577,12 +1652,63 @@ Let&rsquo;s see how it gets on:
 
 {% highlight haskell %}
 :{
-animate 200 "test-one-step-bot" . take 50
-  $ iterate oneStepBot (mkGame (mkStdGen 42))
+animate 50 "test-one-step-bot" . catMaybes
+  $ iterateMaybes oneStepBot (mkGame (mkStdGen 42))
 :}
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-one-step-bot'></code></pre></figure><script src='/scripts/tetris/animation-test-one-step-bot.js'></script>
+
+Hey, 1000! Not bad, but obviously we&rsquo;d benefit from arbitrary lookahead. We&rsquo;ll implement a kind of beam search, where we take the `n` best states and expand them out, up to some predefined depth. Obviously the wider the beam, the faster this space grows, and the deeper we go the more computation we&rsquo;ll need.
+
+We use a common pattern here where we&rsquo;d like to track some state in our recursion, but don&rsquo;t want to expose it. We use this `go` helper to, here, track the first move we made, so that we can return it at the end.
+
+{% highlight haskell %}
+:{
+beamSearchBot :: Int -> Int -> Game -> Maybe Game
+beamSearchBot depth width game =
+  case go Nothing depth width game of
+    Nothing -> Nothing
+    Just (firstMove, _) -> Just firstMove
+  where
+    go :: Maybe Game -> Int -> Int -> Game -> Maybe (Game, Game)
+    go (Just firstMove) 0 _ game = Just (firstMove, game)
+    go firstMove depth width game =
+      let
+        states = take width (sortOn heuristic (possibleStates game))
+        expandedStates =
+          case firstMove of
+            Nothing -> [go (Just state) (depth - 1) width state | state <- states]
+            Just _ -> [go firstMove (depth - 1) width state | state <- states]
+        in case catMaybes expandedStates of
+             [] -> Nothing
+             expandedStates -> Just . head $ sortOn (heuristic . snd) expandedStates
+:}
+{% endhighlight %}
+
+And finally, let&rsquo;s see how it gets on with a width and depth of 1:
+
+{% highlight haskell %}
+:{
+animate 50 "test-beam-search-bot" . catMaybes
+  $ iterateMaybes (beamSearchBot 1 1) (mkGame (mkStdGen 42))
+:}
+{% endhighlight %}
+
+<figure class='text-animation'><pre><code class='text-animation animation-test-beam-search-bot'></code></pre></figure><script src='/scripts/tetris/animation-test-beam-search-bot.js'></script>
+
+Sweet, this replicates our simple one-step lookahead. Finally, let&rsquo;s expand the beam out.
+
+{% highlight haskell %}
+:{
+animate 50 "test-beam-search-bot-wider" . catMaybes
+  $ iterateMaybes (beamSearchBot 3 3) (mkGame (mkStdGen 42))
+:}
+{% endhighlight %}
+
+<figure class='text-animation'><pre><code class='text-animation animation-test-beam-search-bot-wider'></code></pre></figure><script src='/scripts/tetris/animation-test-beam-search-bot-wider.js'></script>
+
+Alright! I&rsquo;ll take 5300. I&rsquo;m going to stop here, as this post has started to take minutes to compile into HTML&#x2026; needless to say, a wider beam and a deeper search can result in some surprisingly good play.
 
 # Footnotes
 
