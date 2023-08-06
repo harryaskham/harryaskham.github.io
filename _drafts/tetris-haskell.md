@@ -9,22 +9,23 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#org9212cdc)
-2.  [What This Is](#org7e08827)
-3.  [What This Isn&rsquo;t](#orga2e139c)
-4.  [Prelude](#orgfad51bb)
-5.  [Strategy](#org55300b0)
-6.  [Imports and Dependencies](#org1309bc4)
-7.  [Establishing the Grid](#org35019af)
-8.  [Making Some Tetrominos](#org56928ed)
-9.  [Rotations](#orga480b34)
-10. [Placing Pieces on the Grid](#org8af6b10)
-11. [Representing the Game State](#orgd087999)
-12. [The Introduction of Time and Logic](#org4c1d7f3)
-13. [Incredibly Advanced Tetris AI](#orgbcda685)
+1.  [Beginning at the End](#orgbc7ac5f)
+2.  [What This Is](#org0f920e7)
+3.  [What This Isn&rsquo;t](#orgaf65cb8)
+4.  [Prelude](#org73b5f6c)
+5.  [Strategy](#org5b35508)
+6.  [Imports and Dependencies](#org21ad5e2)
+7.  [Establishing the Grid](#orgd197b5c)
+8.  [Making Some Tetrominos](#org4bfa5f5)
+9.  [Rotations](#orgd031781)
+10. [Placing Pieces on the Grid](#orgbb18864)
+11. [Representing the Game State](#org74d2162)
+12. [The Introduction of Time and Logic](#org674e07c)
+13. [Operating on the Game](#orgcb69ed9)
+14. [Super Advanced Tetris AI (SATAI)](#org2f3357f)
 
 
-<a id="org9212cdc"></a>
+<a id="orgbc7ac5f"></a>
 
 # Beginning at the End
 
@@ -33,7 +34,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org7e08827"></a>
+<a id="org0f920e7"></a>
 
 # What This Is
 
@@ -44,7 +45,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="orga2e139c"></a>
+<a id="orgaf65cb8"></a>
 
 # What This Isn&rsquo;t
 
@@ -55,7 +56,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="orgfad51bb"></a>
+<a id="org73b5f6c"></a>
 
 # Prelude
 
@@ -66,7 +67,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org55300b0"></a>
+<a id="org5b35508"></a>
 
 # Strategy
 
@@ -83,7 +84,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 
 
-<a id="org1309bc4"></a>
+<a id="org21ad5e2"></a>
 
 # Imports and Dependencies
 
@@ -203,7 +204,10 @@ import System.Random.Shuffle (shuffle')
 :{
 -- We'll be making use of this module for control flow when we get to our
 --imperative-looking (but still functional!) shell.
-import Control.Monad (forM_)
+-- The Kleisli composition operator (>=>) will help us compose together
+-- functions that for example return Maybe values instead of unwrapped
+-- values themselves.
+import Control.Monad (forM_, (>=>))
 :}
 {% endhighlight %}
 
@@ -216,7 +220,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org35019af"></a>
+<a id="orgd197b5c"></a>
 
 # Establishing the Grid
 
@@ -453,7 +457,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org56928ed"></a>
+<a id="org4bfa5f5"></a>
 
 # Making Some Tetrominos
 
@@ -525,12 +529,21 @@ We will also need some notion of a falling piece; something combining colour and
 :{
 -- We need a type to represent the actively falling piece that combines
 -- colour and coordinates.
-data ActivePiece = ActivePiece Colour [V2]
+-- We'll store the piece type, its top-left coordinate, and the grid representing it
+data ActivePiece = ActivePiece Piece V2 Grid
 
 -- We also want some way of converting a piece into an active piece, which can
 -- move around and be placed on a grid.
 initPiece :: Piece -> ActivePiece
-initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
+initPiece piece =
+  ActivePiece
+    piece
+    (0, 0)
+    (Grid 4 4
+      (foldl'
+        (\g c -> M.insert c (Block (pieceColour piece)) g)
+        (unGrid $ mkEmptyGrid 4 4)
+        (pieceCoords piece)))
 :}
 {% endhighlight %}
 
@@ -540,25 +553,25 @@ Notice how we take our grid as an argument, and return ostensibly a new one; in 
 
 {% highlight haskell %}
 :{
--- By only passing the first argument here, we get back a partially applied
--- function; this is a new function of type Grid -> V2 -> Grid which is
--- exactly what we need for our fold. It's a bit of an awkward argument
--- ordering for anything other than a fold.
--- Note that if the block is outside of bounds, we just don't render it.
--- This will make hiding the top rows easier later on.
-withBlock :: Colour -> Grid -> V2 -> Grid
-withBlock colour original@(Grid width height grid) (x, y)
-  | x < 0 || x >= width || y < 0 || y >= height = original
-  | otherwise = Grid width height $ M.insert (x, y) (Block colour) grid
+-- We'll let ourselves use magic numbers in our bounds checker.
+outOfBounds :: V2 -> Bool
+outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
 
--- Adds a whole piece to the grid one block at a time
+-- Adds a whole piece to the grid by offsetting it by its top-left coordinate
+-- and then merging it with the existing grid.
 withPiece :: ActivePiece -> Grid -> Grid
-withPiece (ActivePiece colour coords) grid = foldl' (withBlock colour) grid coords
+withPiece (ActivePiece _ (x, y) (Grid _ _ pieceGrid)) (Grid width height grid) =
+  Grid width height (combine grid $ M.mapKeys (bimap (+ x) (+ y)) pieceGrid)
+  where
+    -- We need a special way to combine maps that prefers blocks over emptiness
+    -- Otherwise when we overlay one with another, we'll also overwrite with
+    -- empty blocks
+    combine = M.unionWith (\a b -> if a == Empty then b else a)
 
 -- Here the (&) operator is just the reverse of ($) - everything to the
 -- right is applied to the left. Useful for builder functions like these.
 mkPieceGrid :: Piece -> Grid
-mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece $ initPiece piece)
+mkPieceGrid piece = mkEmptyGrid 4 4 & withPiece (initPiece piece)
 :}
 {% endhighlight %}
 
@@ -625,8 +638,6 @@ instance Pretty HGrid where
     pretty (HGrid grid) = pretty grid
 :}
 {% endhighlight %}
-
-    g
 
 There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The `unHGrid` named member just lets us easily unwrap this type later on.
 
@@ -727,41 +738,41 @@ do
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││    ││ ██ ││ ██ ││ █  ││██  ││ █  ││
-    ││ ██ ││    ││██  ││ █  ││███ ││ ██ ││ █  ││
-    ││    ││████││    ││ █  ││    ││    ││ ██ ││
+    ││ ██ ││ ██ ││    ││██  ││ ██ ││ █  ││ █  ││
+    ││ █  ││ ██ ││    ││ ██ ││██  ││ █  ││███ ││
+    ││ █  ││    ││████││    ││    ││ ██ ││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ █  ││██  ││ ██ ││ ██ ││ ██ ││    ││ █  ││
-    ││ █  ││ ██ ││ █  ││██  ││ ██ ││    ││███ ││
-    ││ ██ ││    ││ █  ││    ││    ││████││    ││
+    ││ ██ ││ █  ││ ██ ││ █  ││██  ││ ██ ││    ││
+    ││ █  ││███ ││██  ││ █  ││ ██ ││ ██ ││    ││
+    ││ █  ││    ││    ││ ██ ││    ││    ││████││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ ██ ││ █  ││██  ││ █  ││ ██ ││    ││
-    ││██  ││ █  ││███ ││ ██ ││ █  ││ ██ ││    ││
-    ││    ││ █  ││    ││    ││ ██ ││    ││████││
+    ││ █  ││    ││ █  ││ ██ ││ ██ ││██  ││ ██ ││
+    ││███ ││    ││ █  ││ ██ ││██  ││ ██ ││ █  ││
+    ││    ││████││ ██ ││    ││    ││    ││ █  ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││██  ││ █  ││ ██ ││    ││ ██ ││ █  ││
-    ││ █  ││ ██ ││███ ││██  ││    ││ ██ ││ █  ││
-    ││ █  ││    ││    ││    ││████││    ││ ██ ││
+    ││ ██ ││ ██ ││ █  ││    ││██  ││ ██ ││ █  ││
+    ││ █  ││ ██ ││███ ││    ││ ██ ││██  ││ █  ││
+    ││ █  ││    ││    ││████││    ││    ││ ██ ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ █  ││ ██ ││ ██ ││ ██ ││    ││ █  ││██  ││
-    ││███ ││ █  ││ ██ ││██  ││    ││ █  ││ ██ ││
-    ││    ││ █  ││    ││    ││████││ ██ ││    ││
+    ││ ██ ││ ██ ││ ██ ││██  ││    ││ █  ││ █  ││
+    ││██  ││ █  ││ ██ ││ ██ ││    ││███ ││ █  ││
+    ││    ││ █  ││    ││    ││████││    ││ ██ ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
 
@@ -772,7 +783,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="orga480b34"></a>
+<a id="orgd031781"></a>
 
 # Rotations
 
@@ -887,6 +898,7 @@ showRotations CW
     │    ││█   ││    ││   █│
     │████││█   ││    ││   █│
     └────┘└────┘└────┘└────┘
+    g
 
 And counterclockwise:
 
@@ -942,7 +954,7 @@ showRotations CCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="org8af6b10"></a>
+<a id="orgbb18864"></a>
 
 # Placing Pieces on the Grid
 
@@ -953,13 +965,10 @@ We want it to be anchored to the bottom, so that it immediately starts to become
 {% highlight haskell %}
 :{
 -- Ensure the piece is centred and anchored to the top of the viewport.
-initPiece :: Piece -> ActivePiece
-initPiece piece = ActivePiece (pieceColour piece) coordinates
-  where
-    -- We need to ensure the largest y-coordinate is 3
-    yOffset = 3 - maximum (snd <$> pieceCoords piece)
-    -- And we'd like to roughly centre the piece, so we'll offset it by 3
-    coordinates = (\(x, y) -> (x + 3, y + yOffset)) <$> pieceCoords piece
+pieceAtTop :: Piece -> ActivePiece
+pieceAtTop piece =
+  let (ActivePiece pieceType _ grid) = initPiece piece
+   in ActivePiece pieceType (3, 0) grid
 :}
 {% endhighlight %}
 
@@ -967,15 +976,15 @@ And let&rsquo;s test this, as ever:
 
 {% highlight haskell %}
 :{
-putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS)
+putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop PieceS)
 :}
 {% endhighlight %}
 
     ┌──────────┐
     │          │
-    │          │
     │    ██    │
     │   ██     │
+    │          │
     │          │
     │          │
     │          │
@@ -1001,7 +1010,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgd087999"></a>
+<a id="org74d2162"></a>
 
 # Representing the Game State
 
@@ -1016,7 +1025,9 @@ data Game = Game {
   currentPiece :: ActivePiece,
   heldPiece :: Maybe Piece,
   pieces :: [Piece],
-  score :: Int
+  score :: Int,
+  heldThisTurn :: Bool,
+  gameOver :: Bool
 }
 
 mkGame :: RandomGen g => g -> Game
@@ -1024,10 +1035,12 @@ mkGame g =
   let (firstPiece:rest) = pieceStream g
    in Game {
         grid = mkEmptyGrid 10 24,
-        currentPiece = initPiece firstPiece,
+        currentPiece = pieceAtTop firstPiece,
         pieces = rest,
         score = 0,
-        heldPiece = Nothing
+        heldPiece = Nothing,
+        heldThisTurn = False,
+        gameOver = False
       }
 :}
 {% endhighlight %}
@@ -1141,7 +1154,7 @@ do
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="org4c1d7f3"></a>
+<a id="org674e07c"></a>
 
 # The Introduction of Time and Logic
 
@@ -1155,23 +1168,25 @@ To make this work, we&rsquo;ll need a way to:
 
 We&rsquo;ll build a `step` function that does all of this at once, but first let&rsquo;s implement gravity. To do this correctly, we also need a way of checking if a game is in a valid state, to stop pieces from falling through the floor.
 
-A valid `Game` is one where there are no out of bound blocks, and the current `ActivePiece` is not overlapping with any of the existing blocks. By induction, if we start with a valid `Game`, and only place pieces in valid places, we only need to check the currently active piece:
+A valid `Game` is one where there are no out of bound blocks, we haven&rsquo;t spilled over the top, and the current `ActivePiece` is not overlapping with any of the existing blocks. By induction, if we start with a valid `Game`, and only place pieces in valid places, we only need to check the currently active piece:
 
 {% highlight haskell %}
 :{
 isValid :: Game -> Bool
 isValid game =
   let -- We unwrap here to get to activeCoords; libraries like lens make this easier.
-      (ActivePiece _ activeCoords) = currentPiece game
+      (ActivePiece _ (x, y) (Grid pw ph pieceGrid)) = currentPiece game
+      -- We need to offsetby the current position of the piece
+      -- Intentionally not using bimap here to shake things up.
+      pieceGrid' = Grid pw ph $ M.mapKeys (\(x', y') -> (x' + x, y' + y)) pieceGrid
       -- We use a comprehension to create a Set of any non-empty blocks
-      fullCoords = S.fromList [ c
-                                | (c, block) <- M.toList (unGrid $ grid game)
-                                , block /= Empty ]
-      -- We'll let ourselves use magic numbers in our bounds checker.
-      outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
+      nonEmpty (Grid _ _ grid) = S.fromList [c | (c, block) <- M.toList grid, block /= Empty]
       -- Finally, we ensure there is no overlap and no OOB block.
-   in (S.null (S.intersection (S.fromList activeCoords) fullCoords))
+      activeCoords = nonEmpty pieceGrid'
+      fullCoords = nonEmpty (grid game)
+   in (S.null (S.intersection activeCoords fullCoords))
         && (not (any outOfBounds activeCoords))
+        && (not (any ((< 4) . snd) fullCoords))
 :}
 {% endhighlight %}
 
@@ -1180,11 +1195,14 @@ Now we&rsquo;re able to use this for a simple implementation of gravity:
 {% highlight haskell %}
 :{
 -- We need a way to translate a piece
--- bimap comes because a tuple is a Bifunctor,
--- letting us map over both elements at once.
 movePiece :: V2 -> ActivePiece -> ActivePiece
-movePiece (x, y) (ActivePiece colour coords) =
-  ActivePiece colour (bimap (+x) (+y) <$> coords)
+movePiece (x, y) (ActivePiece pieceType (x', y') grid) =
+  ActivePiece pieceType (x' + x, y' + y) grid
+
+-- We can now also reuse our grid rotation to enable us to rotate pieces.
+rotatePiece :: Rotation -> ActivePiece -> ActivePiece
+rotatePiece rotation (ActivePiece pieceType xy grid) =
+  ActivePiece pieceType xy (rotateGrid rotation grid)
 
 -- Here we use record update syntax to edit just one field.
 -- If applying gravity results in an invalid game, we can represent this by Nothing.
@@ -1314,15 +1332,18 @@ animate delay name games = do
       "["
       ++ intercalate "," [mkFrame (pretty . gameGrid $ game) | game <- games]
       ++ "]"
-    containerHtml = "<figure class='text-animation'><pre><code class='text-animation " ++ animationName ++ "'></code></pre></figure>"
+    containerHtml = "<figure class='text-animation'><pre><code class='text-animation "
+                    ++ animationName ++ "'></code></pre></figure>"
     scriptPath = "/scripts/tetris/" ++ animationName ++ ".js"
     scriptHtml = "<script src='" ++ scriptPath ++ "'></script>"
     var = replace "-" "" $ animationName ++ "Frames"
     animationJs = "var " ++ var ++ " = " ++ frameArrayJs ++ ";"
-      ++ "setInterval(function(){document.getElementsByClassName('"
+      ++ "setInterval(function(){"
+      ++ "var " ++ var++"Frame = " ++ var++".shift();"
+      ++ "document.getElementsByClassName('"
       ++ animationName
-      ++ "')[0].innerHTML = " ++ var ++ ".shift();"
-      ++ var ++ ".push(" ++ var ++ "[0]);}, "
+      ++ "')[0].innerHTML = " ++ var++"Frame;"
+      ++ var ++ ".push(" ++ var++"Frame);}, "
       ++ show delay
       ++ ");"
 :}
@@ -1462,16 +1483,11 @@ Seems legit to me, and the score went up appropriately too. Now we can finally f
 fixPiece :: Game -> Game
 fixPiece game =
   removeFullLines
-    $ game { grid = gridWithPiece
-           , currentPiece = initPiece $ head (pieces game)
+    $ game { grid = (grid game) & withPiece (currentPiece game)
+           , currentPiece = pieceAtTop $ head (pieces game)
            , pieces = tail (pieces game)
+           , heldThisTurn = False
            }
-  where
-    (ActivePiece colour coords) = currentPiece game
-    (Grid width height g) = grid game
-    gridWithPiece =
-      Grid width height
-        $ foldl' (\g coord -> M.insert coord (Block colour) g) g coords
 :}
 {% endhighlight %}
 
@@ -1500,12 +1516,12 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 
 <figure class='text-animation'><pre><code class='text-animation animation-lose-the-game'></code></pre></figure><script src='/scripts/tetris/animation-lose-the-game.js'></script>
 
-Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. We&rsquo;re now in a position to write a simple bot to play the game.
+Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. Now we need some sort of way to &ldquo;play the game&rdquo;.
 
 
-<a id="orgbcda685"></a>
+<a id="orgcb69ed9"></a>
 
-# Incredibly Advanced Tetris AI
+# Operating on the Game
 
 We&rsquo;ll need to give our bot a way to operate on a game. Let&rsquo;s define a set of operations - later, we could just map these to keyboard inputs to play the game ourselves, but this is trickier in the medium of a blog.
 
@@ -1526,26 +1542,20 @@ data Operation
 
 Now we&rsquo;ll implement the application of these operations to a `Game`. If they result in an invalid game state (moving out of bounds, or impossible rotations), we&rsquo;ll just return `Nothing`.
 
-First we need a way to rotate the actual actively falling piece:
-
-{% highlight haskell %}
-:{
-rotateActivePiece :: Rotation -> Game -> Game
-rotateActivePiece rotation game =
-  let (ActivePiece colour coords) = currentPiece game
-      (minX, maxX, minY, maxY) = minXMaxXMinYMaxY coords
-      coords' = rotate rotation (maxX - minX) (maxY - minY) <$> coords
-      piece' = ActivePiece colour coords'
-   in game { currentPiece = piece' }
-:}
-{% endhighlight %}
-
 Holding a piece is relatively simple:
 
 {% highlight haskell %}
 :{
-holdPiece :: Game -> Game
-holdPiece = error "needs activepiece to know what piece it is"
+holdPiece :: Game -> Maybe Game
+holdPiece game
+  | heldThisTurn game = Nothing
+  | otherwise =
+      let (ActivePiece pieceType _ _) = currentPiece game
+       in Just game { heldPiece = Just pieceType
+                    , currentPiece = pieceAtTop $ head (pieces game)
+                    , pieces = tail (pieces game)
+                    , heldThisTurn = True
+                    }
 :}
 {% endhighlight %}
 
@@ -1566,17 +1576,17 @@ Now we can implement the actual application of operations:
 :{
 runOperation :: Operation -> Game -> Maybe Game
 runOperation op game
-  | isValid game' = Just game'
+  | (isValid <$> game') == Just True = game'
   | otherwise = Nothing
   where
     game' = case op of
-      OpLeft -> game { currentPiece = movePiece (-1, 0) (currentPiece game) }
-      OpRight -> game { currentPiece = movePiece (1, 0) (currentPiece game) }
-      OpDown -> game { currentPiece = movePiece (0, 1) (currentPiece game) }
-      OpRotateCW -> rotateActivePiece CW game
-      OpRotateCCW -> rotateActivePiece CCW game
+      OpLeft -> Just $ game { currentPiece = movePiece (-1, 0) (currentPiece game) }
+      OpRight -> Just $ game { currentPiece = movePiece (1, 0) (currentPiece game) }
+      OpDown -> Just $ game { currentPiece = movePiece (0, 1) (currentPiece game) }
+      OpRotateCW -> Just $ game { currentPiece = rotatePiece CW (currentPiece game) }
+      OpRotateCCW -> Just $ game { currentPiece = rotatePiece CCW (currentPiece game) }
       OpHold -> holdPiece game
-      OpDrop -> dropPiece game
+      OpDrop -> Just $ dropPiece game
 :}
 {% endhighlight %}
 
@@ -1585,13 +1595,73 @@ We can test this out with a short animation:
 {% highlight haskell %}
 :{
 let game = mkGame (mkStdGen 42)
-    --ops = [OpLeft, OpLeft, OpRotateCW, OpDown, OpDrop, OpDown, OpRight, OpDown, OpDrop]
-    ops = take 50 $ cycle [OpLeft, OpLeft, OpDrop, OpRight, OpRight, OpDrop]
- in animate 50 "test-operations" $ scanl' (\g op -> fromJust $ runOperation op g) game ops
+    leftOps = replicate 7 OpDown ++ replicate 3 OpLeft ++ [OpRotateCW, OpDrop]
+    middleOps = replicate 7 OpDown ++ [OpRotateCW, OpRotateCW, OpDrop]
+    rightOps = replicate 7 OpDown ++ replicate 3 OpRight ++ [OpRotateCW, OpDrop]
+    ops = take 175 . cycle $ OpHold : leftOps ++ middleOps ++ rightOps
+ in animate 50 "test-operations"
+    $ scanl' (\g op -> fromJust $ runOperation op g) game ops
 :}
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-operations'></code></pre></figure><script src='/scripts/tetris/animation-test-operations.js'></script>
+
+I reckon we can do better than this. Time for a bot.
+
+
+<a id="org2f3357f"></a>
+
+# Super Advanced Tetris AI (SATAI)
+
+Ultimately, we want something that can look at a game and decide what operation to perform in order to maximise some heuristic. I think it&rsquo;s a bit ambitious to optimise for score here, since the lookahead required can be quite far, so let&rsquo;s just start by keeping the grid ceiling as low as possible.
+
+To make a decision, we&rsquo;ll simulate all possible operations<sup><a id="fnr.15" class="footref" href="#fn.15" role="doc-backlink">15</a></sup> that we can perform in one turn. We&rsquo;ll cheat, and give the bot as much time to think about each move as possible - a &ldquo;move&rdquo; will therefore be some combination of left or right movements and rotations followed by a drop.
+
+We can use `Applicative` syntax and the `Monad` instance of lists to (somewhat) neatly generate all of these possible future states:
+
+{% highlight haskell %}
+:{
+possibleStates :: Game -> [Game]
+possibleStates game =
+  let
+    -- Will generate 5 functions, each of which moves the game another step
+    -- left respectively, by continuously composing OpLeft.
+    -- We are composing functions of Game -> Maybe Game, so we need to use
+    -- our friend the Kleisli arrow.
+    leftMoves = scanl1 (>=>) (replicate 5 (runOperation OpLeft))
+    -- We do the same for the right moves.
+    rightMoves = scanl1 (>=>) (replicate 5 (runOperation OpRight))
+    -- We need to be able to stay in the centre:
+    noMoves = [Just . id]
+    -- For the rotations we do this 4 times, getting the "no-op" state for free.
+    rotations = scanl1 (>=>) (replicate 4 (runOperation OpRotateCW))
+    -- Now we want to generate all possible combinations of these operations.
+    -- We can do this by using the applicative instance for functions.
+    -- Here <*> takes a list of partial compositions, and applies those compositions
+    -- with the cartesian product of its argument and its applicant.
+    leftRotations = (>=>) <$> leftMoves <*> rotations
+    rightRotations = (>=>) <$> rightMoves <*> rotations
+    centreRotations = (>=>) <$> noMoves <*> rotations
+    -- Finally we need to add a drop to each of these.
+    allMoves =
+      (>=> (runOperation OpDrop))
+        <$> (leftRotations ++ rightRotations ++ centreRotations)
+    hold = runOperation OpHold
+  in -- Some moves will result in an invalid game, so we can ignore those using
+     -- catMaybes.
+     catMaybes $ (hold : allMoves) <*> [game]
+:}
+{% endhighlight %}
+
+We can test this out just by generating an animation of all the possible states at the start of a given game:
+
+{% highlight haskell %}
+:{
+animate 200 "test-possible-states" $ possibleStates (mkGame (mkStdGen 42))
+:}
+{% endhighlight %}
+
+<figure class='text-animation'><pre><code class='text-animation animation-test-possible-states'></code></pre></figure><script src='/scripts/tetris/animation-test-possible-states.js'></script>
 
 # Footnotes
 
@@ -1622,3 +1692,5 @@ let game = mkGame (mkStdGen 42)
 <sup><a id="fn.13" href="#fnr.13">13</a></sup> In this case, Kleisli composition; the `(>=>)` operator composes `a -> m b` and `b -> m c` into `a -> m c`.
 
 <sup><a id="fn.14" href="#fnr.14">14</a></sup> Note that here I&rsquo;m being explicit that we&rsquo;re building something of type `IO ()`, roughly meaning a thing that can have real-world side effects like printing to the screen, but doesn&rsquo;t return anything (or rather, returns the unit value `()`).
+
+<sup><a id="fn.15" href="#fnr.15">15</a></sup> Well, not all. We don&rsquo;t implement T-spins, or slotting into holes halfway down the grid, for example, which might end up being the optimal move.

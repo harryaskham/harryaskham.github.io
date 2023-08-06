@@ -21,6 +21,10 @@
 #+END_SRC
 
 #+RESULTS:
+: Ok, no modules loaded.
+: gh
+: ghci> package flags have changed, resetting and loading new packages...
+: ghci
 
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
@@ -121,6 +125,7 @@ import qualified Data.Map.Strict as M
 #+END_SRC
 
 #+RESULTS:
+: g
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -142,6 +147,7 @@ import qualified Data.Set as S
 #+END_SRC
 
 #+RESULTS:
+: g
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -164,7 +170,6 @@ import Data.List.Extra (replace)
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -174,6 +179,7 @@ import Data.Bifunctor (bimap)
 #+END_SRC
 
 #+RESULTS:
+: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -193,7 +199,6 @@ import Data.Maybe (catMaybes, fromJust)
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -212,12 +217,16 @@ import System.Random.Shuffle (shuffle')
 #+END_SRC
 
 #+RESULTS:
+: ghc
 
 #+BEGIN_SRC haskell :exports code
 :{
 -- We'll be making use of this module for control flow when we get to our
 --imperative-looking (but still functional!) shell.
-import Control.Monad (forM_)
+-- The Kleisli composition operator (>=>) will help us compose together
+-- functions that for example return Maybe values instead of unwrapped
+-- values themselves.
+import Control.Monad (forM_, (>=>))
 :}
 #+END_SRC
 
@@ -327,6 +336,7 @@ mkEmptyGrid width height =
 #+END_SRC
 
 #+RESULTS:
+: g
 
 Let's get some output going. We're going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We'll define a ~Pretty~ typeclass - any type that implements this will be convertable to a nicely formatted ~String~[fn:string] which we can later print to the screen[fn:show].
 
@@ -365,6 +375,7 @@ instance Pretty Colour where
 #+END_SRC
 
 #+RESULTS:
+: g
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -568,12 +579,21 @@ We will also need some notion of a falling piece; something combining colour and
 :{
 -- We need a type to represent the actively falling piece that combines
 -- colour and coordinates.
-data ActivePiece = ActivePiece Colour [V2]
+-- We'll store the piece type, its top-left coordinate, and the grid representing it
+data ActivePiece = ActivePiece Piece V2 Grid
 
 -- We also want some way of converting a piece into an active piece, which can
 -- move around and be placed on a grid.
 initPiece :: Piece -> ActivePiece
-initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
+initPiece piece =
+  ActivePiece
+    piece
+    (0, 0)
+    (Grid 4 4
+      (foldl'
+        (\g c -> M.insert c (Block (pieceColour piece)) g)
+        (unGrid $ mkEmptyGrid 4 4)
+        (pieceCoords piece)))
 :}
 #+END_SRC
 
@@ -588,25 +608,25 @@ Notice how we take our grid as an argument, and return ostensibly a new one; in 
 
 #+BEGIN_SRC haskell :exports code
 :{
--- By only passing the first argument here, we get back a partially applied
--- function; this is a new function of type Grid -> V2 -> Grid which is
--- exactly what we need for our fold. It's a bit of an awkward argument
--- ordering for anything other than a fold.
--- Note that if the block is outside of bounds, we just don't render it.
--- This will make hiding the top rows easier later on.
-withBlock :: Colour -> Grid -> V2 -> Grid
-withBlock colour original@(Grid width height grid) (x, y)
-  | x < 0 || x >= width || y < 0 || y >= height = original
-  | otherwise = Grid width height $ M.insert (x, y) (Block colour) grid
+-- We'll let ourselves use magic numbers in our bounds checker.
+outOfBounds :: V2 -> Bool
+outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
 
--- Adds a whole piece to the grid one block at a time
+-- Adds a whole piece to the grid by offsetting it by its top-left coordinate
+-- and then merging it with the existing grid.
 withPiece :: ActivePiece -> Grid -> Grid
-withPiece (ActivePiece colour coords) grid = foldl' (withBlock colour) grid coords
+withPiece (ActivePiece _ (x, y) (Grid _ _ pieceGrid)) (Grid width height grid) =
+  Grid width height (combine grid $ M.mapKeys (bimap (+ x) (+ y)) pieceGrid)
+  where
+    -- We need a special way to combine maps that prefers blocks over emptiness
+    -- Otherwise when we overlay one with another, we'll also overwrite with
+    -- empty blocks
+    combine = M.unionWith (\a b -> if a == Empty then b else a)
 
 -- Here the (&) operator is just the reverse of ($) - everything to the
 -- right is applied to the left. Useful for builder functions like these.
 mkPieceGrid :: Piece -> Grid
-mkPieceGrid piece = mkEmptyGrid 4 4 & (withPiece $ initPiece piece)
+mkPieceGrid piece = mkEmptyGrid 4 4 & withPiece (initPiece piece)
 :}
 #+END_SRC
 
@@ -622,7 +642,7 @@ instance Pretty Piece where
 #+END_SRC
 
 #+RESULTS:
-: ghc
+: g
 
 
 
@@ -772,7 +792,6 @@ putStrLn . pretty . mconcat
 : │ █  ││ █  ││██  │
 : │ ██ ││ █  ││    │
 : └────┘└────┘└────┘
-: gh
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -798,41 +817,41 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ █  ││ ██ ││    ││ █  ││ ██ ││██  ││
-││ ██ ││███ ││██  ││    ││ █  ││ █  ││ ██ ││
-││    ││    ││    ││████││ ██ ││ █  ││    ││
-│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-└──────────────────────────────────────────┘
-┌──────────────────────────────────────────┐
-│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ ██ ││ █  ││ █  ││ ██ ││██  ││    ││
-││██  ││ █  ││ █  ││███ ││ ██ ││ ██ ││    ││
-││    ││ █  ││ ██ ││    ││    ││    ││████││
-│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-└──────────────────────────────────────────┘
-┌──────────────────────────────────────────┐
-│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ █  ││ ██ ││ ██ ││ ██ ││██  ││    ││
-││ █  ││███ ││██  ││ █  ││ ██ ││ ██ ││    ││
-││ ██ ││    ││    ││ █  ││    ││    ││████││
-│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-└──────────────────────────────────────────┘
-┌──────────────────────────────────────────┐
-│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ █  ││ █  ││ ██ ││ ██ ││    ││██  ││
-││ ██ ││ █  ││███ ││██  ││ █  ││    ││ ██ ││
-││    ││ ██ ││    ││    ││ █  ││████││    ││
-│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-└──────────────────────────────────────────┘
-┌──────────────────────────────────────────┐
-│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-││    ││    ││    ││    ││    ││    ││    ││
 ││██  ││    ││ █  ││ ██ ││ ██ ││ ██ ││ █  ││
-││ ██ ││    ││███ ││ ██ ││ █  ││██  ││ █  ││
-││    ││████││    ││    ││ █  ││    ││ ██ ││
+││ ██ ││    ││ █  ││██  ││ ██ ││ █  ││███ ││
+││    ││████││ ██ ││    ││    ││ █  ││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││██  ││ ██ ││    ││ █  ││ █  ││ ██ ││ ██ ││
+││ ██ ││ ██ ││    ││ █  ││███ ││██  ││ █  ││
+││    ││    ││████││ ██ ││    ││    ││ █  ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ ██ ││ █  ││██  ││ ██ ││ █  ││    ││ ██ ││
+││ ██ ││███ ││ ██ ││██  ││ █  ││    ││ █  ││
+││    ││    ││    ││    ││ ██ ││████││ █  ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ █  ││    ││ ██ ││██  ││ ██ ││ ██ ││ █  ││
+││███ ││    ││ █  ││ ██ ││ ██ ││██  ││ █  ││
+││    ││████││ █  ││    ││    ││    ││ ██ ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ █  ││ ██ ││██  ││ █  ││ ██ ││ ██ ││    ││
+││ █  ││ ██ ││ ██ ││███ ││██  ││ █  ││    ││
+││ ██ ││    ││    ││    ││    ││ █  ││████││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 #+end_example
@@ -915,7 +934,6 @@ showRotations rotation =
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 First clockwise:
 
@@ -1023,7 +1041,7 @@ showRotations CCW
 │    ││   █││    ││█   │
 │████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
-ghc
+g
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -1036,13 +1054,10 @@ We want it to be anchored to the bottom, so that it immediately starts to become
 #+BEGIN_SRC haskell :exports code
 :{
 -- Ensure the piece is centred and anchored to the top of the viewport.
-initPiece :: Piece -> ActivePiece
-initPiece piece = ActivePiece (pieceColour piece) coordinates
-  where
-    -- We need to ensure the largest y-coordinate is 3
-    yOffset = 3 - maximum (snd <$> pieceCoords piece)
-    -- And we'd like to roughly centre the piece, so we'll offset it by 3
-    coordinates = (\(x, y) -> (x + 3, y + yOffset)) <$> pieceCoords piece
+pieceAtTop :: Piece -> ActivePiece
+pieceAtTop piece =
+  let (ActivePiece pieceType _ grid) = initPiece piece
+   in ActivePiece pieceType (3, 0) grid
 :}
 #+END_SRC
 
@@ -1052,7 +1067,7 @@ And let's test this, as ever:
 
 #+BEGIN_SRC haskell :exports both
 :{
-putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS)
+putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop PieceS)
 :}
 #+END_SRC
 
@@ -1060,9 +1075,9 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 #+begin_example
 ┌──────────┐
 │          │
-│          │
 │    ██    │
 │   ██     │
+│          │
 │          │
 │          │
 │          │
@@ -1101,7 +1116,9 @@ data Game = Game {
   currentPiece :: ActivePiece,
   heldPiece :: Maybe Piece,
   pieces :: [Piece],
-  score :: Int
+  score :: Int,
+  heldThisTurn :: Bool,
+  gameOver :: Bool
 }
 
 mkGame :: RandomGen g => g -> Game
@@ -1109,10 +1126,12 @@ mkGame g =
   let (firstPiece:rest) = pieceStream g
    in Game {
         grid = mkEmptyGrid 10 24,
-        currentPiece = initPiece firstPiece,
+        currentPiece = pieceAtTop firstPiece,
         pieces = rest,
         score = 0,
-        heldPiece = Nothing
+        heldPiece = Nothing,
+        heldThisTurn = False,
+        gameOver = False
       }
 :}
 #+END_SRC
@@ -1141,7 +1160,6 @@ sToG s =
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 And a way of hiding the buffer zone:
 
@@ -1236,6 +1254,7 @@ do
 │          │
 │          │
 └──────────┘
+gh
 #+end_example
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we've artificially inserted a held square piece, and as we can see it's all composing nicely.
@@ -1252,23 +1271,25 @@ To make this work, we'll need a way to:
 
 We'll build a ~step~ function that does all of this at once, but first let's implement gravity. To do this correctly, we also need a way of checking if a game is in a valid state, to stop pieces from falling through the floor.
 
-A valid ~Game~ is one where there are no out of bound blocks, and the current ~ActivePiece~ is not overlapping with any of the existing blocks. By induction, if we start with a valid ~Game~, and only place pieces in valid places, we only need to check the currently active piece:
+A valid ~Game~ is one where there are no out of bound blocks, we haven't spilled over the top, and the current ~ActivePiece~ is not overlapping with any of the existing blocks. By induction, if we start with a valid ~Game~, and only place pieces in valid places, we only need to check the currently active piece:
 
 #+BEGIN_SRC haskell :exports code
 :{
 isValid :: Game -> Bool
 isValid game =
   let -- We unwrap here to get to activeCoords; libraries like lens make this easier.
-      (ActivePiece _ activeCoords) = currentPiece game
+      (ActivePiece _ (x, y) (Grid pw ph pieceGrid)) = currentPiece game
+      -- We need to offsetby the current position of the piece
+      -- Intentionally not using bimap here to shake things up.
+      pieceGrid' = Grid pw ph $ M.mapKeys (\(x', y') -> (x' + x, y' + y)) pieceGrid
       -- We use a comprehension to create a Set of any non-empty blocks
-      fullCoords = S.fromList [ c
-                                | (c, block) <- M.toList (unGrid $ grid game)
-                                , block /= Empty ]
-      -- We'll let ourselves use magic numbers in our bounds checker.
-      outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
+      nonEmpty (Grid _ _ grid) = S.fromList [c | (c, block) <- M.toList grid, block /= Empty]
       -- Finally, we ensure there is no overlap and no OOB block.
-   in (S.null (S.intersection (S.fromList activeCoords) fullCoords))
+      activeCoords = nonEmpty pieceGrid'
+      fullCoords = nonEmpty (grid game)
+   in (S.null (S.intersection activeCoords fullCoords))
         && (not (any outOfBounds activeCoords))
+        && (not (any ((< 4) . snd) fullCoords))
 :}
 #+END_SRC
 
@@ -1279,11 +1300,14 @@ Now we're able to use this for a simple implementation of gravity:
 #+BEGIN_SRC haskell :exports code
 :{
 -- We need a way to translate a piece
--- bimap comes because a tuple is a Bifunctor,
--- letting us map over both elements at once.
 movePiece :: V2 -> ActivePiece -> ActivePiece
-movePiece (x, y) (ActivePiece colour coords) =
-  ActivePiece colour (bimap (+x) (+y) <$> coords)
+movePiece (x, y) (ActivePiece pieceType (x', y') grid) =
+  ActivePiece pieceType (x' + x, y' + y) grid
+
+-- We can now also reuse our grid rotation to enable us to rotate pieces.
+rotatePiece :: Rotation -> ActivePiece -> ActivePiece
+rotatePiece rotation (ActivePiece pieceType xy grid) =
+  ActivePiece pieceType xy (rotateGrid rotation grid)
 
 -- Here we use record update syntax to edit just one field.
 -- If applying gravity results in an invalid game, we can represent this by Nothing.
@@ -1298,7 +1322,6 @@ applyGravity game
 #+END_SRC
 
 #+RESULTS:
-: g
 
 So let's test this out a few times - for now we'll represent the passage of time horizontally, so we'll make a few game states, pull out the grids, and stitch them side by side. We'd like to keep applying ~applyGravity~ over and over - but each time we take a ~Game~ to a ~Maybe Game~. We want some way of chaining these iterations together - and that's where the fact that ~Maybe~ belongs to the ~Monad~ typeclass comes in.
 
@@ -1424,15 +1447,18 @@ animate delay name games = do
       "["
       ++ intercalate "," [mkFrame (pretty . gameGrid $ game) | game <- games]
       ++ "]"
-    containerHtml = "<figure class='text-animation'><pre><code class='text-animation " ++ animationName ++ "'></code></pre></figure>"
+    containerHtml = "<figure class='text-animation'><pre><code class='text-animation "
+                    ++ animationName ++ "'></code></pre></figure>"
     scriptPath = "/scripts/tetris/" ++ animationName ++ ".js"
     scriptHtml = "<script src='" ++ scriptPath ++ "'></script>"
     var = replace "-" "" $ animationName ++ "Frames"
     animationJs = "var " ++ var ++ " = " ++ frameArrayJs ++ ";"
-      ++ "setInterval(function(){document.getElementsByClassName('"
+      ++ "setInterval(function(){"
+      ++ "var " ++ var++"Frame = " ++ var++".shift();"
+      ++ "document.getElementsByClassName('"
       ++ animationName
-      ++ "')[0].innerHTML = " ++ var ++ ".shift();"
-      ++ var ++ ".push(" ++ var ++ "[0]);}, "
+      ++ "')[0].innerHTML = " ++ var++"Frame;"
+      ++ var ++ ".push(" ++ var++"Frame);}, "
       ++ show delay
       ++ ");"
 :}
@@ -1592,16 +1618,11 @@ Seems legit to me, and the score went up appropriately too. Now we can finally f
 fixPiece :: Game -> Game
 fixPiece game =
   removeFullLines
-    $ game { grid = gridWithPiece
-           , currentPiece = initPiece $ head (pieces game)
+    $ game { grid = (grid game) & withPiece (currentPiece game)
+           , currentPiece = pieceAtTop $ head (pieces game)
            , pieces = tail (pieces game)
+           , heldThisTurn = False
            }
-  where
-    (ActivePiece colour coords) = currentPiece game
-    (Grid width height g) = grid game
-    gridWithPiece =
-      Grid width height
-        $ foldl' (\g coord -> M.insert coord (Block colour) g) g coords
 :}
 #+END_SRC
 
@@ -1637,9 +1658,9 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 <figure class='text-animation'><pre><code class='text-animation animation-lose-the-game'></code></pre></figure><script src='/scripts/tetris/animation-lose-the-game.js'></script>
 #+end_export
 
-Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works. We're now in a position to write a simple bot to play the game.
+Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works. Now we need some sort of way to "play the game".
 
-* Incredibly Advanced Tetris AI
+* Operating on the Game
 
 We'll need to give our bot a way to operate on a game. Let's define a set of operations - later, we could just map these to keyboard inputs to play the game ourselves, but this is trickier in the medium of a blog.
 
@@ -1659,31 +1680,24 @@ data Operation
 #+END_SRC
 
 #+RESULTS:
+: ghc
 
 Now we'll implement the application of these operations to a ~Game~. If they result in an invalid game state (moving out of bounds, or impossible rotations), we'll just return ~Nothing~.
-
-First we need a way to rotate the actual actively falling piece:
-
-#+BEGIN_SRC haskell :exports code
-:{
-rotateActivePiece :: Rotation -> Game -> Game
-rotateActivePiece rotation game =
-  let (ActivePiece colour coords) = currentPiece game
-      (minX, maxX, minY, maxY) = minXMaxXMinYMaxY coords
-      coords' = rotate rotation (maxX - minX) (maxY - minY) <$> coords
-      piece' = ActivePiece colour coords'
-   in game { currentPiece = piece' }
-:}
-#+END_SRC
-
-#+RESULTS:
 
 Holding a piece is relatively simple:
 
 #+BEGIN_SRC haskell :exports code
 :{
-holdPiece :: Game -> Game
-holdPiece = error "needs activepiece to know what piece it is"
+holdPiece :: Game -> Maybe Game
+holdPiece game
+  | heldThisTurn game = Nothing
+  | otherwise =
+      let (ActivePiece pieceType _ _) = currentPiece game
+       in Just game { heldPiece = Just pieceType
+                    , currentPiece = pieceAtTop $ head (pieces game)
+                    , pieces = tail (pieces game)
+                    , heldThisTurn = True
+                    }
 :}
 #+END_SRC
 
@@ -1708,17 +1722,17 @@ Now we can implement the actual application of operations:
 :{
 runOperation :: Operation -> Game -> Maybe Game
 runOperation op game
-  | isValid game' = Just game'
+  | (isValid <$> game') == Just True = game'
   | otherwise = Nothing
   where
     game' = case op of
-      OpLeft -> game { currentPiece = movePiece (-1, 0) (currentPiece game) }
-      OpRight -> game { currentPiece = movePiece (1, 0) (currentPiece game) }
-      OpDown -> game { currentPiece = movePiece (0, 1) (currentPiece game) }
-      OpRotateCW -> rotateActivePiece CW game
-      OpRotateCCW -> rotateActivePiece CCW game
+      OpLeft -> Just $ game { currentPiece = movePiece (-1, 0) (currentPiece game) }
+      OpRight -> Just $ game { currentPiece = movePiece (1, 0) (currentPiece game) }
+      OpDown -> Just $ game { currentPiece = movePiece (0, 1) (currentPiece game) }
+      OpRotateCW -> Just $ game { currentPiece = rotatePiece CW (currentPiece game) }
+      OpRotateCCW -> Just $ game { currentPiece = rotatePiece CCW (currentPiece game) }
       OpHold -> holdPiece game
-      OpDrop -> dropPiece game
+      OpDrop -> Just $ dropPiece game
 :}
 #+END_SRC
 
@@ -1729,13 +1743,77 @@ We can test this out with a short animation:
 #+BEGIN_SRC haskell :exports both :results html
 :{
 let game = mkGame (mkStdGen 42)
-    --ops = [OpLeft, OpLeft, OpRotateCW, OpDown, OpDrop, OpDown, OpRight, OpDown, OpDrop]
-    ops = take 50 $ cycle [OpLeft, OpLeft, OpDrop, OpRight, OpRight, OpDrop]
- in animate 50 "test-operations" $ scanl' (\g op -> fromJust $ runOperation op g) game ops
+    leftOps = replicate 7 OpDown ++ replicate 3 OpLeft ++ [OpRotateCW, OpDrop]
+    middleOps = replicate 7 OpDown ++ [OpRotateCW, OpRotateCW, OpDrop]
+    rightOps = replicate 7 OpDown ++ replicate 3 OpRight ++ [OpRotateCW, OpDrop]
+    ops = take 175 . cycle $ OpHold : leftOps ++ middleOps ++ rightOps
+ in animate 50 "test-operations"
+    $ scanl' (\g op -> fromJust $ runOperation op g) game ops
 :}
 #+END_SRC
 
 #+RESULTS:
 #+begin_export html
-<figure class='text-animation'><pre><code class='text-animation animation-test-operations'></code></pre></figure><script src='/scripts/tetris/animation-test-operations.js'></script>
+#+end_export
+
+I reckon we can do better than this. Time for a bot.
+
+* Super Advanced Tetris AI (SATAI)
+
+Ultimately, we want something that can look at a game and decide what operation to perform in order to maximise some heuristic. I think it's a bit ambitious to optimise for score here, since the lookahead required can be quite far, so let's just start by keeping the grid ceiling as low as possible.
+
+To make a decision, we'll simulate all possible operations[fn:aioperations] that we can perform in one turn. We'll cheat, and give the bot as much time to think about each move as possible - a "move" will therefore be some combination of left or right movements and rotations followed by a drop.
+
+[fn:aioperations] Well, not all. We don't implement T-spins, or slotting into holes halfway down the grid, for example, which might end up being the optimal move.
+
+
+We can use ~Applicative~ syntax and the ~Monad~ instance of lists to (somewhat) neatly generate all of these possible future states:
+
+#+BEGIN_SRC haskell :exports code
+:{
+possibleStates :: Game -> [Game]
+possibleStates game =
+  let
+    -- Will generate 5 functions, each of which moves the game another step
+    -- left respectively, by continuously composing OpLeft.
+    -- We are composing functions of Game -> Maybe Game, so we need to use
+    -- our friend the Kleisli arrow.
+    leftMoves = scanl1 (>=>) (replicate 5 (runOperation OpLeft))
+    -- We do the same for the right moves.
+    rightMoves = scanl1 (>=>) (replicate 5 (runOperation OpRight))
+    -- We need to be able to stay in the centre:
+    noMoves = [Just . id]
+    -- For the rotations we do this 4 times, getting the "no-op" state for free.
+    rotations = scanl1 (>=>) (replicate 4 (runOperation OpRotateCW))
+    -- Now we want to generate all possible combinations of these operations.
+    -- We can do this by using the applicative instance for functions.
+    -- Here <*> takes a list of partial compositions, and applies those compositions
+    -- with the cartesian product of its argument and its applicant.
+    leftRotations = (>=>) <$> leftMoves <*> rotations
+    rightRotations = (>=>) <$> rightMoves <*> rotations
+    centreRotations = (>=>) <$> noMoves <*> rotations
+    -- Finally we need to add a drop to each of these.
+    allMoves =
+      (>=> (runOperation OpDrop))
+        <$> (leftRotations ++ rightRotations ++ centreRotations)
+    hold = runOperation OpHold
+  in -- Some moves will result in an invalid game, so we can ignore those using
+     -- catMaybes.
+     catMaybes $ (hold : allMoves) <*> [game]
+:}
+#+END_SRC
+
+#+RESULTS:
+
+We can test this out just by generating an animation of all the possible states at the start of a given game:
+
+#+BEGIN_SRC haskell :exports both :results html
+:{
+animate 200 "test-possible-states" $ possibleStates (mkGame (mkStdGen 42))
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_export html
+<figure class='text-animation'><pre><code class='text-animation animation-test-possible-states'></code></pre></figure><script src='/scripts/tetris/animation-test-possible-states.js'></script>
 #+end_export
