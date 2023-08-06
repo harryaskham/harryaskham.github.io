@@ -5,10 +5,11 @@
 
 
 #+BEGIN_COMMENT
-- Make more efficient - sets instead of list intersection, etc
-- Figure out colour block display
-- Figure out animation display in website export
 - Figure out preprocessing to remove the ghci :{ :} preamble
+- Introduce H2s and make smaller
+- ActivePiece needs to know piecetype for holds
+- suspicious of rotation of currently active piece
+- Need a canHoldPiece to only allow once per turn
 #+END_COMMENT
 
 #+BEGIN_SRC haskell :exports none :results output
@@ -141,13 +142,14 @@ import qualified Data.Set as S
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 #+BEGIN_SRC haskell :exports code
 :{
 -- intercalate is similar to Python's x.join()
 -- foldl' is similar to Python's reduce(f, xs)
-import Data.List (intercalate, foldl', intersect)
+-- scanl' is similar to Python's itertools.accumulate(xs), or foldl'
+-- with intermediate results.
+import Data.List (intercalate, foldl', scanl', intersect)
 :}
 #+END_SRC
 
@@ -162,6 +164,7 @@ import Data.List.Extra (replace)
 #+END_SRC
 
 #+RESULTS:
+: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -183,12 +186,14 @@ import Data.Function ((&))
 
 #+BEGIN_SRC haskell :exports code
 :{
--- We'll use this to filter out Nothing values from lists of Maybes.
-import Data.Maybe (catMaybes)
+-- We'll use this to filter out Nothing values from lists of Maybes,
+-- and fromJust lets us unsafely unwrap Maybe values for debug purposes.
+import Data.Maybe (catMaybes, fromJust)
 :}
 #+END_SRC
 
 #+RESULTS:
+: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -260,7 +265,6 @@ data Cell = Block Colour | BlockChar Colour Char | Empty deriving (Eq)
 #+END_SRC
 
 #+RESULTS:
-: g
 
 Now we're ready to set up our grid:
 
@@ -415,7 +419,6 @@ instance Borderable Grid where
 #+END_SRC
 
 #+RESULTS:
-: ghc
 
 We're ready to prettify our ~Grid~. Since we're operating over collections of things, we can start using higher-order functions; in Haskell, ~fmap~ from the ~Functor~ typeclass lets you apply a function to the inhabitants of any instance of a given ~Functor~. A list is an instance of ~Functor~, and so for some list ~xs~, ~fmap f xs~ just operates like the ~map(f, xs)~ function you find over lists in most other languages.
 
@@ -484,7 +487,6 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
-ghc
 #+end_example
 
 Alright!
@@ -576,7 +578,6 @@ initPiece piece = ActivePiece (pieceColour piece) (pieceCoords piece)
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 Now we need some functions for composing an ~ActivePiece~ and a ~Grid~, both for inspection and later, for placing tetrominos on the playing field.
 
@@ -621,6 +622,7 @@ instance Pretty Piece where
 #+END_SRC
 
 #+RESULTS:
+: ghc
 
 
 
@@ -639,7 +641,6 @@ putStrLn $ pretty PieceL
 : │ █  │
 : │ ██ │
 : └────┘
-: gh
 
 For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
 
@@ -726,7 +727,6 @@ putStrLn . pretty . mconcat
 │██  │
 │    │
 └────┘
-ghc
 #+end_example
 
 Now the same for the ~VGrid~:
@@ -772,6 +772,7 @@ putStrLn . pretty . mconcat
 : │ █  ││ █  ││██  │
 : │ ██ ││ █  ││    │
 : └────┘└────┘└────┘
+: gh
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -797,41 +798,41 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││██  ││ █  ││ ██ ││ █  ││ ██ ││ ██ ││
-││    ││ ██ ││ █  ││ ██ ││███ ││ █  ││██  ││
-││████││    ││ ██ ││    ││    ││ █  ││    ││
+││ ██ ││ █  ││ ██ ││    ││ █  ││ ██ ││██  ││
+││ ██ ││███ ││██  ││    ││ █  ││ █  ││ ██ ││
+││    ││    ││    ││████││ ██ ││ █  ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││██  ││    ││ █  ││ █  ││ ██ ││ ██ ││ ██ ││
-││ ██ ││    ││ █  ││███ ││██  ││ █  ││ ██ ││
-││    ││████││ ██ ││    ││    ││ █  ││    ││
+││ ██ ││ ██ ││ █  ││ █  ││ ██ ││██  ││    ││
+││██  ││ █  ││ █  ││███ ││ ██ ││ ██ ││    ││
+││    ││ █  ││ ██ ││    ││    ││    ││████││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ █  ││ ██ ││ █  ││ ██ ││    ││██  ││
-││██  ││ █  ││ ██ ││███ ││ █  ││    ││ ██ ││
+││ █  ││ █  ││ ██ ││ ██ ││ ██ ││██  ││    ││
+││ █  ││███ ││██  ││ █  ││ ██ ││ ██ ││    ││
+││ ██ ││    ││    ││ █  ││    ││    ││████││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ ██ ││ █  ││ █  ││ ██ ││ ██ ││    ││██  ││
+││ ██ ││ █  ││███ ││██  ││ █  ││    ││ ██ ││
 ││    ││ ██ ││    ││    ││ █  ││████││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││ █  ││ ██ ││    ││██  ││ ██ ││
-││███ ││ ██ ││ █  ││██  ││    ││ ██ ││ █  ││
-││    ││    ││ ██ ││    ││████││    ││ █  ││
-│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-└──────────────────────────────────────────┘
-┌──────────────────────────────────────────┐
-│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ ██ ││ █  ││██  ││ █  ││    ││ ██ ││
-││ ██ ││ █  ││ █  ││ ██ ││███ ││    ││██  ││
-││    ││ █  ││ ██ ││    ││    ││████││    ││
+││██  ││    ││ █  ││ ██ ││ ██ ││ ██ ││ █  ││
+││ ██ ││    ││███ ││ ██ ││ █  ││██  ││ █  ││
+││    ││████││    ││    ││ █  ││    ││ ██ ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 #+end_example
@@ -860,6 +861,18 @@ rotate :: Rotation -> Int -> Int -> V2 -> V2
 rotate CW width height (x, y) = (-y + width, x)
 rotate CCW width height (x, y) = (y, -x + height)
 
+-- Gets the min and max x and and y coordinates in one linear pass
+-- over the list of coordinates.
+minXMaxXMinYMaxY :: [V2] -> (Int, Int, Int, Int)
+minXMaxXMinYMaxY cs =
+  foldl'
+    (\(minX, maxX, minY, maxY) (x, y) ->
+        (min minX x, max maxX x, min minY y, max maxY y))
+    (fst c0, fst c0, snd c0, snd c0)
+    cs
+  where
+    c0 = head cs
+
 -- This will let us rotate an entire grid by supplying the
 -- appropriate rotation function. We convert the grid to a list briefly,
 -- then convert it back.
@@ -868,12 +881,7 @@ rotate CCW width height (x, y) = (y, -x + height)
 rotateGrid :: Rotation -> Grid -> Grid
 rotateGrid rotation (Grid width height grid) =
   let k0 = head $ M.keys grid
-      (minX, maxX, minY, maxY) =
-        foldl'
-          (\(minX, maxX, minY, maxY) (x, y) ->
-              (min minX x, max maxX x, min minY y, max maxY y))
-          (fst k0, fst k0, snd k0, snd k0)
-          (M.keys grid)
+      (minX, maxX, minY, maxY) = minXMaxXMinYMaxY $ M.keys grid
       rotateFn = rotate rotation (maxX - minX) (maxY - minY)
    in Grid width height (M.mapKeys rotateFn grid)
 :}
@@ -907,6 +915,7 @@ showRotations rotation =
 #+END_SRC
 
 #+RESULTS:
+: ghci
 
 First clockwise:
 
@@ -917,6 +926,50 @@ showRotations CW
 #+END_SRC
 
 #+RESULTS:
+#+begin_example
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││ ██ ││    │
+│ █  ││███ ││  █ ││   █│
+│ █  ││█   ││  █ ││ ███│
+│ ██ ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││  █ ││    │
+│ ██ ││███ ││  █ ││ █  │
+│ █  ││  █ ││ ██ ││ ███│
+│ █  ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ ██ ││ ██ ││  ██││ █  │
+│██  ││  █ ││ ██ ││ ██ │
+│    ││    ││    ││  █ │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││  █ ││    ││    │
+│██  ││ ██ ││ ██ ││  █ │
+│ ██ ││ █  ││  ██││ ██ │
+│    ││    ││    ││ █  │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ █  ││ ██ ││ ███││  █ │
+│███ ││ █  ││  █ ││ ██ │
+│    ││    ││    ││  █ │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││█   ││████││   █│
+│    ││█   ││    ││   █│
+│    ││█   ││    ││   █│
+│████││█   ││    ││   █│
+└────┘└────┘└────┘└────┘
+#+end_example
 
 And counterclockwise:
 
@@ -970,6 +1023,7 @@ showRotations CCW
 │    ││   █││    ││█   │
 │████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
+ghc
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -993,7 +1047,6 @@ initPiece piece = ActivePiece (pieceColour piece) coordinates
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 And let's test this, as ever:
 
@@ -1088,6 +1141,7 @@ sToG s =
 #+END_SRC
 
 #+RESULTS:
+: gh
 
 And a way of hiding the buffer zone:
 
@@ -1213,7 +1267,6 @@ isValid game =
       -- We'll let ourselves use magic numbers in our bounds checker.
       outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
       -- Finally, we ensure there is no overlap and no OOB block.
-      -- We could use Data.Set to make this significantly more efficient.
    in (S.null (S.intersection (S.fromList activeCoords) fullCoords))
         && (not (any outOfBounds activeCoords))
 :}
@@ -1245,6 +1298,7 @@ applyGravity game
 #+END_SRC
 
 #+RESULTS:
+: g
 
 So let's test this out a few times - for now we'll represent the passage of time horizontally, so we'll make a few game states, pull out the grids, and stitch them side by side. We'd like to keep applying ~applyGravity~ over and over - but each time we take a ~Game~ to a ~Maybe Game~. We want some way of chaining these iterations together - and that's where the fact that ~Maybe~ belongs to the ~Monad~ typeclass comes in.
 
@@ -1334,11 +1388,28 @@ This horizontal time axis thing is a bit of a rough way to display game progress
 :{
 -- We've been building for the console so far, but now we're in HTML land
 -- we need to do something about those ANSI escape codes.
--- For now we'll just strip them out.
-stripAnsiCodes :: String -> String
-stripAnsiCodes s = foldl' (\s code -> replace code "" s) s codes
+-- Let's replace them with coloured spans.
+colourSpan :: Colour -> String
+colourSpan colour = "<span style='color:" ++ colourCode colour ++ "'>"
   where
-    codes = ansiColourEnd : (pretty <$> [minBound .. (maxBound :: Colour)])
+    -- This uses the Nord colour palette.
+    colourCode Blue = "#5E81AC"
+    colourCode Orange = "#D08770"
+    colourCode Yellow = "#EBCB8B"
+    colourCode Green = "#A3BE8C"
+    colourCode Purple = "#B48EAD"
+    colourCode Red = "#BF616A"
+    colourCode Cyan = "#88C0D0"
+    colourCode Black = "#2E3440"
+    colourCode White = "#ECEFF4"
+
+replaceAnsiCodes :: String -> String
+replaceAnsiCodes s =
+  replace ansiColourEnd "</span>"
+   $ foldl'
+       (\s colour -> replace (pretty colour) (colourSpan colour) s)
+       s
+       [minBound .. (maxBound :: Colour)]
 
 -- We're going to build up a JS script that will animate our game and then
 -- write it to a file. We'll then just output the container and script tag.
@@ -1348,18 +1419,20 @@ animate delay name games = do
   putStrLn (containerHtml ++ scriptHtml)
   where
     animationName = "animation-" ++ name
-    mkFrame s = "`<figure><pre><code>" ++ stripAnsiCodes s ++ "</code></pre></figure>`"
+    mkFrame s = "`" ++ replaceAnsiCodes s ++ "`"
     frameArrayJs =
       "["
       ++ intercalate "," [mkFrame (pretty . gameGrid $ game) | game <- games]
       ++ "]"
-    containerHtml = "<div class='" ++ animationName ++ "'></div>"
+    containerHtml = "<figure class='text-animation'><pre><code class='text-animation " ++ animationName ++ "'></code></pre></figure>"
     scriptPath = "/scripts/tetris/" ++ animationName ++ ".js"
     scriptHtml = "<script src='" ++ scriptPath ++ "'></script>"
-    animationJs = "var frames = " ++ frameArrayJs ++ ";"
+    var = replace "-" "" $ animationName ++ "Frames"
+    animationJs = "var " ++ var ++ " = " ++ frameArrayJs ++ ";"
       ++ "setInterval(function(){document.getElementsByClassName('"
       ++ animationName
-      ++ "')[0].innerHTML = frames.shift();frames.push(frames[0]);}, "
+      ++ "')[0].innerHTML = " ++ var ++ ".shift();"
+      ++ var ++ ".push(" ++ var ++ "[0]);}, "
       ++ show delay
       ++ ");"
 :}
@@ -1378,9 +1451,11 @@ Let's test this out:
 
 #+RESULTS:
 #+begin_export html
-<div class='animation-one-falling-block'></div><script src='/scripts/tetris/animation-one-falling-block.js'></script>
+<figure class='text-animation'><pre><code class='text-animation animation-one-falling-block'></code></pre></figure><script src='/scripts/tetris/animation-one-falling-block.js'></script>
 #+end_export
 
+
+Who needs ~ncurses~ when you have hacks like these?
 
 Let's create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We'll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We'll implement simple scoring (no T-spins here, although they will be actually be possible).
 
@@ -1508,7 +1583,6 @@ Full lines detected: [21,23]
 ││██████████│       │││██████    │       │
 │└──────────┘       ││└──────────┘       │
 └───────────────────┘└───────────────────┘
-ghc
 #+end_example
 
 Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
@@ -1560,12 +1634,108 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 
 #+RESULTS:
 #+begin_export html
-<div class='animation-lose-the-game'></div><script src='/scripts/tetris/animation-lose-the-game.js'></script>
-ghci
+<figure class='text-animation'><pre><code class='text-animation animation-lose-the-game'></code></pre></figure><script src='/scripts/tetris/animation-lose-the-game.js'></script>
 #+end_export
 
 Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works. We're now in a position to write a simple bot to play the game.
 
 * Incredibly Advanced Tetris AI
 
-TODO
+We'll need to give our bot a way to operate on a game. Let's define a set of operations - later, we could just map these to keyboard inputs to play the game ourselves, but this is trickier in the medium of a blog.
+
+Let's start by defining the possible operations:
+
+#+BEGIN_SRC haskell :exports code
+:{
+data Operation
+  = OpLeft
+  | OpRight
+  | OpDown
+  | OpRotateCW
+  | OpRotateCCW
+  | OpDrop
+  | OpHold
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Now we'll implement the application of these operations to a ~Game~. If they result in an invalid game state (moving out of bounds, or impossible rotations), we'll just return ~Nothing~.
+
+First we need a way to rotate the actual actively falling piece:
+
+#+BEGIN_SRC haskell :exports code
+:{
+rotateActivePiece :: Rotation -> Game -> Game
+rotateActivePiece rotation game =
+  let (ActivePiece colour coords) = currentPiece game
+      (minX, maxX, minY, maxY) = minXMaxXMinYMaxY coords
+      coords' = rotate rotation (maxX - minX) (maxY - minY) <$> coords
+      piece' = ActivePiece colour coords'
+   in game { currentPiece = piece' }
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Holding a piece is relatively simple:
+
+#+BEGIN_SRC haskell :exports code
+:{
+holdPiece :: Game -> Game
+holdPiece = error "needs activepiece to know what piece it is"
+:}
+#+END_SRC
+
+#+RESULTS:
+
+To forcibly drop a piece, we can just move it down until it's no longer a valid move. This should also trigger fixing the piece.
+
+#+BEGIN_SRC haskell :exports code
+:{
+dropPiece :: Game -> Game
+dropPiece game =
+  let game' = game { currentPiece = movePiece (0, 1) (currentPiece game) }
+   in if isValid game' then dropPiece game' else fixPiece game
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Now we can implement the actual application of operations:
+
+#+BEGIN_SRC haskell :exports code
+:{
+runOperation :: Operation -> Game -> Maybe Game
+runOperation op game
+  | isValid game' = Just game'
+  | otherwise = Nothing
+  where
+    game' = case op of
+      OpLeft -> game { currentPiece = movePiece (-1, 0) (currentPiece game) }
+      OpRight -> game { currentPiece = movePiece (1, 0) (currentPiece game) }
+      OpDown -> game { currentPiece = movePiece (0, 1) (currentPiece game) }
+      OpRotateCW -> rotateActivePiece CW game
+      OpRotateCCW -> rotateActivePiece CCW game
+      OpHold -> holdPiece game
+      OpDrop -> dropPiece game
+:}
+#+END_SRC
+
+#+RESULTS:
+
+We can test this out with a short animation:
+
+#+BEGIN_SRC haskell :exports both :results html
+:{
+let game = mkGame (mkStdGen 42)
+    --ops = [OpLeft, OpLeft, OpRotateCW, OpDown, OpDrop, OpDown, OpRight, OpDown, OpDrop]
+    ops = take 50 $ cycle [OpLeft, OpLeft, OpDrop, OpRight, OpRight, OpDrop]
+ in animate 50 "test-operations" $ scanl' (\g op -> fromJust $ runOperation op g) game ops
+:}
+#+END_SRC
+
+#+RESULTS:
+#+begin_export html
+<figure class='text-animation'><pre><code class='text-animation animation-test-operations'></code></pre></figure><script src='/scripts/tetris/animation-test-operations.js'></script>
+#+end_export

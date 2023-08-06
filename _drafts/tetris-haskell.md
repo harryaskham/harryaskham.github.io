@@ -9,22 +9,22 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#orgeda29a7)
-2.  [What This Is](#orgb76ce51)
-3.  [What This Isn&rsquo;t](#org0c5721a)
-4.  [Prelude](#org4ad8974)
-5.  [Strategy](#org1ed8b28)
-6.  [Imports and Dependencies](#org5ed4a3d)
-7.  [Establishing the Grid](#org8488dd9)
-8.  [Making Some Tetrominos](#org6e3c48b)
-9.  [Rotations](#org12e370c)
-10. [Placing Pieces on the Grid](#orge8ba3b6)
-11. [Representing the Game State](#org401853d)
-12. [The Introduction of Time and Logic](#orgf035582)
-13. [Incredibly Advanced Tetris AI](#org2cdb408)
+1.  [Beginning at the End](#org9212cdc)
+2.  [What This Is](#org7e08827)
+3.  [What This Isn&rsquo;t](#orga2e139c)
+4.  [Prelude](#orgfad51bb)
+5.  [Strategy](#org55300b0)
+6.  [Imports and Dependencies](#org1309bc4)
+7.  [Establishing the Grid](#org35019af)
+8.  [Making Some Tetrominos](#org56928ed)
+9.  [Rotations](#orga480b34)
+10. [Placing Pieces on the Grid](#org8af6b10)
+11. [Representing the Game State](#orgd087999)
+12. [The Introduction of Time and Logic](#org4c1d7f3)
+13. [Incredibly Advanced Tetris AI](#orgbcda685)
 
 
-<a id="orgeda29a7"></a>
+<a id="org9212cdc"></a>
 
 # Beginning at the End
 
@@ -33,7 +33,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="orgb76ce51"></a>
+<a id="org7e08827"></a>
 
 # What This Is
 
@@ -44,7 +44,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org0c5721a"></a>
+<a id="orga2e139c"></a>
 
 # What This Isn&rsquo;t
 
@@ -55,7 +55,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="org4ad8974"></a>
+<a id="orgfad51bb"></a>
 
 # Prelude
 
@@ -66,7 +66,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org1ed8b28"></a>
+<a id="org55300b0"></a>
 
 # Strategy
 
@@ -83,7 +83,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 
 
-<a id="org5ed4a3d"></a>
+<a id="org1309bc4"></a>
 
 # Imports and Dependencies
 
@@ -149,7 +149,9 @@ import qualified Data.Set as S
 :{
 -- intercalate is similar to Python's x.join()
 -- foldl' is similar to Python's reduce(f, xs)
-import Data.List (intercalate, foldl', intersect)
+-- scanl' is similar to Python's itertools.accumulate(xs), or foldl'
+-- with intermediate results.
+import Data.List (intercalate, foldl', scanl', intersect)
 :}
 {% endhighlight %}
 
@@ -177,8 +179,9 @@ import Data.Function ((&))
 
 {% highlight haskell %}
 :{
--- We'll use this to filter out Nothing values from lists of Maybes.
-import Data.Maybe (catMaybes)
+-- We'll use this to filter out Nothing values from lists of Maybes,
+-- and fromJust lets us unsafely unwrap Maybe values for debug purposes.
+import Data.Maybe (catMaybes, fromJust)
 :}
 {% endhighlight %}
 
@@ -213,7 +216,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org8488dd9"></a>
+<a id="org35019af"></a>
 
 # Establishing the Grid
 
@@ -450,7 +453,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org6e3c48b"></a>
+<a id="org56928ed"></a>
 
 # Making Some Tetrominos
 
@@ -623,6 +626,8 @@ instance Pretty HGrid where
 :}
 {% endhighlight %}
 
+    g
+
 There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The `unHGrid` named member just lets us easily unwrap this type later on.
 
 Then we `M.unionWith` the original grid, copying over its elements.
@@ -658,7 +663,6 @@ putStrLn . pretty . mconcat
     │██  │
     │    │
     └────┘
-    gh
 
 Now the same for the `VGrid`:
 
@@ -723,41 +727,41 @@ do
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││██  ││ █  ││ ██ ││ ██ ││    ││ ██ ││ █  ││
-    ││ ██ ││ █  ││ ██ ││██  ││    ││ █  ││███ ││
-    ││    ││ ██ ││    ││    ││████││ █  ││    ││
+    ││ ██ ││    ││ ██ ││ ██ ││ █  ││██  ││ █  ││
+    ││ ██ ││    ││██  ││ █  ││███ ││ ██ ││ █  ││
+    ││    ││████││    ││ █  ││    ││    ││ ██ ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ █  ││ ██ ││██  ││ ██ ││    ││ █  ││
-    ││ ██ ││ █  ││ █  ││ ██ ││██  ││    ││███ ││
-    ││    ││ ██ ││ █  ││    ││    ││████││    ││
+    ││ █  ││██  ││ ██ ││ ██ ││ ██ ││    ││ █  ││
+    ││ █  ││ ██ ││ █  ││██  ││ ██ ││    ││███ ││
+    ││ ██ ││    ││ █  ││    ││    ││████││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││    ││ ██ ││ ██ ││██  ││ █  ││ █  ││
-    ││ ██ ││    ││ █  ││██  ││ ██ ││███ ││ █  ││
-    ││    ││████││ █  ││    ││    ││    ││ ██ ││
+    ││ ██ ││ ██ ││ █  ││██  ││ █  ││ ██ ││    ││
+    ││██  ││ █  ││███ ││ ██ ││ █  ││ ██ ││    ││
+    ││    ││ █  ││    ││    ││ ██ ││    ││████││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
     ││ ██ ││██  ││ █  ││ ██ ││    ││ ██ ││ █  ││
-    ││ ██ ││ ██ ││███ ││ █  ││    ││██  ││ █  ││
-    ││    ││    ││    ││ █  ││████││    ││ ██ ││
+    ││ █  ││ ██ ││███ ││██  ││    ││ ██ ││ █  ││
+    ││ █  ││    ││    ││    ││████││    ││ ██ ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ ██ ││ ██ ││ █  ││    ││ █  ││██  ││
-    ││██  ││ ██ ││ █  ││ █  ││    ││███ ││ ██ ││
-    ││    ││    ││ █  ││ ██ ││████││    ││    ││
+    ││ █  ││ ██ ││ ██ ││ ██ ││    ││ █  ││██  ││
+    ││███ ││ █  ││ ██ ││██  ││    ││ █  ││ ██ ││
+    ││    ││ █  ││    ││    ││████││ ██ ││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
 
@@ -768,7 +772,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="org12e370c"></a>
+<a id="orga480b34"></a>
 
 # Rotations
 
@@ -785,6 +789,18 @@ rotate :: Rotation -> Int -> Int -> V2 -> V2
 rotate CW width height (x, y) = (-y + width, x)
 rotate CCW width height (x, y) = (y, -x + height)
 
+-- Gets the min and max x and and y coordinates in one linear pass
+-- over the list of coordinates.
+minXMaxXMinYMaxY :: [V2] -> (Int, Int, Int, Int)
+minXMaxXMinYMaxY cs =
+  foldl'
+    (\(minX, maxX, minY, maxY) (x, y) ->
+        (min minX x, max maxX x, min minY y, max maxY y))
+    (fst c0, fst c0, snd c0, snd c0)
+    cs
+  where
+    c0 = head cs
+
 -- This will let us rotate an entire grid by supplying the
 -- appropriate rotation function. We convert the grid to a list briefly,
 -- then convert it back.
@@ -793,12 +809,7 @@ rotate CCW width height (x, y) = (y, -x + height)
 rotateGrid :: Rotation -> Grid -> Grid
 rotateGrid rotation (Grid width height grid) =
   let k0 = head $ M.keys grid
-      (minX, maxX, minY, maxY) =
-        foldl'
-          (\(minX, maxX, minY, maxY) (x, y) ->
-              (min minX x, max maxX x, min minY y, max maxY y))
-          (fst k0, fst k0, snd k0, snd k0)
-          (M.keys grid)
+      (minX, maxX, minY, maxY) = minXMaxXMinYMaxY $ M.keys grid
       rotateFn = rotate rotation (maxX - minX) (maxY - minY)
    in Grid width height (M.mapKeys rotateFn grid)
 :}
@@ -931,7 +942,7 @@ showRotations CCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="orge8ba3b6"></a>
+<a id="org8af6b10"></a>
 
 # Placing Pieces on the Grid
 
@@ -990,7 +1001,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org401853d"></a>
+<a id="orgd087999"></a>
 
 # Representing the Game State
 
@@ -1101,10 +1112,36 @@ do
 :}
 {% endhighlight %}
 
+    ┌────────┐         
+    │Score: 0│         
+    └────────┘         
+    ┌──────────┐┌─────┐
+    │          ││Next:│
+    │          ││     │
+    │          ││ ██  │
+    │          ││ █   │
+    │          ││ █   │
+    │          │└─────┘
+    │          │┌─────┐
+    │          ││Held:│
+    │          ││     │
+    │          ││ ██  │
+    │          ││██   │
+    │          ││     │
+    │          │└─────┘
+    │          │       
+    │          │       
+    │          │       
+    │          │       
+    │          │       
+    │          │       
+    │          │       
+    └──────────┘
+
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="orgf035582"></a>
+<a id="org4c1d7f3"></a>
 
 # The Introduction of Time and Logic
 
@@ -1133,7 +1170,6 @@ isValid game =
       -- We'll let ourselves use magic numbers in our bounds checker.
       outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
       -- Finally, we ensure there is no overlap and no OOB block.
-      -- We could use Data.Set to make this significantly more efficient.
    in (S.null (S.intersection (S.fromList activeCoords) fullCoords))
         && (not (any outOfBounds activeCoords))
 :}
@@ -1242,11 +1278,28 @@ This horizontal time axis thing is a bit of a rough way to display game progress
 :{
 -- We've been building for the console so far, but now we're in HTML land
 -- we need to do something about those ANSI escape codes.
--- For now we'll just strip them out.
-stripAnsiCodes :: String -> String
-stripAnsiCodes s = foldl' (\s code -> replace code "" s) s codes
+-- Let's replace them with coloured spans.
+colourSpan :: Colour -> String
+colourSpan colour = "<span style='color:" ++ colourCode colour ++ "'>"
   where
-    codes = ansiColourEnd : (pretty <$> [minBound .. (maxBound :: Colour)])
+    -- This uses the Nord colour palette.
+    colourCode Blue = "#5E81AC"
+    colourCode Orange = "#D08770"
+    colourCode Yellow = "#EBCB8B"
+    colourCode Green = "#A3BE8C"
+    colourCode Purple = "#B48EAD"
+    colourCode Red = "#BF616A"
+    colourCode Cyan = "#88C0D0"
+    colourCode Black = "#2E3440"
+    colourCode White = "#ECEFF4"
+
+replaceAnsiCodes :: String -> String
+replaceAnsiCodes s =
+  replace ansiColourEnd "</span>"
+   $ foldl'
+       (\s colour -> replace (pretty colour) (colourSpan colour) s)
+       s
+       [minBound .. (maxBound :: Colour)]
 
 -- We're going to build up a JS script that will animate our game and then
 -- write it to a file. We'll then just output the container and script tag.
@@ -1256,18 +1309,20 @@ animate delay name games = do
   putStrLn (containerHtml ++ scriptHtml)
   where
     animationName = "animation-" ++ name
-    mkFrame s = "`<figure><pre><code>" ++ stripAnsiCodes s ++ "</code></pre></figure>`"
+    mkFrame s = "`" ++ replaceAnsiCodes s ++ "`"
     frameArrayJs =
       "["
       ++ intercalate "," [mkFrame (pretty . gameGrid $ game) | game <- games]
       ++ "]"
-    containerHtml = "<div class='" ++ animationName ++ "'></div>"
+    containerHtml = "<figure class='text-animation'><pre><code class='text-animation " ++ animationName ++ "'></code></pre></figure>"
     scriptPath = "/scripts/tetris/" ++ animationName ++ ".js"
     scriptHtml = "<script src='" ++ scriptPath ++ "'></script>"
-    animationJs = "var frames = " ++ frameArrayJs ++ ";"
+    var = replace "-" "" $ animationName ++ "Frames"
+    animationJs = "var " ++ var ++ " = " ++ frameArrayJs ++ ";"
       ++ "setInterval(function(){document.getElementsByClassName('"
       ++ animationName
-      ++ "')[0].innerHTML = frames.shift();frames.push(frames[0]);}, "
+      ++ "')[0].innerHTML = " ++ var ++ ".shift();"
+      ++ var ++ ".push(" ++ var ++ "[0]);}, "
       ++ show delay
       ++ ");"
 :}
@@ -1282,7 +1337,9 @@ Let&rsquo;s test this out:
 :}
 {% endhighlight %}
 
-<div class='animation-one-falling-block'></div><script src='/scripts/tetris/animation-one-falling-block.js'></script>
+<figure class='text-animation'><pre><code class='text-animation animation-one-falling-block'></code></pre></figure><script src='/scripts/tetris/animation-one-falling-block.js'></script>
+
+Who needs `ncurses` when you have hacks like these?
 
 Let&rsquo;s create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We&rsquo;ll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We&rsquo;ll implement simple scoring (no T-spins here, although they will be actually be possible).
 
@@ -1397,7 +1454,6 @@ debugLineRemoval
     ││██████████│       │││██████    │       │
     │└──────────┘       ││└──────────┘       │
     └───────────────────┘└───────────────────┘
-    gh
 
 Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
 
@@ -1442,16 +1498,100 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 :}
 {% endhighlight %}
 
-<div class='animation-lose-the-game'></div><script src='/scripts/tetris/animation-lose-the-game.js'></script>
+<figure class='text-animation'><pre><code class='text-animation animation-lose-the-game'></code></pre></figure><script src='/scripts/tetris/animation-lose-the-game.js'></script>
 
 Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. We&rsquo;re now in a position to write a simple bot to play the game.
 
 
-<a id="org2cdb408"></a>
+<a id="orgbcda685"></a>
 
 # Incredibly Advanced Tetris AI
 
-TODO
+We&rsquo;ll need to give our bot a way to operate on a game. Let&rsquo;s define a set of operations - later, we could just map these to keyboard inputs to play the game ourselves, but this is trickier in the medium of a blog.
+
+Let&rsquo;s start by defining the possible operations:
+
+{% highlight haskell %}
+:{
+data Operation
+  = OpLeft
+  | OpRight
+  | OpDown
+  | OpRotateCW
+  | OpRotateCCW
+  | OpDrop
+  | OpHold
+:}
+{% endhighlight %}
+
+Now we&rsquo;ll implement the application of these operations to a `Game`. If they result in an invalid game state (moving out of bounds, or impossible rotations), we&rsquo;ll just return `Nothing`.
+
+First we need a way to rotate the actual actively falling piece:
+
+{% highlight haskell %}
+:{
+rotateActivePiece :: Rotation -> Game -> Game
+rotateActivePiece rotation game =
+  let (ActivePiece colour coords) = currentPiece game
+      (minX, maxX, minY, maxY) = minXMaxXMinYMaxY coords
+      coords' = rotate rotation (maxX - minX) (maxY - minY) <$> coords
+      piece' = ActivePiece colour coords'
+   in game { currentPiece = piece' }
+:}
+{% endhighlight %}
+
+Holding a piece is relatively simple:
+
+{% highlight haskell %}
+:{
+holdPiece :: Game -> Game
+holdPiece = error "needs activepiece to know what piece it is"
+:}
+{% endhighlight %}
+
+To forcibly drop a piece, we can just move it down until it&rsquo;s no longer a valid move. This should also trigger fixing the piece.
+
+{% highlight haskell %}
+:{
+dropPiece :: Game -> Game
+dropPiece game =
+  let game' = game { currentPiece = movePiece (0, 1) (currentPiece game) }
+   in if isValid game' then dropPiece game' else fixPiece game
+:}
+{% endhighlight %}
+
+Now we can implement the actual application of operations:
+
+{% highlight haskell %}
+:{
+runOperation :: Operation -> Game -> Maybe Game
+runOperation op game
+  | isValid game' = Just game'
+  | otherwise = Nothing
+  where
+    game' = case op of
+      OpLeft -> game { currentPiece = movePiece (-1, 0) (currentPiece game) }
+      OpRight -> game { currentPiece = movePiece (1, 0) (currentPiece game) }
+      OpDown -> game { currentPiece = movePiece (0, 1) (currentPiece game) }
+      OpRotateCW -> rotateActivePiece CW game
+      OpRotateCCW -> rotateActivePiece CCW game
+      OpHold -> holdPiece game
+      OpDrop -> dropPiece game
+:}
+{% endhighlight %}
+
+We can test this out with a short animation:
+
+{% highlight haskell %}
+:{
+let game = mkGame (mkStdGen 42)
+    --ops = [OpLeft, OpLeft, OpRotateCW, OpDown, OpDrop, OpDown, OpRight, OpDown, OpDrop]
+    ops = take 50 $ cycle [OpLeft, OpLeft, OpDrop, OpRight, OpRight, OpDrop]
+ in animate 50 "test-operations" $ scanl' (\g op -> fromJust $ runOperation op g) game ops
+:}
+{% endhighlight %}
+
+<figure class='text-animation'><pre><code class='text-animation animation-test-operations'></code></pre></figure><script src='/scripts/tetris/animation-test-operations.js'></script>
 
 # Footnotes
 

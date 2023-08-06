@@ -1,481 +1,481 @@
-var frames = [`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│    ██    ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│    █     ││Next:│
-│    ██    ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│    █     ││Next:│
-│    █     ││     │
-│    ██    ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│    █     ││     │
-│    █     ││ ██  │
-│    ██    ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│    █     ││ ██  │
-│    █     ││ █   │
-│    ██    ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│    █     ││ █   │
-│    █     ││ █   │
-│    ██    │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│    █     ││ █   │
-│    █     │└─────┘
-│    ██    │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│    █     │└─────┘
-│    █     │┌─────┐
-│    ██    ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│    █     │┌─────┐
-│    █     ││Held:│
-│    ██    ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│    █     ││Held:│
-│    █     ││     │
-│    ██    ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│    █     ││     │
-│    █     ││     │
-│    ██    ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│    █     ││     │
-│    █     ││     │
-│    ██    ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│    █     ││     │
-│    █     ││     │
-│    ██    │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│    █     ││     │
-│    █     │└─────┘
-│    ██    │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│    █     │└─────┘
-│    █     │       
-│    ██    │       
-│          │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│    █     │       
-│    █     │       
-│    ██    │       
-│          │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│    █     │       
-│    █     │       
-│    ██    │       
-│          │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│    █     │       
-│    █     │       
-│    ██    │       
-│          │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│    █     │       
-│    █     │       
-│    ██    │       
-│          │       
-└──────────┘       </code></pre></figure>`,`<figure><pre><code>┌────────┐         
-│Score: 0│         
-└────────┘         
-┌──────────┐┌─────┐
-│          ││Next:│
-│          ││     │
-│          ││ ██  │
-│          ││ █   │
-│          ││ █   │
-│          │└─────┘
-│          │┌─────┐
-│          ││Held:│
-│          ││     │
-│          ││     │
-│          ││     │
-│          ││     │
-│          │└─────┘
-│          │       
-│          │       
-│          │       
-│          │       
-│    █     │       
-│    █     │       
-│    ██    │       
-└──────────┘       </code></pre></figure>`];setInterval(function(){document.getElementsByClassName('animation-one-falling-block')[0].innerHTML = frames.shift();frames.push(frames[0]);}, 100);
+var animationonefallingblockFrames = [`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `,`<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>         
+<span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>S</span><span style='color:#ECEFF4'>c</span><span style='color:#ECEFF4'>o</span><span style='color:#ECEFF4'>r</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>:</span><span style='color:#ECEFF4'> </span><span style='color:#ECEFF4'>0</span><span style='color:#2E3440'>│</span>         
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>         
+<span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>N</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>x</span><span style='color:#ECEFF4'>t</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span><span style='color:#5E81AC'>█</span>  <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span> <span style='color:#5E81AC'>█</span>   <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>┌</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┐</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span><span style='color:#ECEFF4'>H</span><span style='color:#ECEFF4'>e</span><span style='color:#ECEFF4'>l</span><span style='color:#ECEFF4'>d</span><span style='color:#ECEFF4'>:</span><span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>│</span>     <span style='color:#2E3440'>│</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span><span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>          <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span>     <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>│</span>    <span style='color:#D08770'>█</span><span style='color:#D08770'>█</span>    <span style='color:#2E3440'>│</span>       
+<span style='color:#2E3440'>└</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>─</span><span style='color:#2E3440'>┘</span>       `];setInterval(function(){document.getElementsByClassName('animation-one-falling-block')[0].innerHTML = animationonefallingblockFrames.shift();animationonefallingblockFrames.push(animationonefallingblockFrames[0]);}, 100);
