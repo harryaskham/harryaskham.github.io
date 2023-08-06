@@ -9,21 +9,22 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#orgb26a560)
-2.  [What This Is](#org7badecb)
-3.  [What This Isn&rsquo;t](#org57347ba)
-4.  [Prelude](#orga6c8a24)
-5.  [Strategy](#org47e7eae)
-6.  [Imports and Dependencies](#org6b6bc4d)
-7.  [Establishing the Grid](#orgcd543cb)
-8.  [Making Some Tetrominos](#org1103ba3)
-9.  [Rotations](#org7fa67f2)
-10. [Placing Pieces on the Grid](#orgace3ac5)
-11. [Representing the Game State](#org73a3d23)
-12. [The Introduction of Time and Logic](#org8b47fde)
+1.  [Beginning at the End](#orge32f493)
+2.  [What This Is](#org3cc3861)
+3.  [What This Isn&rsquo;t](#org4b36b4d)
+4.  [Prelude](#orgf987afd)
+5.  [Strategy](#org970129f)
+6.  [Imports and Dependencies](#orgd78dae4)
+7.  [Establishing the Grid](#org1e76857)
+8.  [Making Some Tetrominos](#org5f3a809)
+9.  [Rotations](#org54f202e)
+10. [Placing Pieces on the Grid](#orga787465)
+11. [Representing the Game State](#org3ff8abd)
+12. [The Introduction of Time and Logic](#orgd79f3ed)
+13. [Incredibly Advanced Tetris AI](#org82bf1c1)
 
 
-<a id="orgb26a560"></a>
+<a id="orge32f493"></a>
 
 # Beginning at the End
 
@@ -32,7 +33,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org7badecb"></a>
+<a id="org3cc3861"></a>
 
 # What This Is
 
@@ -43,7 +44,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org57347ba"></a>
+<a id="org4b36b4d"></a>
 
 # What This Isn&rsquo;t
 
@@ -54,7 +55,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="orga6c8a24"></a>
+<a id="orgf987afd"></a>
 
 # Prelude
 
@@ -65,7 +66,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="org47e7eae"></a>
+<a id="org970129f"></a>
 
 # Strategy
 
@@ -82,7 +83,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 -   We&rsquo;ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.
 
 
-<a id="org6b6bc4d"></a>
+<a id="orgd78dae4"></a>
 
 # Imports and Dependencies
 
@@ -187,7 +188,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="orgcd543cb"></a>
+<a id="org1e76857"></a>
 
 # Establishing the Grid
 
@@ -392,39 +393,12 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 :}
 {% endhighlight %}
 
-    ┌──────────┐
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    │          │
-    └──────────┘
-
 Alright!
 
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org1103ba3"></a>
+<a id="org5f3a809"></a>
 
 # Making Some Tetrominos
 
@@ -556,7 +530,6 @@ putStrLn $ pretty PieceL
     │ █  │
     │ ██ │
     └────┘
-    ghci
 
 For fun, we&rsquo;ll implement `Monoid` for `Grid`; this just means defining what it means for a `Grid` to be empty, and how to stitch two grids together. However, just like `Int` (which can be combined multiple ways - summing, multiplying), there&rsquo;s no unique way to combine two grids - so let&rsquo;s implement both horizontal and vertical stitching. This will require some `newtype` wrappers - for example, we can&rsquo;t just do `2 <> 3 == ???` in Haskell, as it doesn&rsquo;t know which `Monoid` to use for the concatenation; instead we either:
 
@@ -632,7 +605,6 @@ putStrLn . pretty . mconcat
     │██  │
     │    │
     └────┘
-    ghc
 
 Now the same for the `VGrid`:
 
@@ -668,6 +640,14 @@ putStrLn . pretty . mconcat
 :}
 {% endhighlight %}
 
+    ┌────┐┌────┐┌────┐
+    │    ││    ││    │
+    │ █  ││ ██ ││ ██ │
+    │ █  ││ █  ││██  │
+    │ ██ ││ █  ││    │
+    └────┘└────┘└────┘
+    gh
+
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
 {% highlight haskell %}
@@ -689,41 +669,41 @@ do
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││    ││ █  ││ ██ ││██  ││ ██ ││ █  ││ ██ ││
-    ││    ││ █  ││ █  ││ ██ ││██  ││███ ││ ██ ││
-    ││████││ ██ ││ █  ││    ││    ││    ││    ││
+    ││ ██ ││ █  ││ ██ ││██  ││ ██ ││ █  ││    ││
+    ││ █  ││███ ││██  ││ ██ ││ ██ ││ █  ││    ││
+    ││ █  ││    ││    ││    ││    ││ ██ ││████││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ █  ││ ██ ││    ││ ██ ││ █  ││██  ││
-    ││ █  ││ █  ││ ██ ││    ││██  ││███ ││ ██ ││
-    ││ █  ││ ██ ││    ││████││    ││    ││    ││
+    ││ ██ ││ ██ ││ █  ││ ██ ││ █  ││██  ││    ││
+    ││██  ││ █  ││███ ││ ██ ││ █  ││ ██ ││    ││
+    ││    ││ █  ││    ││    ││ ██ ││    ││████││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││██  ││    ││ █  ││ ██ ││ ██ ││ ██ ││ █  ││
-    ││ ██ ││    ││ █  ││ █  ││ ██ ││██  ││███ ││
-    ││    ││████││ ██ ││ █  ││    ││    ││    ││
+    ││    ││██  ││ ██ ││ ██ ││ █  ││ ██ ││ █  ││
+    ││    ││ ██ ││██  ││ ██ ││ █  ││ █  ││███ ││
+    ││████││    ││    ││    ││ ██ ││ █  ││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ ██ ││ █  ││ █  ││██  ││ ██ ││    ││
-    ││ ██ ││ █  ││███ ││ █  ││ ██ ││██  ││    ││
-    ││    ││ █  ││    ││ ██ ││    ││    ││████││
+    ││ █  ││ █  ││ ██ ││ ██ ││██  ││    ││ ██ ││
+    ││ █  ││███ ││██  ││ █  ││ ██ ││    ││ ██ ││
+    ││ ██ ││    ││    ││ █  ││    ││████││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
     ┌──────────────────────────────────────────┐
     │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
     ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ █  ││██  ││ ██ ││ █  ││ ██ ││    ││
-    ││██  ││ █  ││ ██ ││ █  ││███ ││ ██ ││    ││
-    ││    ││ ██ ││    ││ █  ││    ││    ││████││
+    ││██  ││    ││ █  ││ ██ ││ ██ ││ █  ││ ██ ││
+    ││ ██ ││    ││███ ││ █  ││██  ││ █  ││ ██ ││
+    ││    ││████││    ││ █  ││    ││ ██ ││    ││
     │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
     └──────────────────────────────────────────┘
 
@@ -734,7 +714,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="org7fa67f2"></a>
+<a id="org54f202e"></a>
 
 # Rotations
 
@@ -842,6 +822,7 @@ showRotations CW
     │    ││█   ││    ││   █│
     │████││█   ││    ││   █│
     └────┘└────┘└────┘└────┘
+    g
 
 And counterclockwise:
 
@@ -893,11 +874,12 @@ showRotations CCW
     │    ││   █││    ││█   │
     │████││   █││    ││█   │
     └────┘└────┘└────┘└────┘
+    ghc
 
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="orgace3ac5"></a>
+<a id="orga787465"></a>
 
 # Placing Pieces on the Grid
 
@@ -952,12 +934,11 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
     │          │
     │          │
     └──────────┘
-    ghc
 
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org73a3d23"></a>
+<a id="org3ff8abd"></a>
 
 # Representing the Game State
 
@@ -1092,12 +1073,13 @@ do
     │          │       
     │          │       
     │          │       
-    └──────────┘
+    └──────────┘       
+    ghc
 
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="org8b47fde"></a>
+<a id="orgd79f3ed"></a>
 
 # The Introduction of Time and Logic
 
@@ -1224,16 +1206,123 @@ let (Just s) = debugIterateMaybe applyGravity in putStrLn s
 
 Sick, we hit the bottom and then we stop.
 
-Let&rsquo;s create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We&rsquo;ll simultaneously draw a new piece from the stream, too.
+Let&rsquo;s create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We&rsquo;ll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We&rsquo;ll implement simple scoring (no T-spins here, although they will be actually be possible).
+
+{% highlight haskell %}
+:{
+-- Note that this is a partial function; scorelines 5 will error out.
+-- Again, bad practice in real code.
+scoreLines :: Int -> Int
+scoreLines 0 = 0
+scoreLines 1 = 100
+scoreLines 2 = 300
+scoreLines 3 = 500
+scoreLines 4 = 800
+:}
+{% endhighlight %}
+
+Let&rsquo;s find which line indices are completely full:
+
+{% highlight haskell %}
+:{
+fullLines :: Grid -> [Int]
+fullLines (Grid width height grid) =
+    [ y | y <- [0 .. height - 1], all (\x -> grid M.! (x, y) /= Empty) [0 .. width - 1] ]
+:}
+{% endhighlight %}
+
+Now we can remove them from the grid. This is a little inefficient; we&rsquo;ll remove them one by one, shifting the rest of the grid above it down, ensuring that we re-fill with empty space at the top.
+
+{% highlight haskell %}
+:{
+removeLine :: Grid -> Int -> Grid
+removeLine (Grid width height grid) i = Grid width height grid'
+  where
+    grid' =
+      grid
+        -- First move everything down, covering the removed line
+        & M.mapKeys (\(x, y) -> if y <= i then (x, y + 1) else (x, y))
+        -- We might have removed the bottom line; if so, get rid of anything under the grid
+        & M.filterWithKey (\(_, y) _ -> y < height)
+        -- Now, we need to fill in the top line with empty space
+        & M.union (unGrid $ mkEmptyGrid width 1)
+
+removeFullLines :: Game -> Game
+removeFullLines game = game { grid = grid', score = score' }
+  where
+    ixs = fullLines (grid game)
+    grid' = foldl' removeLine (grid game) (fullLines (grid game))
+    score' = score game + scoreLines (length ixs)
+:}
+{% endhighlight %}
+
+Let&rsquo;s write a way to test this out real quick:
+
+{% highlight haskell %}
+:{
+debugLineRemoval = do
+  -- Insert two full lines with a partial line inbetween
+  let full =
+        [ (x, 23) | x <- [0 .. 9] ]
+        <> [ (x, 22) | x <- [0 .. 5] ]
+        <> [ (x, 21) | x <- [0 .. 9] ]
+      fullGrid = foldl' (\g c -> M.insert c (Block Red) g) (unGrid $ mkEmptyGrid 10 24) full
+      game = (mkGame (mkStdGen 42)) { grid = Grid 10 24 fullGrid }
+      lhs = gameGrid game
+      rhs = gameGrid $ removeFullLines game
+  putStrLn $ "Full lines detected: " <> show (fullLines (grid game))
+  putStrLn . pretty . mconcat $ withBorder . VGrid <$> [lhs, rhs]
+:}
+{% endhighlight %}
+
+This should give us a side by side comparison:
+
+{% highlight haskell %}
+:{
+debugLineRemoval
+:}
+{% endhighlight %}
+
+    Full lines detected: [21,23]
+    ┌───────────────────┐┌───────────────────┐
+    │┌────────┐         ││┌──────────┐       │
+    ││Score: 0│         │││Score: 300│       │
+    │└────────┘         ││└──────────┘       │
+    │┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+    ││          ││Next:││││          ││Next:││
+    ││          ││     ││││          ││     ││
+    ││          ││ ██  ││││          ││ ██  ││
+    ││          ││ █   ││││          ││ █   ││
+    ││          ││ █   ││││          ││ █   ││
+    ││          │└─────┘│││          │└─────┘│
+    ││          │┌─────┐│││          │┌─────┐│
+    ││          ││Held:││││          ││Held:││
+    ││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││
+    ││          │└─────┘│││          │└─────┘│
+    ││          │       │││          │       │
+    ││          │       │││          │       │
+    ││          │       │││          │       │
+    ││          │       │││          │       │
+    ││██████████│       │││          │       │
+    ││██████    │       │││          │       │
+    ││██████████│       │││██████    │       │
+    │└──────────┘       ││└──────────┘       │
+    └───────────────────┘└───────────────────┘
+
+Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
 
 {% highlight haskell %}
 :{
 fixPiece :: Game -> Game
 fixPiece game =
-  game { grid = gridWithPiece
-       , currentPiece = initPiece $ head (pieces game)
-       , pieces = tail (pieces game)
-       }
+  removeFullLines
+    $ game { grid = gridWithPiece
+           , currentPiece = initPiece $ head (pieces game)
+           , pieces = tail (pieces game)
+           }
   where
     (ActivePiece colour coords) = currentPiece game
     (Grid width height g) = grid game
@@ -1293,7 +1382,14 @@ let (Just s) = debugIterateMaybe loseTheGame in putStrLn s
     │└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
     └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
 
-Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works.
+Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. We&rsquo;re now in a position to write a simple bot to play the game.
+
+
+<a id="org82bf1c1"></a>
+
+# Incredibly Advanced Tetris AI
+
+TODO
 
 # Footnotes
 

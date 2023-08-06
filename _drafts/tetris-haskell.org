@@ -103,7 +103,6 @@ module Main where
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 I'll spell out each import we're using explicitly[fn:babelimport]:
 
@@ -141,7 +140,6 @@ import Data.List (intercalate, foldl', intersect)
 #+END_SRC
 
 #+RESULTS:
-: ghci
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -453,6 +451,7 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
+gh
 #+end_example
 
 Alright!
@@ -606,7 +605,6 @@ putStrLn $ pretty PieceL
 : │ █  │
 : │ ██ │
 : └────┘
-: gh
 
 For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
 
@@ -731,6 +729,13 @@ putStrLn . pretty . mconcat
 #+END_SRC
 
 #+RESULTS:
+: ┌────┐┌────┐┌────┐
+: │    ││    ││    │
+: │ █  ││ ██ ││ ██ │
+: │ █  ││ █  ││██  │
+: │ ██ ││ █  ││    │
+: └────┘└────┘└────┘
+: g
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -755,44 +760,43 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ █  ││ █  ││ ██ ││██  ││ ██ ││    ││
-││ █  ││███ ││ █  ││ ██ ││ ██ ││██  ││    ││
-││ █  ││    ││ ██ ││    ││    ││    ││████││
+││ █  ││ ██ ││ █  ││    ││ ██ ││██  ││ ██ ││
+││ █  ││██  ││███ ││    ││ █  ││ ██ ││ ██ ││
+││ ██ ││    ││    ││████││ █  ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ █  ││    ││ ██ ││ ██ ││ ██ ││██  ││
-││ █  ││███ ││    ││██  ││ █  ││ ██ ││ ██ ││
-││ ██ ││    ││████││    ││ █  ││    ││    ││
+││ ██ ││    ││ █  ││ ██ ││ ██ ││ █  ││██  ││
+││ ██ ││    ││███ ││ █  ││██  ││ █  ││ ██ ││
+││    ││████││    ││ █  ││    ││ ██ ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││ ██ ││ █  ││ ██ ││ █  ││██  ││ ██ ││
-││    ││██  ││███ ││ ██ ││ █  ││ ██ ││ █  ││
-││████││    ││    ││    ││ ██ ││    ││ █  ││
+││██  ││ ██ ││ █  ││    ││ ██ ││ ██ ││ █  ││
+││ ██ ││ █  ││ █  ││    ││ ██ ││██  ││███ ││
+││    ││ █  ││ ██ ││████││    ││    ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ ██ ││    ││ ██ ││ ██ ││ █  ││██  ││
-││ █  ││ █  ││    ││ ██ ││██  ││███ ││ ██ ││
-││ ██ ││ █  ││████││    ││    ││    ││    ││
+││    ││ █  ││ ██ ││ ██ ││ ██ ││ █  ││██  ││
+││    ││███ ││██  ││ ██ ││ █  ││ █  ││ ██ ││
+││████││    ││    ││    ││ █  ││ ██ ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││██  ││ ██ ││ █  ││ █  ││ ██ ││    ││
-││██  ││ ██ ││ ██ ││███ ││ █  ││ █  ││    ││
-││    ││    ││    ││    ││ ██ ││ █  ││████││
+││    ││ █  ││ ██ ││ ██ ││██  ││ ██ ││ █  ││
+││    ││███ ││ ██ ││██  ││ ██ ││ █  ││ █  ││
+││████││    ││    ││    ││    ││ █  ││ ██ ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
-ghci
 #+end_example
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where's our colour?! In a terminal, those ANSI control codes would show up just fine.
@@ -973,6 +977,7 @@ showRotations CCW
 │    ││   █││    ││█   │
 │████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
+ghci
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -1033,7 +1038,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (initPiece PieceS
 │          │
 │          │
 └──────────┘
-gh
+g
 #+end_example
 
 Looks solid - one step of gravity after this, and the piece will become visible.
@@ -1322,20 +1327,109 @@ let (Just s) = debugIterateMaybe applyGravity in putStrLn s
 ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │
 │└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
 └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
+gh
 #+end_example
 
 Sick, we hit the bottom and then we stop.
 
-Let's create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We'll simultaneously draw a new piece from the stream, too.
+Let's create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We'll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We'll implement simple scoring (no T-spins here, although they will be actually be possible).
+
+#+BEGIN_SRC haskell :exports code
+:{
+-- Note that this is a partial function; scorelines 5 will error out.
+-- Again, bad practice in real code.
+scoreLines :: Int -> Int
+scoreLines 0 = 0
+scoreLines 1 = 100
+scoreLines 2 = 300
+scoreLines 3 = 500
+scoreLines 4 = 800
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Let's find which line indices are completely full:
+
+#+BEGIN_SRC haskell :exports code
+:{
+fullLines :: Grid -> [Int]
+fullLines (Grid width height grid) =
+    [ y | y <- [0 .. height - 1], all (\x -> grid M.! (x, y) /= Empty) [0 .. width - 1] ]
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Now we can remove them from the grid. This is a little inefficient; we'll remove them one by one, shifting the rest of the grid above it down, ensuring that we re-fill with empty space at the top.
+
+#+BEGIN_SRC haskell :exports code
+:{
+removeLine :: Grid -> Int -> Grid
+removeLine (Grid width height grid) i = Grid width height grid'
+  where
+    grid' =
+      grid
+        -- First move everything down, covering the removed line
+        & M.mapKeys (\(x, y) -> if y <= i then (x, y + 1) else (x, y))
+        -- We might have removed the bottom line; if so, get rid of anything under the grid
+        & M.filterWithKey (\(_, y) _ -> y < height)
+        -- Now, we need to fill in the top line with empty space
+        & M.union (unGrid $ mkEmptyGrid width 1)
+
+removeFullLines :: Game -> Game
+removeFullLines game = game { grid = grid', score = score' }
+  where
+    ixs = fullLines (grid game)
+    grid' = foldl' removeLine (grid game) (fullLines (grid game))
+    score' = score game + scoreLines (length ixs)
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Let's write a way to test this out real quick:
+
+#+BEGIN_SRC haskell :exports code
+:{
+debugLineRemoval = do
+  -- Insert two full lines with a partial line inbetween
+  let full =
+        [ (x, 23) | x <- [0 .. 9] ]
+        <> [ (x, 22) | x <- [0 .. 5] ]
+        <> [ (x, 21) | x <- [0 .. 9] ]
+      fullGrid = foldl' (\g c -> M.insert c (Block Red) g) (unGrid $ mkEmptyGrid 10 24) full
+      game = (mkGame (mkStdGen 42)) { grid = Grid 10 24 fullGrid }
+      lhs = gameGrid game
+      rhs = gameGrid $ removeFullLines game
+  putStrLn $ "Full lines detected: " <> show (fullLines (grid game))
+  putStrLn . pretty . mconcat $ withBorder . VGrid <$> [lhs, rhs]
+:}
+#+END_SRC
+
+#+RESULTS:
+
+This should give us a side by side comparison:
+
+#+BEGIN_SRC haskell :exports both
+:{
+debugLineRemoval
+:}
+#+END_SRC
+
+#+RESULTS:
+
+Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
 
 #+BEGIN_SRC haskell :exports code
 :{
 fixPiece :: Game -> Game
 fixPiece game =
-  game { grid = gridWithPiece
-       , currentPiece = initPiece $ head (pieces game)
-       , pieces = tail (pieces game)
-       }
+  removeFullLines
+    $ game { grid = gridWithPiece
+           , currentPiece = initPiece $ head (pieces game)
+           , pieces = tail (pieces game)
+           }
   where
     (ActivePiece colour coords) = currentPiece game
     (Grid width height g) = grid game
@@ -1402,4 +1496,8 @@ let (Just s) = debugIterateMaybe loseTheGame in putStrLn s
 └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
 #+end_example
 
-Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works.
+Aight! We've got rudimentary collision detection, game over detection and we can see that the piece preview works. We're now in a position to write a simple bot to play the game.
+
+* Incredibly Advanced Tetris AI
+
+TODO
