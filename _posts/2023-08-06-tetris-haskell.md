@@ -9,23 +9,23 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#org1808a6c)
-2.  [What This Is](#org83bb2ca)
-3.  [What This Isn&rsquo;t](#org7fdfa0d)
-4.  [Prelude](#orgc2f3eda)
-5.  [Strategy](#orgfbb60f6)
-6.  [Imports and Dependencies](#orgaa91101)
-7.  [Establishing the Grid](#orge577b01)
-8.  [Making Some Tetrominos](#org48e1e90)
-9.  [Rotations](#org032278a)
-10. [Placing Pieces on the Grid](#org84df65e)
-11. [Representing the Game State](#org58a0f6d)
-12. [The Introduction of Time and Logic](#org8a0e88e)
-13. [Operating on the Game](#org7b87d2f)
-14. [Super Advanced Tetris AI (SATAI)](#orga5e15a8)
+1.  [Beginning at the End](#org0fa634d)
+2.  [What This Is](#orgdf80f5b)
+3.  [What This Isn&rsquo;t](#org0a2cead)
+4.  [Prelude](#org0680847)
+5.  [Strategy](#orgb9be339)
+6.  [Imports and Dependencies](#org3b32c95)
+7.  [Establishing the Grid](#org9ea0e16)
+8.  [Making Some Tetrominos](#orgaa772a2)
+9.  [Rotations](#orgf4ad242)
+10. [Placing Pieces on the Grid](#orgc98c67b)
+11. [Representing the Game State](#orgb10d8d2)
+12. [The Introduction of Time and Logic](#orgd1b9a6d)
+13. [Operating on the Game](#orgbd54f8b)
+14. [Super Advanced Tetris AI (SATAI)](#orgd6a166d)
 
 
-<a id="org1808a6c"></a>
+<a id="org0fa634d"></a>
 
 # Beginning at the End
 
@@ -34,7 +34,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="org83bb2ca"></a>
+<a id="orgdf80f5b"></a>
 
 # What This Is
 
@@ -45,7 +45,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org7fdfa0d"></a>
+<a id="org0a2cead"></a>
 
 # What This Isn&rsquo;t
 
@@ -56,7 +56,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="orgc2f3eda"></a>
+<a id="org0680847"></a>
 
 # Prelude
 
@@ -67,7 +67,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgfbb60f6"></a>
+<a id="orgb9be339"></a>
 
 # Strategy
 
@@ -84,7 +84,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 
 
-<a id="orgaa91101"></a>
+<a id="org3b32c95"></a>
 
 # Imports and Dependencies
 
@@ -107,7 +107,6 @@ Versioning is a whole other topic. We aren&rsquo;t using any unstable features o
 Alright, so say we&rsquo;ve got our `tetris.hs` blank slate. This is going to be a single-file program, so we&rsquo;ll put everything into a monolithic `Main` module. This isn&rsquo;t great practice for serious projects, but for our purposes we can keep everything in `Main`.
 
 {% highlight haskell %}
-
 -- Every Haskell source file begins with a module definition like this.
 -- In your own project, you might have submodules like
 -- `module Server.API.Payments where`
@@ -115,113 +114,88 @@ Alright, so say we&rsquo;ve got our `tetris.hs` blank slate. This is going to be
 -- This would typically live at the path lib/Server/API/Payments.hs
 -- In a Cabal project, this monolithic file would live in app/Main.hs.
 module Main where
-
 {% endhighlight %}
 
 I&rsquo;ll spell out each import we&rsquo;re using explicitly<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>:
 
 {% highlight haskell %}
-
 -- There are lots of Map-related methods; a qualified import avoids naming
 -- clashes, and means we can look things up using M.lookup rather than
 -- simply lookup.
 -- Ignore the 'Strict' for now - laziness/strictness is a large and separate topic.
 import qualified Data.Map.Strict as M
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- By also importing the Map type directly, we don't need to constantly
 -- specify M.Map and can just use Map directly in our type signatures.
 import Data.Map.Strict (Map)
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- Similarly, this let's us operate on Sets - we'll be converting to and
 -- from lists using S.toList and S.fromList to enable more efficient
 -- operations over collections.
 import qualified Data.Set as S
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- intercalate is similar to Python's x.join()
 -- foldl' is similar to Python's reduce(f, xs)
 -- scanl' is similar to Python's itertools.accumulate(xs), or foldl'
 -- with intermediate results.
 import Data.List (intercalate, foldl', scanl', intersect, sortOn)
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- Lets us substitute or remove substrings from strings, which are just lists
 -- of characters in Haskell.
 import Data.List.Extra (replace)
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- This will let us easily modify 2-tuples (i.e. our coordinates)
 import Data.Bifunctor (bimap)
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- Reverse function application; allows e.g. `thing & withProperty a` pipelining.
 import Data.Function ((&))
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- We'll use this to filter out Nothing values from lists of Maybes,
 -- and fromJust lets us unsafely unwrap Maybe values for debug purposes.
 import Data.Maybe (catMaybes, fromJust)
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- Provides access to system pseudorandomness and control over setting random seeds.
 import System.Random (RandomGen, split, newStdGen, getStdGen, mkStdGen)
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- Utilities for shuffling collections (e.g. of tetrominos)
 import System.Random.Shuffle (shuffle')
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- We'll be making use of this module for control flow when we get to our
 --imperative-looking (but still functional!) shell.
 -- The Kleisli composition operator (>=>) will help us compose together
 -- functions that for example return Maybe values instead of unwrapped
 -- values themselves.
 import Control.Monad (forM_, (>=>))
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 -- We'll use these to make modifications to coordinates as we stick different
 -- UI elements together.
 import Control.Arrow (first, second)
-
 {% endhighlight %}
 
 
-<a id="orge577b01"></a>
+<a id="org9ea0e16"></a>
 
 # Establishing the Grid
 
@@ -230,7 +204,6 @@ Now let&rsquo;s think about how we&rsquo;ll represent the game state, the entiti
 We&rsquo;ll need a 2D grid of cells, each of which can be empty or filled with a block, and that block . Whenever you have state in this &ldquo;one-of-many&rdquo; form, where you might reach for an enum, in Haskell you can define a sum type:
 
 {% highlight haskell %}
-
 -- This is a sum type; we can now use these colour values directly in our code.
 -- Yes, we'll be using British English.
 data Colour = Blue
@@ -250,13 +223,11 @@ data Colour = Blue
 -- We derive Eq both times here so that we can later check for full cells by
 -- inequality with Empty
 data Cell = Block Colour | BlockChar Colour Char | Empty deriving (Eq)
-
 {% endhighlight %}
 
 Now we&rsquo;re ready to set up our grid:
 
 {% highlight haskell %}
-
 -- This is a type alias - now any time we want a 2-dimensional coordinate,
 -- we can use V2 rather than continually specify that we're representing
 -- x and y as a tuple of Ints.
@@ -277,13 +248,11 @@ data Grid = Grid Int Int (Map V2 Cell)
 -- This is just a helper we'll use later to pull out the underlying Map as needed.
 unGrid :: Grid -> Map V2 Cell
 unGrid (Grid _ _ grid) = grid
-
 {% endhighlight %}
 
 And our first function, a simple constructor:
 
 {% highlight haskell %}
-
 -- Right, our first function - this will construct us an empty grid.
 -- It's a fairly common pattern to prefix constructors like this with 'mk'.
 
@@ -308,7 +277,6 @@ mkEmptyGrid :: Int -> Int -> Grid
 mkEmptyGrid width height =
   Grid width height
     $ M.fromList [((x, y), Empty) | x <- [0 .. width - 1] , y <- [0 .. height - 1]]
-
 {% endhighlight %}
 
 Let&rsquo;s get some output going. We&rsquo;re going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We&rsquo;ll define a `Pretty` typeclass - any type that implements this will be convertable to a nicely formatted `String`<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup> which we can later print to the screen<sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup>.
@@ -316,16 +284,13 @@ Let&rsquo;s get some output going. We&rsquo;re going to want to be able to prett
 Here `a` is a placeholder for the type that will implement the `Pretty` class. We&rsquo;re simply saying that anything prettifiable must define a `pretty` function that spits out a nice `String` representation. Very hand-wavily, Haskell&rsquo;s type signatures are written this way as all functions can be partially applied and are curried by default; for now, a function with a signature of `foo :: a -> b -> c -> d` can be thought of as a three argument function taking an `a`, a `b`, a `c` and returning a `d`.
 
 {% highlight haskell %}
-
 class Pretty a where
   pretty :: a -> String
-
 {% endhighlight %}
 
 We can make `Cell` an instance of this typeclass simply by associating each cell with a character. We can use Haskell&rsquo;s pattern-matching to have `pretty` behave differently depending on whether it&rsquo;s given an `Empty` cell or a `Block` cell. We can also cheat a little, and make the `Pretty` representation of a `Colour` be a terminal escape code we can use to give colour to the blocks by using it as a prefix.
 
 {% highlight haskell %}
-
 instance Pretty Colour where
   pretty Red = "\x1b[31m"
   pretty Blue = "\x1b[34m"
@@ -336,11 +301,9 @@ instance Pretty Colour where
   pretty Orange = "\x1b[37m"
   pretty Black = "\x1b[30m"
   pretty White = "\x1b[97m"
-
 {% endhighlight %}
 
 {% highlight haskell %}
-
 ansiColourEnd :: String
 ansiColourEnd = "\x1b[0m"
 
@@ -348,7 +311,6 @@ instance Pretty Cell where
   pretty Empty = " "
   pretty (Block colour) = pretty colour <> "█" <> ansiColourEnd
   pretty (BlockChar colour c) = pretty colour <> [c] <> ansiColourEnd
-
 {% endhighlight %}
 
 The `<>` is shorthand for `mconcat` - a member of the `Monoid` typeclass, which roughly represents things that can be empty, and can be joined together. `String` is a `Monoid` so `<>` just concatenates them.
@@ -356,7 +318,6 @@ The `<>` is shorthand for `mconcat` - a member of the `Monoid` typeclass, which 
 Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use `BlockChar` with Unicode line and corner chars to surround a grid. Let&rsquo;s make this a typeclass too! That way, we can add borders to regular grid, but also to UI elements.
 
 {% highlight haskell %}
-
 
 class Borderable a where
   withBorder :: a -> a
@@ -386,7 +347,6 @@ instance Borderable Grid where
                   . M.insert (width + 1, 0) (BlockChar Black '┐')
                   . M.insert (0, height + 1) (BlockChar Black '└')
                   . M.insert (width + 1, height + 1) (BlockChar Black '┘')
-
 {% endhighlight %}
 
 We&rsquo;re ready to prettify our `Grid`. Since we&rsquo;re operating over collections of things, we can start using higher-order functions; in Haskell, `fmap` from the `Functor` typeclass lets you apply a function to the inhabitants of any instance of a given `Functor`. A list is an instance of `Functor`, and so for some list `xs`, `fmap f xs` just operates like the `map(f, xs)` function you find over lists in most other languages.
@@ -396,7 +356,6 @@ Helper functions and intermediate values defined in `where` blocks are available
 We use `M.!` to look up keys in our grid; this is unsafe, and can throw an error. A nicer way would be to use `M.lookup`, which returns a `Maybe Cell` here, meaning we&rsquo;d have to handle the `Nothing` case (i.e. out of bounds) and the `Just cell` case separately. We know we&rsquo;re within bounds here, so we&rsquo;ll keep it simple, but it&rsquo;s worth knowing.
 
 {% highlight haskell %}
-
 instance Pretty Grid where
   pretty (Grid width height grid) = intercalate "\n" (prettyRow <$> rows)
     where
@@ -413,7 +372,6 @@ instance Pretty Grid where
       -- prettyRow row = concat (pretty <$> row)
       -- Using the Monad instance of List (don't worry, it just aliases concatMap):
       -- prettyRow row = pretty =<< row
-
 {% endhighlight %}
 
 Here we&rsquo;ve converted back from our `Map` representation of the `Grid` to a `List`-based one, in order to more easily convert it to a list of `String` that we can join (`intercalate` in Haskell) together with newlines inbetween.
@@ -421,9 +379,7 @@ Here we&rsquo;ve converted back from our `Map` representation of the `Grid` to a
 We can finally print our grid! It&rsquo;s nothing special, but here we go:
 
 {% highlight haskell %}
-
 putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
-
 {% endhighlight %}
 
     ┌──────────┐
@@ -458,7 +414,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="org48e1e90"></a>
+<a id="orgaa772a2"></a>
 
 # Making Some Tetrominos
 
@@ -467,7 +423,6 @@ Let&rsquo;s make the pieces. We&rsquo;ll represent them as a product type with a
 We&rsquo;ll encode the actual shapes by the coordinates of their full blocks, letting us specify their colour as well. We&rsquo;ll use some helpers to let us quickly set coloured blocks on an empty grid. Eventually we&rsquo;ll have a function that transforms a `Grid` into a copy of itself containing one new coloured block - we can then `fold` this function, using an empty 4x4 grid as the initial state, over the coordinates of the piece, which will add the blocks one by one, giving us the finished piece.
 
 {% highlight haskell %}
-
 data Piece = PieceL
            | PieceR
            | PieceSquare
@@ -480,13 +435,11 @@ data Piece = PieceL
 -- We get this nicely for free from the Enum and Bounded instances.
 allPieces :: [Piece]
 allPieces = [minBound .. maxBound]
-
 {% endhighlight %}
 
 Now we can specify piece properties using simple pattern-matched functions:
 
 {% highlight haskell %}
-
 pieceColour :: Piece -> Colour
 pieceColour PieceL = Orange
 pieceColour PieceR = Blue
@@ -504,13 +457,11 @@ pieceCoords PieceS = [(0, 2), (1, 2), (1, 1), (2, 1)]
 pieceCoords PieceZ = [(0, 1), (1, 1), (1, 2), (2, 2)]
 pieceCoords PieceT = [(0, 2), (1, 2), (2, 2), (1, 1)]
 pieceCoords PieceLine = [(0, 3), (1, 3), (2, 3), (3, 3)]
-
 {% endhighlight %}
 
 And now we can generate our infinite stream of pieces lazily:
 
 {% highlight haskell %}
-
 -- Here we have a lazy infinite list of pieces.
 -- To avoid requiring side-effects here, we take a random state as an argument.
 -- Later, when we're inside the IO monad, we can hook into this source of randomness
@@ -521,13 +472,11 @@ pieceStream :: RandomGen g => g -> [Piece]
 pieceStream g =
   let (_, g') = split g -- obtain a new random generator for the recursive call
    in shuffle' allPieces (length allPieces) g <> pieceStream g'
-
 {% endhighlight %}
 
 We will also need some notion of a falling piece; something combining colour and location:
 
 {% highlight haskell %}
-
 -- We need a type to represent the actively falling piece that combines
 -- colour and coordinates.
 -- We'll store the piece type, its top-left coordinate, and the grid representing it
@@ -545,7 +494,6 @@ initPiece piece =
         (\g c -> M.insert c (Block (pieceColour piece)) g)
         (unGrid $ mkEmptyGrid 4 4)
         (pieceCoords piece)))
-
 {% endhighlight %}
 
 Now we need some functions for composing an `ActivePiece` and a `Grid`, both for inspection and later, for placing tetrominos on the playing field.
@@ -553,7 +501,6 @@ Now we need some functions for composing an `ActivePiece` and a `Grid`, both for
 Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell&rsquo;s functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>
 
 {% highlight haskell %}
-
 -- We'll let ourselves use magic numbers in our bounds checker.
 outOfBounds :: V2 -> Bool
 outOfBounds (x, y) = x < 0 || x > 9 || y < 0 || y > 23
@@ -573,24 +520,19 @@ withPiece (ActivePiece _ (x, y) (Grid _ _ pieceGrid)) (Grid width height grid) =
 -- right is applied to the left. Useful for builder functions like these.
 mkPieceGrid :: Piece -> Grid
 mkPieceGrid piece = mkEmptyGrid 4 4 & withPiece (initPiece piece)
-
 {% endhighlight %}
 
 Whew, okay. Let&rsquo;s give ourselves a nice way of inspecting these pieces - we&rsquo;ll use this for things like next-piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The `(.)` operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:
 
 {% highlight haskell %}
-
 instance Pretty Piece where
   pretty = pretty . withBorder . mkPieceGrid
-
 {% endhighlight %}
 
 Let&rsquo;s see if we got that right by pretty-printing these pieces. First we&rsquo;ll just print one:
 
 {% highlight haskell %}
-
 putStrLn $ pretty PieceL
-
 {% endhighlight %}
 
     ┌────┐
@@ -610,7 +552,6 @@ There&rsquo;s a practical use here; we&rsquo;ll use these `Monoid` instances to 
 A detail; a `Semigroup` is something that can be associatively combined - that&rsquo;s where the `<>` comes from (shorthand for `mconcat`). A `Monoid` is a `Semigroup` with an identity element (e.g. the empty grid - something you can combine either on the left or right, and get the same thing back). So to make something a `Monoid`, we first make it a `Semigroup`, then simply define what an empty one looks like. It goes like this:
 
 {% highlight haskell %}
-
 -- This wrapper will represent the stitching of grids along the horizontal side.
 -- That is, grid B is placed underneath grid A
 newtype HGrid = HGrid { unHGrid :: Grid }
@@ -637,7 +578,6 @@ instance Borderable HGrid where
 -- Let's also just make it easy to pretty-print our UI elements:
 instance Pretty HGrid where
     pretty (HGrid grid) = pretty grid
-
 {% endhighlight %}
 
 There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The `unHGrid` named member just lets us easily unwrap this type later on.
@@ -651,10 +591,8 @@ Note that we use backticks to inline the function, since it&rsquo;s kind of stan
 Let&rsquo;s just test this quickly:
 
 {% highlight haskell %}
-
 putStrLn . pretty . mconcat
   $ HGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS]
-
 {% endhighlight %}
 
     ┌────┐
@@ -675,11 +613,11 @@ putStrLn . pretty . mconcat
     │██  │
     │    │
     └────┘
+    gh
 
 Now the same for the `VGrid`:
 
 {% highlight haskell %}
-
 newtype VGrid = VGrid { unVGrid :: Grid }
 
 instance Semigroup VGrid where
@@ -698,16 +636,13 @@ instance Borderable VGrid where
 
 instance Pretty VGrid where
     pretty (VGrid grid) = pretty grid
-
 {% endhighlight %}
 
 Again, always worth testing:
 
 {% highlight haskell %}
-
 putStrLn . pretty . mconcat
   $ VGrid . withBorder . mkPieceGrid <$> [PieceL, PieceR, PieceS]
-
 {% endhighlight %}
 
     ┌────┐┌────┐┌────┐
@@ -720,7 +655,6 @@ putStrLn . pretty . mconcat
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
 {% highlight haskell %}
-
 do
   -- Get the system source of randomness
   g <- newStdGen
@@ -733,49 +667,7 @@ do
   let grid = unHGrid $ mconcat (HGrid . withBorder . unVGrid <$> take 5 (rows vStream))
   -- Finally we can print the underlying, unwrapped grid.
   putStrLn (pretty grid)
-
 {% endhighlight %}
-
-    ┌──────────────────────────────────────────┐
-    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-    ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ █  ││    ││██  ││ ██ ││ █  ││ ██ ││
-    ││██  ││███ ││    ││ ██ ││ ██ ││ █  ││ █  ││
-    ││    ││    ││████││    ││    ││ ██ ││ █  ││
-    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-    └──────────────────────────────────────────┘
-    ┌──────────────────────────────────────────┐
-    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-    ││    ││    ││    ││    ││    ││    ││    ││
-    ││██  ││ █  ││ ██ ││ ██ ││ █  ││ ██ ││    ││
-    ││ ██ ││███ ││██  ││ █  ││ █  ││ ██ ││    ││
-    ││    ││    ││    ││ █  ││ ██ ││    ││████││
-    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-    └──────────────────────────────────────────┘
-    ┌──────────────────────────────────────────┐
-    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-    ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││    ││ █  ││ ██ ││██  ││ ██ ││ █  ││
-    ││ █  ││    ││███ ││██  ││ ██ ││ ██ ││ █  ││
-    ││ █  ││████││    ││    ││    ││    ││ ██ ││
-    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-    └──────────────────────────────────────────┘
-    ┌──────────────────────────────────────────┐
-    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-    ││    ││    ││    ││    ││    ││    ││    ││
-    ││██  ││    ││ ██ ││ ██ ││ ██ ││ █  ││ █  ││
-    ││ ██ ││    ││ █  ││██  ││ ██ ││███ ││ █  ││
-    ││    ││████││ █  ││    ││    ││    ││ ██ ││
-    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-    └──────────────────────────────────────────┘
-    ┌──────────────────────────────────────────┐
-    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
-    ││    ││    ││    ││    ││    ││    ││    ││
-    ││ ██ ││ █  ││    ││ ██ ││██  ││ █  ││ ██ ││
-    ││ ██ ││███ ││    ││██  ││ ██ ││ █  ││ █  ││
-    ││    ││    ││████││    ││    ││ ██ ││ █  ││
-    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
-    └──────────────────────────────────────────┘
 
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
@@ -784,14 +676,13 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="org032278a"></a>
+<a id="orgf4ad242"></a>
 
 # Rotations
 
 While we&rsquo;re here, let&rsquo;s implement piece rotation. We&rsquo;d like to handle a single coordinate at a time, which means we&rsquo;ll also need to pass in information about the bounding box within which we&rsquo;re rotating.
 
 {% highlight haskell %}
-
 data Rotation = CW | CCW
 
 -- Here we apply e.g. a (-y, x) rotation but offset back
@@ -825,7 +716,6 @@ rotateGrid rotation (Grid width height grid) =
       rotateFn = rotate rotation (maxX - minX) (maxY - minY)
    in Grid width height (M.mapKeys rotateFn grid)
 
-
 {% endhighlight %}
 
 Now we can rotate coordinates, but we want to rotate pieces themselves.
@@ -833,7 +723,6 @@ Now we can rotate coordinates, but we want to rotate pieces themselves.
 Let&rsquo;s take a look at these rotations with a helper:<sup><a id="fnr.12" class="footref" href="#fn.12" role="doc-backlink">12</a></sup>
 
 {% highlight haskell %}
-
 showRotations rotation =
     forM_ allPieces
     $ (\piece ->
@@ -846,15 +735,12 @@ showRotations rotation =
             & unVGrid
             & pretty
             & putStrLn)
-
 {% endhighlight %}
 
 First clockwise:
 
 {% highlight haskell %}
-
 showRotations CW
-
 {% endhighlight %}
 
     ┌────┐┌────┐┌────┐┌────┐
@@ -903,9 +789,7 @@ showRotations CW
 And counterclockwise:
 
 {% highlight haskell %}
-
 showRotations CCW
-
 {% endhighlight %}
 
     ┌────┐┌────┐┌────┐┌────┐
@@ -954,7 +838,7 @@ showRotations CCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="org84df65e"></a>
+<a id="orgc98c67b"></a>
 
 # Placing Pieces on the Grid
 
@@ -963,21 +847,17 @@ Let&rsquo;s start by placing a piece in that buffer zone at the top of the grid 
 We want it to be anchored to the bottom, so that it immediately starts to become visible as it falls, so we&rsquo;ll translate it based on its lowest y-coordinate.
 
 {% highlight haskell %}
-
 -- Ensure the piece is centred and anchored to the top of the viewport.
 pieceAtTop :: Piece -> ActivePiece
 pieceAtTop piece =
   let (ActivePiece pieceType _ grid) = initPiece piece
    in ActivePiece pieceType (3, 0) grid
-
 {% endhighlight %}
 
 And let&rsquo;s test this, as ever:
 
 {% highlight haskell %}
-
 putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop PieceS)
-
 {% endhighlight %}
 
     ┌──────────┐
@@ -1010,7 +890,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop Piece
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="org58a0f6d"></a>
+<a id="orgb10d8d2"></a>
 
 # Representing the Game State
 
@@ -1019,7 +899,6 @@ Now we&rsquo;ll create the type we&rsquo;ll be using to store all state about th
 We&rsquo;re going to implement piece holding - since there might not be a held piece, we&rsquo;ll represent this using `Maybe`. This is a Haskell staple, defined as `data Maybe a = Just a | Nothing`. It&rsquo;s like Rust&rsquo;s `Option<a>` and there are analogues in most languages. It forces you to consider both cases when you may or may not have a value.
 
 {% highlight haskell %}
-
 data Game = Game {
   grid :: Grid,
   currentPiece :: ActivePiece,
@@ -1042,7 +921,6 @@ mkGame g =
         heldThisTurn = False,
         gameOver = False
       }
-
 {% endhighlight %}
 
 As we pull pieces from the infinite lazy list `pieces`, we&rsquo;ll create new `Game` objects that contain the remainder of the lazy list.
@@ -1054,20 +932,17 @@ Alright - now we&rsquo;re in a position to render our rudimentary UI by stitchin
 We&rsquo;ll need a way of adding string labels to our UI:
 
 {% highlight haskell %}
-
 -- Turn a string into a grid for composability
 -- Only supports single lines, but will be fine for our simple UI.
 sToG :: String -> Grid
 sToG s =
   Grid (length s) 1
     $ M.fromList [((x, 0), BlockChar White c) | (x, c) <- zip [0..] s]
-
 {% endhighlight %}
 
 And a way of hiding the buffer zone:
 
 {% highlight haskell %}
-
 hideBuffer :: Grid -> Grid
 hideBuffer (Grid width height grid) = Grid width (height - 4) grid'
   where
@@ -1075,13 +950,11 @@ hideBuffer (Grid width height grid) = Grid width (height - 4) grid'
       grid
         & M.mapKeys (second (subtract 4))
         & M.filterWithKey (\(_, y) _ -> y >= 0)
-
 {% endhighlight %}
 
 Now finally we can put it all together:
 
 {% highlight haskell %}
-
 -- Here we'll stitch it all together, dropping the four lines, and popping the
 -- score at the top with the held piece and next piece on the right.
 gameGrid :: Game -> Grid
@@ -1109,20 +982,17 @@ gameGrid game =
 -- Finally we just pretty-print the game grid itself
 instance Pretty Game where
   pretty = pretty . gameGrid
-
 {% endhighlight %}
 
 We can preview this as so:
 
 {% highlight haskell %}
-
 do
   -- g <- newStdGen -- This would be system-random; for now we'll set a seed
   let g = mkStdGen 42 -- This sets our random seed.
   -- Create a new Game with one of its records set so we have a held piece to show
   let game = (mkGame g) {heldPiece = Just PieceS}
   putStrLn (pretty game)
-
 {% endhighlight %}
 
     ┌────────┐         
@@ -1154,7 +1024,7 @@ do
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="org8a0e88e"></a>
+<a id="orgd1b9a6d"></a>
 
 # The Introduction of Time and Logic
 
@@ -1171,7 +1041,6 @@ To do all this in a carefree way, we&rsquo;d like a way of checking if a game is
 A valid `Game` is one where there are no out of bound blocks, we haven&rsquo;t spilled over the top, and the current `ActivePiece` is not overlapping with any of the existing blocks. By induction, if we start with a valid `Game`, and only place pieces in valid places, we only need to check the currently active piece:
 
 {% highlight haskell %}
-
 isValid :: Game -> Bool
 isValid game =
   let -- We unwrap here to get to activeCoords; libraries like lens make this easier.
@@ -1188,13 +1057,11 @@ isValid game =
    in (S.null (S.intersection activeCoords fullCoords))
         && (not (any outOfBounds activeCoords))
         && (not (any ((< 4) . snd) fullCoords))
-
 {% endhighlight %}
 
 Now we&rsquo;re able to use this for a simple implementation of gravity:
 
 {% highlight haskell %}
-
 -- We need a way to translate a piece
 movePiece :: V2 -> ActivePiece -> ActivePiece
 movePiece (x, y) (ActivePiece pieceType (x', y') grid) =
@@ -1214,7 +1081,6 @@ applyGravity game
   | otherwise = Nothing
   where
     game' = game { currentPiece = movePiece (0, 1) (currentPiece game) }
-
 {% endhighlight %}
 
 So let&rsquo;s test this out a few times - for now we&rsquo;ll represent the passage of time horizontally, so we&rsquo;ll make a few game states, pull out the grids, and stitch them side by side. We&rsquo;d like to keep applying `applyGravity` over and over - but each time we take a `Game` to a `Maybe Game`. We want some way of chaining these iterations together - and that&rsquo;s where the fact that `Maybe` belongs to the `Monad` typeclass comes in.
@@ -1222,7 +1088,6 @@ So let&rsquo;s test this out a few times - for now we&rsquo;ll represent the pas
 This is **not** a `Monad` tutorial but it&rsquo;s useful to know that this is what&rsquo;s powering the composition<sup><a id="fnr.13" class="footref" href="#fn.13" role="doc-backlink">13</a></sup> of instances of this `applyGravity` function together in a type-consistent way.
 
 {% highlight haskell %}
-
 -- Now that we're dealing with Maybe, let's implement a hacky way
 -- to debug print both cases.
 instance Pretty a => Pretty (Maybe a) where
@@ -1250,23 +1115,47 @@ debugIterateMaybe :: (Game -> Maybe Game) -> Maybe String
 debugIterateMaybe f =
   let games = iterateMaybes f (mkGame (mkStdGen 42))
    in fmap (pretty . unVGrid) . mconcat $ (withBorder . VGrid . gameGrid <$$> games)
-
 {% endhighlight %}
 
 Here we unsafely unwrap the `Maybe String` since we know it&rsquo;s going to be a `Just`, but bear in mind that&rsquo;s not great practice in production:
 
 {% highlight haskell %}
-
 let (Just s) = debugIterateMaybe applyGravity in putStrLn s
-
 {% endhighlight %}
+
+    ┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐
+    │┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         │
+    ││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │
+    │└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         │
+    │┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+    ││    ██    ││Next:││││    █     ││Next:││││    █     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││
+    ││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││ ██  ││││          ││ ██  ││││    ██    ││ ██  ││││    █     ││ ██  ││││    █     ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││
+    ││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+    ││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+    ││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+    ││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│
+    ││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││    █     ││Held:││││    █     ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+    ││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │
+    ││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │
+    │└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
+    └───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
 
 Sick, we hit the bottom and then we stop.
 
 This horizontal time axis thing is a bit of a rough way to display game progression. Let&rsquo;s write a bit of magic to make this easier on the eyes, and animate our outputs:
 
 {% highlight haskell %}
-
 -- We've been building for the console so far, but now we're in HTML land
 -- we need to do something about those ANSI escape codes.
 -- Let's replace them with coloured spans.
@@ -1319,27 +1208,22 @@ animate delay name games = do
       ++ var ++ ".push(" ++ var++"Frame);}, "
       ++ show delay
       ++ ");"
-
 {% endhighlight %}
 
 Let&rsquo;s test this out:
 
 {% highlight haskell %}
-
   let games = catMaybes $ iterateMaybes applyGravity (mkGame (mkStdGen 42))
    in animate 100 "one-falling-block" games
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-one-falling-block'></code></pre></figure><script src='/scripts/tetris/animation-one-falling-block.js'></script>
-ghci
 
 Who needs `ncurses` when you have hacks like these?
 
 Let&rsquo;s create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We&rsquo;ll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We&rsquo;ll implement simple scoring (no T-spins here, although they will be actually be possible).
 
 {% highlight haskell %}
-
 -- Note that this is a partial function; scorelines 5 will error out.
 -- Again, bad practice in real code.
 scoreLines :: Int -> Int
@@ -1348,25 +1232,21 @@ scoreLines 1 = 100
 scoreLines 2 = 300
 scoreLines 3 = 500
 scoreLines 4 = 800
-
 {% endhighlight %}
 
 Let&rsquo;s find which line indices are completely full:
 
 {% highlight haskell %}
-
 fullLines :: Grid -> [Int]
 fullLines (Grid width height grid) =
     [ y |
       y <- [0 .. height - 1],
       all (\x -> grid M.! (x, y) /= Empty) [0 .. width - 1] ]
-
 {% endhighlight %}
 
 Now we can remove them from the grid. This is a little inefficient; we&rsquo;ll remove them one by one, shifting the rest of the grid above it down, ensuring that we re-fill with empty space at the top.
 
 {% highlight haskell %}
-
 removeLine :: Grid -> Int -> Grid
 removeLine (Grid width height grid) i = Grid width height grid'
   where
@@ -1386,13 +1266,11 @@ removeFullLines game = game { grid = grid', score = score' }
     ixs = fullLines (grid game)
     grid' = foldl' removeLine (grid game) (fullLines (grid game))
     score' = score game + scoreLines (length ixs)
-
 {% endhighlight %}
 
 Let&rsquo;s write a way to test this out real quick:<sup><a id="fnr.14" class="footref" href="#fn.14" role="doc-backlink">14</a></sup>
 
 {% highlight haskell %}
-
 debugLineRemoval :: IO ()
 debugLineRemoval = do
   -- Insert two full lines with a partial line inbetween
@@ -1410,15 +1288,12 @@ debugLineRemoval = do
       rhs = gameGrid $ removeFullLines game
   putStrLn $ "Full lines detected: " <> show (fullLines (grid game))
   putStrLn . pretty . mconcat $ withBorder . VGrid <$> [lhs, rhs]
-
 {% endhighlight %}
 
 This should give us a side by side comparison:
 
 {% highlight haskell %}
-
 debugLineRemoval
-
 {% endhighlight %}
 
     Full lines detected: [21,23]
@@ -1453,7 +1328,6 @@ debugLineRemoval
 Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:
 
 {% highlight haskell %}
-
 fixPiece :: Game -> Game
 fixPiece game =
   removeFullLines
@@ -1462,13 +1336,11 @@ fixPiece game =
            , pieces = tail (pieces game)
            , heldThisTurn = False
            }
-
 {% endhighlight %}
 
 Now we can continually apply gravity, and when we reach an invalid state, we can fix the piece instead. The call to `applyGravity` lets us look one step ahead and respond accordingly. However, if after fixing a piece, we&rsquo;re still invalid (i.e. we&rsquo;ve reached the top of the grid), we can return `Nothing` again.
 
 {% highlight haskell %}
-
 loseTheGame :: Game -> Maybe Game
 loseTheGame game
   | isValid game =
@@ -1476,16 +1348,13 @@ loseTheGame game
         Just game' -> Just game'
         Nothing -> Just (fixPiece game)
   | otherwise = Nothing
-
 {% endhighlight %}
 
 And so now when we go to print this:
 
 {% highlight haskell %}
-
 let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
  in animate 50 "lose-the-game" games
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-lose-the-game'></code></pre></figure><script src='/scripts/tetris/animation-lose-the-game.js'></script>
@@ -1493,7 +1362,7 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. Now we need some sort of way to &ldquo;play the game&rdquo;.
 
 
-<a id="org7b87d2f"></a>
+<a id="orgbd54f8b"></a>
 
 # Operating on the Game
 
@@ -1502,7 +1371,6 @@ We&rsquo;ll need to give our bot a way to operate on a game. Let&rsquo;s define 
 Let&rsquo;s start by defining the possible operations:
 
 {% highlight haskell %}
-
 data Operation
   = OpLeft
   | OpRight
@@ -1511,7 +1379,6 @@ data Operation
   | OpRotateCCW
   | OpDrop
   | OpHold
-
 {% endhighlight %}
 
 Now we&rsquo;ll implement the application of these operations to a `Game`. If they result in an invalid game state (moving out of bounds, or impossible rotations), we&rsquo;ll just return `Nothing`.
@@ -1519,7 +1386,6 @@ Now we&rsquo;ll implement the application of these operations to a `Game`. If th
 Holding a piece is relatively simple:
 
 {% highlight haskell %}
-
 holdPiece :: Game -> Maybe Game
 holdPiece game
   | heldThisTurn game = Nothing
@@ -1530,24 +1396,20 @@ holdPiece game
                     , pieces = tail (pieces game)
                     , heldThisTurn = True
                     }
-
 {% endhighlight %}
 
 To forcibly drop a piece, we can just move it down until it&rsquo;s no longer a valid move. This should also trigger fixing the piece.
 
 {% highlight haskell %}
-
 dropPiece :: Game -> Game
 dropPiece game =
   let game' = game { currentPiece = movePiece (0, 1) (currentPiece game) }
    in if isValid game' then dropPiece game' else fixPiece game
-
 {% endhighlight %}
 
 Now we can implement the actual application of operations:
 
 {% highlight haskell %}
-
 runOperation :: Operation -> Game -> Maybe Game
 runOperation op game
   | (isValid <$> game') == Just True = game'
@@ -1561,13 +1423,11 @@ runOperation op game
       OpRotateCCW -> Just $ game { currentPiece = rotatePiece CCW (currentPiece game) }
       OpHold -> holdPiece game
       OpDrop -> Just $ dropPiece game
-
 {% endhighlight %}
 
 We can test this out with a short animation:
 
 {% highlight haskell %}
-
 let game = mkGame (mkStdGen 42)
     leftOps = replicate 7 OpDown ++ replicate 3 OpLeft ++ [OpRotateCW, OpDrop]
     middleOps = replicate 7 OpDown ++ [OpRotateCW, OpRotateCW, OpDrop]
@@ -1575,7 +1435,6 @@ let game = mkGame (mkStdGen 42)
     ops = take 175 . cycle $ OpHold : leftOps ++ middleOps ++ rightOps
  in animate 50 "test-operations"
     $ scanl' (\g op -> fromJust $ runOperation op g) game ops
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-operations'></code></pre></figure><script src='/scripts/tetris/animation-test-operations.js'></script>
@@ -1583,7 +1442,7 @@ let game = mkGame (mkStdGen 42)
 I reckon we can do better than this. Time for a bot.
 
 
-<a id="orga5e15a8"></a>
+<a id="orgd6a166d"></a>
 
 # Super Advanced Tetris AI (SATAI)
 
@@ -1594,7 +1453,6 @@ To make a decision, we&rsquo;ll simulate all possible operations<sup><a id="fnr.
 We can use `Applicative` syntax and the `Monad` instance of lists to (somewhat) neatly generate all of these possible future states:
 
 {% highlight haskell %}
-
 possibleStates :: Game -> [Game]
 possibleStates game =
   let
@@ -1624,15 +1482,12 @@ possibleStates game =
   in -- Some moves will result in an invalid game, so we can ignore those using
      -- catMaybes.
      catMaybes $ (hold : allMoves) <*> [game]
-
 {% endhighlight %}
 
 We can test this out just by generating an animation of all the possible states at the start of a given game:
 
 {% highlight haskell %}
-
 animate 200 "test-possible-states" $ possibleStates (mkGame (mkStdGen 42))
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-possible-states'></code></pre></figure><script src='/scripts/tetris/animation-test-possible-states.js'></script>
@@ -1640,7 +1495,6 @@ animate 200 "test-possible-states" $ possibleStates (mkGame (mkStdGen 42))
 Let&rsquo;s implement a simple heuristic - the higher the grid ceiling, the worse it is:
 
 {% highlight haskell %}
-
 -- We'll do the kind of nasty 24 - y thing here so that our heuristic is always
 -- something to be minimised. If the 23rd row has a block, that means row 1 is full
 -- so that's what we want to keep low.
@@ -1650,28 +1504,23 @@ heuristic game =
    in case fullY of
         [] -> 0
         _ -> 24 - minimum fullY
-
 {% endhighlight %}
 
 We can now implement one-step lookahead:
 
 {% highlight haskell %}
-
 oneStepBot :: Game -> Maybe Game
 oneStepBot game =
   case possibleStates game of
     [] -> Nothing
     states -> Just . head $ sortOn heuristic states
-
 {% endhighlight %}
 
 Let&rsquo;s see how it gets on:
 
 {% highlight haskell %}
-
 animate 50 "test-one-step-bot" . catMaybes
   $ iterateMaybes oneStepBot (mkGame (mkStdGen 42))
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-one-step-bot'></code></pre></figure><script src='/scripts/tetris/animation-test-one-step-bot.js'></script>
@@ -1681,7 +1530,6 @@ Hey, 1000! Not bad, but obviously we&rsquo;d benefit from arbitrary lookahead. W
 We use a common pattern here where we&rsquo;d like to track some state in our recursion, but don&rsquo;t want to expose it. We use this `go` helper to, here, track the first move we made, so that we can return it at the end.
 
 {% highlight haskell %}
-
 beamSearchBot :: Int -> Int -> Game -> Maybe Game
 beamSearchBot depth width game =
   case go Nothing depth width game of
@@ -1700,16 +1548,13 @@ beamSearchBot depth width game =
         in case catMaybes expandedStates of
              [] -> Nothing
              expandedStates -> Just . head $ sortOn (heuristic . snd) expandedStates
-
 {% endhighlight %}
 
 And finally, let&rsquo;s see how it gets on with a width and depth of 1:
 
 {% highlight haskell %}
-
 animate 50 "test-beam-search-bot" . catMaybes
   $ iterateMaybes (beamSearchBot 1 1) (mkGame (mkStdGen 42))
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-beam-search-bot'></code></pre></figure><script src='/scripts/tetris/animation-test-beam-search-bot.js'></script>
@@ -1717,10 +1562,8 @@ animate 50 "test-beam-search-bot" . catMaybes
 Sweet, this replicates our simple one-step lookahead. Finally, let&rsquo;s expand the beam out.
 
 {% highlight haskell %}
-
 animate 50 "test-beam-search-bot-wider" . catMaybes
   $ iterateMaybes (beamSearchBot 3 3) (mkGame (mkStdGen 42))
-
 {% endhighlight %}
 
 <figure class='text-animation'><pre><code class='text-animation animation-test-beam-search-bot-wider'></code></pre></figure><script src='/scripts/tetris/animation-test-beam-search-bot-wider.js'></script>
