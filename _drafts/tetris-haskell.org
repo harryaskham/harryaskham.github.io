@@ -1,6 +1,6 @@
-#+TITLE: Learning Haskell by Building Tetris
+#+TITLE: Learning (Some) Haskell by Building Tetris
 #+JEKYLL_LAYOUT: post
-#+DATE: 2023-07-18
+#+DATE: 2023-08-06
 #+OPTIONS: toc:t
 
 
