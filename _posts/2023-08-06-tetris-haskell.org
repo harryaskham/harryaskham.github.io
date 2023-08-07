@@ -19,8 +19,9 @@
 #+END_SRC
 
 #+RESULTS:
+:
 : Ok, no modules loaded.
-: package flags have changed, resetting and loading new packages...
+: Prelude> Prelude> package flags have changed, resetting and loading new packages...
 
 * Beginning at the End
 [[/img/tetriskell.gif]]\\
@@ -143,7 +144,6 @@ import qualified Data.Set as S
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 #+BEGIN_SRC haskell :exports code
 :{
@@ -330,7 +330,6 @@ mkEmptyGrid width height =
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 Let's get some output going. We're going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We'll define a ~Pretty~ typeclass - any type that implements this will be convertable to a nicely formatted ~String~[fn:string] which we can later print to the screen[fn:show].
 
@@ -390,7 +389,6 @@ Since an empty grid is going to be quite boring to print, let us make a way of a
 
 #+BEGIN_SRC haskell :exports code
 :{
-
 class Borderable a where
   withBorder :: a -> a
 
@@ -491,7 +489,6 @@ putStrLn $ pretty (withBorder $ mkEmptyGrid 10 24)
 │          │
 │          │
 └──────────┘
-g
 #+end_example
 
 Alright!
@@ -648,6 +645,12 @@ putStrLn $ pretty PieceL
 #+END_SRC
 
 #+RESULTS:
+: ┌────┐
+: │    │
+: │ █  │
+: │ █  │
+: │ ██ │
+: └────┘
 
 For fun, we'll implement ~Monoid~ for ~Grid~; this just means defining what it means for a ~Grid~ to be empty, and how to stitch two grids together. However, just like ~Int~ (which can be combined multiple ways - summing, multiplying), there's no unique way to combine two grids - so let's implement both horizontal and vertical stitching. This will require some ~newtype~ wrappers - for example, we can't just do ~2 <> 3 == ???~ in Haskell, as it doesn't know which ~Monoid~ to use for the concatenation; instead we either:
 
@@ -696,7 +699,7 @@ instance Pretty HGrid where
 
 There's quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The ~unHGrid~ named member just lets us easily unwrap this type later on.
 
-Then we ~M.unionWith~ the original grid, copying over its elements.
+Then we ~M.union~ with the original grid, copying over its elements.
 
 Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (~second (+heightA))~) and using an ~M.mapKeys~ to bump all y-coordinates of the second grid to the correct locations.
 
@@ -715,6 +718,26 @@ putStrLn . pretty . mconcat
 #+END_SRC
 
 #+RESULTS:
+#+begin_example
+┌────┐
+│    │
+│ █  │
+│ █  │
+│ ██ │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│ █  │
+│ █  │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│██  │
+│    │
+└────┘
+#+end_example
 
 Now the same for the ~VGrid~:
 
@@ -753,6 +776,12 @@ putStrLn . pretty . mconcat
 #+END_SRC
 
 #+RESULTS:
+: ┌────┐┌────┐┌────┐
+: │    ││    ││    │
+: │ █  ││ ██ ││ ██ │
+: │ █  ││ █  ││██  │
+: │ ██ ││ █  ││    │
+: └────┘└────┘└────┘
 
 Now we can generate some batches of seven pieces, and stitch them together like so:
 
@@ -778,41 +807,41 @@ do
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ ██ ││██  ││ █  ││ █  ││    ││ ██ ││
-││ █  ││ ██ ││ ██ ││ █  ││███ ││    ││██  ││
-││ █  ││    ││    ││ ██ ││    ││████││    ││
+││ █  ││ █  ││ ██ ││    ││██  ││ ██ ││ ██ ││
+││███ ││ █  ││ ██ ││    ││ ██ ││██  ││ █  ││
+││    ││ ██ ││    ││████││    ││    ││ █  ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ █  ││ █  ││ ██ ││    ││ ██ ││ ██ ││██  ││
-││███ ││ █  ││ █  ││    ││██  ││ ██ ││ ██ ││
-││    ││ ██ ││ █  ││████││    ││    ││    ││
+││ ██ ││ █  ││    ││ █  ││ ██ ││ ██ ││██  ││
+││██  ││███ ││    ││ █  ││ ██ ││ █  ││ ██ ││
+││    ││    ││████││ ██ ││    ││ █  ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││    ││ ██ ││ ██ ││ ██ ││██  ││ █  ││ █  ││
-││    ││██  ││ ██ ││ █  ││ ██ ││ █  ││███ ││
-││████││    ││    ││ █  ││    ││ ██ ││    ││
+││ ██ ││ █  ││    ││ █  ││ ██ ││ ██ ││██  ││
+││██  ││ █  ││    ││███ ││ ██ ││ █  ││ ██ ││
+││    ││ ██ ││████││    ││    ││ █  ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ ██ ││██  ││ █  ││    ││ ██ ││ █  ││
-││ ██ ││██  ││ ██ ││ █  ││    ││ █  ││███ ││
-││    ││    ││    ││ ██ ││████││ █  ││    ││
+││    ││ ██ ││██  ││ █  ││ █  ││ ██ ││ ██ ││
+││    ││██  ││ ██ ││███ ││ █  ││ █  ││ ██ ││
+││████││    ││    ││    ││ ██ ││ █  ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
 │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
 ││    ││    ││    ││    ││    ││    ││    ││
-││ ██ ││ █  ││    ││██  ││ ██ ││ █  ││ ██ ││
-││ █  ││███ ││    ││ ██ ││██  ││ █  ││ ██ ││
-││ █  ││    ││████││    ││    ││ ██ ││    ││
+││ ██ ││██  ││ █  ││    ││ ██ ││ █  ││ ██ ││
+││ █  ││ ██ ││███ ││    ││██  ││ █  ││ ██ ││
+││ █  ││    ││    ││████││    ││ ██ ││    ││
 │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
 └──────────────────────────────────────────┘
 #+end_example
@@ -1002,7 +1031,6 @@ showRotations CCW
 │    ││   █││    ││█   │
 │████││   █││    ││█   │
 └────┘└────┘└────┘└────┘
-gh
 #+end_example
 
 I'm almost sure it's not *Regulation Tetris Rotation Rules*, but it'll do.
@@ -1033,6 +1061,34 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop Piece
 #+END_SRC
 
 #+RESULTS:
+#+begin_example
+┌──────────┐
+│          │
+│    ██    │
+│   ██     │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+└──────────┘
+#+end_example
 
 Looks solid - one step of gravity after this, and the piece will become visible.
 
@@ -1227,7 +1283,6 @@ isValid game =
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 Now we're able to use this for a simple implementation of gravity:
 
@@ -1670,7 +1725,6 @@ runOperation op game
 #+END_SRC
 
 #+RESULTS:
-: gh
 
 We can test this out with a short animation:
 
@@ -1750,6 +1804,7 @@ animate 200 "test-possible-states" $ possibleStates (mkGame (mkStdGen 42))
 
 #+RESULTS:
 #+begin_export html
+<figure class='text-animation'><pre><code class='text-animation animation-test-possible-states'></code></pre></figure><script src='/scripts/tetris/animation-test-possible-states.js'></script>
 #+end_export
 
 Let's implement a simple heuristic - the higher the grid ceiling, the worse it is:

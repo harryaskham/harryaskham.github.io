@@ -9,23 +9,23 @@ tags:
 
 # Table of Contents
 
-1.  [Beginning at the End](#org0fa634d)
-2.  [What This Is](#orgdf80f5b)
-3.  [What This Isn&rsquo;t](#org0a2cead)
-4.  [Prelude](#org0680847)
-5.  [Strategy](#orgb9be339)
-6.  [Imports and Dependencies](#org3b32c95)
-7.  [Establishing the Grid](#org9ea0e16)
-8.  [Making Some Tetrominos](#orgaa772a2)
-9.  [Rotations](#orgf4ad242)
-10. [Placing Pieces on the Grid](#orgc98c67b)
-11. [Representing the Game State](#orgb10d8d2)
-12. [The Introduction of Time and Logic](#orgd1b9a6d)
-13. [Operating on the Game](#orgbd54f8b)
-14. [Super Advanced Tetris AI (SATAI)](#orgd6a166d)
+1.  [Beginning at the End](#org87964ce)
+2.  [What This Is](#org4408e43)
+3.  [What This Isn&rsquo;t](#org744d149)
+4.  [Prelude](#orgc0b7c1f)
+5.  [Strategy](#orgb3917fe)
+6.  [Imports and Dependencies](#org38b76cc)
+7.  [Establishing the Grid](#org08da0e5)
+8.  [Making Some Tetrominos](#orgb40aa87)
+9.  [Rotations](#org4ce74a4)
+10. [Placing Pieces on the Grid](#org7fdd791)
+11. [Representing the Game State](#orgcc0a410)
+12. [The Introduction of Time and Logic](#org5c6e469)
+13. [Operating on the Game](#org1af4ea3)
+14. [Super Advanced Tetris AI (SATAI)](#org8f3086e)
 
 
-<a id="org0fa634d"></a>
+<a id="org87964ce"></a>
 
 # Beginning at the End
 
@@ -34,7 +34,7 @@ tags:
 This is what we&rsquo;ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
 
 
-<a id="orgdf80f5b"></a>
+<a id="org4408e43"></a>
 
 # What This Is
 
@@ -45,7 +45,7 @@ I&rsquo;ll explicitly try to overexplain everything, either in prose or in comme
 We&rsquo;ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using [beam search](https://en.wikipedia.org/wiki/Beam_search).
 
 
-<a id="org0a2cead"></a>
+<a id="org744d149"></a>
 
 # What This Isn&rsquo;t
 
@@ -56,7 +56,7 @@ We&rsquo;ll try to use as few external dependencies as possible, and won&rsquo;t
 There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like `StateT`, being more careful around the use of strictness versus laziness, and so on - I&rsquo;m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.
 
 
-<a id="org0680847"></a>
+<a id="orgc0b7c1f"></a>
 
 # Prelude
 
@@ -67,7 +67,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
 **Please note** that I myself am a kind of &ldquo;expert beginner&rdquo; - I love the language but I&rsquo;m sure (in fact I know) there&rsquo;s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.
 
 
-<a id="orgb9be339"></a>
+<a id="orgb3917fe"></a>
 
 # Strategy
 
@@ -84,7 +84,7 @@ When I was first learning Haskell, though, it felt like punching holes in cards.
     -   One to accept user input and act on it
 
 
-<a id="org3b32c95"></a>
+<a id="org38b76cc"></a>
 
 # Imports and Dependencies
 
@@ -195,7 +195,7 @@ import Control.Arrow (first, second)
 {% endhighlight %}
 
 
-<a id="org9ea0e16"></a>
+<a id="org08da0e5"></a>
 
 # Establishing the Grid
 
@@ -318,7 +318,6 @@ The `<>` is shorthand for `mconcat` - a member of the `Monoid` typeclass, which 
 Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use `BlockChar` with Unicode line and corner chars to surround a grid. Let&rsquo;s make this a typeclass too! That way, we can add borders to regular grid, but also to UI elements.
 
 {% highlight haskell %}
-
 class Borderable a where
   withBorder :: a -> a
 
@@ -414,7 +413,7 @@ Alright!
 We&rsquo;ll hide the top four rows later on. For now it&rsquo;s useful to print the whole grid, as we&rsquo;ll use this to display our tetrominos too.
 
 
-<a id="orgaa772a2"></a>
+<a id="orgb40aa87"></a>
 
 # Making Some Tetrominos
 
@@ -582,7 +581,7 @@ instance Pretty HGrid where
 
 There&rsquo;s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The `unHGrid` named member just lets us easily unwrap this type later on.
 
-Then we `M.unionWith` the original grid, copying over its elements.
+Then we `M.union` with the original grid, copying over its elements.
 
 Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (`second (+heightA))`) and using an `M.mapKeys` to bump all y-coordinates of the second grid to the correct locations.
 
@@ -613,7 +612,6 @@ putStrLn . pretty . mconcat
     │██  │
     │    │
     └────┘
-    gh
 
 Now the same for the `VGrid`:
 
@@ -669,6 +667,47 @@ do
   putStrLn (pretty grid)
 {% endhighlight %}
 
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││ █  ││██  ││ ██ ││ █  ││ ██ ││    ││ ██ ││
+    ││███ ││ ██ ││██  ││ █  ││ █  ││    ││ ██ ││
+    ││    ││    ││    ││ ██ ││ █  ││████││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││ █  ││ ██ ││    ││ █  ││ ██ ││██  ││ ██ ││
+    ││ █  ││ █  ││    ││███ ││ ██ ││ ██ ││██  ││
+    ││ ██ ││ █  ││████││    ││    ││    ││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││ ██ ││ ██ ││ ██ ││ █  ││██  ││    ││ █  ││
+    ││ █  ││ ██ ││██  ││ █  ││ ██ ││    ││███ ││
+    ││ █  ││    ││    ││ ██ ││    ││████││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││    ││ █  ││ ██ ││ ██ ││ ██ ││██  ││ █  ││
+    ││    ││ █  ││ ██ ││ █  ││██  ││ ██ ││███ ││
+    ││████││ ██ ││    ││ █  ││    ││    ││    ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+    ┌──────────────────────────────────────────┐
+    │┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+    ││    ││    ││    ││    ││    ││    ││    ││
+    ││ █  ││██  ││ ██ ││ ██ ││    ││ ██ ││ █  ││
+    ││███ ││ ██ ││██  ││ █  ││    ││ ██ ││ █  ││
+    ││    ││    ││    ││ █  ││████││    ││ ██ ││
+    │└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+    └──────────────────────────────────────────┘
+
 Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where&rsquo;s our colour?! In a terminal, those ANSI control codes would show up just fine.
 
 We introduced a number of new concepts here; we secretly entered a monad (`IO`, specifically), enabling the `do`-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we&rsquo;ve been doing this all along with every call to `putStrLn`. We&rsquo;ll get into `IO` more later when we start dealing with user input and multiprocessing.
@@ -676,7 +715,7 @@ We introduced a number of new concepts here; we secretly entered a monad (`IO`, 
 We also introduced `uncurry` - we wanted to pass the tuples of form `f (1, batch1)` we&rsquo;d created via `zip` into a function that wanted arguments `f 1 batch1` - `uncurry` will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.
 
 
-<a id="orgf4ad242"></a>
+<a id="org4ce74a4"></a>
 
 # Rotations
 
@@ -838,7 +877,7 @@ showRotations CCW
 I&rsquo;m almost sure it&rsquo;s not **Regulation Tetris Rotation Rules**, but it&rsquo;ll do.
 
 
-<a id="orgc98c67b"></a>
+<a id="org7fdd791"></a>
 
 # Placing Pieces on the Grid
 
@@ -890,7 +929,7 @@ putStrLn . pretty . withBorder $ mkEmptyGrid 10 24 & withPiece (pieceAtTop Piece
 Looks solid - one step of gravity after this, and the piece will become visible.
 
 
-<a id="orgb10d8d2"></a>
+<a id="orgcc0a410"></a>
 
 # Representing the Game State
 
@@ -1024,7 +1063,7 @@ do
 This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we&rsquo;ve artificially inserted a held square piece, and as we can see it&rsquo;s all composing nicely.
 
 
-<a id="orgd1b9a6d"></a>
+<a id="org5c6e469"></a>
 
 # The Introduction of Time and Logic
 
@@ -1362,7 +1401,7 @@ let games = catMaybes $ iterateMaybes loseTheGame (mkGame (mkStdGen 42))
 Aight! We&rsquo;ve got rudimentary collision detection, game over detection and we can see that the piece preview works. Now we need some sort of way to &ldquo;play the game&rdquo;.
 
 
-<a id="orgbd54f8b"></a>
+<a id="org1af4ea3"></a>
 
 # Operating on the Game
 
@@ -1442,7 +1481,7 @@ let game = mkGame (mkStdGen 42)
 I reckon we can do better than this. Time for a bot.
 
 
-<a id="orgd6a166d"></a>
+<a id="org8f3086e"></a>
 
 # Super Advanced Tetris AI (SATAI)
 
