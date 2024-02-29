@@ -1,0 +1,2 @@
+serve:
+	bundix && nix-shell
