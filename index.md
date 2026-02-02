@@ -2,7 +2,7 @@
 layout: home
 ---
 
-I am a Senior Staff Software Engineer working on real-world applications of artificial intelligence at [Microsoft AI](https://microsoft.ai/).
+I am a Member of Technical Staff at [Microsoft AI](https://microsoft.ai/) (previously Senior Staff Software Engineer, [Google DeepMind](https://deepmind.google/)).
 
 My CV is available [here](cv.pdf){:target="_blank"}.
 
