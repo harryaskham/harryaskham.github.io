@@ -2,7 +2,7 @@
 layout: home
 ---
 
-I am a Senior Staff Software Engineer working on real-world applications of artificial intelligence at [DeepMind](https://deepmind.com).
+I am a Senior Staff Software Engineer working on real-world applications of artificial intelligence at [Microsoft AI](https://microsoft.ai/).
 
 My CV is available [here](cv.pdf){:target="_blank"}.
 
