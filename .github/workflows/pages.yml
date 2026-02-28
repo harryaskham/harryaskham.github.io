@@ -1,0 +1,157 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ['**']
+  delete:
+    branches: ['**']
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  # ── Live site: master → root of gh-pages ──────────────────────
+  deploy-live:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Build Jekyll
+        run: |
+          bundle exec jekyll build --destination ./_site
+        env:
+          JEKYLL_ENV: production
+
+      # Copy any repo-root files that Jekyll skipped (PDFs, CNAME, etc.)
+      # into _site without overwriting what Jekyll already built.
+      - name: Include repo root static files
+        run: |
+          shopt -s dotglob
+          for f in *; do
+            # Skip Jekyll/build dirs, hidden dirs, and _site itself
+            case "$f" in
+              _site|_*|.git|.github|.claude|Gemfile*|gemset.nix|default.nix|Makefile|node_modules) continue ;;
+            esac
+            if [ ! -e "_site/$f" ]; then
+              cp -a "$f" "_site/$f"
+              echo "Copied: $f"
+            fi
+          done
+
+      # Preserve preview directories from gh-pages before deploying
+      - name: Fetch existing previews
+        run: |
+          git fetch origin gh-pages:gh-pages 2>/dev/null || true
+          if git rev-parse --verify gh-pages >/dev/null 2>&1; then
+            mkdir -p /tmp/previews
+            git archive gh-pages -- preview/ 2>/dev/null | tar -x -C /tmp/previews || true
+            if [ -d /tmp/previews/preview ]; then
+              cp -r /tmp/previews/preview ./_site/preview
+              echo "Restored preview directories"
+            fi
+          fi
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          cname: a.skh.am
+          force_orphan: true
+
+  # ── Branch preview: any branch → /preview/<branch>/ ───────────
+  deploy-preview:
+    if: github.event_name == 'push' && github.ref != 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Determine preview path
+        id: preview
+        run: |
+          # Sanitise branch name for use as a path
+          BRANCH="${GITHUB_REF_NAME}"
+          SAFE_BRANCH="$(echo "$BRANCH" | sed 's|/|--|g')"
+          echo "branch=$SAFE_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "Preview path: /preview/$SAFE_BRANCH/"
+
+      - name: Build Jekyll for preview
+        run: |
+          bundle exec jekyll build \
+            --baseurl "/preview/${{ steps.preview.outputs.branch }}" \
+            --destination ./_site
+        env:
+          JEKYLL_ENV: preview
+
+      # Copy any repo-root files that Jekyll skipped (PDFs, CNAME, etc.)
+      - name: Include repo root static files
+        run: |
+          shopt -s dotglob
+          for f in *; do
+            case "$f" in
+              _site|_*|.git|.github|.claude|Gemfile*|gemset.nix|default.nix|Makefile|node_modules) continue ;;
+            esac
+            if [ ! -e "_site/$f" ]; then
+              cp -a "$f" "_site/$f"
+              echo "Copied: $f"
+            fi
+          done
+
+      - name: Deploy preview to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          destination_dir: preview/${{ steps.preview.outputs.branch }}
+          keep_files: true
+
+      - name: Post preview URL
+        run: |
+          echo "## Preview deployed!" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Preview URL:** https://a.skh.am/preview/${{ steps.preview.outputs.branch }}/" >> "$GITHUB_STEP_SUMMARY"
+
+  # ── Cleanup: remove preview when branch is deleted ────────────
+  cleanup-preview:
+    if: github.event_name == 'delete'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+
+      - name: Remove preview directory
+        run: |
+          BRANCH="${{ github.event.ref }}"
+          SAFE_BRANCH="$(echo "$BRANCH" | sed 's|/|--|g')"
+          if [ -d "preview/$SAFE_BRANCH" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "preview/$SAFE_BRANCH"
+            git commit -m "Remove preview for deleted branch: $BRANCH"
+            git push origin gh-pages
+            echo "Cleaned up preview/$SAFE_BRANCH"
+          else
+            echo "No preview directory found for $SAFE_BRANCH"
+          fi
