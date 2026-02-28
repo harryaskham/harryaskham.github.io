@@ -1,0 +1,42 @@
+name: Update CV from cv repo
+
+on:
+  repository_dispatch:
+    types: [cv-updated]
+
+permissions:
+  contents: write
+
+jobs:
+  update-cv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest cv.pdf from cv repo
+        run: |
+          curl -sL \
+            -H "Accept: application/vnd.github.raw+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/harryaskham/cv/contents/cv.pdf?ref=master" \
+            -o cv.pdf.new
+
+          if [ ! -s cv.pdf.new ]; then
+            echo "ERROR: Failed to download cv.pdf"
+            exit 1
+          fi
+
+          mv cv.pdf.new cv.pdf
+          echo "Downloaded cv.pdf ($(stat -c%s cv.pdf) bytes)"
+
+      - name: Commit and push updated CV
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cv.pdf
+          if git diff --cached --quiet; then
+            echo "cv.pdf unchanged, nothing to commit"
+          else
+            git commit -m "Update cv.pdf from harryaskham/cv"
+            git push
+          fi
