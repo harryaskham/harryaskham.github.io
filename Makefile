@@ -1,8 +1,13 @@
+.PHONY: dev serve build update
+
+dev:
+	./scripts/dev
+
 serve:
 	jekyll serve --watch --drafts
 
 build:
-	jekyll build
+	./scripts/build
 
 update:
 	bundle config set --local force_ruby_platform true

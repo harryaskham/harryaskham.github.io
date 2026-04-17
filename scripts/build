@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# One-shot Jekyll build (production).
+# Requires the nix-shell environment (loaded automatically by direnv).
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "Building site..."
+jekyll build
+echo "Done. Output in _site/"

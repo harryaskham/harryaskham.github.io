@@ -15,6 +15,6 @@ in
     buildInputs = [ jekyll_env bundler ruby ];
 
     shellHook = ''
-      echo "Jekyll dev environment ready. Run 'jekyll serve --watch --drafts' to start."
+      echo "Jekyll dev environment ready. Run 'make dev' or './scripts/dev' to start."
     '';
   }
