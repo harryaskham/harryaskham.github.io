@@ -30,6 +30,10 @@ linkedin_username: harryaskham
 bluesky_username: harryaskham.bsky.social
 google_analytics: "G-E6LEXB5B8J"
 
+twitter:
+  username: harryaskham
+  card: summary_large_image
+
 # Build settings
 theme: minima
 plugins:

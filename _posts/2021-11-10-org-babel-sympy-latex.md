@@ -4,6 +4,7 @@ date: 2021-11-10
 layout: post
 categories: 
 tags: 
+image: /img/sympy-emacs.png
 ---
 I recently started playing around with [SymPy](<https://www.sympy.org>) as a kind of local alternative to the increasingly frustrating Wolfram Alpha, and found an ergonomic way to interact with it inside org-mode using Babel to get pretty live-previews of the equations being produced.
 

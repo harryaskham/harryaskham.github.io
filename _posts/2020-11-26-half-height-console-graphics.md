@@ -4,6 +4,7 @@ date: 2020-11-26
 layout: post
 categories: 
 tags: 
+image: /img/libtcod.png
 ---
 *Note: Since writing this post, I&rsquo;ve written this technique up as a [standalone library](<https://github.com/harryaskham/halfheight>).*
 
