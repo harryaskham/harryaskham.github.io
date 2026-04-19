@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Learning (Some) Haskell by Building Tetris | Harry Askham</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Learning (Some) Haskell by Building Tetris" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Table of Contents" />
+<meta property="og:description" content="Table of Contents" />
+<link rel="canonical" href="https://a.skh.am/preview/main/2023/08/06/tetris-haskell.html" />
+<meta property="og:url" content="https://a.skh.am/preview/main/2023/08/06/tetris-haskell.html" />
+<meta property="og:site_name" content="Harry Askham" />
+<meta property="og:image" content="https://a.skh.am/preview/main/img/tetriskell.gif" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-06T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="https://a.skh.am/preview/main/img/tetriskell.gif" />
+<meta property="twitter:title" content="Learning (Some) Haskell by Building Tetris" />
+<meta name="twitter:site" content="@harryaskham" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-08-06T00:00:00+00:00","datePublished":"2023-08-06T00:00:00+00:00","description":"Table of Contents","headline":"Learning (Some) Haskell by Building Tetris","image":"https://a.skh.am/preview/main/img/tetriskell.gif","mainEntityOfPage":{"@type":"WebPage","@id":"https://a.skh.am/preview/main/2023/08/06/tetris-haskell.html"},"url":"https://a.skh.am/preview/main/2023/08/06/tetris-haskell.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/preview/main/assets/main.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Fira+Code|Fira+Sans&display=swap" rel="stylesheet"><link type="application/atom+xml" rel="alternate" href="https://a.skh.am/preview/main/feed.xml" title="Harry Askham" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/preview/main/">Harry Askham</a>
+
+    <!--<nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav>-->
+  </div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Learning (Some) Haskell by Building Tetris</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-08-06T00:00:00+00:00" itemprop="datePublished">Aug 6, 2023
+      </time>• 82 min read</p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h1 id="table-of-contents">Table of Contents</h1>
+
+<ol>
+  <li><a href="#org87964ce">Beginning at the End</a></li>
+  <li><a href="#org4408e43">What This Is</a></li>
+  <li><a href="#org744d149">What This Isn’t</a></li>
+  <li><a href="#orgc0b7c1f">Prelude</a></li>
+  <li><a href="#orgb3917fe">Strategy</a></li>
+  <li><a href="#org38b76cc">Imports and Dependencies</a></li>
+  <li><a href="#org08da0e5">Establishing the Grid</a></li>
+  <li><a href="#orgb40aa87">Making Some Tetrominos</a></li>
+  <li><a href="#org4ce74a4">Rotations</a></li>
+  <li><a href="#org7fdd791">Placing Pieces on the Grid</a></li>
+  <li><a href="#orgcc0a410">Representing the Game State</a></li>
+  <li><a href="#org5c6e469">The Introduction of Time and Logic</a></li>
+  <li><a href="#org1af4ea3">Operating on the Game</a></li>
+  <li><a href="#org8f3086e">Super Advanced Tetris AI (SATAI)</a></li>
+</ol>
+
+<p><a id="org87964ce"></a></p>
+
+<h1 id="beginning-at-the-end">Beginning at the End</h1>
+
+<p><img src="/img/tetriskell.gif" alt="img" /></p>
+
+<p>This is what we’ll build over the course of this post<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.</p>
+
+<p><a id="org4408e43"></a></p>
+
+<h1 id="what-this-is">What This Is</h1>
+
+<p>This post is a hands-on introduction to Haskell via the implementation of a little-known game involving falling blocks, because that’s how I first learnt the basics. I’ll try explain Haskell-specific concepts in detail, such that an audience of competent programmers with no Haskell or even functional programming familiarity could follow it and end up with a passing understanding of how to build a simple Haskell application.</p>
+
+<p>I’ll explicitly try to overexplain everything, either in prose or in comments. I’m also going to purposefully try to use a variety of different styles of Haskell programming.</p>
+
+<p>We’ll end up with a minimal terminal implementation of Tetris, and a simple agent playing using <a href="https://en.wikipedia.org/wiki/Beam_search">beam search</a>.</p>
+
+<p><a id="org744d149"></a></p>
+
+<h1 id="what-this-isnt">What This Isn’t</h1>
+
+<p>I won’t touch on package management or project structure - in fact, this post is a literate<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> Haskell file, and the concatenated code blocks (if written to <code class="highlighter-rouge">tetris.hs</code>) can be run via <code class="highlighter-rouge">runhaskell tetris.hs</code>. There are plenty of tutorials on package managers like Stack and Cabal, and on general project management out there - for now, all you need is whatever Haskell distribution your machine uses. <a href="https://www.haskell.org/ghcup/">GHCup</a> is as good a place to start as any. You might already even have <code class="highlighter-rouge">runhaskell</code> on your machine.</p>
+
+<p>We’ll try to use as few external dependencies as possible, and won’t use any language extensions.</p>
+
+<p>There are a lot of ways one could write this code more cleanly and performantly - avoiding passing around explicit state using monad transformers like <code class="highlighter-rouge">StateT</code>, being more careful around the use of strictness versus laziness, and so on - I’m considering this out of scope and will try keep it as simple as I can. There will be no catamorphisms, hylomorphisms, or other such morphisms here.</p>
+
+<p><a id="orgc0b7c1f"></a></p>
+
+<h1 id="prelude">Prelude</h1>
+
+<p>I watched the <a href="https://en.wikipedia.org/wiki/Tetris_(film)">Tetris</a> movie this week. There’s this almost certainly apocryphal scene where Alexey Patjinov is demoing his creation to a publisher, who has a <a href="https://www.youtube.com/watch?v=PEgk2v6KntY">“drop the ‘the’”</a> moment and suggests all completed rows should vanish at once, rather than one at a time, enabling the achievement of the four-lines-at-once namesake move. They swiftly hack the feature together on a tiny monochrome display, and I was reminded how lucky I am to live in an era of rich tooling, expressive languages, and 4K monitors.</p>
+
+<p>When I was first learning Haskell, though, it felt like punching holes in cards. I couldn’t get my head around the interplay between the purity of the language and the need to interact with the real world. A long while before, I’d grokked Gary Bernhardt’s <a href="https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell">Functional Core, Imperative Shell</a> message, but how does this apply in a world where, supposedly, <strong>everything</strong> is functional? As we’ll see, the Haskell equivalent is something like “functional core, <code class="highlighter-rouge">IO</code> shell” - but we’re getting ahead of ourselves. I wrote <a href="https://github.com/harryaskham/tetriskell">my own toy implementation</a> as a way of getting to grips with the language, and thought I’d revisit it, rewriting it piece-by-piece in notebook style.</p>
+
+<p><strong>Please note</strong> that I myself am a kind of “expert beginner” - I love the language but I’m sure (in fact I know) there’s a lot here that could be improved upon, even with the constraints of targetting a beginner audience. My email is in the footer and I welcome errata.</p>
+
+<p><a id="orgb3917fe"></a></p>
+
+<h1 id="strategy">Strategy</h1>
+
+<ul>
+  <li>We’ll build up from a play area, to the tetrominos, to the game logic, to user input, and finally to a self-playing bot.</li>
+  <li>We’ll represent the play area as a <a href="https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html"><code class="highlighter-rouge">Map</code></a> (think: a tree-backed dictionary) whose keys are coordinates, and whose values are the contents of a grid cell, where the y-coordinate grows from top to bottom.</li>
+  <li>We’ll make this 10x24, to allow for a 4-row buffer at the top in which to place new pieces.</li>
+  <li>Pieces themselves will begin life in a 4x4 grid, and remain that way until they get fixed to the board.
+    <ul>
+      <li>This lets us implement rotation, collision detection and bounds checks on falling pieces by stepping forward (either by rotating, by translation or by gravity), looking for overlap, and simply rejecting the new game state if we have overlapping blocks.</li>
+    </ul>
+  </li>
+  <li>We’ll build logic to move the game forward one “step” (apply gravity, fix blocks when they hit bottom, delete full rows, update the score, etc.)</li>
+  <li>We’ll finally implement a simple bot that looks a few blocks ahead and optimises for keeping the grid as low as possible.</li>
+  <li>Later, when I revisit this post to include human input, we’ll have a playable game with three threads running:
+    <ul>
+      <li>One to progress the game state</li>
+      <li>One to draw the game to the screen</li>
+      <li>One to accept user input and act on it</li>
+    </ul>
+  </li>
+</ul>
+
+<p><a id="org38b76cc"></a></p>
+
+<h1 id="imports-and-dependencies">Imports and Dependencies</h1>
+
+<p>We’ll start with the imports we need. Haskell is “batteries included” in so far as there is a rich collection of widely used, canonical core libraries on <a href="https://hackage.haskell.org/">Hackage</a> - but they don’t come with the compiler. You need to make them available on your system. For example, we’ll be using <a href="https://hackage.haskell.org/package/containers-0.4.0.0/docs/Data-Map.html"><code class="highlighter-rouge">Map</code></a> a lot, which is part of the <code class="highlighter-rouge">containers</code> package. The glorious <a href="https://www.haskell.org/ghc/">Glasgow Haskell Compiler</a> needs you to install these libraries. There are myriad ways of doing this, but simplest might just be running <code class="highlighter-rouge">cabal install --lib &lt;libname&gt;</code>.</p>
+
+<p>The full list of packages we need here are:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">base</code></li>
+  <li><code class="highlighter-rouge">containers</code></li>
+  <li><code class="highlighter-rouge">random</code></li>
+  <li><code class="highlighter-rouge">random-shuffle</code></li>
+  <li><code class="highlighter-rouge">extra</code></li>
+</ul>
+
+<p>If you’re following along, you’ll want to install them all:</p>
+
+<p><code class="highlighter-rouge">cabal install --lib base containers random random-shuffle extra</code><sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup></p>
+
+<p>Versioning is a whole other topic. We aren’t using any unstable features of these packages, so I’ve not suggested pinning any particular versions, but just know it’s often useful to do so do avoid dependency hell in a real project. A good package manager<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> (Cabal, Stack, Nix, others) will help you here.</p>
+
+<p>Alright, so say we’ve got our <code class="highlighter-rouge">tetris.hs</code> blank slate. This is going to be a single-file program, so we’ll put everything into a monolithic <code class="highlighter-rouge">Main</code> module. This isn’t great practice for serious projects, but for our purposes we can keep everything in <code class="highlighter-rouge">Main</code>.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Every Haskell source file begins with a module definition like this.</span>
+<span class="c1">-- In your own project, you might have submodules like</span>
+<span class="c1">-- `module Server.API.Payments where`</span>
+<span class="c1">-- to reflect the boring pragmatism of real-world engineering.</span>
+<span class="c1">-- This would typically live at the path lib/Server/API/Payments.hs</span>
+<span class="c1">-- In a Cabal project, this monolithic file would live in app/Main.hs.</span>
+<span class="kr">module</span> <span class="nn">Main</span> <span class="kr">where</span></code></pre></figure>
+
+<p>I’ll spell out each import we’re using explicitly<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup>:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- There are lots of Map-related methods; a qualified import avoids naming</span>
+<span class="c1">-- clashes, and means we can look things up using M.lookup rather than</span>
+<span class="c1">-- simply lookup.</span>
+<span class="c1">-- Ignore the 'Strict' for now - laziness/strictness is a large and separate topic.</span>
+<span class="kr">import</span> <span class="k">qualified</span> <span class="nn">Data.Map.Strict</span> <span class="k">as</span> <span class="n">M</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- By also importing the Map type directly, we don't need to constantly</span>
+<span class="c1">-- specify M.Map and can just use Map directly in our type signatures.</span>
+<span class="kr">import</span> <span class="nn">Data.Map.Strict</span> <span class="p">(</span><span class="kt">Map</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Similarly, this let's us operate on Sets - we'll be converting to and</span>
+<span class="c1">-- from lists using S.toList and S.fromList to enable more efficient</span>
+<span class="c1">-- operations over collections.</span>
+<span class="kr">import</span> <span class="k">qualified</span> <span class="nn">Data.Set</span> <span class="k">as</span> <span class="n">S</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- intercalate is similar to Python's x.join()</span>
+<span class="c1">-- foldl' is similar to Python's reduce(f, xs)</span>
+<span class="c1">-- scanl' is similar to Python's itertools.accumulate(xs), or foldl'</span>
+<span class="c1">-- with intermediate results.</span>
+<span class="kr">import</span> <span class="nn">Data.List</span> <span class="p">(</span><span class="nf">intercalate</span><span class="p">,</span> <span class="nf">foldl'</span><span class="p">,</span> <span class="nf">scanl'</span><span class="p">,</span> <span class="nf">intersect</span><span class="p">,</span> <span class="nf">sortOn</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Lets us substitute or remove substrings from strings, which are just lists</span>
+<span class="c1">-- of characters in Haskell.</span>
+<span class="kr">import</span> <span class="nn">Data.List.Extra</span> <span class="p">(</span><span class="nf">replace</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- This will let us easily modify 2-tuples (i.e. our coordinates)</span>
+<span class="kr">import</span> <span class="nn">Data.Bifunctor</span> <span class="p">(</span><span class="nf">bimap</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Reverse function application; allows e.g. `thing &amp; withProperty a` pipelining.</span>
+<span class="kr">import</span> <span class="nn">Data.Function</span> <span class="p">((</span><span class="o">&amp;</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We'll use this to filter out Nothing values from lists of Maybes,</span>
+<span class="c1">-- and fromJust lets us unsafely unwrap Maybe values for debug purposes.</span>
+<span class="kr">import</span> <span class="nn">Data.Maybe</span> <span class="p">(</span><span class="nf">catMaybes</span><span class="p">,</span> <span class="nf">fromJust</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Provides access to system pseudorandomness and control over setting random seeds.</span>
+<span class="kr">import</span> <span class="nn">System.Random</span> <span class="p">(</span><span class="kt">RandomGen</span><span class="p">,</span> <span class="nf">split</span><span class="p">,</span> <span class="nf">newStdGen</span><span class="p">,</span> <span class="nf">getStdGen</span><span class="p">,</span> <span class="nf">mkStdGen</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Utilities for shuffling collections (e.g. of tetrominos)</span>
+<span class="kr">import</span> <span class="nn">System.Random.Shuffle</span> <span class="p">(</span><span class="nf">shuffle'</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We'll be making use of this module for control flow when we get to our</span>
+<span class="c1">--imperative-looking (but still functional!) shell.</span>
+<span class="c1">-- The Kleisli composition operator (&gt;=&gt;) will help us compose together</span>
+<span class="c1">-- functions that for example return Maybe values instead of unwrapped</span>
+<span class="c1">-- values themselves.</span>
+<span class="kr">import</span> <span class="nn">Control.Monad</span> <span class="p">(</span><span class="nf">forM_</span><span class="p">,</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We'll use these to make modifications to coordinates as we stick different</span>
+<span class="c1">-- UI elements together.</span>
+<span class="kr">import</span> <span class="nn">Control.Arrow</span> <span class="p">(</span><span class="nf">first</span><span class="p">,</span> <span class="nf">second</span><span class="p">)</span></code></pre></figure>
+
+<p><a id="org08da0e5"></a></p>
+
+<h1 id="establishing-the-grid">Establishing the Grid</h1>
+
+<p>Now let’s think about how we’ll represent the game state, the entities within it, and the actions we can take.</p>
+
+<p>We’ll need a 2D grid of cells, each of which can be empty or filled with a block, and that block . Whenever you have state in this “one-of-many” form, where you might reach for an enum, in Haskell you can define a sum type:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- This is a sum type; we can now use these colour values directly in our code.</span>
+<span class="c1">-- Yes, we'll be using British English.</span>
+<span class="kr">data</span> <span class="kt">Colour</span> <span class="o">=</span> <span class="kt">Blue</span>
+            <span class="o">|</span> <span class="kt">Orange</span>
+            <span class="o">|</span> <span class="kt">Yellow</span>
+            <span class="o">|</span> <span class="kt">Green</span>
+            <span class="o">|</span> <span class="kt">Purple</span>
+            <span class="o">|</span> <span class="kt">Red</span>
+            <span class="o">|</span> <span class="kt">Cyan</span>
+            <span class="o">|</span> <span class="kt">Black</span>
+            <span class="o">|</span> <span class="kt">White</span>
+            <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Eq</span><span class="p">,</span> <span class="kt">Enum</span><span class="p">,</span> <span class="kt">Bounded</span><span class="p">)</span>
+
+<span class="c1">-- Another sum type; we either have a block of a certain colour, or empty space.</span>
+<span class="c1">-- We also insert the ability to display a char here because later, we'll use this</span>
+<span class="c1">-- to compose some basic UI elements.</span>
+<span class="c1">-- We derive Eq both times here so that we can later check for full cells by</span>
+<span class="c1">-- inequality with Empty</span>
+<span class="kr">data</span> <span class="kt">Cell</span> <span class="o">=</span> <span class="kt">Block</span> <span class="kt">Colour</span> <span class="o">|</span> <span class="kt">BlockChar</span> <span class="kt">Colour</span> <span class="kt">Char</span> <span class="o">|</span> <span class="kt">Empty</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Eq</span><span class="p">)</span></code></pre></figure>
+
+<p>Now we’re ready to set up our grid:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- This is a type alias - now any time we want a 2-dimensional coordinate,</span>
+<span class="c1">-- we can use V2 rather than continually specify that we're representing</span>
+<span class="c1">-- x and y as a tuple of Ints.</span>
+
+<span class="c1">-- You get this and more for free in the linear package as Linear.V2</span>
+<span class="c1">--- but I want to avoid as many dependencies as possible.</span>
+<span class="kr">type</span> <span class="kt">V2</span> <span class="o">=</span> <span class="p">(</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">)</span>
+
+<span class="c1">-- Rather than use a 2D array-of-arrays, we'll just use</span>
+<span class="c1">-- a map keyed by our V2 coordinate type, whose values are of our Cell type.</span>
+<span class="c1">-- We use a new datatype here rather than an alias, as this will later allow us to</span>
+<span class="c1">-- attach new behaviour to the Grid in the form of typeclass instances.</span>
+<span class="c1">-- This gives us a constructor function Grid, which accepts a width, height, and</span>
+<span class="c1">-- Map as its arguments and gives us back a value of type Grid. That the</span>
+<span class="c1">-- constructor has the same name as the type is just convention.</span>
+<span class="kr">data</span> <span class="kt">Grid</span> <span class="o">=</span> <span class="kt">Grid</span> <span class="kt">Int</span> <span class="kt">Int</span> <span class="p">(</span><span class="kt">Map</span> <span class="kt">V2</span> <span class="kt">Cell</span><span class="p">)</span>
+
+<span class="c1">-- This is just a helper we'll use later to pull out the underlying Map as needed.</span>
+<span class="n">unGrid</span> <span class="o">::</span> <span class="kt">Grid</span> <span class="o">-&gt;</span> <span class="kt">Map</span> <span class="kt">V2</span> <span class="kt">Cell</span>
+<span class="n">unGrid</span> <span class="p">(</span><span class="kt">Grid</span> <span class="kr">_</span> <span class="kr">_</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">grid</span></code></pre></figure>
+
+<p>And our first function, a simple constructor:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Right, our first function - this will construct us an empty grid.</span>
+<span class="c1">-- It's a fairly common pattern to prefix constructors like this with 'mk'.</span>
+
+<span class="c1">-- You can think of a Map as a list of key-value pairs where it's efficient</span>
+<span class="c1">-- to pick out any one pair by its key; it's easy to switch back and forth</span>
+<span class="c1">-- between these Map and list-of-pairs representations, and it's an easy</span>
+<span class="c1">-- way to construct them.</span>
+
+<span class="c1">-- The type signature follows the :: and here simply says we take no arguments,</span>
+<span class="c1">-- and return an instance of the Grid type. Typically, for top-level functions</span>
+<span class="c1">-- like this, you include a type signature before the implementation, even</span>
+<span class="c1">-- though the compiler can often figure it out itself.</span>
+
+<span class="c1">-- We use a list comprehension to create the (V2, Cell) pairs of the grid, and</span>
+<span class="c1">-- pass this to M.fromList to get our Map V2 Cell, i.e. our Grid.</span>
+<span class="c1">-- Note that Haskell range sugar is inclusive, so [1 .. 3] is [1, 2, 3].</span>
+
+<span class="c1">-- The $ operator applies the function on the left of it (in this case Grid) to</span>
+<span class="c1">-- everything on the right; it's a common way of avoiding Lisp-style parenthesis</span>
+<span class="c1">-- overload.</span>
+<span class="n">mkEmptyGrid</span> <span class="o">::</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">mkEmptyGrid</span> <span class="n">width</span> <span class="n">height</span> <span class="o">=</span>
+  <span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span>
+    <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">fromList</span> <span class="p">[((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="kt">Empty</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="p">,</span> <span class="n">y</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span></code></pre></figure>
+
+<p>Let’s get some output going. We’re going to want to be able to pretty-print a bunch of our entities (our grids, our scoreboard) - when we want to implement the same broad concept across multiple disparate types, we draw for a typeclass (similar to a trait in Rust, or maybe an interface in Go). We’ll define a <code class="highlighter-rouge">Pretty</code> typeclass - any type that implements this will be convertable to a nicely formatted <code class="highlighter-rouge">String</code><sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup> which we can later print to the screen<sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup>.</p>
+
+<p>Here <code class="highlighter-rouge">a</code> is a placeholder for the type that will implement the <code class="highlighter-rouge">Pretty</code> class. We’re simply saying that anything prettifiable must define a <code class="highlighter-rouge">pretty</code> function that spits out a nice <code class="highlighter-rouge">String</code> representation. Very hand-wavily, Haskell’s type signatures are written this way as all functions can be partially applied and are curried by default; for now, a function with a signature of <code class="highlighter-rouge">foo :: a -&gt; b -&gt; c -&gt; d</code> can be thought of as a three argument function taking an <code class="highlighter-rouge">a</code>, a <code class="highlighter-rouge">b</code>, a <code class="highlighter-rouge">c</code> and returning a <code class="highlighter-rouge">d</code>.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">class</span> <span class="kt">Pretty</span> <span class="n">a</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">String</span></code></pre></figure>
+
+<p>We can make <code class="highlighter-rouge">Cell</code> an instance of this typeclass simply by associating each cell with a character. We can use Haskell’s pattern-matching to have <code class="highlighter-rouge">pretty</code> behave differently depending on whether it’s given an <code class="highlighter-rouge">Empty</code> cell or a <code class="highlighter-rouge">Block</code> cell. We can also cheat a little, and make the <code class="highlighter-rouge">Pretty</code> representation of a <code class="highlighter-rouge">Colour</code> be a terminal escape code we can use to give colour to the blocks by using it as a prefix.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">Colour</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="kt">Red</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[31m"</span>
+  <span class="n">pretty</span> <span class="kt">Blue</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[34m"</span>
+  <span class="n">pretty</span> <span class="kt">Cyan</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[36m"</span>
+  <span class="n">pretty</span> <span class="kt">Yellow</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[33m"</span>
+  <span class="n">pretty</span> <span class="kt">Green</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[32m"</span>
+  <span class="n">pretty</span> <span class="kt">Purple</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[35m"</span>
+  <span class="n">pretty</span> <span class="kt">Orange</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[37m"</span>
+  <span class="n">pretty</span> <span class="kt">Black</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[30m"</span>
+  <span class="n">pretty</span> <span class="kt">White</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[97m"</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">ansiColourEnd</span> <span class="o">::</span> <span class="kt">String</span>
+<span class="n">ansiColourEnd</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x1b</span><span class="s">[0m"</span>
+
+<span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">Cell</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="kt">Empty</span> <span class="o">=</span> <span class="s">" "</span>
+  <span class="n">pretty</span> <span class="p">(</span><span class="kt">Block</span> <span class="n">colour</span><span class="p">)</span> <span class="o">=</span> <span class="n">pretty</span> <span class="n">colour</span> <span class="o">&lt;&gt;</span> <span class="s">"█"</span> <span class="o">&lt;&gt;</span> <span class="n">ansiColourEnd</span>
+  <span class="n">pretty</span> <span class="p">(</span><span class="kt">BlockChar</span> <span class="n">colour</span> <span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="n">pretty</span> <span class="n">colour</span> <span class="o">&lt;&gt;</span> <span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">&lt;&gt;</span> <span class="n">ansiColourEnd</span></code></pre></figure>
+
+<p>The <code class="highlighter-rouge">&lt;&gt;</code> is shorthand for <code class="highlighter-rouge">mconcat</code> - a member of the <code class="highlighter-rouge">Monoid</code> typeclass, which roughly represents things that can be empty, and can be joined together. <code class="highlighter-rouge">String</code> is a <code class="highlighter-rouge">Monoid</code> so <code class="highlighter-rouge">&lt;&gt;</code> just concatenates them.</p>
+
+<p>Since an empty grid is going to be quite boring to print, let us make a way of adding a border to a grid. We can use <code class="highlighter-rouge">BlockChar</code> with Unicode line and corner chars to surround a grid. Let’s make this a typeclass too! That way, we can add borders to regular grid, but also to UI elements.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">class</span> <span class="kt">Borderable</span> <span class="n">a</span> <span class="kr">where</span>
+  <span class="n">withBorder</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">a</span>
+
+<span class="kr">instance</span> <span class="kt">Borderable</span> <span class="kt">Grid</span> <span class="kr">where</span>
+  <span class="n">withBorder</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+    <span class="c1">-- Create a new Grid with enough room for the UI elements</span>
+    <span class="kt">Grid</span> <span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">height</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+      <span class="p">(</span><span class="n">grid</span>
+        <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span> <span class="p">(</span><span class="n">first</span> <span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">.</span> <span class="n">second</span> <span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>  <span class="c1">-- Shift every coordinate by (+1, +1)</span>
+        <span class="c1">-- Then we insert the elements using the helpers below</span>
+        <span class="o">&amp;</span> <span class="n">withLeftBorder</span>
+        <span class="o">&amp;</span> <span class="n">withRightBorder</span>
+        <span class="o">&amp;</span> <span class="n">withTopBorder</span>
+        <span class="o">&amp;</span> <span class="n">withBottomBorder</span>
+        <span class="o">&amp;</span> <span class="n">withCorners</span><span class="p">)</span>
+    <span class="kr">where</span>
+      <span class="c1">-- First a helper to insert black characters at the given coordinates</span>
+      <span class="n">insertBlackChars</span> <span class="n">char</span> <span class="n">coordinates</span> <span class="o">=</span>
+        <span class="kt">M</span><span class="o">.</span><span class="n">union</span> <span class="p">(</span><span class="kt">M</span><span class="o">.</span><span class="n">fromList</span> <span class="p">(</span><span class="n">zip</span> <span class="n">coordinates</span> <span class="p">(</span><span class="n">repeat</span> <span class="p">(</span><span class="kt">BlockChar</span> <span class="kt">Black</span> <span class="n">char</span><span class="p">))))</span>
+      <span class="c1">-- And now we use this over the four sides of the grid and the corner pieces.</span>
+      <span class="n">withLeftBorder</span> <span class="o">=</span> <span class="n">insertBlackChars</span> <span class="sc">'│'</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">|</span> <span class="n">y</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">height</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+      <span class="n">withRightBorder</span> <span class="o">=</span> <span class="n">insertBlackChars</span> <span class="sc">'│'</span> <span class="p">[(</span><span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">|</span> <span class="n">y</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">height</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+      <span class="n">withTopBorder</span> <span class="o">=</span> <span class="n">insertBlackChars</span> <span class="sc">'─'</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+      <span class="n">withBottomBorder</span> <span class="o">=</span> <span class="n">insertBlackChars</span> <span class="sc">'─'</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">height</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+      <span class="n">withCorners</span> <span class="o">=</span> <span class="kt">M</span><span class="o">.</span><span class="n">insert</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="kt">BlockChar</span> <span class="kt">Black</span> <span class="sc">'┌'</span><span class="p">)</span>
+                  <span class="o">.</span> <span class="kt">M</span><span class="o">.</span><span class="n">insert</span> <span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="kt">BlockChar</span> <span class="kt">Black</span> <span class="sc">'┐'</span><span class="p">)</span>
+                  <span class="o">.</span> <span class="kt">M</span><span class="o">.</span><span class="n">insert</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">height</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="kt">BlockChar</span> <span class="kt">Black</span> <span class="sc">'└'</span><span class="p">)</span>
+                  <span class="o">.</span> <span class="kt">M</span><span class="o">.</span><span class="n">insert</span> <span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="kt">BlockChar</span> <span class="kt">Black</span> <span class="sc">'┘'</span><span class="p">)</span></code></pre></figure>
+
+<p>We’re ready to prettify our <code class="highlighter-rouge">Grid</code>. Since we’re operating over collections of things, we can start using higher-order functions; in Haskell, <code class="highlighter-rouge">fmap</code> from the <code class="highlighter-rouge">Functor</code> typeclass lets you apply a function to the inhabitants of any instance of a given <code class="highlighter-rouge">Functor</code>. A list is an instance of <code class="highlighter-rouge">Functor</code>, and so for some list <code class="highlighter-rouge">xs</code>, <code class="highlighter-rouge">fmap f xs</code> just operates like the <code class="highlighter-rouge">map(f, xs)</code> function you find over lists in most other languages.</p>
+
+<p>Helper functions and intermediate values defined in <code class="highlighter-rouge">where</code> blocks are available in the above scope. Type signatures are optional, but I’ve included them for clarity - they can also help the compiler tell you when you’ve gone off track. I’ve included some alternative equivalent implementations of <code class="highlighter-rouge">prettyRow</code> here; I won’t keep doing this, but it gives you a sense of the different ways one can construct functions.</p>
+
+<p>We use <code class="highlighter-rouge">M.!</code> to look up keys in our grid; this is unsafe, and can throw an error. A nicer way would be to use <code class="highlighter-rouge">M.lookup</code>, which returns a <code class="highlighter-rouge">Maybe Cell</code> here, meaning we’d have to handle the <code class="highlighter-rouge">Nothing</code> case (i.e. out of bounds) and the <code class="highlighter-rouge">Just cell</code> case separately. We know we’re within bounds here, so we’ll keep it simple, but it’s worth knowing.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">Grid</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">intercalate</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span> <span class="p">(</span><span class="n">prettyRow</span> <span class="o">&lt;$&gt;</span> <span class="n">rows</span><span class="p">)</span>
+    <span class="kr">where</span>
+      <span class="n">rows</span> <span class="o">::</span> <span class="p">[[</span><span class="kt">Cell</span><span class="p">]]</span>
+      <span class="n">rows</span> <span class="o">=</span> <span class="p">[[</span><span class="n">grid</span> <span class="kt">M</span><span class="o">.!</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">|</span> <span class="n">y</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+      <span class="n">prettyRow</span> <span class="o">::</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">String</span>
+      <span class="n">prettyRow</span> <span class="n">row</span> <span class="o">=</span> <span class="n">concatMap</span> <span class="n">pretty</span> <span class="n">row</span>
+      <span class="c1">-- Alternative implementations:</span>
+      <span class="c1">-- With eta-reduction:</span>
+      <span class="c1">-- prettyRow = concatMap pretty</span>
+      <span class="c1">-- With explicit fmap:</span>
+      <span class="c1">-- prettyRow row = concat (fmap pretty row)</span>
+      <span class="c1">-- Using the fmap "spaceship" operator:</span>
+      <span class="c1">-- prettyRow row = concat (pretty &lt;$&gt; row)</span>
+      <span class="c1">-- Using the Monad instance of List (don't worry, it just aliases concatMap):</span>
+      <span class="c1">-- prettyRow row = pretty =&lt;&lt; row</span></code></pre></figure>
+
+<p>Here we’ve converted back from our <code class="highlighter-rouge">Map</code> representation of the <code class="highlighter-rouge">Grid</code> to a <code class="highlighter-rouge">List</code>-based one, in order to more easily convert it to a list of <code class="highlighter-rouge">String</code> that we can join (<code class="highlighter-rouge">intercalate</code> in Haskell) together with newlines inbetween.</p>
+
+<p>We can finally print our grid! It’s nothing special, but here we go:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">putStrLn</span> <span class="o">$</span> <span class="n">pretty</span> <span class="p">(</span><span class="n">withBorder</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="mi">10</span> <span class="mi">24</span><span class="p">)</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──────────┐
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+└──────────┘
+</code></pre></div></div>
+
+<p>Alright!</p>
+
+<p>We’ll hide the top four rows later on. For now it’s useful to print the whole grid, as we’ll use this to display our tetrominos too.</p>
+
+<p><a id="orgb40aa87"></a></p>
+
+<h1 id="making-some-tetrominos">Making Some Tetrominos</h1>
+
+<p>Let’s make the pieces. We’ll represent them as a product type with a colour and coordinates, and take advantage of Haskell’s laziness to construct an infinite stream of pieces, in chunks of seven, where each of the seven chunks is a shuffled collection containing every piece (per the <strong>official rules</strong>). This’ll let us easily draw the next piece, as well as enabling a simple lookahead for a next-piece preview.</p>
+
+<p>We’ll encode the actual shapes by the coordinates of their full blocks, letting us specify their colour as well. We’ll use some helpers to let us quickly set coloured blocks on an empty grid. Eventually we’ll have a function that transforms a <code class="highlighter-rouge">Grid</code> into a copy of itself containing one new coloured block - we can then <code class="highlighter-rouge">fold</code> this function, using an empty 4x4 grid as the initial state, over the coordinates of the piece, which will add the blocks one by one, giving us the finished piece.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">data</span> <span class="kt">Piece</span> <span class="o">=</span> <span class="kt">PieceL</span>
+           <span class="o">|</span> <span class="kt">PieceR</span>
+           <span class="o">|</span> <span class="kt">PieceSquare</span>
+           <span class="o">|</span> <span class="kt">PieceS</span>
+           <span class="o">|</span> <span class="kt">PieceZ</span>
+           <span class="o">|</span> <span class="kt">PieceT</span>
+           <span class="o">|</span> <span class="kt">PieceLine</span>
+           <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Enum</span><span class="p">,</span> <span class="kt">Bounded</span><span class="p">)</span>
+
+<span class="c1">-- We get this nicely for free from the Enum and Bounded instances.</span>
+<span class="n">allPieces</span> <span class="o">::</span> <span class="p">[</span><span class="kt">Piece</span><span class="p">]</span>
+<span class="n">allPieces</span> <span class="o">=</span> <span class="p">[</span><span class="n">minBound</span> <span class="o">..</span> <span class="n">maxBound</span><span class="p">]</span></code></pre></figure>
+
+<p>Now we can specify piece properties using simple pattern-matched functions:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">pieceColour</span> <span class="o">::</span> <span class="kt">Piece</span> <span class="o">-&gt;</span> <span class="kt">Colour</span>
+<span class="n">pieceColour</span> <span class="kt">PieceL</span> <span class="o">=</span> <span class="kt">Orange</span>
+<span class="n">pieceColour</span> <span class="kt">PieceR</span> <span class="o">=</span> <span class="kt">Blue</span>
+<span class="n">pieceColour</span> <span class="kt">PieceSquare</span> <span class="o">=</span> <span class="kt">Yellow</span>
+<span class="n">pieceColour</span> <span class="kt">PieceS</span> <span class="o">=</span> <span class="kt">Green</span>
+<span class="n">pieceColour</span> <span class="kt">PieceZ</span> <span class="o">=</span> <span class="kt">Red</span>
+<span class="n">pieceColour</span> <span class="kt">PieceT</span> <span class="o">=</span> <span class="kt">Purple</span>
+<span class="n">pieceColour</span> <span class="kt">PieceLine</span> <span class="o">=</span> <span class="kt">Cyan</span>
+
+<span class="n">pieceCoords</span> <span class="o">::</span> <span class="kt">Piece</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">V2</span><span class="p">]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceL</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceR</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceSquare</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceS</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceZ</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceT</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="n">pieceCoords</span> <span class="kt">PieceLine</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)]</span></code></pre></figure>
+
+<p>And now we can generate our infinite stream of pieces lazily:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Here we have a lazy infinite list of pieces.</span>
+<span class="c1">-- To avoid requiring side-effects here, we take a random state as an argument.</span>
+<span class="c1">-- Later, when we're inside the IO monad, we can hook into this source of randomness</span>
+<span class="c1">-- and pass it in; by avoiding this here, we can keep this function pure.</span>
+<span class="c1">-- The shuffle API is a little odd, so we need to handle splitting the random state</span>
+<span class="c1">-- ourselves otherwise every chunk of seven pieces will be the same.</span>
+<span class="n">pieceStream</span> <span class="o">::</span> <span class="kt">RandomGen</span> <span class="n">g</span> <span class="o">=&gt;</span> <span class="n">g</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Piece</span><span class="p">]</span>
+<span class="n">pieceStream</span> <span class="n">g</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="kr">_</span><span class="p">,</span> <span class="n">g'</span><span class="p">)</span> <span class="o">=</span> <span class="n">split</span> <span class="n">g</span> <span class="c1">-- obtain a new random generator for the recursive call</span>
+   <span class="kr">in</span> <span class="n">shuffle'</span> <span class="n">allPieces</span> <span class="p">(</span><span class="n">length</span> <span class="n">allPieces</span><span class="p">)</span> <span class="n">g</span> <span class="o">&lt;&gt;</span> <span class="n">pieceStream</span> <span class="n">g'</span></code></pre></figure>
+
+<p>We will also need some notion of a falling piece; something combining colour and location:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We need a type to represent the actively falling piece that combines</span>
+<span class="c1">-- colour and coordinates.</span>
+<span class="c1">-- We'll store the piece type, its top-left coordinate, and the grid representing it</span>
+<span class="kr">data</span> <span class="kt">ActivePiece</span> <span class="o">=</span> <span class="kt">ActivePiece</span> <span class="kt">Piece</span> <span class="kt">V2</span> <span class="kt">Grid</span>
+
+<span class="c1">-- We also want some way of converting a piece into an active piece, which can</span>
+<span class="c1">-- move around and be placed on a grid.</span>
+<span class="n">initPiece</span> <span class="o">::</span> <span class="kt">Piece</span> <span class="o">-&gt;</span> <span class="kt">ActivePiece</span>
+<span class="n">initPiece</span> <span class="n">piece</span> <span class="o">=</span>
+  <span class="kt">ActivePiece</span>
+    <span class="n">piece</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">(</span><span class="kt">Grid</span> <span class="mi">4</span> <span class="mi">4</span>
+      <span class="p">(</span><span class="n">foldl'</span>
+        <span class="p">(</span><span class="nf">\</span><span class="n">g</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="kt">M</span><span class="o">.</span><span class="n">insert</span> <span class="n">c</span> <span class="p">(</span><span class="kt">Block</span> <span class="p">(</span><span class="n">pieceColour</span> <span class="n">piece</span><span class="p">))</span> <span class="n">g</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">unGrid</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="mi">4</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">pieceCoords</span> <span class="n">piece</span><span class="p">)))</span></code></pre></figure>
+
+<p>Now we need some functions for composing an <code class="highlighter-rouge">ActivePiece</code> and a <code class="highlighter-rouge">Grid</code>, both for inspection and later, for placing tetrominos on the playing field.</p>
+
+<p>Notice how we take our grid as an argument, and return ostensibly a new one; in some languages this would be expensive, but Haskell’s functional data structures make this a cheap operation, and let us pass around and create updated versions of state without needing to worry about mutation. We can just think in terms of pure transformations of our entities.<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup></p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We'll let ourselves use magic numbers in our bounds checker.</span>
+<span class="n">outOfBounds</span> <span class="o">::</span> <span class="kt">V2</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">outOfBounds</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">9</span> <span class="o">||</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="mi">23</span>
+
+<span class="c1">-- Adds a whole piece to the grid by offsetting it by its top-left coordinate</span>
+<span class="c1">-- and then merging it with the existing grid.</span>
+<span class="n">withPiece</span> <span class="o">::</span> <span class="kt">ActivePiece</span> <span class="o">-&gt;</span> <span class="kt">Grid</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">withPiece</span> <span class="p">(</span><span class="kt">ActivePiece</span> <span class="kr">_</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">(</span><span class="kt">Grid</span> <span class="kr">_</span> <span class="kr">_</span> <span class="n">pieceGrid</span><span class="p">))</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+  <span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="p">(</span><span class="n">combine</span> <span class="n">grid</span> <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span> <span class="p">(</span><span class="n">bimap</span> <span class="p">(</span><span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="p">(</span><span class="o">+</span> <span class="n">y</span><span class="p">))</span> <span class="n">pieceGrid</span><span class="p">)</span>
+  <span class="kr">where</span>
+    <span class="c1">-- We need a special way to combine maps that prefers blocks over emptiness</span>
+    <span class="c1">-- Otherwise when we overlay one with another, we'll also overwrite with</span>
+    <span class="c1">-- empty blocks</span>
+    <span class="n">combine</span> <span class="o">=</span> <span class="kt">M</span><span class="o">.</span><span class="n">unionWith</span> <span class="p">(</span><span class="nf">\</span><span class="n">a</span> <span class="n">b</span> <span class="o">-&gt;</span> <span class="kr">if</span> <span class="n">a</span> <span class="o">==</span> <span class="kt">Empty</span> <span class="kr">then</span> <span class="n">b</span> <span class="kr">else</span> <span class="n">a</span><span class="p">)</span>
+
+<span class="c1">-- Here the (&amp;) operator is just the reverse of ($) - everything to the</span>
+<span class="c1">-- right is applied to the left. Useful for builder functions like these.</span>
+<span class="n">mkPieceGrid</span> <span class="o">::</span> <span class="kt">Piece</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">mkPieceGrid</span> <span class="n">piece</span> <span class="o">=</span> <span class="n">mkEmptyGrid</span> <span class="mi">4</span> <span class="mi">4</span> <span class="o">&amp;</span> <span class="n">withPiece</span> <span class="p">(</span><span class="n">initPiece</span> <span class="n">piece</span><span class="p">)</span></code></pre></figure>
+
+<p>Whew, okay. Let’s give ourselves a nice way of inspecting these pieces - we’ll use this for things like next-piece preview. We can just pretty-print the containing grid; here we use point-free style to omit the argument. The <code class="highlighter-rouge">(.)</code> operator composes functions right-to-left, so since we want to first convert to a grid, and then pretty-print, we can write:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">Piece</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="o">=</span> <span class="n">pretty</span> <span class="o">.</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="n">mkPieceGrid</span></code></pre></figure>
+
+<p>Let’s see if we got that right by pretty-printing these pieces. First we’ll just print one:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">putStrLn</span> <span class="o">$</span> <span class="n">pretty</span> <span class="kt">PieceL</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────┐
+│    │
+│ █  │
+│ █  │
+│ ██ │
+└────┘
+</code></pre></div></div>
+
+<p>For fun, we’ll implement <code class="highlighter-rouge">Monoid</code> for <code class="highlighter-rouge">Grid</code>; this just means defining what it means for a <code class="highlighter-rouge">Grid</code> to be empty, and how to stitch two grids together. However, just like <code class="highlighter-rouge">Int</code> (which can be combined multiple ways - summing, multiplying), there’s no unique way to combine two grids - so let’s implement both horizontal and vertical stitching. This will require some <code class="highlighter-rouge">newtype</code> wrappers - for example, we can’t just do <code class="highlighter-rouge">2 &lt;&gt; 3 == ???</code> in Haskell, as it doesn’t know which <code class="highlighter-rouge">Monoid</code> to use for the concatenation; instead we either:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">Sum 2 &lt;&gt; Sum 3 == Sum 5</code></li>
+  <li><code class="highlighter-rouge">Product 2 &lt;&gt; Product 3 == Product 6</code></li>
+</ul>
+
+<p>There’s a practical use here; we’ll use these <code class="highlighter-rouge">Monoid</code> instances to compose UI elements like the grid, the next piece preview, and the display of the held piece. When we concatenate two grids along an edge, we’ll grow the shorter grid to match it. This is a design choice; if we didn’t do this, we’d still have a <a href="https://en.wikibooks.org/wiki/Haskell/Monoids#Monoid_laws">lawful <code class="highlighter-rouge">Monoid</code></a><sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup>, but it wouldn’t be as useful for us.</p>
+
+<p>A detail; a <code class="highlighter-rouge">Semigroup</code> is something that can be associatively combined - that’s where the <code class="highlighter-rouge">&lt;&gt;</code> comes from (shorthand for <code class="highlighter-rouge">mconcat</code>). A <code class="highlighter-rouge">Monoid</code> is a <code class="highlighter-rouge">Semigroup</code> with an identity element (e.g. the empty grid - something you can combine either on the left or right, and get the same thing back). So to make something a <code class="highlighter-rouge">Monoid</code>, we first make it a <code class="highlighter-rouge">Semigroup</code>, then simply define what an empty one looks like. It goes like this:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- This wrapper will represent the stitching of grids along the horizontal side.</span>
+<span class="c1">-- That is, grid B is placed underneath grid A</span>
+<span class="kr">newtype</span> <span class="kt">HGrid</span> <span class="o">=</span> <span class="kt">HGrid</span> <span class="p">{</span> <span class="n">unHGrid</span> <span class="o">::</span> <span class="kt">Grid</span> <span class="p">}</span>
+
+<span class="kr">instance</span> <span class="kt">Semigroup</span> <span class="kt">HGrid</span> <span class="kr">where</span>
+  <span class="c1">-- First we make a new empty grid with the correct dimensions</span>
+  <span class="c1">-- Then we stitch the first grid with the second shifted down by the</span>
+  <span class="c1">-- height of the first</span>
+  <span class="p">(</span><span class="kt">HGrid</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">widthA</span> <span class="n">heightA</span> <span class="n">gridA</span><span class="p">))</span> <span class="o">&lt;&gt;</span> <span class="p">(</span><span class="kt">HGrid</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">widthB</span> <span class="n">heightB</span> <span class="n">gridB</span><span class="p">))</span> <span class="o">=</span>
+    <span class="kr">let</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">mkEmptyGrid</span> <span class="p">(</span><span class="n">max</span> <span class="n">widthA</span> <span class="n">widthB</span><span class="p">)</span> <span class="p">(</span><span class="n">heightA</span> <span class="o">+</span> <span class="n">heightB</span><span class="p">)</span>
+        <span class="n">combinedGrid</span> <span class="o">=</span> <span class="n">grid</span>
+          <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">union</span> <span class="n">gridA</span>
+          <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">union</span> <span class="p">((</span><span class="n">second</span> <span class="p">(</span><span class="o">+</span> <span class="n">heightA</span><span class="p">)</span> <span class="p">`</span><span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span><span class="p">`</span> <span class="n">gridB</span><span class="p">))</span>
+     <span class="kr">in</span> <span class="kt">HGrid</span> <span class="o">$</span> <span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">combinedGrid</span>
+
+<span class="kr">instance</span> <span class="kt">Monoid</span> <span class="kt">HGrid</span> <span class="kr">where</span>
+  <span class="n">mempty</span> <span class="o">=</span> <span class="kt">HGrid</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="mi">0</span> <span class="mi">0</span>
+
+<span class="c1">-- Let's make sure we can add borders to our composable UI elements:</span>
+<span class="c1">-- Note that we could do this using Monofunctor and omap, but we'll be explicit.</span>
+<span class="kr">instance</span> <span class="kt">Borderable</span> <span class="kt">HGrid</span> <span class="kr">where</span>
+    <span class="n">withBorder</span> <span class="p">(</span><span class="kt">HGrid</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="kt">HGrid</span> <span class="o">$</span> <span class="n">withBorder</span> <span class="n">grid</span>
+
+<span class="c1">-- Let's also just make it easy to pretty-print our UI elements:</span>
+<span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">HGrid</span> <span class="kr">where</span>
+    <span class="n">pretty</span> <span class="p">(</span><span class="kt">HGrid</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">pretty</span> <span class="n">grid</span></code></pre></figure>
+
+<p>There’s quite a bit going on here; essentially, we construct a new empty grid of combined height, and wide enough to accomodate both grids. The <code class="highlighter-rouge">unHGrid</code> named member just lets us easily unwrap this type later on.</p>
+
+<p>Then we <code class="highlighter-rouge">M.union</code> with the original grid, copying over its elements.</p>
+
+<p>Finally, we copy over the second grid - but this time, we increase all y-coordinates by the height of the first grid by first creating a partial function that increments the second member of a tuple (<code class="highlighter-rouge">second (+heightA))</code>) and using an <code class="highlighter-rouge">M.mapKeys</code> to bump all y-coordinates of the second grid to the correct locations.</p>
+
+<p>Note that we use backticks to inline the function, since it’s kind of standing in place of the <code class="highlighter-rouge">fmap</code> operator <code class="highlighter-rouge">(&lt;$&gt;)</code><sup><a id="fnr.10" class="footref" href="#fn.10" role="doc-backlink">10</a></sup>.</p>
+
+<p>Let’s just test this quickly:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">putStrLn</span> <span class="o">.</span> <span class="n">pretty</span> <span class="o">.</span> <span class="n">mconcat</span>
+  <span class="o">$</span> <span class="kt">HGrid</span> <span class="o">.</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="n">mkPieceGrid</span> <span class="o">&lt;$&gt;</span> <span class="p">[</span><span class="kt">PieceL</span><span class="p">,</span> <span class="kt">PieceR</span><span class="p">,</span> <span class="kt">PieceS</span><span class="p">]</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────┐
+│    │
+│ █  │
+│ █  │
+│ ██ │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│ █  │
+│ █  │
+└────┘
+┌────┐
+│    │
+│ ██ │
+│██  │
+│    │
+└────┘
+</code></pre></div></div>
+
+<p>Now the same for the <code class="highlighter-rouge">VGrid</code>:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">newtype</span> <span class="kt">VGrid</span> <span class="o">=</span> <span class="kt">VGrid</span> <span class="p">{</span> <span class="n">unVGrid</span> <span class="o">::</span> <span class="kt">Grid</span> <span class="p">}</span>
+
+<span class="kr">instance</span> <span class="kt">Semigroup</span> <span class="kt">VGrid</span> <span class="kr">where</span>
+  <span class="p">(</span><span class="kt">VGrid</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">widthA</span> <span class="n">heightA</span> <span class="n">gridA</span><span class="p">))</span> <span class="o">&lt;&gt;</span> <span class="p">(</span><span class="kt">VGrid</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">widthB</span> <span class="n">heightB</span> <span class="n">gridB</span><span class="p">))</span> <span class="o">=</span>
+    <span class="kr">let</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">mkEmptyGrid</span> <span class="p">(</span><span class="n">widthA</span> <span class="o">+</span> <span class="n">widthB</span><span class="p">)</span> <span class="p">(</span><span class="n">max</span> <span class="n">heightA</span> <span class="n">heightB</span><span class="p">)</span>
+        <span class="n">combinedGrid</span> <span class="o">=</span> <span class="n">grid</span>
+          <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">union</span> <span class="n">gridA</span>
+          <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">union</span> <span class="p">((</span><span class="n">first</span> <span class="p">(</span><span class="o">+</span> <span class="n">widthA</span><span class="p">)</span> <span class="p">`</span><span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span><span class="p">`</span> <span class="n">gridB</span><span class="p">))</span>
+     <span class="kr">in</span> <span class="kt">VGrid</span> <span class="o">$</span> <span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">combinedGrid</span>
+
+<span class="kr">instance</span> <span class="kt">Monoid</span> <span class="kt">VGrid</span> <span class="kr">where</span>
+  <span class="n">mempty</span> <span class="o">=</span> <span class="kt">VGrid</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="mi">0</span> <span class="mi">0</span>
+
+<span class="kr">instance</span> <span class="kt">Borderable</span> <span class="kt">VGrid</span> <span class="kr">where</span>
+    <span class="n">withBorder</span> <span class="p">(</span><span class="kt">VGrid</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="kt">VGrid</span> <span class="o">$</span> <span class="n">withBorder</span> <span class="n">grid</span>
+
+<span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">VGrid</span> <span class="kr">where</span>
+    <span class="n">pretty</span> <span class="p">(</span><span class="kt">VGrid</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">pretty</span> <span class="n">grid</span></code></pre></figure>
+
+<p>Again, always worth testing:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">putStrLn</span> <span class="o">.</span> <span class="n">pretty</span> <span class="o">.</span> <span class="n">mconcat</span>
+  <span class="o">$</span> <span class="kt">VGrid</span> <span class="o">.</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="n">mkPieceGrid</span> <span class="o">&lt;$&gt;</span> <span class="p">[</span><span class="kt">PieceL</span><span class="p">,</span> <span class="kt">PieceR</span><span class="p">,</span> <span class="kt">PieceS</span><span class="p">]</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────┐┌────┐┌────┐
+│    ││    ││    │
+│ █  ││ ██ ││ ██ │
+│ █  ││ █  ││██  │
+│ ██ ││ █  ││    │
+└────┘└────┘└────┘
+</code></pre></div></div>
+
+<p>Now we can generate some batches of seven pieces, and stitch them together like so:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">do</span>
+  <span class="c1">-- Get the system source of randomness</span>
+  <span class="n">g</span> <span class="o">&lt;-</span> <span class="n">newStdGen</span>
+  <span class="c1">-- Create a stream of pieces wrapped in our VGrid Monoid.</span>
+  <span class="kr">let</span> <span class="n">vStream</span> <span class="o">=</span> <span class="kt">VGrid</span> <span class="o">.</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="n">mkPieceGrid</span> <span class="o">&lt;$&gt;</span> <span class="n">pieceStream</span> <span class="n">g</span>
+  <span class="c1">-- We create an infinite stream of batches, each stitched together with a border.</span>
+  <span class="kr">let</span> <span class="n">rows</span> <span class="n">pieces</span> <span class="o">=</span> <span class="p">(</span><span class="n">mconcat</span> <span class="o">$</span> <span class="n">take</span> <span class="mi">7</span> <span class="n">pieces</span><span class="p">)</span> <span class="o">:</span> <span class="n">rows</span> <span class="p">(</span><span class="n">drop</span> <span class="mi">7</span> <span class="n">pieces</span><span class="p">)</span>
+  <span class="c1">-- Now we can take 5 of these rows, unwrap them, rewrap as VGrid,</span>
+  <span class="c1">-- and stitch them again.</span>
+  <span class="kr">let</span> <span class="n">grid</span> <span class="o">=</span> <span class="n">unHGrid</span> <span class="o">$</span> <span class="n">mconcat</span> <span class="p">(</span><span class="kt">HGrid</span> <span class="o">.</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="n">unVGrid</span> <span class="o">&lt;$&gt;</span> <span class="n">take</span> <span class="mi">5</span> <span class="p">(</span><span class="n">rows</span> <span class="n">vStream</span><span class="p">))</span>
+  <span class="c1">-- Finally we can print the underlying, unwrapped grid.</span>
+  <span class="n">putStrLn</span> <span class="p">(</span><span class="n">pretty</span> <span class="n">grid</span><span class="p">)</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ █  ││██  ││ ██ ││ █  ││ ██ ││    ││ ██ ││
+││███ ││ ██ ││██  ││ █  ││ █  ││    ││ ██ ││
+││    ││    ││    ││ ██ ││ █  ││████││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ █  ││ ██ ││    ││ █  ││ ██ ││██  ││ ██ ││
+││ █  ││ █  ││    ││███ ││ ██ ││ ██ ││██  ││
+││ ██ ││ █  ││████││    ││    ││    ││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ ██ ││ ██ ││ ██ ││ █  ││██  ││    ││ █  ││
+││ █  ││ ██ ││██  ││ █  ││ ██ ││    ││███ ││
+││ █  ││    ││    ││ ██ ││    ││████││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││    ││ █  ││ ██ ││ ██ ││ ██ ││██  ││ █  ││
+││    ││ █  ││ ██ ││ █  ││██  ││ ██ ││███ ││
+││████││ ██ ││    ││ █  ││    ││    ││    ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││    ││    ││    ││    ││    ││    ││    ││
+││ █  ││██  ││ ██ ││ ██ ││    ││ ██ ││ █  ││
+││███ ││ ██ ││██  ││ █  ││    ││ ██ ││ █  ││
+││    ││    ││    ││ █  ││████││    ││ ██ ││
+│└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└──────────────────────────────────────────┘
+</code></pre></div></div>
+
+<p>Looks good to me - each batch of seven represents all pieces, and each is separately shuffled. But where’s our colour?! In a terminal, those ANSI control codes would show up just fine.</p>
+
+<p>We introduced a number of new concepts here; we secretly entered a monad (<code class="highlighter-rouge">IO</code>, specifically), enabling the <code class="highlighter-rouge">do</code>-notation you see above, and giving us the ability to enact the useful side effect of being able to print to the screen. In fact, we’ve been doing this all along with every call to <code class="highlighter-rouge">putStrLn</code>. We’ll get into <code class="highlighter-rouge">IO</code> more later when we start dealing with user input and multiprocessing.</p>
+
+<p>We also introduced <code class="highlighter-rouge">uncurry</code> - we wanted to pass the tuples of form <code class="highlighter-rouge">f (1, batch1)</code> we’d created via <code class="highlighter-rouge">zip</code> into a function that wanted arguments <code class="highlighter-rouge">f 1 batch1</code> - <code class="highlighter-rouge">uncurry</code> will convert a function that wants two arguments into a function that wants a tuple of those two arguments<sup><a id="fnr.11" class="footref" href="#fn.11" role="doc-backlink">11</a></sup>.</p>
+
+<p><a id="org4ce74a4"></a></p>
+
+<h1 id="rotations">Rotations</h1>
+
+<p>While we’re here, let’s implement piece rotation. We’d like to handle a single coordinate at a time, which means we’ll also need to pass in information about the bounding box within which we’re rotating.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">data</span> <span class="kt">Rotation</span> <span class="o">=</span> <span class="kt">CW</span> <span class="o">|</span> <span class="kt">CCW</span>
+
+<span class="c1">-- Here we apply e.g. a (-y, x) rotation but offset back</span>
+<span class="c1">-- Here bounds will be supplied based on the frame of reference of the rotation.</span>
+<span class="c1">-- This will usually be the piece's bounding box.</span>
+<span class="n">rotate</span> <span class="o">::</span> <span class="kt">Rotation</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">V2</span> <span class="o">-&gt;</span> <span class="kt">V2</span>
+<span class="n">rotate</span> <span class="kt">CW</span> <span class="n">width</span> <span class="n">height</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">y</span> <span class="o">+</span> <span class="n">width</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+<span class="n">rotate</span> <span class="kt">CCW</span> <span class="n">width</span> <span class="n">height</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="o">-</span><span class="n">x</span> <span class="o">+</span> <span class="n">height</span><span class="p">)</span>
+
+<span class="c1">-- Gets the min and max x and and y coordinates in one linear pass</span>
+<span class="c1">-- over the list of coordinates.</span>
+<span class="n">minXMaxXMinYMaxY</span> <span class="o">::</span> <span class="p">[</span><span class="kt">V2</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">)</span>
+<span class="n">minXMaxXMinYMaxY</span> <span class="n">cs</span> <span class="o">=</span>
+  <span class="n">foldl'</span>
+    <span class="p">(</span><span class="nf">\</span><span class="p">(</span><span class="n">minX</span><span class="p">,</span> <span class="n">maxX</span><span class="p">,</span> <span class="n">minY</span><span class="p">,</span> <span class="n">maxY</span><span class="p">)</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">-&gt;</span>
+        <span class="p">(</span><span class="n">min</span> <span class="n">minX</span> <span class="n">x</span><span class="p">,</span> <span class="n">max</span> <span class="n">maxX</span> <span class="n">x</span><span class="p">,</span> <span class="n">min</span> <span class="n">minY</span> <span class="n">y</span><span class="p">,</span> <span class="n">max</span> <span class="n">maxY</span> <span class="n">y</span><span class="p">))</span>
+    <span class="p">(</span><span class="n">fst</span> <span class="n">c0</span><span class="p">,</span> <span class="n">fst</span> <span class="n">c0</span><span class="p">,</span> <span class="n">snd</span> <span class="n">c0</span><span class="p">,</span> <span class="n">snd</span> <span class="n">c0</span><span class="p">)</span>
+    <span class="n">cs</span>
+  <span class="kr">where</span>
+    <span class="n">c0</span> <span class="o">=</span> <span class="n">head</span> <span class="n">cs</span>
+
+<span class="c1">-- This will let us rotate an entire grid by supplying the</span>
+<span class="c1">-- appropriate rotation function. We convert the grid to a list briefly,</span>
+<span class="c1">-- then convert it back.</span>
+<span class="c1">-- This is inefficient in that it scans for the min and max each time,</span>
+<span class="c1">-- but at least does so using a single fold.</span>
+<span class="n">rotateGrid</span> <span class="o">::</span> <span class="kt">Rotation</span> <span class="o">-&gt;</span> <span class="kt">Grid</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">rotateGrid</span> <span class="n">rotation</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">k0</span> <span class="o">=</span> <span class="n">head</span> <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">keys</span> <span class="n">grid</span>
+      <span class="p">(</span><span class="n">minX</span><span class="p">,</span> <span class="n">maxX</span><span class="p">,</span> <span class="n">minY</span><span class="p">,</span> <span class="n">maxY</span><span class="p">)</span> <span class="o">=</span> <span class="n">minXMaxXMinYMaxY</span> <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">keys</span> <span class="n">grid</span>
+      <span class="n">rotateFn</span> <span class="o">=</span> <span class="n">rotate</span> <span class="n">rotation</span> <span class="p">(</span><span class="n">maxX</span> <span class="o">-</span> <span class="n">minX</span><span class="p">)</span> <span class="p">(</span><span class="n">maxY</span> <span class="o">-</span> <span class="n">minY</span><span class="p">)</span>
+   <span class="kr">in</span> <span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="p">(</span><span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span> <span class="n">rotateFn</span> <span class="n">grid</span><span class="p">)</span></code></pre></figure>
+
+<p>Now we can rotate coordinates, but we want to rotate pieces themselves.</p>
+
+<p>Let’s take a look at these rotations with a helper:<sup><a id="fnr.12" class="footref" href="#fn.12" role="doc-backlink">12</a></sup></p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">showRotations</span> <span class="n">rotation</span> <span class="o">=</span>
+    <span class="n">forM_</span> <span class="n">allPieces</span>
+    <span class="o">$</span> <span class="p">(</span><span class="nf">\</span><span class="n">piece</span> <span class="o">-&gt;</span>
+          <span class="n">piece</span>
+            <span class="o">&amp;</span> <span class="n">mkPieceGrid</span>
+            <span class="o">&amp;</span> <span class="n">iterate</span> <span class="p">(</span><span class="n">rotateGrid</span> <span class="n">rotation</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="n">take</span> <span class="mi">4</span>
+            <span class="o">&amp;</span> <span class="n">fmap</span> <span class="p">(</span><span class="kt">VGrid</span> <span class="o">.</span> <span class="n">withBorder</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="n">mconcat</span>
+            <span class="o">&amp;</span> <span class="n">unVGrid</span>
+            <span class="o">&amp;</span> <span class="n">pretty</span>
+            <span class="o">&amp;</span> <span class="n">putStrLn</span><span class="p">)</span></code></pre></figure>
+
+<p>First clockwise:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">showRotations</span> <span class="kt">CW</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────┐┌────┐┌────┐┌────┐
+│    ││    ││ ██ ││    │
+│ █  ││███ ││  █ ││   █│
+│ █  ││█   ││  █ ││ ███│
+│ ██ ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││  █ ││    │
+│ ██ ││███ ││  █ ││ █  │
+│ █  ││  █ ││ ██ ││ ███│
+│ █  ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ ██ ││ ██ ││  ██││ █  │
+│██  ││  █ ││ ██ ││ ██ │
+│    ││    ││    ││  █ │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││  █ ││    ││    │
+│██  ││ ██ ││ ██ ││  █ │
+│ ██ ││ █  ││  ██││ ██ │
+│    ││    ││    ││ █  │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││ █  ││    ││    │
+│ █  ││ ██ ││ ███││  █ │
+│███ ││ █  ││  █ ││ ██ │
+│    ││    ││    ││  █ │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││█   ││████││   █│
+│    ││█   ││    ││   █│
+│    ││█   ││    ││   █│
+│████││█   ││    ││   █│
+└────┘└────┘└────┘└────┘
+</code></pre></div></div>
+
+<p>And counterclockwise:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">showRotations</span> <span class="kt">CCW</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────┐┌────┐┌────┐┌────┐
+│    ││    ││ ██ ││    │
+│ █  ││   █││  █ ││███ │
+│ █  ││ ███││  █ ││█   │
+│ ██ ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││  █ ││    │
+│ ██ ││ █  ││  █ ││███ │
+│ █  ││ ███││ ██ ││  █ │
+│ █  ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││    │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│ ██ ││ ██ ││ ██ ││ ██ │
+│    ││    ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││ █  │
+│ ██ ││ █  ││  ██││ ██ │
+│██  ││ ██ ││ ██ ││  █ │
+│    ││  █ ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││  █ │
+│██  ││  █ ││ ██ ││ ██ │
+│ ██ ││ ██ ││  ██││ █  │
+│    ││ █  ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││    ││    ││ █  │
+│ █  ││  █ ││ ███││ ██ │
+│███ ││ ██ ││  █ ││ █  │
+│    ││  █ ││    ││    │
+└────┘└────┘└────┘└────┘
+┌────┐┌────┐┌────┐┌────┐
+│    ││   █││████││█   │
+│    ││   █││    ││█   │
+│    ││   █││    ││█   │
+│████││   █││    ││█   │
+└────┘└────┘└────┘└────┘
+</code></pre></div></div>
+
+<p>I’m almost sure it’s not <strong>Regulation Tetris Rotation Rules</strong>, but it’ll do.</p>
+
+<p><a id="org7fdd791"></a></p>
+
+<h1 id="placing-pieces-on-the-grid">Placing Pieces on the Grid</h1>
+
+<p>Let’s start by placing a piece in that buffer zone at the top of the grid (which we’ll eventually hide).</p>
+
+<p>We want it to be anchored to the bottom, so that it immediately starts to become visible as it falls, so we’ll translate it based on its lowest y-coordinate.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Ensure the piece is centred and anchored to the top of the viewport.</span>
+<span class="n">pieceAtTop</span> <span class="o">::</span> <span class="kt">Piece</span> <span class="o">-&gt;</span> <span class="kt">ActivePiece</span>
+<span class="n">pieceAtTop</span> <span class="n">piece</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="kr">_</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="n">initPiece</span> <span class="n">piece</span>
+   <span class="kr">in</span> <span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="n">grid</span></code></pre></figure>
+
+<p>And let’s test this, as ever:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">putStrLn</span> <span class="o">.</span> <span class="n">pretty</span> <span class="o">.</span> <span class="n">withBorder</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="mi">10</span> <span class="mi">24</span> <span class="o">&amp;</span> <span class="n">withPiece</span> <span class="p">(</span><span class="n">pieceAtTop</span> <span class="kt">PieceS</span><span class="p">)</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──────────┐
+│          │
+│    ██    │
+│   ██     │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+│          │
+└──────────┘
+</code></pre></div></div>
+
+<p>Looks solid - one step of gravity after this, and the piece will become visible.</p>
+
+<p><a id="orgcc0a410"></a></p>
+
+<h1 id="representing-the-game-state">Representing the Game State</h1>
+
+<p>Now we’ll create the type we’ll be using to store all state about the ongoing game. Note that we still keep this outside of <code class="highlighter-rouge">IO</code>, requiring that a source of randomness is piped in to create this state.</p>
+
+<p>We’re going to implement piece holding - since there might not be a held piece, we’ll represent this using <code class="highlighter-rouge">Maybe</code>. This is a Haskell staple, defined as <code class="highlighter-rouge">data Maybe a = Just a | Nothing</code>. It’s like Rust’s <code class="highlighter-rouge">Option&lt;a&gt;</code> and there are analogues in most languages. It forces you to consider both cases when you may or may not have a value.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">data</span> <span class="kt">Game</span> <span class="o">=</span> <span class="kt">Game</span> <span class="p">{</span>
+  <span class="n">grid</span> <span class="o">::</span> <span class="kt">Grid</span><span class="p">,</span>
+  <span class="n">currentPiece</span> <span class="o">::</span> <span class="kt">ActivePiece</span><span class="p">,</span>
+  <span class="n">heldPiece</span> <span class="o">::</span> <span class="kt">Maybe</span> <span class="kt">Piece</span><span class="p">,</span>
+  <span class="n">pieces</span> <span class="o">::</span> <span class="p">[</span><span class="kt">Piece</span><span class="p">],</span>
+  <span class="n">score</span> <span class="o">::</span> <span class="kt">Int</span><span class="p">,</span>
+  <span class="n">heldThisTurn</span> <span class="o">::</span> <span class="kt">Bool</span><span class="p">,</span>
+  <span class="n">gameOver</span> <span class="o">::</span> <span class="kt">Bool</span>
+<span class="p">}</span>
+
+<span class="n">mkGame</span> <span class="o">::</span> <span class="kt">RandomGen</span> <span class="n">g</span> <span class="o">=&gt;</span> <span class="n">g</span> <span class="o">-&gt;</span> <span class="kt">Game</span>
+<span class="n">mkGame</span> <span class="n">g</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">firstPiece</span><span class="o">:</span><span class="n">rest</span><span class="p">)</span> <span class="o">=</span> <span class="n">pieceStream</span> <span class="n">g</span>
+   <span class="kr">in</span> <span class="kt">Game</span> <span class="p">{</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">mkEmptyGrid</span> <span class="mi">10</span> <span class="mi">24</span><span class="p">,</span>
+        <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">pieceAtTop</span> <span class="n">firstPiece</span><span class="p">,</span>
+        <span class="n">pieces</span> <span class="o">=</span> <span class="n">rest</span><span class="p">,</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">heldPiece</span> <span class="o">=</span> <span class="kt">Nothing</span><span class="p">,</span>
+        <span class="n">heldThisTurn</span> <span class="o">=</span> <span class="kt">False</span><span class="p">,</span>
+        <span class="n">gameOver</span> <span class="o">=</span> <span class="kt">False</span>
+      <span class="p">}</span></code></pre></figure>
+
+<p>As we pull pieces from the infinite lazy list <code class="highlighter-rouge">pieces</code>, we’ll create new <code class="highlighter-rouge">Game</code> objects that contain the remainder of the lazy list.</p>
+
+<p>Note each field of this record type (essentially a Haskell product type with named members) creates a function of the same name, which you can call on inhabitants of this datatype to retrieve the field value. So <code class="highlighter-rouge">score game</code> will return the score of a game, and so on. This can cause all kinds of namespace clashes and there are a lot of ways around it, but for now we’re just going to use these default record accessors.</p>
+
+<p>Alright - now we’re in a position to render our rudimentary UI by stitching these things together. On the left we’ll have our grid, and on the right we’ll have our next piece on the top, and our held piece on the bottom:</p>
+
+<p>We’ll need a way of adding string labels to our UI:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Turn a string into a grid for composability</span>
+<span class="c1">-- Only supports single lines, but will be fine for our simple UI.</span>
+<span class="n">sToG</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">sToG</span> <span class="n">s</span> <span class="o">=</span>
+  <span class="kt">Grid</span> <span class="p">(</span><span class="n">length</span> <span class="n">s</span><span class="p">)</span> <span class="mi">1</span>
+    <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">fromList</span> <span class="p">[((</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="kt">BlockChar</span> <span class="kt">White</span> <span class="n">c</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">zip</span> <span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="p">]</span> <span class="n">s</span><span class="p">]</span></code></pre></figure>
+
+<p>And a way of hiding the buffer zone:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">hideBuffer</span> <span class="o">::</span> <span class="kt">Grid</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">hideBuffer</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Grid</span> <span class="n">width</span> <span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span> <span class="n">grid'</span>
+  <span class="kr">where</span>
+    <span class="n">grid'</span> <span class="o">=</span>
+      <span class="n">grid</span>
+        <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span> <span class="p">(</span><span class="n">second</span> <span class="p">(</span><span class="n">subtract</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">filterWithKey</span> <span class="p">(</span><span class="nf">\</span><span class="p">(</span><span class="kr">_</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="kr">_</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span></code></pre></figure>
+
+<p>Now finally we can put it all together:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Here we'll stitch it all together, dropping the four lines, and popping the</span>
+<span class="c1">-- score at the top with the held piece and next piece on the right.</span>
+<span class="n">gameGrid</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">gameGrid</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="c1">-- Let's add a label at the top to display the score.</span>
+      <span class="n">scoreGrid</span> <span class="o">=</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="kt">HGrid</span> <span class="o">.</span> <span class="n">sToG</span> <span class="o">$</span> <span class="s">"Score: "</span> <span class="o">&lt;&gt;</span> <span class="n">show</span> <span class="p">(</span><span class="n">score</span> <span class="n">game</span><span class="p">)</span>
+      <span class="c1">-- Now the left hand side; the grid with the current piece,</span>
+      <span class="c1">-- but the top four lines hidden.</span>
+      <span class="n">lhs</span> <span class="o">=</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="kt">VGrid</span> <span class="o">.</span> <span class="n">hideBuffer</span> <span class="o">$</span> <span class="n">grid</span> <span class="n">game</span> <span class="o">&amp;</span> <span class="n">withPiece</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span>
+      <span class="c1">-- Create a preview with a label above it showing the next piece</span>
+      <span class="n">nextPiece</span> <span class="o">=</span> <span class="kt">HGrid</span> <span class="p">(</span><span class="n">sToG</span> <span class="s">"Next:"</span><span class="p">)</span> <span class="o">&lt;&gt;</span> <span class="kt">HGrid</span> <span class="p">(</span><span class="n">mkPieceGrid</span> <span class="p">(</span><span class="n">head</span> <span class="p">(</span><span class="n">pieces</span> <span class="n">game</span><span class="p">)))</span>
+      <span class="c1">-- Now we show the held piece; it might not exist, so we need to handle that case.</span>
+      <span class="n">held</span> <span class="o">=</span> <span class="kt">HGrid</span> <span class="p">(</span><span class="n">sToG</span> <span class="s">"Held:"</span><span class="p">)</span> <span class="o">&lt;&gt;</span>
+             <span class="p">(</span><span class="kt">HGrid</span> <span class="o">$</span> <span class="kr">case</span> <span class="n">heldPiece</span> <span class="n">game</span> <span class="kr">of</span>
+                        <span class="kt">Nothing</span> <span class="o">-&gt;</span> <span class="n">mkEmptyGrid</span> <span class="mi">4</span> <span class="mi">4</span>
+                        <span class="kt">Just</span> <span class="n">piece</span> <span class="o">-&gt;</span> <span class="n">mkPieceGrid</span> <span class="n">piece</span><span class="p">)</span>
+      <span class="c1">-- To construct the RHS we can just add borders and mconcat them with &lt;&gt;</span>
+      <span class="n">rhs</span> <span class="o">=</span> <span class="n">withBorder</span> <span class="n">nextPiece</span> <span class="o">&lt;&gt;</span> <span class="n">withBorder</span> <span class="n">held</span>
+      <span class="c1">-- It's a little clumsy to stitch an HGrid and VGrid, but it works.</span>
+      <span class="n">playArea</span> <span class="o">=</span> <span class="kt">HGrid</span> <span class="o">.</span> <span class="n">unVGrid</span> <span class="o">$</span> <span class="n">lhs</span> <span class="o">&lt;&gt;</span> <span class="kt">VGrid</span> <span class="p">(</span><span class="n">unHGrid</span> <span class="n">rhs</span><span class="p">)</span>
+      <span class="c1">-- Finally, we can stitch it all together</span>
+      <span class="n">gameInterface</span> <span class="o">=</span> <span class="n">scoreGrid</span> <span class="o">&lt;&gt;</span> <span class="n">playArea</span>
+   <span class="kr">in</span> <span class="n">unHGrid</span> <span class="n">gameInterface</span>
+
+<span class="c1">-- Finally we just pretty-print the game grid itself</span>
+<span class="kr">instance</span> <span class="kt">Pretty</span> <span class="kt">Game</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="o">=</span> <span class="n">pretty</span> <span class="o">.</span> <span class="n">gameGrid</span></code></pre></figure>
+
+<p>We can preview this as so:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">do</span>
+  <span class="c1">-- g &lt;- newStdGen -- This would be system-random; for now we'll set a seed</span>
+  <span class="kr">let</span> <span class="n">g</span> <span class="o">=</span> <span class="n">mkStdGen</span> <span class="mi">42</span> <span class="c1">-- This sets our random seed.</span>
+  <span class="c1">-- Create a new Game with one of its records set so we have a held piece to show</span>
+  <span class="kr">let</span> <span class="n">game</span> <span class="o">=</span> <span class="p">(</span><span class="n">mkGame</span> <span class="n">g</span><span class="p">)</span> <span class="p">{</span><span class="n">heldPiece</span> <span class="o">=</span> <span class="kt">Just</span> <span class="kt">PieceS</span><span class="p">}</span>
+  <span class="n">putStrLn</span> <span class="p">(</span><span class="n">pretty</span> <span class="n">game</span><span class="p">)</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌────────┐         
+│Score: 0│         
+└────────┘         
+┌──────────┐┌─────┐
+│          ││Next:│
+│          ││     │
+│          ││ ██  │
+│          ││ █   │
+│          ││ █   │
+│          │└─────┘
+│          │┌─────┐
+│          ││Held:│
+│          ││     │
+│          ││ ██  │
+│          ││██   │
+│          ││     │
+│          │└─────┘
+│          │       
+│          │       
+│          │       
+│          │       
+│          │       
+│          │       
+│          │       
+└──────────┘
+</code></pre></div></div>
+
+<p>This is looking a bit like Tetris! We can no longer see the buffer zone at the top with the falling piece, but we can see the next piece displayed on the right hand side, and below that we’ve artificially inserted a held square piece, and as we can see it’s all composing nicely.</p>
+
+<p><a id="org5c6e469"></a></p>
+
+<h1 id="the-introduction-of-time-and-logic">The Introduction of Time and Logic</h1>
+
+<p>Let’s ignore user input for now and focus solely on advancing time.</p>
+
+<p>To make this work, we’ll need a way to:</p>
+
+<ul>
+  <li>Advance the current piece downwards</li>
+  <li>Fix pieces in place when they hit the bottom</li>
+  <li>Pulls a new piece from the infinite stream and places it at the top</li>
+</ul>
+
+<p>To do all this in a carefree way, we’d like a way of checking if a game is in a valid state (at first just to stop pieces from falling through the floor).</p>
+
+<p>A valid <code class="highlighter-rouge">Game</code> is one where there are no out of bound blocks, we haven’t spilled over the top, and the current <code class="highlighter-rouge">ActivePiece</code> is not overlapping with any of the existing blocks. By induction, if we start with a valid <code class="highlighter-rouge">Game</code>, and only place pieces in valid places, we only need to check the currently active piece:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">isValid</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">isValid</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="c1">-- We unwrap here to get to activeCoords; libraries like lens make this easier.</span>
+      <span class="p">(</span><span class="kt">ActivePiece</span> <span class="kr">_</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">pw</span> <span class="n">ph</span> <span class="n">pieceGrid</span><span class="p">))</span> <span class="o">=</span> <span class="n">currentPiece</span> <span class="n">game</span>
+      <span class="c1">-- We need to offsetby the current position of the piece</span>
+      <span class="c1">-- Intentionally not using bimap here to shake things up.</span>
+      <span class="n">pieceGrid'</span> <span class="o">=</span> <span class="kt">Grid</span> <span class="n">pw</span> <span class="n">ph</span> <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span> <span class="p">(</span><span class="nf">\</span><span class="p">(</span><span class="n">x'</span><span class="p">,</span> <span class="n">y'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">x'</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">y'</span> <span class="o">+</span> <span class="n">y</span><span class="p">))</span> <span class="n">pieceGrid</span>
+      <span class="c1">-- We use a comprehension to create a Set of any non-empty blocks</span>
+      <span class="n">nonEmpty</span> <span class="p">(</span><span class="kt">Grid</span> <span class="kr">_</span> <span class="kr">_</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+        <span class="kt">S</span><span class="o">.</span><span class="n">fromList</span> <span class="p">[</span><span class="n">c</span> <span class="o">|</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="kt">M</span><span class="o">.</span><span class="n">toList</span> <span class="n">grid</span><span class="p">,</span> <span class="n">block</span> <span class="o">/=</span> <span class="kt">Empty</span><span class="p">]</span>
+      <span class="c1">-- Finally, we ensure there is no overlap and no OOB block.</span>
+      <span class="n">activeCoords</span> <span class="o">=</span> <span class="n">nonEmpty</span> <span class="n">pieceGrid'</span>
+      <span class="n">fullCoords</span> <span class="o">=</span> <span class="n">nonEmpty</span> <span class="p">(</span><span class="n">grid</span> <span class="n">game</span><span class="p">)</span>
+   <span class="kr">in</span> <span class="p">(</span><span class="kt">S</span><span class="o">.</span><span class="n">null</span> <span class="p">(</span><span class="kt">S</span><span class="o">.</span><span class="n">intersection</span> <span class="n">activeCoords</span> <span class="n">fullCoords</span><span class="p">))</span>
+        <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">not</span> <span class="p">(</span><span class="n">any</span> <span class="n">outOfBounds</span> <span class="n">activeCoords</span><span class="p">))</span>
+        <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">not</span> <span class="p">(</span><span class="n">any</span> <span class="p">((</span><span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">.</span> <span class="n">snd</span><span class="p">)</span> <span class="n">fullCoords</span><span class="p">))</span></code></pre></figure>
+
+<p>Now we’re able to use this for a simple implementation of gravity:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We need a way to translate a piece</span>
+<span class="n">movePiece</span> <span class="o">::</span> <span class="kt">V2</span> <span class="o">-&gt;</span> <span class="kt">ActivePiece</span> <span class="o">-&gt;</span> <span class="kt">ActivePiece</span>
+<span class="n">movePiece</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">(</span><span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="p">(</span><span class="n">x'</span><span class="p">,</span> <span class="n">y'</span><span class="p">)</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+  <span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="p">(</span><span class="n">x'</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">y'</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="n">grid</span>
+
+<span class="c1">-- We can now also reuse our grid rotation to enable us to rotate pieces.</span>
+<span class="n">rotatePiece</span> <span class="o">::</span> <span class="kt">Rotation</span> <span class="o">-&gt;</span> <span class="kt">ActivePiece</span> <span class="o">-&gt;</span> <span class="kt">ActivePiece</span>
+<span class="n">rotatePiece</span> <span class="n">rotation</span> <span class="p">(</span><span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="n">xy</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+  <span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="n">xy</span> <span class="p">(</span><span class="n">rotateGrid</span> <span class="n">rotation</span> <span class="n">grid</span><span class="p">)</span>
+
+<span class="c1">-- Here we use record update syntax to edit just one field.</span>
+<span class="c1">-- If applying gravity results in an invalid game, we can represent this by Nothing.</span>
+<span class="c1">-- Here we use guard syntax to handle multiple boolean cases.</span>
+<span class="n">applyGravity</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span>
+<span class="n">applyGravity</span> <span class="n">game</span>
+  <span class="o">|</span> <span class="n">isValid</span> <span class="n">game'</span> <span class="o">=</span> <span class="kt">Just</span> <span class="n">game'</span>
+  <span class="o">|</span> <span class="n">otherwise</span> <span class="o">=</span> <span class="kt">Nothing</span>
+  <span class="kr">where</span>
+    <span class="n">game'</span> <span class="o">=</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">movePiece</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span></code></pre></figure>
+
+<p>So let’s test this out a few times - for now we’ll represent the passage of time horizontally, so we’ll make a few game states, pull out the grids, and stitch them side by side. We’d like to keep applying <code class="highlighter-rouge">applyGravity</code> over and over - but each time we take a <code class="highlighter-rouge">Game</code> to a <code class="highlighter-rouge">Maybe Game</code>. We want some way of chaining these iterations together - and that’s where the fact that <code class="highlighter-rouge">Maybe</code> belongs to the <code class="highlighter-rouge">Monad</code> typeclass comes in.</p>
+
+<p>This is <strong>not</strong> a <code class="highlighter-rouge">Monad</code> tutorial but it’s useful to know that this is what’s powering the composition<sup><a id="fnr.13" class="footref" href="#fn.13" role="doc-backlink">13</a></sup> of instances of this <code class="highlighter-rouge">applyGravity</code> function together in a type-consistent way.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Now that we're dealing with Maybe, let's implement a hacky way</span>
+<span class="c1">-- to debug print both cases.</span>
+<span class="kr">instance</span> <span class="kt">Pretty</span> <span class="n">a</span> <span class="o">=&gt;</span> <span class="kt">Pretty</span> <span class="p">(</span><span class="kt">Maybe</span> <span class="n">a</span><span class="p">)</span> <span class="kr">where</span>
+  <span class="n">pretty</span> <span class="kt">Nothing</span> <span class="o">=</span> <span class="s">"Nothing Pretty"</span>
+  <span class="n">pretty</span> <span class="p">(</span><span class="kt">Just</span> <span class="n">a</span><span class="p">)</span> <span class="o">=</span> <span class="n">pretty</span> <span class="n">a</span>
+
+<span class="c1">-- This takes some thinking and is left as an exercise for the reader.</span>
+<span class="c1">-- We need to map some functions two Functors deep - the outer layer is the List</span>
+<span class="c1">-- and the inner layer is the Maybe.</span>
+<span class="c1">-- Having an operator for this is useful.</span>
+<span class="kr">infixl</span> <span class="mi">4</span> <span class="o">&lt;$$&gt;</span>
+<span class="p">(</span><span class="o">&lt;$$&gt;</span><span class="p">)</span> <span class="o">::</span> <span class="p">(</span><span class="kt">Functor</span> <span class="n">f</span><span class="p">,</span> <span class="kt">Functor</span> <span class="n">g</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="n">a</span> <span class="o">-&gt;</span> <span class="n">b</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">g</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">f</span> <span class="p">(</span><span class="n">g</span> <span class="n">b</span><span class="p">)</span>
+<span class="p">(</span><span class="o">&lt;$$&gt;</span><span class="p">)</span> <span class="o">=</span> <span class="n">fmap</span> <span class="o">.</span> <span class="n">fmap</span>
+
+<span class="c1">-- There are monadic library functions that'll do this generically, but let's manually</span>
+<span class="c1">-- implement the composition of our Maybes. This will iterate until it hits a Nothing,</span>
+<span class="c1">-- and then stop.</span>
+<span class="n">iterateMaybes</span> <span class="o">::</span> <span class="p">(</span><span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Maybe</span> <span class="n">a</span><span class="p">]</span>
+<span class="n">iterateMaybes</span> <span class="n">f</span> <span class="n">a</span> <span class="o">=</span>
+  <span class="kr">case</span> <span class="n">f</span> <span class="n">a</span> <span class="kr">of</span>
+    <span class="kt">Just</span> <span class="n">x</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="n">x</span> <span class="o">:</span> <span class="n">iterateMaybes</span> <span class="n">f</span> <span class="n">x</span>
+    <span class="kt">Nothing</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Nothing</span><span class="p">]</span>
+
+<span class="n">debugIterateMaybe</span> <span class="o">::</span> <span class="p">(</span><span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">String</span>
+<span class="n">debugIterateMaybe</span> <span class="n">f</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">games</span> <span class="o">=</span> <span class="n">iterateMaybes</span> <span class="n">f</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span>
+   <span class="kr">in</span> <span class="n">fmap</span> <span class="p">(</span><span class="n">pretty</span> <span class="o">.</span> <span class="n">unVGrid</span><span class="p">)</span> <span class="o">.</span> <span class="n">mconcat</span> <span class="o">$</span> <span class="p">(</span><span class="n">withBorder</span> <span class="o">.</span> <span class="kt">VGrid</span> <span class="o">.</span> <span class="n">gameGrid</span> <span class="o">&lt;$$&gt;</span> <span class="n">games</span><span class="p">)</span></code></pre></figure>
+
+<p>Here we unsafely unwrap the <code class="highlighter-rouge">Maybe String</code> since we know it’s going to be a <code class="highlighter-rouge">Just</code>, but bear in mind that’s not great practice in production:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">let</span> <span class="p">(</span><span class="kt">Just</span> <span class="n">s</span><span class="p">)</span> <span class="o">=</span> <span class="n">debugIterateMaybe</span> <span class="n">applyGravity</span> <span class="kr">in</span> <span class="n">putStrLn</span> <span class="n">s</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐┌───────────────────┐
+│┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         ││┌────────┐         │
+││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │││Score: 0│         │
+│└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         ││└────────┘         │
+│┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+││    ██    ││Next:││││    █     ││Next:││││    █     ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││││          ││Next:││
+││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││ ██  ││││          ││ ██  ││││    ██    ││ ██  ││││    █     ││ ██  ││││    █     ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││││          ││ ██  ││
+││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││    ██    ││ █   ││││    █     ││ █   ││││    █     ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││││          ││ █   ││
+││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││    ██    │┌─────┐│││    █     │┌─────┐│││    █     │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│││          │┌─────┐│
+││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││    ██    ││Held:││││    █     ││Held:││││    █     ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││││          ││Held:││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││    ██    ││     ││││    █     ││     ││││    █     ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││││          ││     ││
+││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││    ██    │└─────┘│││    █     │└─────┘│││    █     │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│││          │└─────┘│
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │││          │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │││    █     │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │││    █     │       │
+││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││          │       │││    ██    │       │
+│└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       ││└──────────┘       │
+└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘└───────────────────┘
+</code></pre></div></div>
+
+<p>Sick, we hit the bottom and then we stop.</p>
+
+<p>This horizontal time axis thing is a bit of a rough way to display game progression. Let’s write a bit of magic to make this easier on the eyes, and animate our outputs:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We've been building for the console so far, but now we're in HTML land</span>
+<span class="c1">-- we need to do something about those ANSI escape codes.</span>
+<span class="c1">-- Let's replace them with coloured spans.</span>
+<span class="n">colourSpan</span> <span class="o">::</span> <span class="kt">Colour</span> <span class="o">-&gt;</span> <span class="kt">String</span>
+<span class="n">colourSpan</span> <span class="n">colour</span> <span class="o">=</span> <span class="s">"&lt;span style='color:"</span> <span class="o">++</span> <span class="n">colourCode</span> <span class="n">colour</span> <span class="o">++</span> <span class="s">"'&gt;"</span>
+  <span class="kr">where</span>
+    <span class="c1">-- This uses the Nord colour palette.</span>
+    <span class="n">colourCode</span> <span class="kt">Blue</span> <span class="o">=</span> <span class="s">"#5E81AC"</span>
+    <span class="n">colourCode</span> <span class="kt">Orange</span> <span class="o">=</span> <span class="s">"#D08770"</span>
+    <span class="n">colourCode</span> <span class="kt">Yellow</span> <span class="o">=</span> <span class="s">"#EBCB8B"</span>
+    <span class="n">colourCode</span> <span class="kt">Green</span> <span class="o">=</span> <span class="s">"#A3BE8C"</span>
+    <span class="n">colourCode</span> <span class="kt">Purple</span> <span class="o">=</span> <span class="s">"#B48EAD"</span>
+    <span class="n">colourCode</span> <span class="kt">Red</span> <span class="o">=</span> <span class="s">"#BF616A"</span>
+    <span class="n">colourCode</span> <span class="kt">Cyan</span> <span class="o">=</span> <span class="s">"#88C0D0"</span>
+    <span class="n">colourCode</span> <span class="kt">Black</span> <span class="o">=</span> <span class="s">"#2E3440"</span>
+    <span class="n">colourCode</span> <span class="kt">White</span> <span class="o">=</span> <span class="s">"#ECEFF4"</span>
+
+<span class="n">replaceAnsiCodes</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">String</span>
+<span class="n">replaceAnsiCodes</span> <span class="n">s</span> <span class="o">=</span>
+  <span class="n">replace</span> <span class="n">ansiColourEnd</span> <span class="s">"&lt;/span&gt;"</span>
+   <span class="o">$</span> <span class="n">foldl'</span>
+       <span class="p">(</span><span class="nf">\</span><span class="n">s</span> <span class="n">colour</span> <span class="o">-&gt;</span> <span class="n">replace</span> <span class="p">(</span><span class="n">pretty</span> <span class="n">colour</span><span class="p">)</span> <span class="p">(</span><span class="n">colourSpan</span> <span class="n">colour</span><span class="p">)</span> <span class="n">s</span><span class="p">)</span>
+       <span class="n">s</span>
+       <span class="p">[</span><span class="n">minBound</span> <span class="o">..</span> <span class="p">(</span><span class="n">maxBound</span> <span class="o">::</span> <span class="kt">Colour</span><span class="p">)]</span>
+
+<span class="c1">-- We're going to build up a JS script that will animate our game and then</span>
+<span class="c1">-- write it to a file. We'll then just output the container and script tag.</span>
+<span class="n">animate</span> <span class="o">::</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Game</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">animate</span> <span class="n">delay</span> <span class="n">name</span> <span class="n">games</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="n">writeFile</span> <span class="p">(</span><span class="s">".."</span> <span class="o">++</span> <span class="n">scriptPath</span><span class="p">)</span> <span class="n">animationJs</span>
+  <span class="n">putStrLn</span> <span class="p">(</span><span class="n">containerHtml</span> <span class="o">++</span> <span class="n">scriptHtml</span><span class="p">)</span>
+  <span class="kr">where</span>
+    <span class="n">animationName</span> <span class="o">=</span> <span class="s">"animation-"</span> <span class="o">++</span> <span class="n">name</span>
+    <span class="n">mkFrame</span> <span class="n">s</span> <span class="o">=</span> <span class="s">"`"</span> <span class="o">++</span> <span class="n">replaceAnsiCodes</span> <span class="n">s</span> <span class="o">++</span> <span class="s">"`"</span>
+    <span class="n">frameArrayJs</span> <span class="o">=</span>
+      <span class="s">"["</span>
+      <span class="o">++</span> <span class="n">intercalate</span> <span class="s">","</span> <span class="p">[</span><span class="n">mkFrame</span> <span class="p">(</span><span class="n">pretty</span> <span class="o">.</span> <span class="n">gameGrid</span> <span class="o">$</span> <span class="n">game</span><span class="p">)</span> <span class="o">|</span> <span class="n">game</span> <span class="o">&lt;-</span> <span class="n">games</span><span class="p">]</span>
+      <span class="o">++</span> <span class="s">"]"</span>
+    <span class="n">containerHtml</span> <span class="o">=</span> <span class="s">"&lt;figure class='text-animation'&gt;&lt;pre&gt;&lt;code class='text-animation "</span>
+                    <span class="o">++</span> <span class="n">animationName</span> <span class="o">++</span> <span class="s">"'&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;"</span>
+    <span class="n">scriptPath</span> <span class="o">=</span> <span class="s">"/scripts/tetris/"</span> <span class="o">++</span> <span class="n">animationName</span> <span class="o">++</span> <span class="s">".js"</span>
+    <span class="n">scriptHtml</span> <span class="o">=</span> <span class="s">"&lt;script src='"</span> <span class="o">++</span> <span class="n">scriptPath</span> <span class="o">++</span> <span class="s">"'&gt;&lt;/script&gt;"</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">replace</span> <span class="s">"-"</span> <span class="s">""</span> <span class="o">$</span> <span class="n">animationName</span> <span class="o">++</span> <span class="s">"Frames"</span>
+    <span class="n">animationJs</span> <span class="o">=</span> <span class="s">"var "</span> <span class="o">++</span> <span class="n">var</span> <span class="o">++</span> <span class="s">" = "</span> <span class="o">++</span> <span class="n">frameArrayJs</span> <span class="o">++</span> <span class="s">";"</span>
+      <span class="o">++</span> <span class="s">"setInterval(function(){"</span>
+      <span class="o">++</span> <span class="s">"var "</span> <span class="o">++</span> <span class="n">var</span><span class="o">++</span><span class="s">"Frame = "</span> <span class="o">++</span> <span class="n">var</span><span class="o">++</span><span class="s">".shift();"</span>
+      <span class="o">++</span> <span class="s">"document.getElementsByClassName('"</span>
+      <span class="o">++</span> <span class="n">animationName</span>
+      <span class="o">++</span> <span class="s">"')[0].innerHTML = "</span> <span class="o">++</span> <span class="n">var</span><span class="o">++</span><span class="s">"Frame;"</span>
+      <span class="o">++</span> <span class="n">var</span> <span class="o">++</span> <span class="s">".push("</span> <span class="o">++</span> <span class="n">var</span><span class="o">++</span><span class="s">"Frame);}, "</span>
+      <span class="o">++</span> <span class="n">show</span> <span class="n">delay</span>
+      <span class="o">++</span> <span class="s">");"</span></code></pre></figure>
+
+<p>Let’s test this out:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell">  <span class="kr">let</span> <span class="n">games</span> <span class="o">=</span> <span class="n">catMaybes</span> <span class="o">$</span> <span class="n">iterateMaybes</span> <span class="n">applyGravity</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span>
+   <span class="kr">in</span> <span class="n">animate</span> <span class="mi">100</span> <span class="s">"one-falling-block"</span> <span class="n">games</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-one-falling-block"></code></pre></figure>
+<script src="/scripts/tetris/animation-one-falling-block.js"></script>
+
+<p>Who needs <code class="highlighter-rouge">ncurses</code> when you have hacks like these?</p>
+
+<p>Let’s create a way to fix our active pieces to the grid - simple, because we can just take the union of the coordinates. We’ll simultaneously draw a new piece from the stream, too - and this would be the time to check for any complete lines, and remove them from the grid. We’ll implement simple scoring (no T-spins here, although they will be actually be possible).</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Note that this is a partial function; scorelines 5 will error out.</span>
+<span class="c1">-- Again, bad practice in real code.</span>
+<span class="n">scoreLines</span> <span class="o">::</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+<span class="n">scoreLines</span> <span class="mi">0</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">scoreLines</span> <span class="mi">1</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">scoreLines</span> <span class="mi">2</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">scoreLines</span> <span class="mi">3</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">scoreLines</span> <span class="mi">4</span> <span class="o">=</span> <span class="mi">800</span></code></pre></figure>
+
+<p>Let’s find which line indices are completely full:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">fullLines</span> <span class="o">::</span> <span class="kt">Grid</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span>
+<span class="n">fullLines</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="o">=</span>
+    <span class="p">[</span> <span class="n">y</span> <span class="o">|</span>
+      <span class="n">y</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+      <span class="n">all</span> <span class="p">(</span><span class="nf">\</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">grid</span> <span class="kt">M</span><span class="o">.!</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">/=</span> <span class="kt">Empty</span><span class="p">)</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="p">]</span></code></pre></figure>
+
+<p>Now we can remove them from the grid. This is a little inefficient; we’ll remove them one by one, shifting the rest of the grid above it down, ensuring that we re-fill with empty space at the top.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">removeLine</span> <span class="o">::</span> <span class="kt">Grid</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Grid</span>
+<span class="n">removeLine</span> <span class="p">(</span><span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid</span><span class="p">)</span> <span class="n">i</span> <span class="o">=</span> <span class="kt">Grid</span> <span class="n">width</span> <span class="n">height</span> <span class="n">grid'</span>
+  <span class="kr">where</span>
+    <span class="n">grid'</span> <span class="o">=</span>
+      <span class="n">grid</span>
+        <span class="c1">-- First move everything down, covering the removed line</span>
+        <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">mapKeys</span> <span class="p">(</span><span class="nf">\</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kr">if</span> <span class="n">y</span> <span class="o">&lt;=</span> <span class="n">i</span> <span class="kr">then</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="kr">else</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="c1">-- We might have removed the bottom line.</span>
+        <span class="c1">-- If so, get rid of anything under the grid</span>
+        <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">filterWithKey</span> <span class="p">(</span><span class="nf">\</span><span class="p">(</span><span class="kr">_</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="kr">_</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">)</span>
+        <span class="c1">-- Now, we need to fill in the top line with empty space</span>
+        <span class="o">&amp;</span> <span class="kt">M</span><span class="o">.</span><span class="n">union</span> <span class="p">(</span><span class="n">unGrid</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="n">width</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">removeFullLines</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Game</span>
+<span class="n">removeFullLines</span> <span class="n">game</span> <span class="o">=</span> <span class="n">game</span> <span class="p">{</span> <span class="n">grid</span> <span class="o">=</span> <span class="n">grid'</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">score'</span> <span class="p">}</span>
+  <span class="kr">where</span>
+    <span class="n">ixs</span> <span class="o">=</span> <span class="n">fullLines</span> <span class="p">(</span><span class="n">grid</span> <span class="n">game</span><span class="p">)</span>
+    <span class="n">grid'</span> <span class="o">=</span> <span class="n">foldl'</span> <span class="n">removeLine</span> <span class="p">(</span><span class="n">grid</span> <span class="n">game</span><span class="p">)</span> <span class="p">(</span><span class="n">fullLines</span> <span class="p">(</span><span class="n">grid</span> <span class="n">game</span><span class="p">))</span>
+    <span class="n">score'</span> <span class="o">=</span> <span class="n">score</span> <span class="n">game</span> <span class="o">+</span> <span class="n">scoreLines</span> <span class="p">(</span><span class="n">length</span> <span class="n">ixs</span><span class="p">)</span></code></pre></figure>
+
+<p>Let’s write a way to test this out real quick:<sup><a id="fnr.14" class="footref" href="#fn.14" role="doc-backlink">14</a></sup></p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">debugLineRemoval</span> <span class="o">::</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">debugLineRemoval</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="c1">-- Insert two full lines with a partial line inbetween</span>
+  <span class="kr">let</span> <span class="n">fullCoords</span> <span class="o">=</span>
+        <span class="p">[</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">23</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="mi">9</span><span class="p">]</span> <span class="p">]</span>
+        <span class="o">&lt;&gt;</span> <span class="p">[</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">22</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="mi">5</span><span class="p">]</span> <span class="p">]</span>
+        <span class="o">&lt;&gt;</span> <span class="p">[</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span> <span class="o">..</span> <span class="mi">9</span><span class="p">]</span> <span class="p">]</span>
+      <span class="n">fullGrid</span> <span class="o">=</span>
+        <span class="n">foldl'</span>
+          <span class="p">(</span><span class="nf">\</span><span class="n">g</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="kt">M</span><span class="o">.</span><span class="n">insert</span> <span class="n">c</span> <span class="p">(</span><span class="kt">Block</span> <span class="kt">Red</span><span class="p">)</span> <span class="n">g</span><span class="p">)</span>
+          <span class="p">(</span><span class="n">unGrid</span> <span class="o">$</span> <span class="n">mkEmptyGrid</span> <span class="mi">10</span> <span class="mi">24</span><span class="p">)</span>
+          <span class="n">fullCoords</span>
+      <span class="n">game</span> <span class="o">=</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span> <span class="p">{</span> <span class="n">grid</span> <span class="o">=</span> <span class="kt">Grid</span> <span class="mi">10</span> <span class="mi">24</span> <span class="n">fullGrid</span> <span class="p">}</span>
+      <span class="n">lhs</span> <span class="o">=</span> <span class="n">gameGrid</span> <span class="n">game</span>
+      <span class="n">rhs</span> <span class="o">=</span> <span class="n">gameGrid</span> <span class="o">$</span> <span class="n">removeFullLines</span> <span class="n">game</span>
+  <span class="n">putStrLn</span> <span class="o">$</span> <span class="s">"Full lines detected: "</span> <span class="o">&lt;&gt;</span> <span class="n">show</span> <span class="p">(</span><span class="n">fullLines</span> <span class="p">(</span><span class="n">grid</span> <span class="n">game</span><span class="p">))</span>
+  <span class="n">putStrLn</span> <span class="o">.</span> <span class="n">pretty</span> <span class="o">.</span> <span class="n">mconcat</span> <span class="o">$</span> <span class="n">withBorder</span> <span class="o">.</span> <span class="kt">VGrid</span> <span class="o">&lt;$&gt;</span> <span class="p">[</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">]</span></code></pre></figure>
+
+<p>This should give us a side by side comparison:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">debugLineRemoval</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Full lines detected: [21,23]
+┌───────────────────┐┌───────────────────┐
+│┌────────┐         ││┌──────────┐       │
+││Score: 0│         │││Score: 300│       │
+│└────────┘         ││└──────────┘       │
+│┌──────────┐┌─────┐││┌──────────┐┌─────┐│
+││          ││Next:││││          ││Next:││
+││          ││     ││││          ││     ││
+││          ││ ██  ││││          ││ ██  ││
+││          ││ █   ││││          ││ █   ││
+││          ││ █   ││││          ││ █   ││
+││          │└─────┘│││          │└─────┘│
+││          │┌─────┐│││          │┌─────┐│
+││          ││Held:││││          ││Held:││
+││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││
+││          ││     ││││          ││     ││
+││          │└─────┘│││          │└─────┘│
+││          │       │││          │       │
+││          │       │││          │       │
+││          │       │││          │       │
+││          │       │││          │       │
+││██████████│       │││          │       │
+││██████    │       │││          │       │
+││██████████│       │││██████    │       │
+│└──────────┘       ││└──────────┘       │
+└───────────────────┘└───────────────────┘
+</code></pre></div></div>
+
+<p>Seems legit to me, and the score went up appropriately too. Now we can finally fix our pieces in place:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">fixPiece</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Game</span>
+<span class="n">fixPiece</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="n">removeFullLines</span>
+    <span class="o">$</span> <span class="n">game</span> <span class="p">{</span> <span class="n">grid</span> <span class="o">=</span> <span class="p">(</span><span class="n">grid</span> <span class="n">game</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">withPiece</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span>
+           <span class="p">,</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">pieceAtTop</span> <span class="o">$</span> <span class="n">head</span> <span class="p">(</span><span class="n">pieces</span> <span class="n">game</span><span class="p">)</span>
+           <span class="p">,</span> <span class="n">pieces</span> <span class="o">=</span> <span class="n">tail</span> <span class="p">(</span><span class="n">pieces</span> <span class="n">game</span><span class="p">)</span>
+           <span class="p">,</span> <span class="n">heldThisTurn</span> <span class="o">=</span> <span class="kt">False</span>
+           <span class="p">}</span></code></pre></figure>
+
+<p>Now we can continually apply gravity, and when we reach an invalid state, we can fix the piece instead. The call to <code class="highlighter-rouge">applyGravity</code> lets us look one step ahead and respond accordingly. However, if after fixing a piece, we’re still invalid (i.e. we’ve reached the top of the grid), we can return <code class="highlighter-rouge">Nothing</code> again.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">loseTheGame</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span>
+<span class="n">loseTheGame</span> <span class="n">game</span>
+  <span class="o">|</span> <span class="n">isValid</span> <span class="n">game</span> <span class="o">=</span>
+      <span class="kr">case</span> <span class="n">applyGravity</span> <span class="n">game</span> <span class="kr">of</span>
+        <span class="kt">Just</span> <span class="n">game'</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="n">game'</span>
+        <span class="kt">Nothing</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="p">(</span><span class="n">fixPiece</span> <span class="n">game</span><span class="p">)</span>
+  <span class="o">|</span> <span class="n">otherwise</span> <span class="o">=</span> <span class="kt">Nothing</span></code></pre></figure>
+
+<p>And so now when we go to print this:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">let</span> <span class="n">games</span> <span class="o">=</span> <span class="n">catMaybes</span> <span class="o">$</span> <span class="n">iterateMaybes</span> <span class="n">loseTheGame</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span>
+ <span class="kr">in</span> <span class="n">animate</span> <span class="mi">50</span> <span class="s">"lose-the-game"</span> <span class="n">games</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-lose-the-game"></code></pre></figure>
+<script src="/scripts/tetris/animation-lose-the-game.js"></script>
+
+<p>Aight! We’ve got rudimentary collision detection, game over detection and we can see that the piece preview works. Now we need some sort of way to “play the game”.</p>
+
+<p><a id="org1af4ea3"></a></p>
+
+<h1 id="operating-on-the-game">Operating on the Game</h1>
+
+<p>We’ll need to give our bot a way to operate on a game. Let’s define a set of operations - later, we could just map these to keyboard inputs to play the game ourselves, but this is trickier in the medium of a blog.</p>
+
+<p>Let’s start by defining the possible operations:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">data</span> <span class="kt">Operation</span>
+  <span class="o">=</span> <span class="kt">OpLeft</span>
+  <span class="o">|</span> <span class="kt">OpRight</span>
+  <span class="o">|</span> <span class="kt">OpDown</span>
+  <span class="o">|</span> <span class="kt">OpRotateCW</span>
+  <span class="o">|</span> <span class="kt">OpRotateCCW</span>
+  <span class="o">|</span> <span class="kt">OpDrop</span>
+  <span class="o">|</span> <span class="kt">OpHold</span></code></pre></figure>
+
+<p>Now we’ll implement the application of these operations to a <code class="highlighter-rouge">Game</code>. If they result in an invalid game state (moving out of bounds, or impossible rotations), we’ll just return <code class="highlighter-rouge">Nothing</code>.</p>
+
+<p>Holding a piece is relatively simple:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">holdPiece</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span>
+<span class="n">holdPiece</span> <span class="n">game</span>
+  <span class="o">|</span> <span class="n">heldThisTurn</span> <span class="n">game</span> <span class="o">=</span> <span class="kt">Nothing</span>
+  <span class="o">|</span> <span class="n">otherwise</span> <span class="o">=</span>
+      <span class="kr">let</span> <span class="p">(</span><span class="kt">ActivePiece</span> <span class="n">pieceType</span> <span class="kr">_</span> <span class="kr">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">currentPiece</span> <span class="n">game</span>
+       <span class="kr">in</span> <span class="kt">Just</span> <span class="n">game</span> <span class="p">{</span> <span class="n">heldPiece</span> <span class="o">=</span> <span class="kt">Just</span> <span class="n">pieceType</span>
+                    <span class="p">,</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">pieceAtTop</span> <span class="o">$</span> <span class="n">head</span> <span class="p">(</span><span class="n">pieces</span> <span class="n">game</span><span class="p">)</span>
+                    <span class="p">,</span> <span class="n">pieces</span> <span class="o">=</span> <span class="n">tail</span> <span class="p">(</span><span class="n">pieces</span> <span class="n">game</span><span class="p">)</span>
+                    <span class="p">,</span> <span class="n">heldThisTurn</span> <span class="o">=</span> <span class="kt">True</span>
+                    <span class="p">}</span></code></pre></figure>
+
+<p>To forcibly drop a piece, we can just move it down until it’s no longer a valid move. This should also trigger fixing the piece.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">dropPiece</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Game</span>
+<span class="n">dropPiece</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">game'</span> <span class="o">=</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">movePiece</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span>
+   <span class="kr">in</span> <span class="kr">if</span> <span class="n">isValid</span> <span class="n">game'</span> <span class="kr">then</span> <span class="n">dropPiece</span> <span class="n">game'</span> <span class="kr">else</span> <span class="n">fixPiece</span> <span class="n">game</span></code></pre></figure>
+
+<p>Now we can implement the actual application of operations:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">runOperation</span> <span class="o">::</span> <span class="kt">Operation</span> <span class="o">-&gt;</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span>
+<span class="n">runOperation</span> <span class="n">op</span> <span class="n">game</span>
+  <span class="o">|</span> <span class="p">(</span><span class="n">isValid</span> <span class="o">&lt;$&gt;</span> <span class="n">game'</span><span class="p">)</span> <span class="o">==</span> <span class="kt">Just</span> <span class="kt">True</span> <span class="o">=</span> <span class="n">game'</span>
+  <span class="o">|</span> <span class="n">otherwise</span> <span class="o">=</span> <span class="kt">Nothing</span>
+  <span class="kr">where</span>
+    <span class="n">game'</span> <span class="o">=</span> <span class="kr">case</span> <span class="n">op</span> <span class="kr">of</span>
+      <span class="kt">OpLeft</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">$</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">movePiece</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span>
+      <span class="kt">OpRight</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">$</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">movePiece</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span>
+      <span class="kt">OpDown</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">$</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">movePiece</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span>
+      <span class="kt">OpRotateCW</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">$</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">rotatePiece</span> <span class="kt">CW</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span>
+      <span class="kt">OpRotateCCW</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">$</span> <span class="n">game</span> <span class="p">{</span> <span class="n">currentPiece</span> <span class="o">=</span> <span class="n">rotatePiece</span> <span class="kt">CCW</span> <span class="p">(</span><span class="n">currentPiece</span> <span class="n">game</span><span class="p">)</span> <span class="p">}</span>
+      <span class="kt">OpHold</span> <span class="o">-&gt;</span> <span class="n">holdPiece</span> <span class="n">game</span>
+      <span class="kt">OpDrop</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">$</span> <span class="n">dropPiece</span> <span class="n">game</span></code></pre></figure>
+
+<p>We can test this out with a short animation:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="kr">let</span> <span class="n">game</span> <span class="o">=</span> <span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">)</span>
+    <span class="n">leftOps</span> <span class="o">=</span> <span class="n">replicate</span> <span class="mi">7</span> <span class="kt">OpDown</span> <span class="o">++</span> <span class="n">replicate</span> <span class="mi">3</span> <span class="kt">OpLeft</span> <span class="o">++</span> <span class="p">[</span><span class="kt">OpRotateCW</span><span class="p">,</span> <span class="kt">OpDrop</span><span class="p">]</span>
+    <span class="n">middleOps</span> <span class="o">=</span> <span class="n">replicate</span> <span class="mi">7</span> <span class="kt">OpDown</span> <span class="o">++</span> <span class="p">[</span><span class="kt">OpRotateCW</span><span class="p">,</span> <span class="kt">OpRotateCW</span><span class="p">,</span> <span class="kt">OpDrop</span><span class="p">]</span>
+    <span class="n">rightOps</span> <span class="o">=</span> <span class="n">replicate</span> <span class="mi">7</span> <span class="kt">OpDown</span> <span class="o">++</span> <span class="n">replicate</span> <span class="mi">3</span> <span class="kt">OpRight</span> <span class="o">++</span> <span class="p">[</span><span class="kt">OpRotateCW</span><span class="p">,</span> <span class="kt">OpDrop</span><span class="p">]</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="n">take</span> <span class="mi">175</span> <span class="o">.</span> <span class="n">cycle</span> <span class="o">$</span> <span class="kt">OpHold</span> <span class="o">:</span> <span class="n">leftOps</span> <span class="o">++</span> <span class="n">middleOps</span> <span class="o">++</span> <span class="n">rightOps</span>
+ <span class="kr">in</span> <span class="n">animate</span> <span class="mi">50</span> <span class="s">"test-operations"</span>
+    <span class="o">$</span> <span class="n">scanl'</span> <span class="p">(</span><span class="nf">\</span><span class="n">g</span> <span class="n">op</span> <span class="o">-&gt;</span> <span class="n">fromJust</span> <span class="o">$</span> <span class="n">runOperation</span> <span class="n">op</span> <span class="n">g</span><span class="p">)</span> <span class="n">game</span> <span class="n">ops</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-test-operations"></code></pre></figure>
+<script src="/scripts/tetris/animation-test-operations.js"></script>
+
+<p>I reckon we can do better than this. Time for a bot.</p>
+
+<p><a id="org8f3086e"></a></p>
+
+<h1 id="super-advanced-tetris-ai-satai">Super Advanced Tetris AI (SATAI)</h1>
+
+<p>Ultimately, we want something that can look at a game and decide what operation to perform in order to maximise some heuristic. I think it’s a bit ambitious to optimise for score here, since the lookahead required can be quite far, so let’s just start by keeping the grid ceiling as low as possible.</p>
+
+<p>To make a decision, we’ll simulate all possible operations<sup><a id="fnr.15" class="footref" href="#fn.15" role="doc-backlink">15</a></sup> that we can perform in one turn. We’ll cheat, and give the bot as much time to think about each move as possible - a “move” will therefore be some combination of left or right movements and rotations followed by a drop.</p>
+
+<p>We can use <code class="highlighter-rouge">Applicative</code> syntax and the <code class="highlighter-rouge">Monad</code> instance of lists to (somewhat) neatly generate all of these possible future states:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">possibleStates</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Game</span><span class="p">]</span>
+<span class="n">possibleStates</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">let</span>
+    <span class="c1">-- Will generate 5 functions, each of which moves the game another step</span>
+    <span class="c1">-- left respectively, by continuously composing OpLeft.</span>
+    <span class="c1">-- We are composing functions of Game -&gt; Maybe Game, so we need to use</span>
+    <span class="c1">-- our friend the Kleisli arrow.</span>
+    <span class="n">leftMoves</span> <span class="o">=</span> <span class="n">scanl1</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">)</span> <span class="p">(</span><span class="n">replicate</span> <span class="mi">5</span> <span class="p">(</span><span class="n">runOperation</span> <span class="kt">OpLeft</span><span class="p">))</span>
+    <span class="c1">-- We do the same for the right moves.</span>
+    <span class="n">rightMoves</span> <span class="o">=</span> <span class="n">scanl1</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">)</span> <span class="p">(</span><span class="n">replicate</span> <span class="mi">5</span> <span class="p">(</span><span class="n">runOperation</span> <span class="kt">OpRight</span><span class="p">))</span>
+    <span class="c1">-- We need to be able to stay in the centre:</span>
+    <span class="n">noMoves</span> <span class="o">=</span> <span class="p">[</span><span class="kt">Just</span> <span class="o">.</span> <span class="n">id</span><span class="p">]</span>
+    <span class="c1">-- For the rotations we do this 4 times, getting the "no-op" state for free.</span>
+    <span class="n">rotations</span> <span class="o">=</span> <span class="n">scanl1</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">)</span> <span class="p">(</span><span class="n">replicate</span> <span class="mi">4</span> <span class="p">(</span><span class="n">runOperation</span> <span class="kt">OpRotateCW</span><span class="p">))</span>
+    <span class="c1">-- Now we want to generate all possible combinations of these operations.</span>
+    <span class="c1">-- We can do this by using the applicative instance for functions.</span>
+    <span class="c1">-- Here &lt;*&gt; takes a list of partial compositions, and applies those compositions</span>
+    <span class="c1">-- with the cartesian product of its argument and its applicant.</span>
+    <span class="n">leftRotations</span> <span class="o">=</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">)</span> <span class="o">&lt;$&gt;</span> <span class="n">leftMoves</span> <span class="o">&lt;*&gt;</span> <span class="n">rotations</span>
+    <span class="n">rightRotations</span> <span class="o">=</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">)</span> <span class="o">&lt;$&gt;</span> <span class="n">rightMoves</span> <span class="o">&lt;*&gt;</span> <span class="n">rotations</span>
+    <span class="n">centreRotations</span> <span class="o">=</span> <span class="p">(</span><span class="o">&gt;=&gt;</span><span class="p">)</span> <span class="o">&lt;$&gt;</span> <span class="n">noMoves</span> <span class="o">&lt;*&gt;</span> <span class="n">rotations</span>
+    <span class="c1">-- Finally we need to add a drop to each of these.</span>
+    <span class="n">allMoves</span> <span class="o">=</span>
+      <span class="p">(</span><span class="o">&gt;=&gt;</span> <span class="p">(</span><span class="n">runOperation</span> <span class="kt">OpDrop</span><span class="p">))</span>
+        <span class="o">&lt;$&gt;</span> <span class="p">(</span><span class="n">leftRotations</span> <span class="o">++</span> <span class="n">rightRotations</span> <span class="o">++</span> <span class="n">centreRotations</span><span class="p">)</span>
+    <span class="n">hold</span> <span class="o">=</span> <span class="n">runOperation</span> <span class="kt">OpHold</span>
+  <span class="kr">in</span> <span class="c1">-- Some moves will result in an invalid game, so we can ignore those using</span>
+     <span class="c1">-- catMaybes.</span>
+     <span class="n">catMaybes</span> <span class="o">$</span> <span class="p">(</span><span class="n">hold</span> <span class="o">:</span> <span class="n">allMoves</span><span class="p">)</span> <span class="o">&lt;*&gt;</span> <span class="p">[</span><span class="n">game</span><span class="p">]</span></code></pre></figure>
+
+<p>We can test this out just by generating an animation of all the possible states at the start of a given game:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">animate</span> <span class="mi">200</span> <span class="s">"test-possible-states"</span> <span class="o">$</span> <span class="n">possibleStates</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-test-possible-states"></code></pre></figure>
+<script src="/scripts/tetris/animation-test-possible-states.js"></script>
+
+<p>Let’s implement a simple heuristic - the higher the grid ceiling, the worse it is:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- We'll do the kind of nasty 24 - y thing here so that our heuristic is always</span>
+<span class="c1">-- something to be minimised. If the 23rd row has a block, that means row 1 is full</span>
+<span class="c1">-- so that's what we want to keep low.</span>
+<span class="n">heuristic</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+<span class="n">heuristic</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">fullY</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span> <span class="o">|</span> <span class="p">((</span><span class="kr">_</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">block</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="kt">M</span><span class="o">.</span><span class="n">toList</span> <span class="p">(</span><span class="n">unGrid</span> <span class="o">$</span> <span class="n">grid</span> <span class="n">game</span><span class="p">),</span> <span class="n">block</span> <span class="o">/=</span> <span class="kt">Empty</span><span class="p">]</span>
+   <span class="kr">in</span> <span class="kr">case</span> <span class="n">fullY</span> <span class="kr">of</span>
+        <span class="kt">[]</span> <span class="o">-&gt;</span> <span class="mi">0</span>
+        <span class="kr">_</span> <span class="o">-&gt;</span> <span class="mi">24</span> <span class="o">-</span> <span class="n">minimum</span> <span class="n">fullY</span></code></pre></figure>
+
+<p>We can now implement one-step lookahead:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">oneStepBot</span> <span class="o">::</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span>
+<span class="n">oneStepBot</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">case</span> <span class="n">possibleStates</span> <span class="n">game</span> <span class="kr">of</span>
+    <span class="kt">[]</span> <span class="o">-&gt;</span> <span class="kt">Nothing</span>
+    <span class="n">states</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">.</span> <span class="n">head</span> <span class="o">$</span> <span class="n">sortOn</span> <span class="n">heuristic</span> <span class="n">states</span></code></pre></figure>
+
+<p>Let’s see how it gets on:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">animate</span> <span class="mi">50</span> <span class="s">"test-one-step-bot"</span> <span class="o">.</span> <span class="n">catMaybes</span>
+  <span class="o">$</span> <span class="n">iterateMaybes</span> <span class="n">oneStepBot</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-test-one-step-bot"></code></pre></figure>
+<script src="/scripts/tetris/animation-test-one-step-bot.js"></script>
+
+<p>Hey, 1000! Not bad, but obviously we’d benefit from arbitrary lookahead. We’ll implement a kind of beam search, where we take the <code class="highlighter-rouge">n</code> best states and expand them out, up to some predefined depth. Obviously the wider the beam, the faster this space grows, and the deeper we go the more computation we’ll need.</p>
+
+<p>We use a common pattern here where we’d like to track some state in our recursion, but don’t want to expose it. We use this <code class="highlighter-rouge">go</code> helper to, here, track the first move we made, so that we can return it at the end.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">beamSearchBot</span> <span class="o">::</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Game</span>
+<span class="n">beamSearchBot</span> <span class="n">depth</span> <span class="n">width</span> <span class="n">game</span> <span class="o">=</span>
+  <span class="kr">case</span> <span class="n">go</span> <span class="kt">Nothing</span> <span class="n">depth</span> <span class="n">width</span> <span class="n">game</span> <span class="kr">of</span>
+    <span class="kt">Nothing</span> <span class="o">-&gt;</span> <span class="kt">Nothing</span>
+    <span class="kt">Just</span> <span class="p">(</span><span class="n">firstMove</span><span class="p">,</span> <span class="kr">_</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="n">firstMove</span>
+  <span class="kr">where</span>
+    <span class="n">go</span> <span class="o">::</span> <span class="kt">Maybe</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Game</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="p">(</span><span class="kt">Game</span><span class="p">,</span> <span class="kt">Game</span><span class="p">)</span>
+    <span class="n">go</span> <span class="p">(</span><span class="kt">Just</span> <span class="n">firstMove</span><span class="p">)</span> <span class="mi">0</span> <span class="kr">_</span> <span class="n">game</span> <span class="o">=</span> <span class="kt">Just</span> <span class="p">(</span><span class="n">firstMove</span><span class="p">,</span> <span class="n">game</span><span class="p">)</span>
+    <span class="n">go</span> <span class="n">firstMove</span> <span class="n">depth</span> <span class="n">width</span> <span class="n">game</span> <span class="o">=</span>
+      <span class="kr">let</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="n">take</span> <span class="n">width</span> <span class="p">(</span><span class="n">sortOn</span> <span class="n">heuristic</span> <span class="p">(</span><span class="n">possibleStates</span> <span class="n">game</span><span class="p">))</span>
+        <span class="n">expandedStates</span> <span class="o">=</span>
+          <span class="kr">case</span> <span class="n">firstMove</span> <span class="kr">of</span>
+            <span class="kt">Nothing</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="n">go</span> <span class="p">(</span><span class="kt">Just</span> <span class="n">state</span><span class="p">)</span> <span class="p">(</span><span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="n">width</span> <span class="n">state</span> <span class="o">|</span> <span class="n">state</span> <span class="o">&lt;-</span> <span class="n">states</span><span class="p">]</span>
+            <span class="kt">Just</span> <span class="kr">_</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="n">go</span> <span class="n">firstMove</span> <span class="p">(</span><span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="n">width</span> <span class="n">state</span> <span class="o">|</span> <span class="n">state</span> <span class="o">&lt;-</span> <span class="n">states</span><span class="p">]</span>
+        <span class="kr">in</span> <span class="kr">case</span> <span class="n">catMaybes</span> <span class="n">expandedStates</span> <span class="kr">of</span>
+             <span class="kt">[]</span> <span class="o">-&gt;</span> <span class="kt">Nothing</span>
+             <span class="n">expandedStates</span> <span class="o">-&gt;</span> <span class="kt">Just</span> <span class="o">.</span> <span class="n">head</span> <span class="o">$</span> <span class="n">sortOn</span> <span class="p">(</span><span class="n">heuristic</span> <span class="o">.</span> <span class="n">snd</span><span class="p">)</span> <span class="n">expandedStates</span></code></pre></figure>
+
+<p>And finally, let’s see how it gets on with a width and depth of 1:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">animate</span> <span class="mi">50</span> <span class="s">"test-beam-search-bot"</span> <span class="o">.</span> <span class="n">catMaybes</span>
+  <span class="o">$</span> <span class="n">iterateMaybes</span> <span class="p">(</span><span class="n">beamSearchBot</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-test-beam-search-bot"></code></pre></figure>
+<script src="/scripts/tetris/animation-test-beam-search-bot.js"></script>
+
+<p>Sweet, this replicates our simple one-step lookahead. Finally, let’s expand the beam out.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">animate</span> <span class="mi">50</span> <span class="s">"test-beam-search-bot-wider"</span> <span class="o">.</span> <span class="n">catMaybes</span>
+  <span class="o">$</span> <span class="n">iterateMaybes</span> <span class="p">(</span><span class="n">beamSearchBot</span> <span class="mi">3</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">mkGame</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">42</span><span class="p">))</span></code></pre></figure>
+
+<figure class="text-animation"><pre><code class="text-animation animation-test-beam-search-bot-wider"></code></pre></figure>
+<script src="/scripts/tetris/animation-test-beam-search-bot-wider.js"></script>
+
+<p>Alright! I’ll take 5300. I’m going to stop here, as this post has started to take minutes to compile into HTML… needless to say, a wider beam and a deeper search can result in some surprisingly good play.</p>
+
+<h1 id="footnotes">Footnotes</h1>
+
+<p><sup><a id="fn.1" href="#fnr.1">1</a></sup> Okay, for now this is actually a version I build ages ago. I’m rewriting this from scratch for this post, so ours will look a little different, and hopefully better!</p>
+
+<p><sup><a id="fn.2" href="#fnr.2">2</a></sup> Okay, not quite. I’m writing this in Emacs, where <code class="highlighter-rouge">org-babel</code> will run each block in GHCi, a Haskell interpreter, with <code class="highlighter-rouge">set +m</code> enabled to allow multiline blocks. The whole thing gets compiled to Markdown via <code class="highlighter-rouge">org-jekyll</code>. The end result is the same, more or less, as writing actual literate code, with some of the advantages of a Jupyter-style workflow.</p>
+
+<p><sup><a id="fn.3" href="#fnr.3">3</a></sup> Note that in general this is a terrible idea and gave me all kinds of headaches writing this post. Using Cabal in a global manner like this is inviting trouble. Pick and learn a package manager (could still be Cabal, but in the context of a project, not a blog post)</p>
+
+<p><sup><a id="fn.4" href="#fnr.4">4</a></sup> I use Cabal’s Nix integration for anything serious.</p>
+
+<p><sup><a id="fn.5" href="#fnr.5">5</a></sup> Also because for whatever reason, I can’t get <code class="highlighter-rouge">org-babel</code> to accept more than one import per code block and I really want to be able to run this entire post as a single notebook-style program.</p>
+
+<p><sup><a id="fn.6" href="#fnr.6">6</a></sup> You’ll typically be recommended to eschew <code class="highlighter-rouge">String</code> (which is a linked list of characters) for the more efficient <code class="highlighter-rouge">Text</code> type; we don’t need to worry about this for a toy application.</p>
+
+<p><sup><a id="fn.7" href="#fnr.7">7</a></sup> There’s already the <code class="highlighter-rouge">Show</code> typeclass that does exactly this, and which can be automatically derived for many types, but I tend to think of it as for debugging and inspection purposes - I prefer a separate typeclass for representations intended to be user-facing.</p>
+
+<p><sup><a id="fn.8" href="#fnr.8">8</a></sup> The use of <code class="highlighter-rouge">foldl'</code> here does two things: we fold from the left (irrelevant in this case, but important sometimes), and we fold strictly - that is, we don’t accumulate a load of unevaluated thunks and overflow the stack. Again, never going to happen in our toy example, but worth knowing.</p>
+
+<p><sup><a id="fn.9" href="#fnr.9">9</a></sup> That is, associative, and with a left and right identity (the empty grid in both cases).</p>
+
+<p><sup><a id="fn.10" href="#fnr.10">10</a></sup> Note that when referring to operators both in code and prose, it’s typical to refer to them in parentheses. <code class="highlighter-rouge">(+) 1 2</code> is the same as <code class="highlighter-rouge">1 + 2</code>.</p>
+
+<p><sup><a id="fn.11" href="#fnr.11">11</a></sup> It gets more complex when you’re dealing with more arguments - <code class="highlighter-rouge">uncurry3 f (a, b c) = f a b c</code> and so on exist but there’s no way to write generic <code class="highlighter-rouge">uncurryN</code> without resorting to <code class="highlighter-rouge">TemplateHaskell</code> to the best of my knowledge. Tweet at me if I’m wrong please.</p>
+
+<p><sup><a id="fn.12" href="#fnr.12">12</a></sup> The lambda syntax used here twice nested makes e.g. <code class="highlighter-rouge">(\a b -&gt; a + b)</code> equivalent to <code class="highlighter-rouge">(+)</code>.</p>
+
+<p><sup><a id="fn.13" href="#fnr.13">13</a></sup> In this case, Kleisli composition; the <code class="highlighter-rouge">(&gt;=&gt;)</code> operator composes <code class="highlighter-rouge">a -&gt; m b</code> and <code class="highlighter-rouge">b -&gt; m c</code> into <code class="highlighter-rouge">a -&gt; m c</code>.</p>
+
+<p><sup><a id="fn.14" href="#fnr.14">14</a></sup> Note that here I’m being explicit that we’re building something of type <code class="highlighter-rouge">IO ()</code>, roughly meaning a thing that can have real-world side effects like printing to the screen, but doesn’t return anything (or rather, returns the unit value <code class="highlighter-rouge">()</code>).</p>
+
+<p><sup><a id="fn.15" href="#fnr.15">15</a></sup> Well, not all. We don’t implement T-spins, or slotting into holes halfway down the grid, for example, which might end up being the optimal move.</p>
+
+  </div><a class="u-url" href="/preview/main/2023/08/06/tetris-haskell.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/preview/main/"></data>
+
+  <div class="wrapper">
+
+    <!--<h2 class="footer-heading">Harry Askham</h2>-->
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Harry Askham</li><li><a class="u-email" href="mailto:harry@skh.am">harry@skh.am</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/harryaskham"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#github"></use></svg> <span class="username">harryaskham</span></a></li><li><a href="https://www.linkedin.com/in/harryaskham"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">harryaskham</span></a></li><li><a href="https://bsky.app/profile/harryaskham.bsky.social"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#bluesky"></use></svg> <span class="username">harryaskham.bsky.social</span></a></li><li><a href="https://www.twitter.com/harryaskham"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">harryaskham</span></a></li></ul>
+</div>
+<!--
+      <div class="footer-col footer-col-3">
+        <p>Harry Askham, Senior Staff Software Engineer</p>
+      </div>
+-->
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

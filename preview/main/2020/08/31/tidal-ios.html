@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Algorithmic Music on iOS with TidalCycles | Harry Askham</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Algorithmic Music on iOS with TidalCycles" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Caveat" />
+<meta property="og:description" content="Caveat" />
+<link rel="canonical" href="https://a.skh.am/preview/main/2020/08/31/tidal-ios.html" />
+<meta property="og:url" content="https://a.skh.am/preview/main/2020/08/31/tidal-ios.html" />
+<meta property="og:site_name" content="Harry Askham" />
+<meta property="og:image" content="https://a.skh.am/preview/main/img/tidal1.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-08-31T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="https://a.skh.am/preview/main/img/tidal1.png" />
+<meta property="twitter:title" content="Algorithmic Music on iOS with TidalCycles" />
+<meta name="twitter:site" content="@harryaskham" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2020-08-31T00:00:00+00:00","datePublished":"2020-08-31T00:00:00+00:00","description":"Caveat","headline":"Algorithmic Music on iOS with TidalCycles","image":"https://a.skh.am/preview/main/img/tidal1.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://a.skh.am/preview/main/2020/08/31/tidal-ios.html"},"url":"https://a.skh.am/preview/main/2020/08/31/tidal-ios.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/preview/main/assets/main.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Fira+Code|Fira+Sans&display=swap" rel="stylesheet"><link type="application/atom+xml" rel="alternate" href="https://a.skh.am/preview/main/feed.xml" title="Harry Askham" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/preview/main/">Harry Askham</a>
+
+    <!--<nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav>-->
+  </div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Algorithmic Music on iOS with TidalCycles</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2020-08-31T00:00:00+00:00" itemprop="datePublished">Aug 31, 2020
+      </time>• 2 min read</p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h1 id="caveat">Caveat</h1>
+
+<p>This is a writeup for my mobile setup for Emacs music composition - but iOS being iOS, this does require access to a Linux machine for most of the heavy lifting, with something like Blink on the phone as a thin client.</p>
+
+<h1 id="previously-funktor--pulseaudio-streaming">Previously: funktor + PulseAudio streaming</h1>
+
+<p><img src="/img/tidal1.png" alt="img" /><br />
+<em>Song composition in Emacs in Blink on iOS</em></p>
+
+<p>For a while now I’ve wanted a fully mobile programmatic music generation solution. I’d previously set this up using my own Haskell library <a href="https://github.com/harryaskham/funktor">funktor</a>, which is an interpretive layer on top of `csound-expression` allowing terse music creation in a Haskell DSL.</p>
+
+<p>I’d use Blink on iOS to connect to Emacs-in-tmux running on my VPS, with <code class="highlighter-rouge">ghcid</code> watching for changes, constantly reloading my track when saving the file. To stream audio, I’d transcode the VPS’s PulseAudio output on-the-fly, <a href="https://superuser.com/questions/605445/how-to-stream-my-gnu-linux-audio-output-to-android-devices-over-wi-fi/1021823?noredirect=1#comment2066805_1021823">expose it to the internet</a>, and connect to it using the iOS VLC app in the background. This gives about a second of latency.</p>
+
+<p>For posterity, I’m streaming Pulse via:</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">cvlc <span class="nt">-vvv</span> pulse://<span class="si">$(</span>pactl list | <span class="nb">grep</span> <span class="s2">"Monitor Source"</span> | <span class="nb">awk</span> <span class="s1">'{print $3}'</span><span class="si">)</span> <span class="se">\</span>
+    <span class="nt">--sout</span> <span class="s1">'#transcode{acodec=mp3,ab=128,channels=2}:standard{access=http,dst=0.0.0.0:8888/pc.mp3}'</span></code></pre></figure>
+
+<h1 id="moving-to-tidalcycles">Moving to TidalCycles</h1>
+
+<p>I recently realised I had more or less made a <a href="https://tidalcycles.org">TidalCycles</a> lookalike with this setup. I’d wanted to try out Tidal for a while, and given its extreme terseness and focus on transience and experimentation rather than song composition, I figured it’d be an even better fit for the mobile interaction use-case.</p>
+
+<p>I followed the <a href="https://tidalcycles.org/index.php/Linux_installation">Linux Installation</a> instructions on my VPS, installing the Emacs Tidal package and getting to the point where I could get Supercollider/Superdirt/Tidal-in-Emacs talking.</p>
+
+<h1 id="streaming-jack-over-the-network">Streaming JACK over the Network</h1>
+
+<p>The sticking point for me was that as I understand it, starting SuperDirt also suspends PulseAudio - the Tidal stack uses JACK instead. Thankfully, it was relatively straightforward to stream SuperCollider’s JACK output over the network via VLC:</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh"><span class="nv">$ </span>cvlc <span class="nt">-vvv</span> <span class="s2">"jack://channels=2:ports=.*out_1,.*out_2"</span> <span class="se">\</span>
+    <span class="nt">--sout</span> <span class="s1">'#transcode{acodec=mp3,ab=128,channels=2}:standard{access=http,dst=0.0.0.0:8888/pc.mp3}'</span></code></pre></figure>
+
+<p>With this running (and SuperDirt running in the background), one can open a <code class="highlighter-rouge">.tidal</code> file in Emacs, <code class="highlighter-rouge">C-c C-s</code> to bring up Tidal, and play around with very little latency.</p>
+
+<p>We need to open SuperDirt first before streaming JACK, otherwise we end up with a race for port 57120.</p>
+
+<p>The end result looks something like:</p>
+
+<p><img src="/img/tidal2.png" alt="img" /><br />
+<em>TidalCycles in Emacs in Blink on iOS</em></p>
+
+  </div><a class="u-url" href="/preview/main/2020/08/31/tidal-ios.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/preview/main/"></data>
+
+  <div class="wrapper">
+
+    <!--<h2 class="footer-heading">Harry Askham</h2>-->
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Harry Askham</li><li><a class="u-email" href="mailto:harry@skh.am">harry@skh.am</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/harryaskham"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#github"></use></svg> <span class="username">harryaskham</span></a></li><li><a href="https://www.linkedin.com/in/harryaskham"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">harryaskham</span></a></li><li><a href="https://bsky.app/profile/harryaskham.bsky.social"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#bluesky"></use></svg> <span class="username">harryaskham.bsky.social</span></a></li><li><a href="https://www.twitter.com/harryaskham"><svg class="svg-icon"><use xlink:href="/preview/main/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">harryaskham</span></a></li></ul>
+</div>
+<!--
+      <div class="footer-col footer-col-3">
+        <p>Harry Askham, Senior Staff Software Engineer</p>
+      </div>
+-->
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Half-Height Console Graphics with Haskell and ncurses | Harry Askham</title>
+<meta name="generator" content="Jekyll v4.0.1" />
+<meta property="og:title" content="Half-Height Console Graphics with Haskell and ncurses" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Note: Since writing this post, I’ve written this technique up as a standalone library." />
+<meta property="og:description" content="Note: Since writing this post, I’ve written this technique up as a standalone library." />
+<link rel="canonical" href="https://a.skh.am/2020/11/26/half-height-console-graphics.html" />
+<meta property="og:url" content="https://a.skh.am/2020/11/26/half-height-console-graphics.html" />
+<meta property="og:site_name" content="Harry Askham" />
+<meta property="og:image" content="https://a.skh.am/img/libtcod.png" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-11-26T00:00:00+00:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:image" content="https://a.skh.am/img/libtcod.png" />
+<meta property="twitter:title" content="Half-Height Console Graphics with Haskell and ncurses" />
+<meta name="twitter:site" content="@harryaskham" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2020-11-26T00:00:00+00:00","datePublished":"2020-11-26T00:00:00+00:00","description":"Note: Since writing this post, I’ve written this technique up as a standalone library.","headline":"Half-Height Console Graphics with Haskell and ncurses","image":"https://a.skh.am/img/libtcod.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://a.skh.am/2020/11/26/half-height-console-graphics.html"},"url":"https://a.skh.am/2020/11/26/half-height-console-graphics.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Fira+Code|Fira+Sans&display=swap" rel="stylesheet"><link type="application/atom+xml" rel="alternate" href="https://a.skh.am/feed.xml" title="Harry Askham" /><!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-E6LEXB5B8J"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-E6LEXB5B8J');
+</script>
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Harry Askham</a>
+
+    <!--<nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav>-->
+  </div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Half-Height Console Graphics with Haskell and ncurses</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2020-11-26T00:00:00+00:00" itemprop="datePublished">Nov 26, 2020
+      </time>• 7 min read</p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>Note: Since writing this post, I’ve written this technique up as a <a href="https://github.com/harryaskham/halfheight">standalone library</a>.</em></p>
+
+<h1 id="motivation">Motivation</h1>
+
+<p>Most terminals print characters twice as long as they are wide. This means that any character-based graphics that naively treat a character as a pixel are going to end up distorted. There are <a href="https://en.wikipedia.org/wiki/ANSI_art">plenty of ways</a> around this, but I wanted to write up the ncurses-based solution I came up with when writing a terminal-only roguelike engine in Haskell recently with support for simulating square pixels in an otherwise rectangular terminal.</p>
+
+<video muted="" controls="controls">
+  <source type="video/mp4" src="/video/rouge-example.mp4" />&lt;/source&gt;
+</video>
+
+<p><em>A debug run showing the end result: full-height text at the bottom of the terminal, and dense half-height ncurses graphics at the top.</em></p>
+
+<h1 id="problem-and-solution">Problem and Solution</h1>
+
+<p>The best examples of character per pixel ncurses rendering are those using the <a href="https://libtcod.readthedocs.io/en/latest/">libtcod</a> engine:</p>
+
+<p><img src="/img/libtcod.png" alt="img" /></p>
+
+<p>This looks good, but note that each cell is the same height as the text around it (in the above screenshot, this effect is minimised by using a shorter monospaced font). We’d like two modes: one for denser cell-based graphics and another for full-sized text, both in the same terminal window.</p>
+
+<p>Our solution will be to represent the canvas as a (W, (H/2)) dimension 2D array of <a href="https://www.compart.com/en/unicode/U+2580">Upper Half Block (▀)</a> characters, where (for example) if we take the top-left cell in (x, y) coordinates as (0, 0), we set the foreground colour to our canvas’ (0, 0) colour and the background colour to our canvas’ (0, 1) colour, simulating two rows of half-height pixels using only one row of characters.</p>
+
+<p>I’ll omit most of the setup - here we have a simple 2D array graphics buffer (each cell is one of 15 colours), and an environment that contains a camera position and viewport width and height. This function draws the buffer to the screen as half-height block characters. We pair up rows in chunks of two, and render within the <code class="highlighter-rouge">Update</code> monad of <code class="highlighter-rouge">UI.NCurses</code>.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">drawBuffer</span> <span class="o">::</span> <span class="p">(</span><span class="kt">MonadReader</span> <span class="kt">Env</span> <span class="n">m</span><span class="p">,</span> <span class="kt">MonadIO</span> <span class="n">m</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="kt">GfxBuffer</span> <span class="o">-&gt;</span> <span class="n">m</span> <span class="p">(</span><span class="kt">Update</span> <span class="nb">()</span><span class="p">)</span>
+<span class="n">drawBuffer</span> <span class="n">gfxBuffer</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="n">env</span> <span class="o">&lt;-</span> <span class="n">ask</span>
+  <span class="n">camera</span> <span class="o">&lt;-</span> <span class="n">liftIO</span> <span class="o">$</span> <span class="n">readMVar</span> <span class="o">$</span> <span class="n">env</span><span class="o">^.</span><span class="n">camera</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="kt">V2</span> <span class="n">cx</span> <span class="n">cy'</span><span class="p">)</span> <span class="o">=</span> <span class="n">camera</span><span class="o">^.</span><span class="n">topLeft</span>
+      <span class="p">(</span><span class="kt">V2</span> <span class="n">cw</span> <span class="n">ch'</span><span class="p">)</span> <span class="o">=</span> <span class="n">camera</span><span class="o">^.</span><span class="n">dims</span>
+      <span class="c1">-- Adjust vertical values to account for the block-rendering</span>
+      <span class="n">cy</span> <span class="o">=</span> <span class="n">cy'</span> <span class="p">`</span><span class="n">div</span><span class="p">`</span> <span class="mi">2</span>
+      <span class="n">ch</span> <span class="o">=</span> <span class="n">ch'</span> <span class="p">`</span><span class="n">div</span><span class="p">`</span> <span class="mi">2</span>
+      <span class="c1">-- Pair up rows to allow for block rendering.</span>
+      <span class="n">pairedBuffer</span> <span class="o">=</span> <span class="kt">V</span><span class="o">.</span><span class="n">fromList</span> <span class="o">$</span> <span class="n">combineRows</span> <span class="o">&lt;$&gt;</span> <span class="kt">VS</span><span class="o">.</span><span class="n">chunksOf</span> <span class="mi">2</span> <span class="n">gfxBuffer</span>
+      <span class="n">mkSetter</span> <span class="n">x</span> <span class="n">y</span> <span class="o">=</span> <span class="kr">do</span>
+        <span class="kr">let</span> <span class="p">(</span><span class="kt">ColorPair</span> <span class="n">fg</span> <span class="n">bg</span><span class="p">)</span> <span class="o">=</span> <span class="n">pairedBuffer</span> <span class="kt">V</span><span class="o">.!</span> <span class="n">y</span> <span class="kt">V</span><span class="o">.!</span> <span class="n">x</span>
+            <span class="n">colorID</span> <span class="o">=</span> <span class="n">getCol</span> <span class="p">(</span><span class="n">env</span><span class="o">^.</span><span class="n">colors</span><span class="p">)</span> <span class="n">fg</span> <span class="n">bg</span>
+        <span class="n">moveCursor</span> <span class="p">(</span><span class="n">fromIntegral</span> <span class="n">y</span><span class="p">)</span> <span class="p">(</span><span class="n">fromIntegral</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">setColor</span> <span class="n">colorID</span>
+        <span class="n">drawGlyph</span> <span class="o">$</span> <span class="kt">Glyph</span> <span class="sc">'▀'</span> <span class="kt">[]</span>
+  <span class="n">return</span> <span class="o">$</span> <span class="n">sequence_</span> <span class="p">[</span><span class="n">mkSetter</span> <span class="n">x</span> <span class="n">y</span> <span class="o">|</span> <span class="n">x</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="n">cw</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span> <span class="o">&lt;-</span> <span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="n">ch</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span></code></pre></figure>
+
+<p>We lose two things by taking this approach:</p>
+
+<ul>
+  <li>Cells can only be block colour and can’t contain text (they already contain the half-block character).</li>
+  <li>The colour pallette must be limited, as we’ll now see.</li>
+</ul>
+
+<h1 id="colour-representation-in-ncurses">Colour Representation in ncurses</h1>
+
+<p>There’s a problem for colour-hungry use-cases. ncurses allows you to use the predefined terminal colour library, and also allows you to overwrite these built-in colours and extend to a table of 255 custom colours (colour 0 cannot be overridden) - but the snag is that a “custom colour” is really a combination of background and foreground colour.</p>
+
+<p>With our condensed representation, if we have a pallette of say 4 custom colours, we would need 16 custom fg/bg pairs to represent each possibility that might arise. With our available 255 slots, then, we can only represent 15 unique colours.</p>
+
+<p>Using the <code class="highlighter-rouge">Color</code> type from <code class="highlighter-rouge">UI.NCurses</code>, we first define a pair type for our block cells and implement <code class="highlighter-rouge">Ord</code> so we can look up the 1-255 colour key for a given pair:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- A pair of colors s.t. we can display half-characters using unicode blocks.</span>
+<span class="kr">data</span> <span class="kt">ColorPair</span> <span class="o">=</span> <span class="kt">ColorPair</span> <span class="kt">Color</span> <span class="kt">Color</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Show</span><span class="p">,</span> <span class="kt">Eq</span><span class="p">)</span>
+
+<span class="kr">instance</span> <span class="kt">Ord</span> <span class="kt">ColorPair</span> <span class="kr">where</span>
+  <span class="c1">-- Arbitrary comparison so that we end up with distinct map keys.</span>
+  <span class="n">a</span> <span class="o">&lt;=</span> <span class="n">b</span> <span class="o">=</span> <span class="n">show</span> <span class="n">a</span> <span class="o">&lt;=</span> <span class="n">show</span> <span class="n">b</span>
+
+<span class="c1">-- A map to store the registered color pairings.</span>
+<span class="kr">type</span> <span class="kt">ColorMap</span> <span class="o">=</span> <span class="kt">M</span><span class="o">.</span><span class="kt">Map</span> <span class="kt">ColorPair</span> <span class="kt">ColorID</span></code></pre></figure>
+
+<p>Colour definition itself is stateful: we need to register our 255-colour pallette inside the <code class="highlighter-rouge">Curses</code> monad. The <code class="highlighter-rouge">ColorMap</code> itself is just a convenience lookup keeping track of which logical colour-pairs map on to which terminal colour ID. The library requires colours in RGB-1000 format - we include a quick-and-dirty method for constructing these from hex strings.</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Takes a hex code and converts to a tuple of RGB 1000 values.</span>
+<span class="c1">-- These are required by the curses register.</span>
+<span class="n">parseColor</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="kt">Integer</span><span class="p">,</span> <span class="kt">Integer</span><span class="p">,</span> <span class="kt">Integer</span><span class="p">)</span>
+<span class="n">parseColor</span> <span class="n">cs</span> <span class="o">=</span> <span class="n">toTuple3</span> <span class="n">scaled</span>
+  <span class="kr">where</span>
+    <span class="n">hexes</span> <span class="o">=</span> <span class="n">fst</span> <span class="o">&lt;$&gt;</span> <span class="p">(</span><span class="n">head</span> <span class="o">.</span> <span class="n">readHex</span> <span class="o">&lt;$&gt;</span> <span class="kt">LS</span><span class="o">.</span><span class="n">chunksOf</span> <span class="mi">2</span> <span class="n">cs</span><span class="p">)</span>
+    <span class="n">scaled</span> <span class="o">=</span> <span class="p">(</span><span class="nf">\</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span> <span class="p">`</span><span class="n">div</span><span class="p">`</span> <span class="mi">255</span><span class="p">)</span> <span class="o">&lt;$&gt;</span> <span class="n">hexes</span>
+    
+<span class="c1">-- Takes a list of hex strings and for each index, sets the corresponding terminal colour</span>
+<span class="c1">-- to that represented by the hex.</span>
+<span class="n">defineCustomColors</span> <span class="o">::</span> <span class="p">[</span><span class="kt">String</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">Curses</span> <span class="nb">()</span>
+<span class="n">defineCustomColors</span> <span class="n">hexes</span> <span class="o">=</span> <span class="n">sequence_</span> <span class="o">.</span> <span class="n">getZipList</span> <span class="o">$</span> <span class="kt">ZipList</span> <span class="n">mkColors</span> <span class="o">&lt;*&gt;</span> <span class="kt">ZipList</span> <span class="n">colorIDs</span>
+  <span class="kr">where</span>
+    <span class="n">colorIDs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">..</span><span class="p">]</span> <span class="o">::</span> <span class="p">[</span><span class="kt">Int16</span><span class="p">]</span>
+    <span class="n">mkColors</span> <span class="o">=</span> <span class="p">[</span> <span class="nf">\</span><span class="n">i</span> <span class="o">-&gt;</span> <span class="n">defineColor</span> <span class="p">(</span><span class="kt">Color</span> <span class="n">i</span><span class="p">)</span> <span class="n">r</span> <span class="n">g</span> <span class="n">b</span>
+               <span class="o">|</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">parseColor</span> <span class="o">&lt;$&gt;</span> <span class="n">hexes</span>
+               <span class="p">]</span></code></pre></figure>
+
+<p>And finally, in order to both set the colours and track the pairwise mapping, we call the following init function to get a <code class="highlighter-rouge">Curses ColorMap</code>:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- Takes all custom colors and defines + persists them as an overlap map.</span>
+<span class="n">initColors</span> <span class="o">::</span> <span class="p">[</span><span class="kt">String</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">Curses</span> <span class="kt">ColorMap</span>
+<span class="n">initColors</span> <span class="n">hexes</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="c1">-- Set the terminal colours appropriately</span>
+  <span class="n">defineCustomColors</span> <span class="n">hexes</span>
+  <span class="c1">-- Create and return the ColorMap tracking the assignments made</span>
+  <span class="n">sequenceA</span> <span class="o">$</span> <span class="kt">M</span><span class="o">.</span><span class="n">fromList</span> <span class="p">(</span><span class="n">zip</span> <span class="n">colorKeys</span> <span class="n">newColors</span><span class="p">)</span>
+  <span class="kr">where</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="kt">Color</span> <span class="o">&lt;$&gt;</span> <span class="p">[</span><span class="mi">1</span><span class="o">..</span><span class="mi">15</span><span class="p">]</span>
+    <span class="n">colorIDs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">..</span><span class="n">length</span> <span class="n">colors</span> <span class="o">^</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">colorCombos</span> <span class="o">=</span> <span class="p">(,)</span> <span class="o">&lt;$&gt;</span> <span class="n">colors</span> <span class="o">&lt;*&gt;</span> <span class="n">colors</span>
+    <span class="n">colorKeys</span> <span class="o">=</span> <span class="n">uncurry</span> <span class="kt">ColorPair</span> <span class="o">&lt;$&gt;</span> <span class="n">colorCombos</span>
+    <span class="n">colorCreators</span> <span class="o">=</span> <span class="kt">ZipList</span> <span class="o">$</span> <span class="n">uncurry</span> <span class="n">newColorID</span> <span class="o">&lt;$&gt;</span> <span class="n">colorCombos</span>
+    <span class="n">newColors</span> <span class="o">=</span> <span class="n">getZipList</span> <span class="o">$</span> <span class="n">colorCreators</span> <span class="o">&lt;*&gt;</span> <span class="kt">ZipList</span> <span class="p">(</span><span class="n">fromIntegral</span> <span class="o">&lt;$&gt;</span> <span class="n">colorIDs</span><span class="p">)</span></code></pre></figure>
+
+<p>With a fully constructed map (whose keys are foreground/background pairs), we can get the block representation for a two-row cell by simple lookup:</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">getCol</span> <span class="o">::</span> <span class="kt">ColorMap</span> <span class="o">-&gt;</span> <span class="kt">Color</span> <span class="o">-&gt;</span> <span class="kt">Color</span> <span class="o">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">ColorID</span>
+<span class="n">getCol</span> <span class="n">colors</span> <span class="n">fg</span> <span class="n">bg</span> <span class="o">=</span> <span class="n">colors</span><span class="o">^.</span><span class="n">at</span> <span class="p">(</span><span class="kt">ColorPair</span> <span class="n">fg</span> <span class="n">bg</span><span class="p">)</span></code></pre></figure>
+
+
+  </div><a class="u-url" href="/2020/11/26/half-height-console-graphics.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <!--<h2 class="footer-heading">Harry Askham</h2>-->
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Harry Askham</li><li><a class="u-email" href="mailto:harry@skh.am">harry@skh.am</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/harryaskham"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">harryaskham</span></a></li><li><a href="https://www.linkedin.com/in/harryaskham"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">harryaskham</span></a></li><li><a href="https://bsky.app/profile/skh.am"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#bluesky"></use></svg> <span class="username">skh.am</span></a></li><li><a href="https://www.twitter.com/harryaskham"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">harryaskham</span></a></li></ul>
+</div>
+<!--
+      <div class="footer-col footer-col-3">
+        <p>Harry Askham, Senior Staff Software Engineer</p>
+      </div>
+-->
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
