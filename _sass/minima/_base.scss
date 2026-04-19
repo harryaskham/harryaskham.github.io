@@ -267,3 +267,79 @@ table {
   background-color: #4C566A;
   line-height: 1 !important;
 }
+
+/**
+ * Dark mode (respects OS preference)
+ * Uses Nord dark palette: https://www.nordtheme.com/
+ */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: $dark-text-color;
+    background-color: $dark-background-color;
+  }
+
+  a {
+    color: $dark-brand-color;
+
+    &:visited {
+      color: darken($dark-brand-color, 10%);
+    }
+
+    &:hover {
+      color: $dark-text-color;
+    }
+  }
+
+  blockquote {
+    color: $dark-grey-color;
+    border-left-color: $dark-grey-color-light;
+  }
+
+  pre,
+  code {
+    border-color: $dark-grey-color-light;
+    background-color: $dark-code-bg;
+    color: $dark-text-color;
+  }
+
+  table {
+    color: $dark-text-color;
+    border-color: $dark-grey-color-light;
+    tr:nth-child(even) {
+      background-color: $dark-code-bg;
+    }
+    th {
+      background-color: $dark-grey-color-light;
+      border-color: $dark-grey-color-light;
+    }
+    td {
+      border-color: $dark-grey-color-light;
+    }
+  }
+
+  .svg-icon {
+    fill: $dark-grey-color;
+  }
+
+  .site-header {
+    border-top-color: $dark-brand-color;
+    border-bottom-color: $dark-grey-color-light;
+  }
+
+  .site-title,
+  .site-title:visited {
+    color: $dark-text-color;
+  }
+
+  .site-footer {
+    border-top-color: $dark-grey-color-light;
+  }
+
+  .post-meta {
+    color: $dark-grey-color;
+  }
+
+  .post-link {
+    color: $dark-brand-color;
+  }
+}
