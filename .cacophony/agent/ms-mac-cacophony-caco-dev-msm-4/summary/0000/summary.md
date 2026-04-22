@@ -1,67 +1,61 @@
-# bd-5b02d6 — caco agent reintegrate broken-on-main pre-push gate
+# bd-d69565 — caco agent rebase auto-pushes rebased tip
 
 ## Goal
-Catch broken-on-main waves at their source — the agent that introduced
-the wave — by simulating the rebase onto the latest target tip and
-re-running the workspace test+clippy gates one final time before the
-squash-merge push.
+Eliminate the manual `git push --force-with-lease` step that operators
+have been hitting whenever `caco agent rebase` is followed by
+`caco agent reintegrate`.
 
 ## Bead(s)
-- bd-5b02d6 (P2 feature) — broken-on-main mitigation: caco agent
-  reintegrate should rebase + re-test immediately before squash-push.
+- bd-d69565 (P2 bug) — caco agent reintegrate's auto-rebase fights
+  with concurrent agent-branch updates: needed manual force-with-lease
+  tonight. Pairs with bd-a51211 (server-side non-FF auto-recovery,
+  already landed) and bd-732406 (daemon-restart re-attach, separate).
 
 ## Before state
-- An agent runs full test+clippy at HEAD-of-branch, then by the time
-  the squash-merge push lands main has moved. The push-rebase pulls in
-  new files (e.g. new struct fields, new dead-code targets) which
-  would have failed locally if tested. The wave then ripples to every
-  active worker who pulls main (~5–15 minutes of peer-repair time
-  per wave; bd-ee1696 reported 13+ waves in a single session).
-- `dispatch_agent_reintegrate` proceeded straight from preflight +
-  before_reintegration hooks into `reintegrate(&req)` with no
-  rebased-state validation step.
+- `caco agent rebase` ran `git fetch origin <target>` + `git rebase
+  origin/<target>` and stopped there. The local agent branch advanced;
+  the remote one did not.
+- The next `caco agent reintegrate` then tried to push the rebased
+  branch back to its own remote ref and was rejected non-fast-forward
+  (the remote still held the pre-rebase commit).
+- Operators worked around by running `git push --force-with-lease`
+  manually before re-running reintegrate.
+- bd-a51211 added a single-shot auto-recovery to the reintegration
+  flow's `push_agent_branch`, but the rebase command itself never
+  pushed at all, so an extra round-trip was always required.
 
 ## After state
-- New `broken_on_main_gate_enabled()` env-controlled toggle
-  (`CACO_REINTEGRATE_BROKEN_ON_MAIN_GATE` ∈ `1`, `true`, `yes`, `on`,
-  case-insensitive). Defaults off until we have enough field
-  experience to make it the default.
-- New `run_broken_on_main_gate(checkout, target_branch, remote)` runs:
-    1. `git fetch <remote> <target_branch>`
-    2. snapshot `HEAD` for unconditional rollback
-    3. `git merge --no-edit -X theirs FETCH_HEAD` (working tree only)
-    4. `cargo test --workspace --lib --no-fail-fast`
-    5. `cargo clippy --workspace --all-targets -- -D warnings`
-    6. always `git reset --hard <pre_merge_head>`
-- When step 4 or 5 fails the gate returns the captured failure detail
-  and `dispatch_agent_reintegrate` aborts with a clear message,
-  refusing to push the squash.
-- A merge conflict in step 3 is treated as non-blocking — the daemon's
-  auto-rebase loop will still handle it, so we report `Ok` and let it
-  run.
-- Three new tests cover the toggle parser (default-off, truthy-on,
-  falsy-off); the helper itself is exercised end-to-end by enabling
-  the env var on the next reintegration.
+- After a successful local rebase, `dispatch_agent_rebase` now runs
+  `git push --force-with-lease origin <agent_branch>:<agent_branch>`.
+- Agent branches are single-writer (the agent process itself), so
+  `--force-with-lease` is safe: it only succeeds when the remote tip
+  matches what we last observed and refuses if a concurrent writer
+  has advanced it.
+- The push is best-effort. On failure we annotate the success message
+  with a `warning: bd-d69565 …` line but do NOT mask the rebase
+  success — operators can still re-run reintegrate, which routes
+  through bd-a51211's auto-recovery on its push attempt.
+- JSON mode surfaces the same warning under
+  `"post_rebase_push_warning"` so automation can decide whether to
+  retry or proceed.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs`:
-  - In `dispatch_agent_reintegrate`, gate-check between
-    `ScopedEnvVar::set("CACO_REINTEGRATION_AUTO_REBASE_RETRY_LIMIT", …)`
-    and the call to `reintegration::reintegrate(&req)`.
-  - New helpers `broken_on_main_gate_enabled()` and
-    `run_broken_on_main_gate(checkout, target_branch, remote)`.
-  - New tests `broken_on_main_gate_disabled_by_default`,
-    `broken_on_main_gate_enabled_by_truthy_env`,
-    `broken_on_main_gate_disabled_by_falsy_env`.
+- `crates/caco-cli/src/lib.rs` (`dispatch_agent_rebase`):
+  - After the rebase succeeds, run a `git push --force-with-lease`
+    against the resolved agent branch.
+  - Capture push failures into an optional warning string.
+  - Plumb the warning into both the JSON envelope and the human-readable
+    success message.
 
 ## Operator-takeaway
-Set `CACO_REINTEGRATE_BROKEN_ON_MAIN_GATE=1` for an agent (in profile
-`environment` or via the launcher) to opt in to the pre-push gate.
-Cost is one extra full workspace test+clippy run per reintegration
-(~30s on warm caches, more on cold caches). When the gate trips, the
-agent gets the failure output verbatim and a `Fix and re-run.`
-instruction; the squash never lands. Pairs with bd-2c399b (full
-merge-queue daemon), which remains the proper architectural fix.
+The two-command `caco agent rebase` → `caco agent reintegrate` flow
+should now work first time without an interleaved manual force-push.
+If you ever see a `bd-d69565 post-rebase push failed` warning, just
+re-run `caco agent reintegrate` — bd-a51211's auto-recovery will pick
+up from there.
 
 ## Tests
-- `cargo test -p caco-cli --lib broken_on_main_gate` — 3 passed.
+- `cargo test -p caco-cli --lib agent_rebase` — 1 passed (the existing
+  help-text test). The push branch is best-effort and would require a
+  full live-git fixture to exercise meaningfully; the contract is
+  asserted by the manual workflow this bead is closing.
