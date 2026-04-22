@@ -1,36 +1,33 @@
-# Session summary 0000 — bd-274c2d cycle 0028: dup operator-actions list dispatch
+# Session summary 0000 — bd-274c2d cycle 0029: restore operator-actions fn + doc_lazy_continuation
 
 ## Goal
 
-Workspace clippy red on origin/main with E0428 (duplicate `dispatch_operator_actions_list` definition) and E0061 (call mismatch). msm-5 bd-6b7b30 slice 1 added a parallel implementation of `caco operator-actions list` that was already implemented under bd-8fe920. Sweep.
+Workspace clippy red on origin/main with two issues:
+1. `E0425: dispatch_operator_actions_list not in scope` — my own cycle 0028 deleted the wrong fn (kept the bd-8fe920 fn at 16747 mentally but deletion script removed line range 51236..51333 which was the bd-8fe920 fn, NOT the bd-6b7b30 dup). The remaining bd-8fe920 dispatch arm at 10134 calls a fn that no longer exists.
+2. `clippy::doc_lazy_continuation` at `caco-cli/src/lib.rs:50828-50830` — bd-1f01ad doc-comment had `///\n` blank-line followed by continuation prose where the previous line ended with `+ logs`, parsed as list-item.
 
 ## Bead(s)
 
-- `bd-274c2d` — Permanent: continuous test suite health (broken-on-main sweep cycle 0028).
+- `bd-274c2d` — Permanent: continuous test suite health (broken-on-main sweep cycle 0029).
 
 ## Before state
 
-- `cargo clippy --workspace --all-targets -- -D warnings`: failing.
-  - `E0428: dispatch_operator_actions_list defined multiple times` (16747 vs 51241).
-  - `E0061: this function takes 3 arguments but 2 were supplied` (call site at 10057).
+- Workspace clippy: failing.
 
 ## After state
 
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+- Workspace clippy: clean.
 - `cargo test-small`: 56 pass.
 
 ## Implementation
 
-bd-8fe920 already shipped `dispatch_operator_actions_list(project: &str, json_requested: bool, config_override: Option<&PathBuf>)` with a proper daemon-API call at 16747, and a dispatch site at 10106 using `co`. msm-5 bd-6b7b30 slice 1 landed a parallel implementation at 51241 that shells out (`std::process::Command`) and a parallel dispatch arm at 10050 that uses a 2-arg signature. Both the duplicate dispatch arm and the duplicate function are dead — the bd-8fe920 path is canonical and superior (no shell-out, uses daemon API directly).
-
-Changes:
-- Deleted the second `fn dispatch_operator_actions_list` (51241 onwards) and its doc-comment.
-- Deleted the duplicate match arm at 10050 (kept the bd-8fe920 arm at 10106).
+1. Restored the `dispatch_operator_actions_list(project: String, json_requested: bool)` fn from `git show 14dcdcc8:crates/caco-cli/src/lib.rs` (lines 51302..51399) by appending it to lib.rs. This is the bd-6b7b30 shell-out implementation; the bd-8fe920 daemon-API impl I thought I was preserving was actually the one I deleted. The dispatch arm at 10134 expects this 2-arg signature.
+2. Replaced `+` with `plus` in the doc-comment to defeat clippy's list-item heuristic.
 
 ## Diff summary
 
-- `crates/caco-cli/src/lib.rs` — ~110 lines removed (one fn + one match arm + comments).
+- `crates/caco-cli/src/lib.rs` — +98 lines (restored fn) + 1 word change (doc).
 
 ## Operator-takeaway
 
-Concurrent landing collision. msm-5 bd-6b7b30 implemented `operator-actions list` independently of bd-8fe920 (already shipped). Kept the canonical bd-8fe920 implementation; dropped the bd-6b7b30 shell-out duplicate. Behaviourally equivalent for the operator (same CLI surface, same JSON envelope), with the bd-8fe920 path slightly faster (one HTTPS round-trip vs sub-process spawn).
+Cycle 0028 self-correction: I misread which `dispatch_operator_actions_list` was canonical and removed the wrong one. Restored the surviving dispatch arm's matching fn. Both implementations existed because of a bd-8fe920 ↔ bd-6b7b30 collision; the dispatch arm at 10134 was bd-8fe920's, but the fn I restored was bd-6b7b30's — the API surface still works (both fns shipped the same `caco operator-actions list` command). Net behaviour preserved. bd-1f01ad's doc-comment regression bears the same `+` symbol bug as past doc_lazy_continuation cycles (cycle 0026 etc.); standard workaround is to spell it out.
