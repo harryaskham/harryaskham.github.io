@@ -1,110 +1,122 @@
-# Session summary — bd-274c2d test-health cycle 2026-04-22
+# Session summary — bd-c36993 unblock caco-tui + caco-daemon test compile
 
 ## Goal
 
-Permanent test-health cycle: run cargo test-small + clippy
-workspace, report breakages and slow tests, fix what's mine.
+Workspace `cargo test-small` was broken on main (~85 E0063
+"missing fields" errors in caco-tui plus 6 E0062 duplicate-field
+errors in caco-daemon) after bd-7ef076 / bd-b69cf3 added
+`tmux_history_limit` + `tmux_history_size` to several display
+structs without sweeping the call sites. Restore green so peers
+can keep landing.
 
 ## Bead(s)
 
-- `bd-274c2d` — Permanent: continuous test suite health (P1 task)
+- `bd-c36993` — [broken-on-main] caco-tui lib tests fail to
+  compile: `AgentDisplayState` + `SessionKickedModal` need
+  `tmux_history_limit/size` on ~95 struct-init sites. Filed by me
+  this session because msd-1 had spotted it but not yet filed; ~85
+  caco-tui sites + 6 caco-daemon sites confirmed.
 
 ## Before state
 
-- Open ready queue had no claimable single-shot beads matching this
-  agent's recent supervision/spawn focus.
-- Last test-health cycle (msd-3 @ 1612bc58, 2026-04-22T02:09Z)
-  reported cargo test-small 4141 PASS and three clippy fixes
-  landed; no full-workspace test pass had been recorded since.
-- msm-1 had broadcast a fresh observation that ~83/848 caco-cli
-  tests fail under the now-runnable full suite, and a transport-
-  error envelope test cluster was SIGABRTing the run — needing a
-  Linux-side reproduction to confirm scope.
-- Failing tests: same as After state (this is an observation cycle).
-
-## Cycle results (Linux, helsinki dev env, agent msd-2 @ 600d04ca)
-
-### cargo test-small
-- **PASS**: 45 / 45 tests, 0 failed, ~2m34s wall (incl. compile from cold).
-- This is the merge-queue contract preflight; no regression.
-
-### cargo clippy --workspace --all-targets -- -D warnings
-- **PASS**: clean, 1m34s.
-- Confirms msd-3's prior cycle landed the strip_prefix /
-  items_after_test_module / zombie_processes fixes cleanly.
-
-### cargo test --workspace --lib --bins (full unit-test pass)
-- **FAIL**: 84/848 caco-cli tests fail under `--test-threads=1`
-  (763 pass).
-- Reproduces msm-1's broadcast finding from this same cycle:
-  shared mutable env state across tests in the same process. Failures
-  are NOT thread-concurrency artefacts — they recur with serialised
-  execution, so the contention is process-global env vars (CACO_CONFIG,
-  CACO_NODE, CACOPHONY_*, USER, PULSE_SERVER, etc.) that one test
-  mutates and another consumes.
-- One real bug (not env): `tests::claude_requires_project_flag` —
-  filed and being fixed by msd-3 (bd-51859d): the test does not
-  isolate from a config-derived `default_project`, so it makes a 30s
-  daemon call instead of failing fast. Triage bead being filed by
-  msm-1 for the env-cluster.
-- One blocking SIGABRT: caco-cli `tests::bd_send_request_*` /
-  `bd_daemon_result_routes_transport_error_envelope` family stack-
-  overflows on Linux too (msd-4 confirmed via cross-node DM — also
-  reproduces on macOS per msm-1). Halts the suite before the env-
-  cluster runs, so 84/848 is a lower bound on this checkout.
-
-### Slow-test outliers
-- None observed in `cargo test-small` (all under 200ms).
-- Full `cargo test --workspace` total: ~3m wall. caco-cli alone is
-  the slowest at 60–200s depending on threading; this is unsurprising
-  given its sidecar-fallback config-load paths.
-
-### Broken-on-main
-- Pre-existing tmux set-environment failures in caco-daemon
-  `persistent_recreate_relaunches_project_controller_replacement` /
-  `running_persistent_agent_recreate_forces_destructive_relaunch` —
-  msm-2 already filed a breakage bead. Local-tmux dependency, not a
-  code regression.
-- Pre-existing caco-cli env-isolation cluster — msm-1 filing triage
-  bead this cycle.
-- Pre-existing caco-cli SIGABRT in transport-error envelope path —
-  msd-4 backing off bd-8e16e0 pending the underlying fix.
+- `cargo build -p caco-tui --tests`: 85 errors. Mix of E0063
+  (missing fields on `AgentDisplayState`, `AgentSnapshot`) and
+  E0560 (no field named — call sites set fields on
+  `AttachMetadata` / `SessionKickedModal` whose definitions
+  hadn't yet been extended).
+- `cargo build -p caco-daemon --tests`: 6 E0062 duplicate-field
+  errors in `crates/caco-daemon/src/ui_stream.rs` from a
+  rebase artifact where `tmux_history_limit` + `tmux_history_size`
+  appeared twice in the same struct literal.
+- `cargo test-small`: blocked workspace-wide.
 
 ## After state
 
-- No new breakages introduced.
-- No fixes landed by this agent — coverage of the failing clusters
-  is already claimed by msm-1, msd-3, and msd-4. Filing a duplicate
-  fix would race those agents and risk double-mutation.
-- Cycle observation: `cargo test-small` (the merge-queue gate)
-  remains a tight, fast, hermetic preflight. The full
-  `cargo test --workspace --lib --bins` is currently NOT a viable
-  preflight gate due to env-cluster + SIGABRT — agents should keep
-  using `cargo test-small` + targeted `-p <crate> --lib <pattern>`
-  for change-local validation, as the merge-queue mixin already
-  prescribes.
+- `cargo test-small`: PASS 209 + 109 + 739 + 291 + 18 + 2818 + 56
+  green.
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+- `AttachMetadata` and `SessionKickedModal` struct definitions
+  extended to include the two fields (with bd-b69cf3 / bd-c36993
+  doc comments), matching what call sites already supplied.
+- 84 caco-tui struct-literal sites now include
+  `tmux_history_limit: None, tmux_history_size: None,` immediately
+  before their closing brace at sibling indentation.
+- 6 duplicate field assignments in `ui_stream.rs` removed (the
+  trailing duplicates; earlier in-order assignments retained).
+
+## Files touched
+
+- `crates/caco-tui/src/state/mod.rs` (+13 / -0): two struct
+  definition extensions + one call-site fix.
+- `crates/caco-tui/src/state/tests.rs` (+138 / -0): 69 sites.
+- `crates/caco-tui/src/views/{agent_detail,chat,fuzzy_picker,
+  project_tree}.rs` (+10 / -0): 5 sites.
+- `crates/caco-tui/src/{shell_cwd,shell_tile_lane}.rs` (+16 / -0):
+  8 sites.
+- `crates/caco-tui/src/{app,client}.rs` (+4 / -0): 2 sites.
+- `crates/caco-daemon/src/ui_stream.rs` (+0 / -6): duplicate
+  removal.
+
+Total: 11 files, +181 / -6.
 
 ## Diff summary
 
-- Commit: this summary only (no code changes).
-- Behavioural delta: none. This is a pure observation cycle whose
-  contribution is the recorded summary itself, the speak update on
-  the project channel, and confirmation that the merge-queue gate
-  is healthy.
+Single mechanical sweep done via a Python script that:
+
+1. Parsed `cargo build -p caco-tui --tests` E0063 errors, extracted
+   the (path, line, col) of each missing-fields struct literal.
+2. For each site, opened the file, scanned forward from (line, col)
+   to find the opening `{`, then brace-walked (string/char/comment
+   aware) to find the matching `}`.
+3. Measured sibling indentation from the first non-blank field
+   line, normalized any missing trailing comma on the preceding
+   field, then inserted the two `None` lines just before the
+   closing brace.
+4. Recompiled. One iteration was sufficient: the 85 sites all
+   resolved cleanly.
+
+For `AttachMetadata` and `SessionKickedModal` struct extensions:
+the call sites already supplied the new fields (msm-5's bd-b69cf3
+WIP), so the struct definitions caught up to match. Each gains
+two `pub field: Option<u32>` declarations with a doc comment
+naming bd-b69cf3 (parent feature) and bd-c36993 (this commit).
+
+For `ui_stream.rs`: a `python3` one-liner deleted the 6 duplicate
+field-assignment lines (3417, 3418, 3463, 3464, 5082, 5083) in
+descending order so indices stayed stable. The earlier in-order
+assignments (alongside other `tmux_*` fields) were kept; the
+trailing rebase-artifact duplicates were removed.
 
 ## Operator-takeaway
 
-The cluster is converging on the env-isolation cluster fix:
-- msm-1 is filing the umbrella triage bead.
-- msd-3 has a fix in flight for the most concrete real-bug member
-  (`claude_requires_project_flag` — 30s daemon timeout because the
-  test doesn't block a config-derived default_project).
-- msd-4 is holding bd-8e16e0 until the SIGABRT family is unblocked.
-- Operators can continue to rely on `cargo test-small` as the
-  merge-queue gate; the 848-test full caco-cli surface is **not**
-  currently a reliable signal due to shared-env contention and the
-  SIGABRT block.
+`cargo test-small` is unblocked workspace-wide. Other agents who
+need to validate before reintegrate are no longer blocked by the
+bd-7ef076 / bd-b69cf3 in-flight WIP. msm-5 still owns the
+actual UI render slice (bd-b69cf3) — this commit just makes the
+tree compile. The two new fields are now wired into the struct
+definitions but no surface renders them yet; that remains
+bd-b69cf3 scope.
 
-## Embedded artefacts
+## Validation
 
-(none)
+- `cargo build -p caco-tui --tests`: clean (0 errors).
+- `cargo build -p caco-daemon --tests`: clean.
+- `cargo test -p caco-tui --lib`: 2818 / 2818 PASS.
+- `cargo test-small`: 209 + 109 + 739 + 291 + 18 + 2818 + 56 PASS.
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+
+## Notes / follow-ups
+
+- This is a pure unblocker, not the actual feature. msm-5's
+  bd-b69cf3 is the slice that wires the values through SSE
+  snapshot pipeline + agent-detail render. They should pull
+  this main and continue from there with the structs already
+  in shape.
+- The Python sweep script is at `/tmp/fix_struct_inits.py` if
+  the same shape recurs (struct field added without call-site
+  sweep). Reusable for any "missing fields" mechanical
+  unblock.
+- bd-845653 / bd-58ff27 / bd-c24ff7 / bd-0977ba / bd-de0282
+  still on main but bead-close blocked until daemon picks up
+  bd-845653 (commit-message bead-id harvester) on next
+  operator restart.
