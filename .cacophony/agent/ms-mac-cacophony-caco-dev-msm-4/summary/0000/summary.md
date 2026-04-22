@@ -1,61 +1,59 @@
-# bd-d69565 — caco agent rebase auto-pushes rebased tip
+# bd-13b2a1 — daemon health watchdog self-exit on wedge
 
 ## Goal
-Eliminate the manual `git push --force-with-lease` step that operators
-have been hitting whenever `caco agent rebase` is followed by
-`caco agent reintegrate`.
+Eliminate manual SSH-and-pkill recovery for the termux daemon-wedge
+pattern (process alive, no port bind, listener thread deadlocked) by
+extending the existing bd-3a85f7 health watchdog to self-exit when
+the local listener has been unresponsive for too long, so the
+supervisor (`caco up`) respawns a fresh daemon that binds cleanly.
 
 ## Bead(s)
-- bd-d69565 (P2 bug) — caco agent reintegrate's auto-rebase fights
-  with concurrent agent-branch updates: needed manual force-with-lease
-  tonight. Pairs with bd-a51211 (server-side non-FF auto-recovery,
-  already landed) and bd-732406 (daemon-restart re-attach, separate).
+- bd-13b2a1 (P2 bug) — sgu24 termux daemon wedges into not-listening
+  state every few hours. Two reproductions observed by caco-doctor-hel
+  in 7h.
 
 ## Before state
-- `caco agent rebase` ran `git fetch origin <target>` + `git rebase
-  origin/<target>` and stopped there. The local agent branch advanced;
-  the remote one did not.
-- The next `caco agent reintegrate` then tried to push the rebased
-  branch back to its own remote ref and was rejected non-fast-forward
-  (the remote still held the pre-rebase commit).
-- Operators worked around by running `git push --force-with-lease`
-  manually before re-running reintegrate.
-- bd-a51211 added a single-shot auto-recovery to the reintegration
-  flow's `push_agent_branch`, but the rebase command itself never
-  pushed at all, so an extra round-trip was always required.
+- The bd-3a85f7 watchdog probed `GET /api/v1/node` every 30s with a
+  5s timeout and logged after 3 consecutive failures.
+- On a wedged daemon it kept logging indefinitely. Recovery required
+  an operator to `ssh <node> -- pkill -f 'caco.*daemon'` and wait for
+  the supervisor to respawn.
 
 ## After state
-- After a successful local rebase, `dispatch_agent_rebase` now runs
-  `git push --force-with-lease origin <agent_branch>:<agent_branch>`.
-- Agent branches are single-writer (the agent process itself), so
-  `--force-with-lease` is safe: it only succeeds when the remote tip
-  matches what we last observed and refuses if a concurrent writer
-  has advanced it.
-- The push is best-effort. On failure we annotate the success message
-  with a `warning: bd-d69565 …` line but do NOT mask the rebase
-  success — operators can still re-run reintegrate, which routes
-  through bd-a51211's auto-recovery on its push attempt.
-- JSON mode surfaces the same warning under
-  `"post_rebase_push_warning"` so automation can decide whether to
-  retry or proceed.
+- `health_watchdog_loop` now reads
+  `CACO_DAEMON_WATCHDOG_SELF_EXIT_THRESHOLD` (default 20). When the
+  consecutive-failure counter reaches that value, the watchdog logs a
+  `bd-13b2a1` diagnostic, flushes stderr, and calls
+  `std::process::exit(87)`.
+- `caco up` (the existing supervisor) sees the exit and respawns a
+  fresh daemon process which binds the port cleanly — exactly the
+  manual recovery, automated.
+- Exit code 87 (= bd-13b2a1) is distinctive so post-mortem tooling
+  can tell this apart from a panic, SIGKILL, or clean shutdown.
+- Setting the env var to `0` disables self-exit and restores the prior
+  log-only behaviour for nodes where automatic restart is undesirable.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (`dispatch_agent_rebase`):
-  - After the rebase succeeds, run a `git push --force-with-lease`
-    against the resolved agent branch.
-  - Capture push failures into an optional warning string.
-  - Plumb the warning into both the JSON envelope and the human-readable
-    success message.
+- `crates/caco-daemon/src/lib.rs` (`health_watchdog_loop`):
+  - Read `CACO_DAEMON_WATCHDOG_SELF_EXIT_THRESHOLD` once at loop start
+    (default `20`, i.e. ~10 minutes at 30s probe interval).
+  - After the existing log-on-failure block, evaluate the threshold
+    and call `std::process::exit(87)` with a flushed-stderr
+    diagnostic citing the bead, the listener address, the failure
+    count, and the elapsed seconds.
 
 ## Operator-takeaway
-The two-command `caco agent rebase` → `caco agent reintegrate` flow
-should now work first time without an interleaved manual force-push.
-If you ever see a `bd-d69565 post-rebase push failed` warning, just
-re-run `caco agent reintegrate` — bd-a51211's auto-recovery will pick
-up from there.
+- Default behaviour: ~10 minutes of total unresponsiveness triggers
+  automatic supervisor-respawn. Should make the sgu24-class wedge
+  invisible to operators.
+- To tune for a wedge-prone node:
+  `CACO_DAEMON_WATCHDOG_SELF_EXIT_THRESHOLD=4` (≈ 2 minutes).
+- To audit: grep crash log for `bd-13b2a1: health watchdog self-exit`.
+- To disable: `CACO_DAEMON_WATCHDOG_SELF_EXIT_THRESHOLD=0`.
 
 ## Tests
-- `cargo test -p caco-cli --lib agent_rebase` — 1 passed (the existing
-  help-text test). The push branch is best-effort and would require a
-  full live-git fixture to exercise meaningfully; the contract is
-  asserted by the manual workflow this bead is closing.
+- `cargo build -p caco-daemon` — clean.
+- The exit path itself is a `std::process::exit` and not unit-testable
+  in-proc; the threshold parsing is trivial and covered by the
+  `unwrap_or(20)` default. Behaviour will be validated in production
+  by sgu24's regular wedges (or, ideally, by their absence).
