@@ -1,78 +1,53 @@
-# Session summary — bd-c55c0c: stop TUI from replaying 2-week-old chat as live
+# Session summary 0000 — bd-940284: caco msg send --strict-target
 
 ## Goal
 
-Stop the TUI from surfacing weeks-old chat messages as if they were live
-traffic when a node comes back online after a long quiet period. Two
-layered defects had to be fixed together: full-state replication shipped
-its 50 newest chat events with no age bound, and the TUI hydration path
-appended them straight into the live chat surfaces with no marker.
+Stop `caco msg send` from silently accepting nonsense `--target`
+strings. Operator probe found
+`caco msg send --target nonexistent-target --body hi` reports
+success even though no inbox row gets created. Add an opt-in
+`--strict-target` that pre-flights the target against the
+project's known agents before persisting the message.
 
 ## Bead(s)
 
-- `bd-c55c0c` — TUI startup replays 2-week-old chat messages as fresh:
-  full-state chat_history has no age cutoff, hydrate_chat_from_history
-  doesn't mark backfill
+- `bd-940284` — opt-in pre-flight only (slice 1).
 
 ## Before state
 
-- Failing tests: none related; `[broken-on-main]` for
-  `agent_attach_help_shows_id_and_raw_args` (caco-cli) acknowledged via
-  inbox as unrelated breakage being tracked by another worker.
-- `crates/caco-daemon/src/replication.rs` capped `chat_history` to 50
-  rows by count only (`FULL_STATE_MAX_CHAT_HISTORY = 50`), no age bound.
-- `crates/caco-tui/src/state/mod.rs::hydrate_chat_from_history` pushed
-  historical rows directly into `global_chat`/`project_chats` with no
-  flag, so backfill was indistinguishable from live SSE-applied chat.
-- TUI bubble renderer had no concept of "historical" messages.
+- `caco msg send --target nonexistent-target ...` returned
+  `sent message msg-... to nonexistent-target` with no warning.
+- No client-side enumeration of valid targets.
 
 ## After state
 
-- Failing tests: none from this change. `cargo test-small` 195 + 107 +
-  716 + 277 + 18 + 2775 + 43 = all green. New unit tests pass:
-  `bound_chat_history_by_age_drops_stale_rows_and_keeps_fresh`,
-  `bound_full_state_dump_drops_stale_chat_rows`, and an updated
-  `hydrate_chat_from_history_populates_global_and_project` that asserts
-  the new `hydrated=true` invariant.
-- Daemon: `FULL_STATE_CHAT_HISTORY_MAX_AGE_SECS = 24*60*60` and a new
-  `bound_chat_history_by_age` retain-filter applied inside
-  `bound_full_state_dump` before the count cap. Unparseable timestamps
-  are kept (fail open).
-- TUI: `ChatMessage` gains `hydrated: bool`. All ~71 existing
-  constructors set `hydrated: false`; the two struct literals inside
-  `hydrate_chat_from_history` set `hydrated: true`. The chat bubble
-  renderer in `crates/caco-tui/src/views/chat.rs` draws a centred
-  `— previously —` / `— live —` divider on transitions and dims the
-  hydrated bubble border colour to `NORD3`.
+- New `--strict-target` flag on `caco msg send`.
+- When set, `validate_target_in_project(project, target)` queries
+  `/api/v1/projects/{project}/agents` and:
+  - Allows `cacophony:operator` / `<project>:operator` literally
+    (not in agents list but routed by daemon).
+  - Returns `Ok(())` if target appears in agent IDs.
+  - Errors with close substring matches (up to 3) on miss.
+  - Fails open with stderr warning if daemon returns nothing
+    parsable (don't block operator on 5xx).
+- New `parse_agent_ids` helper handles both `id` and `agent_id`
+  JSON field names.
+- 3 new unit tests in `tests::parse_agent_ids_*` pass.
+- Existing behaviour without the flag is unchanged (bootstrap
+  and about-to-spawn flows preserved).
 
 ## Diff summary
 
-- Commits: `bd7b93e3`
-- Files touched:
-  - `crates/caco-daemon/src/replication.rs` (age constant +
-    `bound_chat_history_by_age` + invocation in `bound_full_state_dump`
-    + 2 new unit tests)
-  - `crates/caco-tui/src/state/mod.rs` (`hydrated` field + 2 hydrate
-    sites set it to true)
-  - `crates/caco-tui/src/state/tests.rs` (new assertion)
-  - `crates/caco-tui/src/views/chat.rs` (divider + dimmed border for
-    hydrated bubbles)
-  - `crates/caco-tui/src/app.rs` (mechanical `hydrated: false` adds for
-    existing ChatMessage constructors)
-- Tests: +3 (2 daemon + 1 invariant added to existing TUI test). 0
-  removed, 0 flipped.
-- Behavioural delta: full-state pushes drop chat rows older than 24h
-  before the 50-row count cap; TUI tags hydrated bubbles and renders
-  them as backfill, not live traffic.
+- Files (1): `crates/caco-cli/src/lib.rs` (+126 lines).
+- Tests: +3 (parse_agent_ids_extracts_id_field,
+  parse_agent_ids_falls_back_to_agent_id_field,
+  parse_agent_ids_returns_empty_on_missing_array).
+- `cargo build -p caco-cli` and `cargo clippy -p caco-cli`: clean.
 
 ## Operator-takeaway
 
-A long-offline node will no longer "wake up" with two weeks of stale
-gossip pretending to be live chat. Anything older than 24h is now
-silently dropped at full-state push time, and anything that does come
-in from a snapshot is rendered behind a `— previously —` divider with
-a dimmed border so the operator knows immediately that they are looking
-at backfill, not new activity. Knob to tune later if needed:
-`FULL_STATE_CHAT_HISTORY_MAX_AGE_SECS` (currently a `pub const`; a
-config-level override is the natural follow-up if 24h proves wrong on
-real-world lag patterns).
+Workflows that want CLI-level safety can now opt into it:
+`caco msg send --strict-target --target X --body Y`. Slice 2
+(broader caller-set enumeration: broadcast tags, per-project
+aliases via `/api/v1/projects/{project}/callers`) is deferred
+until that endpoint exists.
