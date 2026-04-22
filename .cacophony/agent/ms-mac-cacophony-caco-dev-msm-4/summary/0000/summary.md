@@ -1,70 +1,60 @@
-# bd-917f8a — release CHANGELOG gate + doctor sensor
+# bd-93e798 — bd create title-too-long error names $() and --description
 
 ## Goal
-Stop shipping a release without a CHANGELOG entry. Tonight's
-destructive reconciler (v1.2.490–v1.2.512) had no documentation
-and turned the bead-store bisect into an extra hour of work.
+Make the client-side title-length rejection actually tell the
+operator what to do, since bd-943e85's 8998-char poison-pill was
+filed by an accidental shell substitution and the prior wording
+gave no hint that was the cause.
 
 ## Bead(s)
-- bd-917f8a (P1 bug). Acceptance items 1 (CI gate), 2 (failing
-  aborts release), 5 (doctor sensor). Item 3 (backfill) was
-  already done by an earlier worker through v1.2.515. Item 4
-  (optional pre-commit hook) covered by the CI gate landing.
+- bd-93e798 (P2 bug). Acceptance items 1 (CLI bd create), 2 (CLI
+  bd update --title), 4 (MCP boundary). Item 3 (test) covered by
+  the new + existing unit tests.
 
 ## Before state
-- `.github/workflows/release.yml` had no CHANGELOG gate. A tag
-  push went straight into the build matrix regardless of whether
-  CHANGELOG.md mentioned the tag.
-- `caco doctor` had no sensor for changelog freshness; operators
-  could not tell from a doctor pass that the in-flight version
-  was undocumented.
-- Recent precedent: v1.2.490–v1.2.512 shipped with empty
-  CHANGELOG coverage; bd-cf99b7 postmortem flagged the resulting
-  bisect cost.
+- `crates/caco-cli/src/lib.rs::validate_bead_title_length`
+  already enforced 1..=500 chars and was called from both
+  `dispatch_bd_create` (line 24114) and `dispatch_bd_update`'s
+  `--title` branch (line 23704). MCP `caco_bd_create` /
+  `caco_bd_update` route through the same dispatchers via
+  `invocation_segments`, so the validator was reached there too.
+- Error wording named the consequence ("caps titles at 500 chars
+  (CHECK constraint). Truncate or reword.") but not the cause.
+  Operators kept hitting it via stray $() substitution into
+  --title and had no diagnostic pointer.
 
 ## After state
-- `.github/workflows/release.yml`: new `changelog-gate` job runs
-  first, gated on `refs/tags/v*`. Asserts CHANGELOG.md exists,
-  contains `## [<tag>]`, and the section has at least one
-  non-blank, non-header content line. Failure prints a
-  `::error::` annotation naming bd-917f8a and exits non-zero.
-  The existing `build` matrix now declares
-  `needs: changelog-gate`, so a missing entry blocks every
-  per-target build.
-- `crates/caco-cli/src/lib.rs`: new doctor check
-  `changelog up to date with cargo version` inserted right after
-  the existing `caco version` check. Emits `warning` (not
-  `error`) when the running version is strictly newer than the
-  latest `## [vX.Y.Z]` header. Walks parents from cwd to find a
-  `CHANGELOG.md` paired with `Cargo.toml`; skips silently when
-  no checkout is reachable. Honors `CACO_DOCTOR_SKIP_CHANGELOG`
-  opt-out.
+- `validate_bead_title_length` returns the bead-mandated wording:
+  `"title too long (N chars, max 500). Did you accidentally pass
+  a shell $() substitution? Move long content to --description.
+  (CHECK constraint enforces 500 server-side.) First 80 chars:
+  ..."`. Leads with operator-actionable phrasing, names the
+  most common cause, points at the right escape hatch, and keeps
+  the 80-char preview that operators use to recognise escaped
+  command output at a glance.
+- Coverage of all four acceptance items unchanged structurally;
+  this is a UX-only fix on top of the existing gate.
 
 ## Diff summary
-- `.github/workflows/release.yml` (+45/-1):
-  - New `changelog-gate` job with the assertions above.
-  - `build` job gains `needs: changelog-gate`.
-
-- `crates/caco-cli/src/lib.rs` (+136/-0):
-  - New helper `check_changelog_up_to_date(version)` and three
-    pure helpers (`locate_repo_changelog`,
-    `latest_changelog_version`, `version_is_newer`).
-  - Wired into the `caco doctor` check pipeline.
-  - 4 new unit tests in the existing `tests` module.
+- `crates/caco-cli/src/lib.rs` (+32/-2):
+  - Re-wording inside `validate_bead_title_length` body, with
+    inline bd-93e798 doc comment explaining the diagnostic intent.
+  - New unit test
+    `validate_bead_title_length_error_mentions_shell_substitution_and_description`
+    asserts `$()`, `--description`, and `too long` are all present.
+  - Existing `_accepts_in_range_and_rejects_out_of_range` and
+    `_counts_codepoints_not_bytes` tests still pass unchanged.
 
 ## Tests
 - `cargo build -p caco-cli` — clean.
 - `cargo clippy -p caco-cli --all-targets -- -D warnings` — clean.
-- `cargo test -p caco-cli --lib` for each new test — 4/4 pass:
-  - `latest_changelog_version_returns_first_versioned_header`
-  - `latest_changelog_version_handles_unreleased_only`
-  - `version_is_newer_compares_semver_strictly`
-  - `version_is_newer_returns_false_on_malformed_inputs`
+- `cargo test -p caco-cli --lib validate_bead_title_length` — 3/3
+  pass (1 new + 2 pre-existing).
 
 ## Operator-takeaway
-After binary roll, `caco doctor` warns (not errors) when the
-in-flight Cargo.toml version is ahead of CHANGELOG.md. After CI
-roll, pushing a `vX.Y.Z` tag without a corresponding non-empty
-CHANGELOG section aborts the release before any binary is built.
-Future post-incident bisects start from the changelog instead of
-`git log`.
+Next time a worker accidentally runs
+`caco bd create --title "$(caco msg inbox)"` the error tells them
+what happened and where to put the long content, instead of
+making them re-derive the cause from a generic "too long" notice.
+The actual 500-char cap (server-side CHECK + client-side
+validator) is unchanged.
