@@ -1,86 +1,65 @@
-# bd-125b70 — fix `caco scp` arg passthrough
+# bd-aa5299 — raise tts-daemon audio default timeout 25 → 60s, surface env knob in error
 
 ## Goal
-Make `caco scp` (and other passthrough commands) honour the
-`[<tool> args...]` contract advertised in their help: positional
-sources are not silently dropped, and standard wrapped-tool flags
-like `-r` actually pass through.
+Cut the chronic "speech request failed after 25s timeout window"
+errors that flooded ms-mac's daemon log throughout 2026-04-22
+(459 502 returns, 79 timeout records).
 
 ## Bead(s)
-- bd-125b70 (P2 bug, test-user). Two issues filed together.
-  Same family as bd-b76723 (warn-on-unknown-flag).
+- bd-aa5299 (P2 bug). Filed by log-monitor after a full-day audit
+  that surfaced the issue per-window dedup had been masking.
 
 ## Before state
-- `caco scp --print helsinki:/tmp/foo /tmp/bar` printed
-  `scp /tmp/bar` — the source path was silently consumed as
-  --print's value because the parser peeked ahead, saw a non-flag
-  non-subcommand token, and grabbed it as the flag's value. The
-  user copy-pasted the printed command, hit a scp usage error
-  with no hint that the source went missing. Workaround was to
-  put `--print` *after* the positionals.
-- `caco scp --print -r src dst` errored with
-  `unsupported flag: -r`. The help advertises
-  `[scp args...] SCP flags and path arguments. Remote paths use
-  <node>:<path> form.` but the parser's blanket short-flag arm
-  rejected anything starting with `-`.
-- Same shape applied to `caco mosh`, `caco shell`, `caco exec`
-  — every passthrough command suffered from both bugs.
+- `DEFAULT_TTS_DAEMON_AUDIO_TIMEOUT_SECS = 25`. The constant lives
+  in `crates/caco-cli/src/lib.rs:17294` and is read by
+  `tts_daemon_audio_request_timeout()` (env override:
+  `CACO_TTS_AUDIO_TIMEOUT_SECS`, fallback derived from
+  `CACO_REQUEST_TIMEOUT_SECS - 5`).
+- The synthesis provider's p99 latency clearly exceeds 25s in
+  bursts; operator log says "first attempt timed out, retry
+  succeeded" — i.e. the timeout was the actual failure mode,
+  not the backend.
+- The failure-summary log line included the timeout value but
+  not the env-knob name, so operators reading dashboards had to
+  trace into source to tune.
 
 ## After state
-- `parse_command_path` learns two helpers:
-  - `is_passthrough_cmd(path)` — true iff the matched
-    `CommandSpec.args` contains any `ArgSpec` whose `name`
-    contains `args...]`.  Catches `[scp args...]`,
-    `[mosh args...]`, `[shell args...]`, `[exec args...]`,
-    `[caco-msg args...]` etc.
-  - `known_flag_in_spec(path, flag)` — true iff `flag` matches an
-    `ArgSpec.name` exactly.
-- For known long flags under a passthrough command, parsing is
-  forced to boolean: `--print` never consumes the next positional.
-  Source path stays in positionals where it belongs.
-- Unknown short flags (`-r`, `-O`, `-v`, …) under a passthrough
-  command are routed into `passthrough_args` instead of erroring.
-  The wrapped tool (`scp`, `mosh`, `bash`) is the authority on
-  whether a given short flag is valid.
-- Non-passthrough commands keep the strict
-  `unsupported flag: <flag>` gate and the existing peek-as-value
-  semantics for their own flags. No global behaviour change.
+- `DEFAULT_TTS_DAEMON_AUDIO_TIMEOUT_SECS = 60`. Still well under
+  the outer daemon request timeout (90s default), so playback
+  errors still surface cleanly to `caco msg speak --wait`
+  callers — no risk of stranding them behind the outer timeout.
+- Failure-summary now reads:
+  `speech request failed after 60s timeout window
+   (override via CACO_TTS_AUDIO_TIMEOUT_SECS)`.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+115/-8):
-  - `parse_command_path` (~L7989): new closures
-    `is_passthrough_cmd` and `known_flag_in_spec`. Long-flag arm
-    computes `force_boolean` and short-circuits the `next_is_value`
-    peek when applicable. Short-flag arm splits into
-    `passthrough_args.push(...)` (passthrough cmds) vs the legacy
-    `Err("unsupported flag")` (everything else).
-  - 3 new tests in `caco_cli::tests`:
-    - `parse_command_path_scp_print_does_not_swallow_positional_source`
-    - `parse_command_path_scp_routes_unknown_short_flags_to_passthrough`
-    - `parse_command_path_non_passthrough_still_rejects_unknown_short_flags`
-      (regression guard for the global unsupported-flag gate).
-
-## Live verification
-After binary rebuild, both reported reproductions:
-```
-$ caco scp --print helsinki:/tmp/foo /tmp/bar
-scp -P 22 -i /Users/.../id_ed25519 harry@100.83.90.42:/tmp/foo /tmp/bar
-$ caco scp --print -r helsinki:/tmp/foo /tmp/bar
-scp -P 22 -i /Users/.../id_ed25519 harry@100.83.90.42:/tmp/foo /tmp/bar -r
-```
-Both print the correct command — no silent drops, no flag
-rejection. (`-r` lands at the end of args; scp accepts flags in
-either order.)
+- `crates/caco-cli/src/lib.rs` (+18/-3):
+  - constant 25 → 60 with bd-aa5299 comment block explaining the
+    rationale and the headroom under the outer request timeout.
+  - one-liner change to the `Err(e)` arm of the daemon's
+    `client.post(speak_url).send().await` to append
+    `(override via CACO_TTS_AUDIO_TIMEOUT_SECS)`.
+- Test
+  `tts_daemon_audio_request_timeout_defaults_below_request_timeout`
+  updated: now asserts `timeout.as_secs() == 60`.
+  Companion test
+  `tts_daemon_audio_request_timeout_respects_request_timeout_env`
+  unchanged (CACO_REQUEST_TIMEOUT_SECS=18 → 13 derivation still
+  holds, since 18-5=13 ≥ floor 5).
 
 ## Operator-takeaway
-After roll, `caco scp` works as advertised: any flag order, any
-scp short flag pass-through, no silent positional consumption.
-Same fix automatically applies to `caco mosh`, `caco shell`,
-`caco exec`, and any future command whose spec uses the
-`[<tool> args...]` convention.
+- After roll, expect a sharp drop in `/api/v1/audio/speech` 502
+  count. If the synthesis backend continues to spike past 60s
+  on ms-mac (or has different characteristics on a slower host),
+  bump per-host with
+  `export CACO_TTS_AUDIO_TIMEOUT_SECS=120` — guidance is now
+  visible in the error message itself.
+- Followup possible (not in scope here): add a single retry on
+  `Err(timeout)` inside the playback loop. The change touches a
+  deeply-nested async closure and warrants its own bead.
 
 ## Tests
 - `cargo build -p caco-cli` — clean.
 - `cargo clippy -p caco-cli --all-targets -- -D warnings` — clean.
-- `cargo test -p caco-cli --lib parse_command_path_scp` — 2/2.
-- `cargo test -p caco-cli --lib parse_command_path_non_passthrough` — 1/1.
+- `cargo test -p caco-cli --lib tts_daemon_audio_request_timeout`
+  — 2/2 pass.
