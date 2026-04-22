@@ -1,70 +1,63 @@
-# Session summary — bd-80d6de: multi-pass cleanup of orphan cargo/rustc trees on agent stop
+# Session summary — bd-fabf46: align agent_logs tests with bd-aa882f pipe-pane removal
 
 ## Goal
 
-Make `caco agent stop` actually terminate the cargo/rustc compile graph
-that an agent leaves behind in its checkout, so stopped agents stop
-consuming CPU and disk. Today, after a stop, rustc workers reparent to
-PID 1 and keep compiling for an hour or more, which is what tipped
-helsinki into its build-storm + daemon-death loop.
+Unbreak `cargo test -p caco-cli --lib` on main by reconciling two stale
+tests with the canonical `read_session_log` contract introduced by
+bd-aa882f. The tests asserted the pre-bd-aa882f behaviour where the
+legacy `logs/session.log` was surfaced as primary content; the daemon
+side has since enforced "always None" for that helper, and the CLI
+tests were never updated.
 
 ## Bead(s)
 
-- `bd-80d6de` — caco agent stop leaves orphaned cargo/rustc processes running in agent checkout (P1, bug)
+- `bd-fabf46` — [broken-on-main] caco-cli tests::agent_logs_{json_includes_session_log_and_capture,prefers_session_log} failing (P1, bug)
+- (related: `bd-aa882f` — pipe-pane capture removal that introduced the contract drift)
 
 ## Before state
 
-- Failing tests: none caused by this work (3 pre-existing `stop_*`
-  tests fail when run in parallel due to shared tempdir state — fail
-  identically on `main` without my changes).
-- `cleanup_checkout_processes` was a single-pass `pgrep -f <checkout>`
-  followed by SIGTERM (200ms grace) then SIGKILL. cargo regularly
-  outran this because it forks fresh rustc workers between the pgrep
-  snapshot and the kill.
-- `stop()` discarded the kill count, so operators had no signal that
-  the stop had to escalate.
-- Concrete production evidence in the bead: two helsinki workers
-  still building 1h+ after `caco agent stop`; required manual
-  `pgrep -af agents/cacophony/<id> | kill -KILL` to actually clear.
+- Failing tests (on `main` without this change):
+  - `caco-cli tests::agent_logs_prefers_session_log`
+  - `caco-cli tests::agent_logs_json_includes_session_log_and_capture`
+- Both panicked with `assertion failed: left == right` because
+  `read_session_log` returns `None`, so the dispatch path produces
+  the bd-aa882f empty-state instead of echoing back the fixture's
+  `logs/session.log` content.
+- The daemon-side test `read_session_log_reads_content` enforces the
+  None contract, so any "fix" that restored file reads would break
+  the daemon tests instead.
 
 ## After state
 
-- Failing tests: same 3 pre-existing parallelism flakes (independent of
-  this change). All 4131 `cargo test-small` tests pass. All targeted
-  `caco-daemon` `stop_*` and `cleanup_checkout_processes_*` tests pass
-  individually.
-- `cleanup_checkout_processes` now iterates up to 5 passes, sleeping
-  150ms between passes so freshly-spawned rustc workers become visible
-  to the next `pgrep` snapshot, and returns the total number of
-  processes that received signals.
-- `stop()` captures the returned count and appends a forced-cleanup
-  suffix to `last_error` so operators can see when escalation was
-  needed, e.g. `"... — forcibly killed 17 orphaned process(es) from
-  checkout (likely cargo/rustc compile tree)"`.
-- Survivors after the pass cap are logged at warning level so
-  persistent escapees can be chased.
+- Failing tests: none caused by this change. Pre-existing parallelism
+  flakes in `caco-daemon stop_*` tests still fail when run together
+  (independent, also reproduce on `main` without my changes).
+- All 4133 `cargo test-small` tests pass.
+- `caco-cli tests::agent_logs_*` — all 3 pass.
+- `caco-daemon tests::read_session_log_*` — both pass.
 
 ## Diff summary
 
-- Commits: 2d56160c
+- Commits: 661e0fe8
 - Files touched:
-  - `crates/caco-daemon/src/agent/health.rs` — multi-pass loop, return
-    type now `usize`, post-cap survivor logging
-  - `crates/caco-daemon/src/agent/lifecycle.rs` — `stop()` plumbs
-    `forced_kills` count into `last_error`; `set_state()` keeps
-    fire-and-forget call via `let _ =`
-  - `crates/caco-daemon/src/agent/tests.rs` — three new unit tests
-- Tests: +3 / -0 / flipped 0
-- Behavioural delta: agent stop now reliably tears down cargo/rustc
-  trees rooted in the checkout and tells operators when it had to.
+  - `crates/caco-cli/src/lib.rs` — rewrote two tests against the
+    bd-aa882f contract (legacy session.log MUST NOT surface; JSON
+    `session_log` is empty; text output shows capture metadata +
+    the bd-aa882f empty-state line). No production code change.
+- Tests: +0 / -0 / flipped 2 (rewritten for new contract)
+- Behavioural delta: none — production behaviour was already correct
+  per bd-aa882f; only the test assertions were stale.
 
 ## Operator-takeaway
 
-The helsinki build-storm root cause is now fenced. When `caco agent
-stop` finishes, the cargo/rustc tree is verifiably gone (or, if some
-process refused to die after 5 SIGTERM/SIGKILL passes, you'll see a
-`bd-80d6de: WARNING` line naming the survivors). If a stopped agent's
-`last_error` mentions "forcibly killed N orphaned process(es)", that's
-diagnostic gold — it means the runtime exited cleanly but compile work
-was still running, which is the exact pattern that drove the saturation
-incident.
+bd-aa882f removed pipe-pane capture and rewired structured display to
+runtime JSONL, but the CLI tests for `agent logs` were never refreshed
+and started failing on every `cargo test` run. They now match the
+canonical contract enforced by `read_session_log_reads_content`. If a
+future bead wants to re-introduce a legacy file fallback, both the
+daemon test and these two tests will surface the contract change
+together — they now agree.
+
+## Embedded artefacts
+
+(none)
