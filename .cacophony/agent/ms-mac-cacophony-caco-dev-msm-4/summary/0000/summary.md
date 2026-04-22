@@ -1,60 +1,68 @@
-# bd-93e798 — bd create title-too-long error names $() and --description
+# bd-a3ee9d — TUI sidebar Closed/Draft counts now correct
 
 ## Goal
-Make the client-side title-length rejection actually tell the
-operator what to do, since bd-943e85's 8998-char poison-pill was
-filed by an accidental shell substitution and the prior wording
-gave no hint that was the cause.
+Stop the TUI/web sidebar from rendering Closed (0) / Draft (0)
+when the underlying store has thousands of closed and draft beads.
 
 ## Bead(s)
-- bd-93e798 (P2 bug). Acceptance items 1 (CLI bd create), 2 (CLI
-  bd update --title), 4 (MCP boundary). Item 3 (test) covered by
-  the new + existing unit tests.
+- bd-a3ee9d (P2 bug), Option A from the design notes:
+  ship per-status counts in the snapshot and have the TUI read
+  badge totals from those counts, not from the trimmed bead list.
+  Option B (lazy fetch on subsection click) deferred.
 
 ## Before state
-- `crates/caco-cli/src/lib.rs::validate_bead_title_length`
-  already enforced 1..=500 chars and was called from both
-  `dispatch_bd_create` (line 24114) and `dispatch_bd_update`'s
-  `--title` branch (line 23704). MCP `caco_bd_create` /
-  `caco_bd_update` route through the same dispatchers via
-  `invocation_segments`, so the validator was reached there too.
-- Error wording named the consequence ("caps titles at 500 chars
-  (CHECK constraint). Truncate or reword.") but not the cause.
-  Operators kept hitting it via stray $() substitution into
-  --title and had no diagnostic pointer.
+- Daemon: `compute_bead_stats` only tallied open / in_progress /
+  closed / blocked. `ProjectBeadStats` had no draft or permanent
+  fields. `trim_snapshot_beads` (bd-ecf1a0) drops closed/draft
+  beads from the wire payload.
+- TUI: `bead_counts_global` / `bead_counts_for_project` iterated
+  `self.beads` (the trimmed set) so Closed / Draft buckets always
+  read 0. During the bd-cf99b7 incident this fooled the operator
+  into spending ~30 min investigating phantom data loss while
+  `/api/v1/beads` correctly reported 1054 closed beads on disk.
 
 ## After state
-- `validate_bead_title_length` returns the bead-mandated wording:
-  `"title too long (N chars, max 500). Did you accidentally pass
-  a shell $() substitution? Move long content to --description.
-  (CHECK constraint enforces 500 server-side.) First 80 chars:
-  ..."`. Leads with operator-actionable phrasing, names the
-  most common cause, points at the right escape hatch, and keeps
-  the 80-char preview that operators use to recognise escaped
-  command output at a glance.
-- Coverage of all four acceptance items unchanged structurally;
-  this is a UX-only fix on top of the existing gate.
+- Daemon: `ProjectBeadStats` grows `draft` and `permanent` fields
+  (`#[serde(default)]` for backwards compatibility with older
+  TUI clients). `compute_bead_stats` tallies draft + permanent.
+  Stats are still computed from the unfiltered store BEFORE the
+  snapshot trim runs.
+- TUI: `bead_counts_global` / `bead_counts_for_project` retain
+  iteration over `self.beads` for buckets that survive the trim,
+  then override `closed` and `draft` from `self.bead_stats`
+  (sum across projects for global; matching `ProjectBeadStats`
+  entry per-project). `total` is recomputed from the corrected
+  per-section sum so the badge total is consistent with the
+  per-section badges. The override is conditional
+  (`stats > 0 || bucket == 0`) so a TUI talking to a
+  not-yet-trimming daemon (mixed-version cluster) doesn't
+  regress.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+32/-2):
-  - Re-wording inside `validate_bead_title_length` body, with
-    inline bd-93e798 doc comment explaining the diagnostic intent.
-  - New unit test
-    `validate_bead_title_length_error_mentions_shell_substitution_and_description`
-    asserts `$()`, `--description`, and `too long` are all present.
-  - Existing `_accepts_in_range_and_rejects_out_of_range` and
-    `_counts_codepoints_not_bytes` tests still pass unchanged.
+- `crates/caco-daemon/src/ui_stream.rs` (+~30):
+  - `ProjectBeadStats { draft, permanent }`.
+  - `compute_bead_stats` arms for `"draft"` and `"permanent"`.
+  - New unit test `compute_bead_stats_counts_draft_and_permanent`.
+- `crates/caco-tui/src/state/mod.rs` (+~30):
+  - `bead_counts_global` + `bead_counts_for_project` override
+    `closed` / `draft` from `bead_stats` and recompute `total`.
+- `crates/caco-tui/src/state/tests.rs` (+~85):
+  - 2 new tests asserting the override surfaces correct totals
+    when `self.beads` is trimmed.
+- `crates/caco-tui/src/app/benchmark_support.rs`,
+  `crates/caco-tui/src/views/project_overview.rs`: synthetic
+  fixtures grow the two new fields.
 
 ## Tests
-- `cargo build -p caco-cli` — clean.
-- `cargo clippy -p caco-cli --all-targets -- -D warnings` — clean.
-- `cargo test -p caco-cli --lib validate_bead_title_length` — 3/3
-  pass (1 new + 2 pre-existing).
+- `cargo build -p caco-daemon -p caco-tui` — clean.
+- `cargo clippy -p caco-daemon -p caco-tui --all-targets -- -D warnings` — clean.
+- 3/3 new tests pass.
 
 ## Operator-takeaway
-Next time a worker accidentally runs
-`caco bd create --title "$(caco msg inbox)"` the error tells them
-what happened and where to put the long content, instead of
-making them re-derive the cause from a generic "too long" notice.
-The actual 500-char cap (server-side CHECK + client-side
-validator) is unchanged.
+After the binary rolls, the TUI/web sidebar's Closed and Draft
+badge counts will match what `caco bd list --status closed` and
+`caco bd list --status draft` report. The wire snapshot stays
+trimmed (still small per bd-ecf1a0); only the badge counts gain
+the missing buckets via `bead_stats`. Lazy-load of closed bead
+bodies on subsection click is the remaining follow-up Option B
+on the bead — left open.
