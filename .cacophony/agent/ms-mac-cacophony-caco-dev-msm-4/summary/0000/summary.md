@@ -1,96 +1,89 @@
-# bd-ded3df — fix project_messages baseline drift + misleading error prefix on caco doctor schema
+# bd-ff59fa — caco summary undercount + caco bd list --updated-since default sort
 
 ## Goal
-Make `caco doctor schema` report cleanly on a healthy install: no
-false-positive drift on `project_messages`, no misleading `error:`
-prefix on stderr when the only "failure" is the structured drift
-report itself.
+Make `caco summary` accurately reflect bead-close activity, and make
+`caco bd list --updated-since N` show the newest activity first by
+default.
 
 ## Bead(s)
-- bd-ded3df (P2 bug, label test-user) — `caco doctor schema reports
-  drift on project_messages (3 EXTRA columns) and emits misleading
-  'error:' prefix on stderr`. Test-user repro: `caco doctor schema;
-  echo exit: $?` against cacophony 1.2.491 produced exit 2 with the
-  whole report on stderr behind `error:`.
+- bd-ff59fa (P2 bug, label test-user) — `caco summary undercounts
+  closed beads — reports '0 closed' in 1h window when ~10 beads
+  actually closed`. Bonus finding in same bead: default sort for
+  `--updated-since` returns oldest beads first.
 
 ## Before state
-- Repro on this host: `caco doctor schema` exited 2 with the entire
-  table-by-table report on stderr prefixed by `error:` (because
-  `dispatch_doctor_schema` returned `Err(CliError)` on drift, and
-  the binary surfaces every CliError that way).
-- The reported drift was real: `project_messages` had three EXTRA
-  columns the binary baseline didn't list — `cc_target`,
-  `delivered_at`, `read_at`. Cross-checked against
-  `crates/caco-daemon/src/messaging.rs:384 (init_table)` — those
-  columns are part of the canonical schema (`cc_target` per
-  bd-? message-cc work, `delivered_at` per bd-91a14c, `read_at`
-  per the original message-read tracking). The baseline in
-  `crates/caco-cli/src/lib.rs:expected_schema_baseline` was lagging
-  the daemon's actual `init_table`, so every clean install reported
-  3 phantom drift columns.
+- Reproduced on this host:
+  `caco summary --since 1h` → `Beads: 7 created, 9 claimed, 0 closed`
+  while `sqlite3 daemon.db "SELECT COUNT(*) FROM feed_events WHERE
+  ts >= '2026-04-22T13:00:00' AND event_type='bead_closed'"` returned
+  many real closures from earlier in the window.
+- Root cause: `caco bd update --status closed` (handler
+  `handle_update_bead`) emitted `EventType::BeadUpdated` regardless
+  of the new status, while `caco bd close` (handler
+  `handle_close_bead`) emitted `EventType::BeadClosed`. The
+  /api/v1/summary aggregator counts `bead_closed` rows only, so
+  every closure done via the update path was invisible to it.
+  Operators routinely close via `update --status closed` for
+  housekeeping (it's the recommended path when the dedicated close
+  validator can't find the bead in main, e.g. bd-845653 workaround),
+  so the undercount was systematic.
+- Bonus bug: `caco bd list --updated-since 1h` returned ancient
+  unchanged beads at the top of the window because the static
+  default sort was `Priority` and `reverse=false`. An operator
+  looking for "what moved recently?" would scan the top of the
+  list and conclude `--updated-since` was broken.
 
 ## After state
-- `expected_schema_baseline` now lists all 14 `project_messages`
-  columns including `cc_target`, `delivered_at`, `read_at` with a
-  bd-ded3df comment pointing at `messaging::MessageStore::init_table`
-  as the source of truth.
-- `dispatch_doctor_schema` now returns `Result<(String, bool),
-  CliError>` instead of using `Err(CliError)` to signal drift.
-  - The boolean second tuple element is `has_drift`.
-  - Real failures (bad `--db` value, can't open DB, JSON serialise
-    error) still come back as `Err(CliError)` and surface with the
-    standard `error:` prefix on stderr.
-- The `[doctor, schema]` arm of `dispatch()` now maps the tuple
-  into an `Outcome` directly: `exit_code = 2` if `has_drift`, body
-  on `stdout`, no `error:` prefix. `--json` mode is unchanged
-  (always exit 0; tooling reads structure from the JSON body).
-- End-to-end smoke after fix: `./target/debug/caco doctor schema`
-  exits 0 with `0 drift column(s)`, `project_messages OK (14
-  columns)`, empty stderr.
+- `handle_update_bead` now emits `EventType::BeadClosed` (instead of
+  `BeadUpdated`) when both:
+  1. The request's `status` was `BeadStatus::Closed`, and
+  2. The post-update bead's `.status` is in fact `Closed`.
+  All other update shapes still emit `BeadUpdated` unchanged. The
+  cross-project move arm is unaffected (already separate).
+- New helper `resolve_bead_sort(sort, reverse, updated_since_active)
+  -> (BeadSortField, bool)`. When `--updated-since` is in play and
+  neither `--sort` nor `--reverse` was explicitly passed, defaults
+  to `(UpdatedAt, reverse=true)`. Explicit `--sort` or `--reverse`
+  always wins so power users keep full control.
+- Helper plumbed into both `handle_list_beads` (per-project) and the
+  global beads list path. Legacy callers without `--updated-since`
+  still get the original `(Priority, reverse=false)` default.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+106/-18):
-  - `expected_schema_baseline`: added `cc_target`, `delivered_at`,
-    `read_at` to the `project_messages` column list with bd-ded3df
-    comment.
-  - `dispatch_doctor_schema`: signature → `Result<(String, bool),
-    CliError>`; both `Ok` exits return tuple; rewrote doc comment.
-  - `dispatch()` `[doctor, schema]` arm: destructure tuple, map
-    `has_drift` → `exit_code = 2`, body on stdout, no `error:`
-    prefix. Removed the dead `Err` arm-translation now that real
-    errors are still bubbled with `?`-equivalent semantics.
-  - `doctor_schema_json_handles_missing_db_cleanly` /
-    `doctor_schema_detects_missing_and_extra_columns`: updated
-    callers to destructure the new tuple.
-  - 2 new tests:
-    - `doctor_schema_drift_returns_ok_with_has_drift_true` — text
-      mode drift returns `Ok((report, true))`, body contains both
-      EXTRA listing and summary footer.
-    - `doctor_schema_arg_validation_still_returns_err` — bad `--db`
-      still returns `Err`, preserving the `error:` prefix path
-      for real failures.
+- `crates/caco-daemon/src/beads.rs` (+98/-5):
+  - `handle_update_bead` non-move arm: pick `BeadClosed` vs
+    `BeadUpdated` based on requested+resulting status.
+  - New `resolve_bead_sort` helper between `parse_bead_sort` and
+    `mainline_validation_message`.
+  - Two `let (sort_by, reverse) = resolve_bead_sort(...)` call sites
+    (per-project list at L2598-region, global list at L3797-region).
+  - 4 unit tests in `beads::tests`:
+    - `resolve_bead_sort_updated_since_defaults_to_updated_at_reverse`
+    - `resolve_bead_sort_explicit_sort_wins`
+    - `resolve_bead_sort_explicit_reverse_wins`
+    - `resolve_bead_sort_no_updated_since_keeps_legacy_default`
 
 ## Operator-takeaway
-- `caco doctor schema` against a healthy 1.2.499+ install will now
-  exit 0 with all-OK output. If you see drift after upgrading,
-  it's a *real* schema regression worth flagging.
-- Shell scripts that gated on the previous behaviour
-  (`caco doctor schema || alert`) keep working: drift still
-  exits non-zero (now exit 2), only the output channel and prefix
-  changed.
-- For the canonical baseline going forward, edit
-  `expected_schema_baseline` in lockstep with the relevant module's
-  `init_table` (messaging, dynamic_registry, store) — the
-  `expected_schema_baseline_matches_daemon_init_tables` test
-  catches the baseline-lags-init direction; the new
-  `cc_target/delivered_at/read_at` audit was forced by user
-  reproduction, not by that test.
+- After this rolls out, `caco summary --since N` will accurately
+  count closures done via either `caco bd close` or
+  `caco bd update --status closed`. Existing automation that
+  watched the `bead_closed` feed event already saw both lifecycle
+  paths only when the operator used the dedicated close command —
+  it'll now also see them when housekeeping closes go through
+  update. Workers that derive state from `bead_updated` rows
+  specifically (none known in tree) would need to add a
+  `bead_closed` listener too.
+- `caco bd list --updated-since 1h` now top-loads recent activity
+  by default. To restore the old priority-default ordering pass
+  `--sort priority` explicitly. To scroll up through history pass
+  `--reverse=false` (the existing flag's negative form).
 
 ## Tests
-- `cargo test -p caco-cli --lib doctor_schema` — 5/5 passed.
-- `cargo test -p caco-cli --lib expected_schema_baseline` — 1/1
-  passed.
-- `cargo build -p caco --bin caco` — clean.
-- `cargo clippy -p caco-cli --all-targets -- -D warnings` — clean.
-- End-to-end: `./target/debug/caco doctor schema` exits 0, output
-  on stdout, stderr empty.
+- `cargo test -p caco-daemon --lib resolve_bead_sort` — 4/4 passed.
+- `cargo build -p caco-daemon` — clean.
+- `cargo clippy -p caco-daemon --all-targets -- -D warnings` — clean.
+- End-to-end behaviour change requires a daemon binary roll on the
+  node owning the cacophony beads DB before `caco summary` will
+  reflect the fix; existing closed-via-update events from before the
+  roll remain invisible (they're already-stored `bead_updated`
+  rows). Going forward, every fresh closure is counted.
