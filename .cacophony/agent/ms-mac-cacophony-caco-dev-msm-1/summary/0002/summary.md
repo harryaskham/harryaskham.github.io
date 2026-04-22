@@ -1,68 +1,62 @@
-# Session 0002 — bd-274c2d cycle + broken-on-main fix
+# Session summary — reject --lines 0 across log surfaces
 
 ## Goal
 
-Run a continuous test-suite-health cycle (bd-274c2d permanent bead), fix any
-broken-on-main turned up, and reintegrate.
+Close the sibling miss bd-551b43 noted by the test-user pass: `caco service
+logs --lines 0` silently returned `-- No entries --` with exit 0 instead of
+erroring like its peers. Also extend the sweep proactively to other
+`--lines` sites that share the same shape (`log tail`, `log stream`,
+`tts daemon logs`).
 
 ## Bead(s)
 
-- bd-274c2d (permanent: continuous test suite health) — cycle entry appended.
-  No separate bead filed for the trivial structural test-fixture fix; it was
-  caught and resolved inside the same cycle.
+- `bd-551b43` — caco service logs --lines 0 silently returns '-- No
+  entries --' (exit 0); sibling miss of bd-a08f85 sweep
 
 ## Before state
 
-- Branch `agent/ms-mac/cacophony/ms-mac-cacophony-caco-dev-msm-1` rebased onto
-  origin/main @ 4c373f7c (clean).
-- `cargo test-small`: PASS.
-- `cargo clippy --workspace --all-targets -- -D warnings`: FAIL with two
-  E0063 errors at `crates/caco-cli/src/lib.rs:61617` and `:61644` — missing
-  field `artefact_commit` in `caco_daemon::reintegration::ReintegrationOutcome`
-  struct literals inside two test fixtures.
-- Root cause: bd-ae8de9 session-recording artefact split added
-  `pub artefact_commit: Option<String>` to the daemon-side
-  `ReintegrationOutcome`, updated all production fixture sites, but missed two
-  test struct literals in caco-cli.
+- `caco service logs --lines 0` → `-- No entries --`, exit 0
+- `caco log tail --lines 0` → empty tail, exit 0
+- `caco log stream --lines 0` → empty stream, exit 0
+- `caco tts daemon logs --lines 0` → empty, exit 0
+- `caco event log --limit 0` correctly errored (bd-a08f85)
 
 ## After state
 
-- `crates/caco-cli/src/lib.rs` — both test fixtures now set
-  `artefact_commit: None` to match the production conflict-path defaults.
-- `cargo test -p caco-cli --lib -- reintegration_conflict_formatter --test-threads=1`:
-  2 passed.
-- `cargo clippy --workspace --all-targets -- -D warnings`: PASS clean
-  (~17s incremental).
-- `cargo test-small`: PASS (final binary 45/45; full sweep across 7 binaries).
-- bd-274c2d description appended with three-cycle summary for this session
-  (03:07Z, 03:14Z, 03:25Z — only the third surfaced this break).
+All four sites now produce:
+
+```
+error: --lines must be >= 1 (use --lines 1 for a single result, or omit --lines for the default)
+```
+
+with exit code 1 — the same wording bd-a08f85 standardised on for
+`--limit 0` across `caco event log` / `log exceptions` / `msg inbox` /
+`bd list`.
+
+`cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
+clean. Two new unit tests:
+`validate_positive_limit_rejects_zero_for_lines`,
+`validate_positive_limit_accepts_positive_lines`.
 
 ## Diff summary
 
-```
-crates/caco-cli/src/lib.rs                                                  | 2 +
-.cacophony/agent/ms-mac-cacophony-caco-dev-msm-1/summary/0002/summary.md    | (new)
-```
-
-Two single-line additions inside existing test-only struct literals; no
-behavioural change, no production code touched.
+- Commit: 45e6fcdc
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: +2 / -0 / flipped 0
+- Behavioural delta: four CLI subcommands now error on `--lines 0`
+  instead of silently returning empty.
 
 ## Operator-takeaway
 
-Permanent test-health lane is paying for itself: this cycle caught a fresh
-broken-on-main introduced minutes earlier (bd-ae8de9 reintegrate) before any
-downstream agent's `cargo build/test/clippy` would have failed. Whoever lands
-struct-shape changes to types re-exported from caco-daemon should also run
-`cargo clippy --workspace --all-targets` (not just package-scoped clippy) to
-catch missed test-side fixture sites.
+The `--lines`/`--limit`/`--tail`/`--count` `0` family is a recurring
+class of footguns because each subsystem ships its own validator
+wrapper. The minimal fix swaps `validate_non_negative_int` for
+`validate_positive_limit` at four dispatch sites. A more durable fix
+would be a centralised "list-pagination flag" specifier that all
+`*-list / log / inbox / tail` commands declare via, but that's a wider
+refactor — file as a follow-up bead if a third sibling-miss surfaces.
 
-## Coordination
-
-- Spoke broadcast claiming the fix before committing.
-- `winmini:winmini-cacophony-caco-dev-wmi-2` independently spotted the same
-  break ~30s later; sent direct message asking them to yield.
-
-## Out-of-scope notes (filed earlier this session)
-
-- bd-8e16e0 (env-isolation cluster, claimed by msm-4)
-- bd-51859d (claude_requires_project_flag, already auto-closed)
+Out of scope but visible during the work: `caco service logs --lines 1`
+shows systemd-coredump entries for git crashes on the test-user host;
+that's a host-side journalctl content question, not a caco bug, and
+caco-doctor already owns daemon-crash detection.
