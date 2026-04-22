@@ -1,87 +1,120 @@
-# Session summary — bd-5d53b7 TUI claims attribute to operator
+# Session summary — bd-0977ba agent_defaults.profile validation
 
 ## Goal
 
-Direct CLI/TUI bead claims should attribute to the operator, not
-`{node}:tui`. The CLI was already correct; the TUI was bypassing
-SPEC 9.4 caller-ID format and producing 2-segment caller IDs that
-the daemon's `normalize_assignee_for_agents` then left untouched.
+Surface typos in project `agent_defaults.profile` at config-load
+time, not at first-spawn time. The persistent-agent path already
+checks profile references against the discovered set (warning);
+the project-defaults path did not. Close the gap with a hard
+validation error that names the project, the missing profile, and
+gives a one-line remediation hint.
 
 ## Bead(s)
 
-- `bd-5d53b7` — Direct CLI/TUI claims should attribute to operator,
-  not node+tui (P2 feature)
+- `bd-0977ba` — caco project create: no smoke-test that the
+  project-defaults.yaml profile-stack actually resolves before
+  persisting.
 
 ## Before state
 
-- `crates/caco-tui/src/app.rs` set `client.set_caller(format!("{}:tui",
-  snapshot.node.name))` on both initial snapshot fetch and SSE
-  reconnect.
-- `normalize_assignee_for_agents` (caco-daemon::beads) only strips
-  the node prefix for callers with ≥3 segments. Two-segment callers
-  pass through unchanged.
-- Result: a `bd claim` from alice's TUI on `ms-mac` was stored as
-  assignee `ms-mac:tui` rather than `cacophony:alice`. Bead-burndown
-  views, audit logs, per-operator stats could not distinguish
-  operators sharing a node, nor distinguish operator activity from
-  automated `mode:*` claims.
-- Failing tests: none (latent bug — test pinned the wrong literal).
+A typo like `agent_defaults: { profile: typo-profile }` in a
+project block validated cleanly via `caco config validate` (and
+`caco config validate --strict`). The error only surfaced when an
+agent in that project was actually spawned — minutes or hours
+later, far from the operator's edit context. The persistent-agent
+path had this check (as a warning, not error) but the project-
+defaults path was uncovered.
 
 ## After state
 
-- New `caco-tui::app::build_tui_caller(snapshot_node, default_project)`
-  helper produces a SPEC 9.4 `{node}:{project}:{actor}` triple with
-  the same priority chain as the CLI's
-  `infer_caller_with_context`:
-  - node: `CACO_NODE` env > `snapshot.node.name` > `"localhost"`
-  - project: `CACOPHONY_PROJECT` env > `snapshot.default_project` >
-    `"unknown"`
-  - actor: `CACOPHONY_ACTOR` env > `USER` env > `"tui"` (preserves
-    the historical fallback so unattended demo TUIs without an
-    operator env still produce a parseable triple while preserving a
-    clear "no operator inferred" signal)
-- Pure inner form `build_tui_caller_pure` extracted so unit tests
-  can assert the priority chain hermetically without mutating
-  shared process env.
-- Wired at both call sites in `app.rs`: `ActionResult::Reconnected`
-  and `ActionResult::SnapshotFetched`.
-- 6 new unit tests; legacy `snapshot_fetched_applies_state` test
-  updated to assert the structural 3-segment invariant (with
-  `CACO_NODE` tolerance) instead of the literal `mynode:tui`.
-- `cargo test-small` green (45 base + 2787 caco-tui unit tests).
-- Failing tests: none.
+`validate_config_with_extra_profiles` now rejects unknown
+`agent_defaults.profile` references with:
+
+```
+project '<name>' agent_defaults.profile '<missing>' does not match
+any configured profile (declare it under config.profiles, drop a
+.md file under .cacophony/profiles/, or use one of the embedded
+caco:* profiles)
+```
+
+Both `Single("name")` and `Composite([...])` selections are
+checked. The optional `caco:` prefix is stripped before lookup so
+embedded canonical profiles match the same way they do in the
+persistent-agent path. Every missing entry in a composite is
+reported in a single validation pass.
+
+## Files touched
+
+- `crates/caco-config/src/validate.rs` (+253 / -0).
 
 ## Diff summary
 
-- Commit: `1d04d67d`
-- Files touched:
-  - `crates/caco-tui/src/app.rs`: +195 / −6
-    - new `build_tui_caller` + `build_tui_caller_pure` helpers
-    - two call sites updated (Reconnected, SnapshotFetched)
-    - 6 new unit tests + 1 existing test relaxed to structural form
-- Behavioural delta: TUI bead claims are now attributable to the
-  operator (`{project}:{actor}` after daemon-side node-prefix
-  stripping). Operators sharing a node are now distinguishable in
-  burndown / audit views; TUI claims are now distinguishable from
-  `mode:*` automated claims.
+Single-file addition to `crates/caco-config/src/validate.rs`. Two
+production-code blocks plus a fresh `#[cfg(test)]` submodule:
+
+1. New pure helper `missing_profiles_in_selection(&ProfileSelection,
+   &HashSet<&str>) -> Vec<String>` near
+   `check_persistent_decl_missing_profiles`. Walks the selection,
+   strips `caco:` prefix, returns names not present in the
+   supplied set. Pure (no I/O), so unit-testable with synthetic
+   sets.
+2. New validation block inside `validate_config_with_extra_profiles`
+   (placed immediately after the `agent_defaults.preset` check
+   for visual locality). Loops over `config.projects`, reads
+   `project.agent_defaults.profile`, runs the helper against the
+   merged `profile_names` set (config.profiles + extra_profile_names
+   already accumulated upstream), and pushes one hard error per
+   missing entry into the validation batch.
+3. New `#[cfg(test)] mod agent_defaults_profile_bd_0977ba` with
+   11 tests: 5 unit tests for the helper (Single present/absent,
+   `caco:` prefix strip, Composite missings collected, Composite
+   fully present), 6 end-to-end tests through
+   `validate_config_with_extra_profiles` (acceptance, error
+   shape, multi-missing composite, `caco:` acceptance, no-profile
+   passthrough, project name in error).
+
+Severity choice — hard error vs warning: the persistent-agent
+counterpart emits a warning because a missing-profile persistent
+gets *skipped* at spawn (rest of system still works). But
+`agent_defaults.profile` is the per-project default — every spawn
+in that project picks it up. A typo silently breaks every new
+agent. Bead text "rejects with actionable error" confirms the
+intended severity. Used the validation-batch path so multiple
+errors aggregate.
 
 ## Operator-takeaway
 
-A direct `bd claim` from the operator's TUI now stores the operator
-identity as the assignee (matching the CLI behaviour that has been
-correct since bd-fff055). No migration is needed for already-claimed
-beads — only newly claimed ones pick up the corrected attribution.
-If an operator wants to run their TUI under an explicit identity
-(e.g. for shared workstations or service accounts) they can export
-`CACOPHONY_ACTOR` and the TUI will use that in preference to `USER`.
+`caco config validate` (and `caco config validate --strict`) now
+catches `agent_defaults.profile` typos before they propagate to
+spawn. Operator workflow is unchanged — same command, same exit
+codes, same JSON shape — but a previously-silent failure mode is
+now eagerly surfaced. No migration needed; existing valid configs
+continue to validate (the new check only fires when a profile
+name fails the merged-set lookup, which previously meant a
+guaranteed spawn-time failure anyway).
 
-The historical 2-segment `{node}:tui` form is no longer emitted by
-the TUI for the new claim path. Other code paths in the daemon /
-CLI that hard-code `{node}:tui` (test fixtures, benchmark support)
-are left untouched as they are not on the operator-attribution
-path; they remain valid 2-segment caller IDs that the daemon
-recognises as non-agent.
+Out of scope for this slice (bead items 2-3): a stand-alone
+`caco project lint` command, and equivalent eager checks for
+`hook_mixins`, `mcp_servers`, `scopes`. Those pair with bd-aac755
+and bd-8a56ce which are already in_progress.
 
-## Embedded artefacts
+## Validation
 
-(none)
+- `cargo test -p caco-config agent_defaults_profile_bd_0977ba`:
+  11/11 PASS.
+- `cargo test-small`: 204+109+731+291+18+2815+54 PASS green
+  (caco-config test count delta +11, 720 → 731).
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+  (1m20s).
+
+## Notes / follow-ups
+
+- A natural follow-up: extend the same eager-check pattern to
+  `agent_defaults.preset` already exists; `hook_mixins` /
+  `mcp_servers` / `scopes` pair with the in-flight beads. Worth
+  a tracking bead for the union after the in-flight ones land,
+  to ensure no silent-spawn-failure surface remains.
+- `caco project lint` (bead item 2) is small once items 1 and 3
+  are unified: just a thin CLI wrapper over the same validator
+  with project-scope filtering. Defer until an operator workflow
+  asks for the standalone command.
