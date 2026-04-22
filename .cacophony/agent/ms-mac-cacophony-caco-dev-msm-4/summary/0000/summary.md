@@ -1,63 +1,68 @@
-# Session summary — bd-fabf46: align agent_logs tests with bd-aa882f pipe-pane removal
+# Session summary — bd-30a15c: stop sidecar EADDRINUSE recovery from self-killing the test process
 
 ## Goal
 
-Unbreak `cargo test -p caco-cli --lib` on main by reconciling two stale
-tests with the canonical `read_session_log` contract introduced by
-bd-aa882f. The tests asserted the pre-bd-aa882f behaviour where the
-legacy `logs/session.log` was surfaced as primary content; the daemon
-side has since enforced "always None" for that helper, and the CLI
-tests were never updated.
+Unbreak the broken-on-main `serve_eaddrinuse_reports_clear_error`
+test in `caco-sidecar` and remove a latent foot-gun from the
+EADDRINUSE recovery path that could SIGTERM the very process trying
+to recover from a bind collision.
 
 ## Bead(s)
 
-- `bd-fabf46` — [broken-on-main] caco-cli tests::agent_logs_{json_includes_session_log_and_capture,prefers_session_log} failing (P1, bug)
-- (related: `bd-aa882f` — pipe-pane capture removal that introduced the contract drift)
+- `bd-30a15c` — [broken-on-main] caco-sidecar lib test serve_eaddrinuse_reports_clear_error hangs (SIGTERM) (P2, bug)
+- (related: `bd-4db921` introduced the EADDRINUSE recovery path)
 
 ## Before state
 
-- Failing tests (on `main` without this change):
-  - `caco-cli tests::agent_logs_prefers_session_log`
-  - `caco-cli tests::agent_logs_json_includes_session_log_and_capture`
-- Both panicked with `assertion failed: left == right` because
-  `read_session_log` returns `None`, so the dispatch path produces
-  the bd-aa882f empty-state instead of echoing back the fixture's
-  `logs/session.log` content.
-- The daemon-side test `read_session_log_reads_content` enforces the
-  None contract, so any "fix" that restored file reads would break
-  the daemon tests instead.
+- Failing test on `main`: `cargo test -p caco-sidecar --lib
+  serve_eaddrinuse_reports_clear_error` reproducibly killed by
+  SIGTERM (signal 15) on hosts where lsof reports in-process tokio
+  listeners.
+- Root cause: serve()'s recovery path identifies the port holder via
+  lsof. When the holder is our own PID (the test pre-binds the port),
+  resolve_pid_exe returns the test binary path
+  (`caco_sidecar-<hash>`), which begins with "caco", so kill_pid sends
+  SIGTERM to the test process itself.
+- The full `caco-sidecar` lib suite ran with three other unrelated
+  pre-existing failures (`resolve_pid_exe_returns_self`,
+  `stale_detection_true_when_binary_path_mismatches`,
+  `status_reports_stopped_when_nothing_running`) — those are not in
+  scope of this bead.
 
 ## After state
 
-- Failing tests: none caused by this change. Pre-existing parallelism
-  flakes in `caco-daemon stop_*` tests still fail when run together
-  (independent, also reproduce on `main` without my changes).
-- All 4133 `cargo test-small` tests pass.
-- `caco-cli tests::agent_logs_*` — all 3 pass.
-- `caco-daemon tests::read_session_log_*` — both pass.
+- `serve_eaddrinuse_reports_clear_error` passes individually and in
+  the full lib run. Wrapped in a 15s tokio::time::timeout so any
+  future regression fails as a clear timeout rather than a SIGTERM.
+- `kill_pid_refuses_to_kill_current_process` (new) explicitly pins
+  the self-kill guard.
+- `cargo test-small` — 4137 passed, 0 failed.
+- Pre-existing unrelated failures listed above are still on main.
 
 ## Diff summary
 
-- Commits: 661e0fe8
+- Commits: 07abe4c8
 - Files touched:
-  - `crates/caco-cli/src/lib.rs` — rewrote two tests against the
-    bd-aa882f contract (legacy session.log MUST NOT surface; JSON
-    `session_log` is empty; text output shows capture metadata +
-    the bd-aa882f empty-state line). No production code change.
-- Tests: +0 / -0 / flipped 2 (rewritten for new contract)
-- Behavioural delta: none — production behaviour was already correct
-  per bd-aa882f; only the test assertions were stale.
+  - `crates/caco-sidecar/src/lib.rs` — serve() returns a clear
+    `Bind` error when find_port_holder returns our own PID; test
+    wrapped in tokio::time::timeout
+  - `crates/caco-sidecar/src/lifecycle.rs` — kill_pid refuses to act
+    on the current PID; new unit test pins the contract
+- Tests: +1 / -0 / hardened 1
+- Behavioural delta: serve() can no longer SIGTERM the calling
+  process via its EADDRINUSE recovery path. The error returned in
+  that case is a `Bind` error referencing bd-30a15c so future
+  triage is one grep away.
 
 ## Operator-takeaway
 
-bd-aa882f removed pipe-pane capture and rewired structured display to
-runtime JSONL, but the CLI tests for `agent logs` were never refreshed
-and started failing on every `cargo test` run. They now match the
-canonical contract enforced by `read_session_log_reads_content`. If a
-future bead wants to re-introduce a legacy file fallback, both the
-daemon test and these two tests will surface the contract change
-together — they now agree.
-
-## Embedded artefacts
-
-(none)
+This is a small but nasty class of bug — a recovery path that kills
+the very process running it. The two guards (one in serve(), one in
+kill_pid) are independent layers of defence. If you ever see a
+sidecar test fail with `signal: 15, SIGTERM` again, search for
+`bd-30a15c` in the error output: that string in a Bind error is
+proof the new guard fired and the process the recovery wanted to
+kill was itself. Anything else points to a different self-kill route
+that the kill_pid guard would have caught — and you should add a
+third layer at the new call site rather than removing the existing
+guards.
