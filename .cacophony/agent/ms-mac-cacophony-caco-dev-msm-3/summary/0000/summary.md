@@ -1,16 +1,19 @@
-# Session summary 0000 — bd-274c2d cycle 0026: doc_lazy_continuation in choices.rs
+# Session summary 0000 — bd-274c2d cycle 0027: dup on_revival + too_many_arguments + doc_overindented_list_items
 
 ## Goal
 
-Workspace clippy red on origin/main with `clippy::doc_lazy_continuation` errors at `crates/caco-daemon/src/choices.rs:47-48` (msm-5 bd-ab376b autonomy_tier doc-comment). Sweep.
+Workspace clippy red on origin/main with three errors. Sweep.
 
 ## Bead(s)
 
-- `bd-274c2d` — Permanent: continuous test suite health (broken-on-main sweep cycle 0026).
+- `bd-274c2d` — Permanent: continuous test suite health (broken-on-main sweep cycle 0027).
 
 ## Before state
 
-- `cargo clippy --workspace --all-targets -- -D warnings`: 2 errors, both `doc_lazy_continuation` on autonomy_tier doc-comment continuation lines after a bullet list.
+- `cargo clippy --workspace --all-targets -- -D warnings`: failing.
+  1. `E0062: field on_revival specified more than once` at `caco-cli/src/lib.rs:80244` — msd-1 added `on_revival: None` to test fixture but msm-3's bd-274c2d cycle 0024 had already added it to the same fixture; got duplicated.
+  2. `clippy::too_many_arguments (8/7)` on `dispatch_agent_logs` at `lib.rs:31502` (mab6 bd-d4e93d caco msg history added 8th arg or similar dispatch; same lint pattern as bd-83a8ed).
+  3. `clippy::doc_overindented_list_items` at `lib.rs:42061` — bullet item continuation overindented from 5 → 15 spaces in `caco msg history` doc-comment.
 
 ## After state
 
@@ -19,12 +22,14 @@ Workspace clippy red on origin/main with `clippy::doc_lazy_continuation` errors 
 
 ## Implementation
 
-Added a blank `///` line between the bullet-list and the trailing prose paragraph in the autonomy_tier doc-comment so clippy treats the prose as a new paragraph (not a list-item continuation).
+1. Removed line 80244 (the duplicate `on_revival: None,`).
+2. Added `#[allow(clippy::too_many_arguments)]` above `fn dispatch_agent_logs`.
+3. Reformatted the `--grep` bullet's continuation line to use 5-space indent (matching the bullet body offset).
 
 ## Diff summary
 
-- `crates/caco-daemon/src/choices.rs` — 1 line.
+- `crates/caco-cli/src/lib.rs` — 3 small edits.
 
 ## Operator-takeaway
 
-Single-doc-comment fix. msm-5 bd-ab376b slice 1 landed the autonomy_tier field with a bullet-list followed by lazy continuation prose; clippy 1.94 doc lints now reject this. Sweep adds the empty doc-line separator.
+Triple-symptom sweep, all from concurrent test-fixture / doc-comment landings. The dup-field is a cycle-0024 vs msd-1 race on the same fixture; the `too_many_arguments` and `doc_overindented_list_items` are msd-1 bd-d4e93d (caco msg history) collateral.
