@@ -1,76 +1,76 @@
-# bd-b76723 — warn (or error under strict) on unrecognised CLI flags
+# bd-e03445 — extend cacophony-fast-tests gate to compile-check daemon test targets
 
 ## Goal
-Stop every caco subcommand from silently accepting unknown flags so a
-typo like `caco msg inbox --tial 5` no longer dumps the entire inbox
-without complaint.
+Catch struct-shape changes that `cargo test-small` skips (because it
+excludes caco-cli / caco-daemon / caco / caco-sidecar) at the
+reintegration gate, before they reach main and break every peer's
+next pull.
 
 ## Bead(s)
-- bd-b76723 (P2 bug, label test-user) — `caco CLI: every subcommand
-  silently accepts unknown flags`. Pairs with bd-c9d42c (unknown
-  subcommands exit 0, already closed) and bd-8920ae (strict
-  per-command validate_flags landed only in `caco ls`).
+- bd-e03445 (P2 feature, test-user / discovered-via wave-15-overlap):
+  `[merge-queue gate] extend cargo test-small to compile-check daemon
+  --tests as well`. Pairs with bd-9ab2b6 (gate plumbing landed),
+  bd-e5eec5 (stale-base re-check landed), bd-2c399b (full queue
+  daemon, the proper fix), and bd-bf1e86 (the wave-15
+  PersistentAgentDecl-goal change that motivated the bead).
 
 ## Before state
-- The dispatcher accepted any `--flag` token, stuffed it into the
-  `parsed.flags` HashMap, and proceeded. Per-arm code only consulted
-  the flags it cared about; everything else was silently ignored.
-- Reproductions all returned normal output:
-  `caco cert status --some-unknown-flag`, `caco config show --bogus`,
-  `caco msg inbox --bogus --tail 1`, `caco bd list --bogus`.
-- bd-8920ae had introduced strict `validate_flags` but only wired it
-  into `caco ls`; a blanket strict rollout would false-positive
-  because many dispatch arms read flags via ad-hoc `flags.get(...)`
-  without keeping the static `ArgSpec` list authoritative.
+- `cacophony-fast-tests.md` set `check_command: cargo test --lib
+  --workspace`. That command runs tests on workspace lib targets but
+  never compiles the test fixtures inside the four crates excluded
+  from the test-small alias.
+- A struct-shape change like adding a field to `PersistentAgentDecl`
+  passed the local gate and only failed for peers when they ran
+  `cargo test` after pulling main.
+- The fast-test-gate.sh hook (bd-9ab2b6) already exposes
+  `CACO_REINTEGRATION_CHECK_CMD` as a separate compile-check step;
+  the profile just wasn't pointing it at a useful command.
 
 ## After state
-- New `warn_or_error_unknown_flags(parsed_flags, allowed, command)`
-  helper and `KNOWN_GLOBAL_FLAGS` constant covering the documented
-  globals (`--json`, `--help`, `--config`, `--wait-daemon`).
-- `dispatch()` calls it once at the top, before the giant match arm:
-  ```rust
-  if let Some(spec) = spec_for_path(path) {
-      warn_or_error_unknown_flags(&parsed.flags, spec.args, &path.join(" "))?;
-  }
-  ```
-- Default behaviour: a single warning to stderr per invocation,
-  citing bd-b76723, listing the offending flag(s), and pointing at
-  `CACO_STRICT_UNKNOWN_FLAGS=1` for opt-in escalation.
-- `CACO_STRICT_UNKNOWN_FLAGS=1` (or `true`/`yes`/`on`) escalates to a
-  `CliError` so CI and disciplined automation can refuse to run on
-  typos.
-- The existing strict bd-8920ae path in `caco ls` is unchanged.
+- `cacophony-fast-tests.md` now sets
+  `check_command: cargo build --workspace --tests`. This compiles
+  every test target in the workspace in ~30s warm without executing
+  them, so any field-mismatch / API-shape regression in test fixtures
+  surfaces at the gate.
+- The profile prose now lists the three Cargo invocations explicitly
+  (`test-small`, `build --tests`, `clippy`) so readers don't have to
+  reverse-engineer the ordering from fast-test-gate.sh.
+- The wave the new gate immediately surfaced is also fixed:
+  `crates/caco-daemon/src/persistent.rs` had 74 `PersistentAgentDecl`
+  literals carrying a duplicate `goal: None` line (introduced by a
+  recent reintegration leaving conflict-resolution leftover):
+      project: None,
+
+      goal: None,         <-- duplicate
+
+      depends_on_node: None,
+  Mechanical removal across two indent levels (60 + 14 sites).
+- Verified clean: `cargo build --workspace --tests` + `cargo clippy
+  --workspace --all-targets -- -D warnings`.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs`:
-  - New `KNOWN_GLOBAL_FLAGS` constant.
-  - New `warn_or_error_unknown_flags` helper next to the existing
-    `validate_flags` (preserved verbatim for `caco ls`).
-  - In `dispatch`, invoke the helper between the function-prelude
-    bindings and the existing `doctor_exit_override` initialisation.
-  - 4 new tests:
-    - `warn_or_error_unknown_flags_passes_when_all_known`
-    - `warn_or_error_unknown_flags_warns_in_default_mode`
-    - `warn_or_error_unknown_flags_errors_under_strict_env`
-    - `warn_or_error_unknown_flags_allows_global_flags_unconditionally`
+- `.cacophony/profiles/cacophony-fast-tests.md` (+15/-5):
+  - `check_command` switched.
+  - Description block + body prose updated to reflect the three-step
+    gate and cite bd-9ab2b6 / bd-e03445.
+- `crates/caco-daemon/src/persistent.rs` (-222 lines, +0):
+  - Stripped 74 duplicate `goal: None` field literals plus their
+    surrounding blank-line padding.
 
 ## Operator-takeaway
-- Default is an advisory warning so nothing previously working
-  starts failing on existing scripts; investigate the warning and
-  either fix the typo or add the flag to the command's `ArgSpec`
-  list.
-- For CI / disciplined agent scripting set
-  `CACO_STRICT_UNKNOWN_FLAGS=1` to make typos a hard error.
-- A follow-up sweep should audit each dispatch arm's per-flag reads
-  against its `ArgSpec` list so we can flip the default to strict.
+- Workers using the `cacophony-fast-tests` mixin will pay ~30s extra
+  per reintegration for the new compile-check step. In return, the
+  `goal: None`-style waves (~5–15 minutes of peer repair time each;
+  bd-ee1696 reported 13+ in a session) should stop reaching main.
+- Operators can still override per invocation:
+  `CACO_REINTEGRATION_CHECK_CMD='cargo check --workspace --tests'`
+  for an even cheaper compile pass, or empty string to disable.
+- Pairs with bd-5b02d6's opt-in broken-on-main rebase-and-test gate
+  on the CLI side. The two layers compose: this bead catches it
+  pre-rebase; bd-5b02d6 catches what slips through after rebase.
 
 ## Tests
-- `cargo test -p caco-cli --lib warn_or_error_unknown_flags` —
-  4 passed.
-- `cargo build -p caco-cli` — clean.
-- Broader `cargo test -p caco-cli --lib` shows 957 passing / 13
-  failing under shared run; spot-checked failures
-  (`bd_update_rejects_no_field_flags`,
-  `bd_dispatch_recovers_success_after_spawn_timeout`) all pass
-  standalone — pre-existing env-leak cluster (separately tracked,
-  not introduced by this change).
+- `cargo build --workspace --tests` — clean.
+- `cargo clippy --workspace --all-targets -- -D warnings` — clean.
+- The profile change has no Rust test surface; behaviour is end-to-end
+  validated by the wave the new gate just exposed and fixed.
