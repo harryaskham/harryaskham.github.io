@@ -1,53 +1,52 @@
-# Session summary 0000 — bd-940284: caco msg send --strict-target
+# Session summary 0000 — bd-f8f754 slice 2: `caco msg thread <msg-id>`
 
 ## Goal
 
-Stop `caco msg send` from silently accepting nonsense `--target`
-strings. Operator probe found
-`caco msg send --target nonexistent-target --body hi` reports
-success even though no inbox row gets created. Add an opt-in
-`--strict-target` that pre-flights the target against the
-project's known agents before persisting the message.
+Provide a viewer for the threading metadata laid down by slice 1
+(`--reply-to`). Previously a thread root + its replies were
+linkable in the DB but had no first-class CLI surface to walk.
 
 ## Bead(s)
 
-- `bd-940284` — opt-in pre-flight only (slice 1).
+- `bd-f8f754` — slice 2 (viewer). Slice 1 (`--reply-to` flag
+  setting `parent_msg_id` / `reply_to` column) was already
+  shipped (bd-1616c1 migration + send-side wiring).
 
 ## Before state
 
-- `caco msg send --target nonexistent-target ...` returned
-  `sent message msg-... to nonexistent-target` with no warning.
-- No client-side enumeration of valid targets.
+- `caco msg send --reply-to <msg-id>` writes the column.
+- Inbox renders messages flat; no tree walk anywhere.
 
 ## After state
 
-- New `--strict-target` flag on `caco msg send`.
-- When set, `validate_target_in_project(project, target)` queries
-  `/api/v1/projects/{project}/agents` and:
-  - Allows `cacophony:operator` / `<project>:operator` literally
-    (not in agents list but routed by daemon).
-  - Returns `Ok(())` if target appears in agent IDs.
-  - Errors with close substring matches (up to 3) on miss.
-  - Fails open with stderr warning if daemon returns nothing
-    parsable (don't block operator on 5xx).
-- New `parse_agent_ids` helper handles both `id` and `agent_id`
-  JSON field names.
-- 3 new unit tests in `tests::parse_agent_ids_*` pass.
-- Existing behaviour without the flag is unchanged (bootstrap
-  and about-to-spawn flows preserved).
+- New `caco msg thread <msg-id> --project <p>` subcommand.
+- Walks ancestors via `reply_to` (with cycle guard) to find the
+  thread root, then DFS-renders descendants chronologically.
+- Tree rendering: depth indentation, `●` root marker, `└─` reply
+  marker, `← focus` annotation on the requested id.
+- `--json` returns flat array with per-entry `depth` field +
+  `{root, focus, count, messages}` envelope.
+- `--limit` (default 2000) caps the chat-window fetched from
+  `GET /api/v1/projects/<p>/messages/chat`; surfaces a friendly
+  "try a larger --limit" error if the focus id is older.
+- Registered in `MSG_SUBCOMMANDS` with a new `MSG_THREAD_ARGS`
+  spec so help / strict-flag plumbing pick it up.
 
 ## Diff summary
 
-- Files (1): `crates/caco-cli/src/lib.rs` (+126 lines).
-- Tests: +3 (parse_agent_ids_extracts_id_field,
-  parse_agent_ids_falls_back_to_agent_id_field,
-  parse_agent_ids_returns_empty_on_missing_array).
-- `cargo build -p caco-cli` and `cargo clippy -p caco-cli`: clean.
+- Files (1): `crates/caco-cli/src/lib.rs` (+213 lines).
+- Build: `cargo build -p caco-cli` clean.
+- Lint: `cargo clippy -p caco-cli --all-targets -- -D warnings`
+  clean (had to relocate the existing
+  `#[allow(clippy::too_many_arguments)]` from above
+  `dispatch_msg_history` since insertion-order put it above the
+  new fn instead).
+- Live-tested: `caco msg thread --project cacophony
+  msg-019db74f-...` rendered the focus message correctly.
 
 ## Operator-takeaway
 
-Workflows that want CLI-level safety can now opt into it:
-`caco msg send --strict-target --target X --body Y`. Slice 2
-(broader caller-set enumeration: broadcast tags, per-project
-aliases via `/api/v1/projects/{project}/callers`) is deferred
-until that endpoint exists.
+Threaded coordination chats are now navigable from the CLI;
+`caco msg thread <id>` shows the full conversation tree rooted at
+or containing `<id>`. Slice 3 (TUI/web tree-collapse surfacing)
+is deferred to follow-on beads.
