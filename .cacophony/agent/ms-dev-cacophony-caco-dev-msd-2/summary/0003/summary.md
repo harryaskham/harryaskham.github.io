@@ -1,87 +1,74 @@
-# Session summary — bd-b174bb per-persistent-id launch governor
+# Session summary — bd-274c2d test-health clippy fix
 
 ## Goal
 
-Bound the two failure-amplification mechanisms the existing
-`PersistentSentinel` backoff state machine does not fully cover: two
-reconcile ticks racing on the same persistent id, and failure paths
-that return `Err` before reaching `mark_failed` and so never advance
-backoff at all.
+Permanent test-health cycle: keep workspace clippy green on main.
+A spot-check after rebasing onto a fresh main surfaced two trivial
+clippy regressions in caco-cli introduced by msd-4's recent
+bd-83a84d landing of `caco agent log`. Fixed both inline.
 
 ## Bead(s)
 
-- `bd-b174bb` — Per-agent resource accounting: open-fd cap,
-  spawn-rate cap, bounded retry concurrency (P1 feature)
-- (parent: `bd-07bd29` — non-fatal agent-subprocess errors;
-  related: `bd-6bdb17`, `bd-65813b`, `bd-80d6de`, `bd-f49a71`)
+- `bd-274c2d` — Permanent: continuous test suite health (does not close).
 
 ## Before state
 
-- Two reconcile ticks could both call `launch_persistent_agent` for
-  the same persistent id and both hold tmux/fd resources during
-  preflight.
-- Pre-`mark_failed` failure paths (config / profile / project lookup)
-  returned `Err` without scheduling backoff. `bd-6bdb17` evidence on
-  sgu24 showed identical fingerprints firing every ~7 min for over an
-  hour with no backoff advancement.
-- Failing tests: none.
+- `cargo test-small`: PASS 720+291+18+2814+52 green on main.
+- `cargo clippy --workspace --all-targets -- -D warnings`: FAIL with
+  two errors in `crates/caco-cli/src/lib.rs`:
+  - line 30014: `doc_overindented_list_items` — continuation
+    line in a `///` list item indented 22 spaces; clippy wants 2.
+  - line 30119: `explicit_counter_loop` — manual `taken` counter
+    incremented in a for-line loop where `.lines().take(k)` is the
+    idiomatic form.
 
 ## After state
 
-- New `caco-daemon::agent_launch_governor` module exposing
-  `LaunchGovernor::try_begin_launch(id) -> BeginLaunch`:
-  - `Granted(LaunchGuard)` — RAII guard releases the in-flight
-    reservation on drop.
-  - `AlreadyInFlight` — refuses cleanly; the in-flight launch will
-    report its own outcome.
-  - `AttemptCeilingReached { attempts, ceiling }` — refuses; lets
-    backoff catch up.
-- Defaults: 3600 s rolling window, 12 attempts/window per persistent
-  id (≈ one every five minutes, matching the bd-07bd29 event-emission
-  window).
-- Refused attempts (`AlreadyInFlight`) are NOT counted against the
-  ceiling — only granted launches consume an attempt slot — so a
-  flapping reconcile loop cannot exhaust the ceiling without ever
-  doing real work.
-- Wired at the entry of `launch_persistent_agent`.
-- Refusal returns an `Err` recognised by the existing
-  `is_benign_persistent_already_live` classifier (extended to two new
-  refusal forms), so the periodic-reconcile arm skips structured
-  error reporting for governor refusals — they are not real launch
-  failures and must not amplify the very flood the governor exists
-  to suppress.
-- 7 new unit tests; `cargo test-small` green (45).
-- Failing tests: none.
+- Doc continuation re-indented to 2 spaces (clippy-compliant).
+- Manual counter loop replaced with `for line in raw_output.lines().take(*k)`.
+- `cargo test-small`: PASS 720+291+18+2814+52 green (unchanged).
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+
+## Files touched
+
+- `crates/caco-cli/src/lib.rs` (+2 / -7 lines).
 
 ## Diff summary
 
-- Commit: `14c388f0`
-- Files touched:
-  - `crates/caco-daemon/src/agent_launch_governor.rs` (new, 329 lines incl. tests)
-  - `crates/caco-daemon/src/lib.rs` — module registration, `DaemonState`
-    field + 14 test-state initializers, governor consultation at
-    `launch_persistent_agent` entry, extended benign classifier
-- Tests: +7 unit tests (`agent_launch_governor::tests::*`)
-- Behavioural delta: a second reconcile tick that races a launch for
-  the same persistent id is refused at the entry point (rather than
-  proceeding into preflight and racing tmux/fd allocation). Pre-mark_failed
-  error paths can no longer fire more than 12 launch attempts per id
-  per hour even when they bypass backoff scheduling entirely.
+Two-hunk single-file fix in `crates/caco-cli/src/lib.rs`. First
+hunk reflows a documentation continuation line so its indent
+matches the parent list item (clippy `doc_overindented_list_items`).
+Second hunk replaces a manual loop counter with
+`Iterator::take(*k)` (clippy `explicit_counter_loop`). No behaviour
+change to `dispatch_agent_log` or its callers; same set of lines
+emitted in the same order.
 
 ## Operator-takeaway
 
-This closes the third and final supervision-hardening slice of the
-bd-07bd29 / bd-6bdb17 line: bd-07bd29 collapsed the event flood,
-bd-6bdb17 fixed the misleading exit-code reporting, and bd-b174bb
-caps the launch attempt rate at the source so floods stop before
-they reach the event pipeline. The remaining acceptance item from
-the parent (open-fd cap attributable to a single fingerprint) is
-better attacked by ensuring failed launches release tmux + child-pipe
-+ lock-file resources cleanly on the failure path; that is a
-case-by-case audit rather than a single architectural primitive and
-should be tracked as a separate bead if the dispatch storms recur
-after the existing three slices are deployed.
+Workspace clippy is back to green on main. No code-path or CLI
+contract change. The `caco agent log` subcommand (bd-83a84d)
+behaves identically to before; the head-mode loop now uses the
+canonical iterator-take form. This is a test-health bead so no
+follow-up bead filing is needed.
 
-## Embedded artefacts
+## Validation
 
-(none)
+- `cargo test-small`: PASS 720+291+18+2814+52 (no test count delta;
+  no functional change).
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+  (1m20s).
+- Did not run full workspace tests per merge-queue mixin and the
+  no-Rust-functional-diff scope.
+
+## Notes / follow-ups
+
+- The lint that fired (`doc_overindented_list_items`) is enabled
+  by default in clippy 1.94+. Worth a one-line CI tickle so this
+  class of lint failure surfaces before reintegration rather than
+  on the next agent's clippy preflight. Not in scope for this
+  cycle.
+- bd-845653 / bd-58ff27 / bd-c24ff7 all still on main but blocked
+  from `caco bd close --bead-id` because the daemon-binary on flight
+  is the pre-bd-845653-fix one (the very bug this session shipped a
+  fix for). Operator restart of the reintegration daemon will
+  unblock the close path for those three.
