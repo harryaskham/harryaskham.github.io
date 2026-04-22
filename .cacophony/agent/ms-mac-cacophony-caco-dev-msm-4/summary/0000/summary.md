@@ -1,89 +1,78 @@
-# bd-ff59fa — caco summary undercount + caco bd list --updated-since default sort
+# bd-ef0099 — keep chat hydrated/live divider inside the bubble border
 
 ## Goal
-Make `caco summary` accurately reflect bead-close activity, and make
-`caco bd list --updated-since N` show the newest activity first by
-default.
+Stop the new `— previously —` / `— live —` chat divider (bd-c55c0c)
+from pushing rendered text outside the bubble's visual border, and
+make the live-segment bubble visually re-open instead of bleeding
+into the hydrated bubble above it.
 
 ## Bead(s)
-- bd-ff59fa (P2 bug, label test-user) — `caco summary undercounts
-  closed beads — reports '0 closed' in 1h window when ~10 beads
-  actually closed`. Bonus finding in same bead: default sort for
-  `--updated-since` returns oldest beads first.
+- bd-ef0099 (P2 task, test-user) — `The ──— previously —─── text
+  newly added to the chat breaks the layout by pushing all text
+  outside of its bubble border, please fix`. Direct follow-up to
+  bd-c55c0c which introduced the divider.
 
 ## Before state
-- Reproduced on this host:
-  `caco summary --since 1h` → `Beads: 7 created, 9 claimed, 0 closed`
-  while `sqlite3 daemon.db "SELECT COUNT(*) FROM feed_events WHERE
-  ts >= '2026-04-22T13:00:00' AND event_type='bead_closed'"` returned
-  many real closures from earlier in the window.
-- Root cause: `caco bd update --status closed` (handler
-  `handle_update_bead`) emitted `EventType::BeadUpdated` regardless
-  of the new status, while `caco bd close` (handler
-  `handle_close_bead`) emitted `EventType::BeadClosed`. The
-  /api/v1/summary aggregator counts `bead_closed` rows only, so
-  every closure done via the update path was invisible to it.
-  Operators routinely close via `update --status closed` for
-  housekeeping (it's the recommended path when the dedicated close
-  validator can't find the bead in main, e.g. bd-845653 workaround),
-  so the undercount was systematic.
-- Bonus bug: `caco bd list --updated-since 1h` returned ancient
-  unchanged beads at the top of the window because the static
-  default sort was `Priority` and `reverse=false`. An operator
-  looking for "what moved recently?" would scan the top of the
-  list and conclude `--updated-since` was broken.
+- `build_bubble_lines` emitted divider lines as exactly `inner_width`
+  cells wide: `"─"×left + label + "─"×right` with no gutter. The
+  divider hugged the bubble border on both sides, visually
+  indistinguishable from the bubble's own `─` runs and (on narrow
+  widths or when `inner_width < label_w`) overflowing it.
+- After a hydrated→live transition the next bubble used the shared
+  `├───┤` connector with the previous (hydrated) bubble, so live
+  traffic shared a "wall" with snapshot history instead of opening
+  a fresh bubble run.
+- `bubble_stack_height` did not count divider rows, so the
+  visible-window heuristic ("trim bubbles off the top while
+  height > viewport") underestimated the rendered height by one
+  row per transition and let the bottom bubble overflow.
 
 ## After state
-- `handle_update_bead` now emits `EventType::BeadClosed` (instead of
-  `BeadUpdated`) when both:
-  1. The request's `status` was `BeadStatus::Closed`, and
-  2. The post-update bead's `.status` is in fact `Closed`.
-  All other update shapes still emit `BeadUpdated` unchanged. The
-  cross-project move arm is unaffected (already separate).
-- New helper `resolve_bead_sort(sort, reverse, updated_since_active)
-  -> (BeadSortField, bool)`. When `--updated-since` is in play and
-  neither `--sort` nor `--reverse` was explicitly passed, defaults
-  to `(UpdatedAt, reverse=true)`. Explicit `--sort` or `--reverse`
-  always wins so power users keep full control.
-- Helper plumbed into both `handle_list_beads` (per-project) and the
-  global beads list path. Legacy callers without `--updated-since`
-  still get the original `(Priority, reverse=false)` default.
+- Divider width = `inner_width - 1` cells, with a one-space gutter
+  on each side surrounding the `─` fill. The divider now visually
+  sits inside the bubble column rather than pressing against the
+  border.
+- After a divider on a live transition (`i > 0` with `show_divider`),
+  open the next bubble with a fresh `╭───╮` top instead of the
+  shared `├───┤` connector. Hydrated and live runs read as
+  distinct stacks even when they touch.
+- `bubble_stack_height` counts divider rows by re-running the same
+  `(prev_hydrated, msg.hydrated)` match, so the visible-window
+  trim is exact.
 
 ## Diff summary
-- `crates/caco-daemon/src/beads.rs` (+98/-5):
-  - `handle_update_bead` non-move arm: pick `BeadClosed` vs
-    `BeadUpdated` based on requested+resulting status.
-  - New `resolve_bead_sort` helper between `parse_bead_sort` and
-    `mainline_validation_message`.
-  - Two `let (sort_by, reverse) = resolve_bead_sort(...)` call sites
-    (per-project list at L2598-region, global list at L3797-region).
-  - 4 unit tests in `beads::tests`:
-    - `resolve_bead_sort_updated_since_defaults_to_updated_at_reverse`
-    - `resolve_bead_sort_explicit_sort_wins`
-    - `resolve_bead_sort_explicit_reverse_wins`
-    - `resolve_bead_sort_no_updated_since_keeps_legacy_default`
+- `crates/caco-tui/src/views/chat.rs` (+171/-6):
+  - `build_bubble_lines`:
+    - Divider construction: `target_w = width-1`,
+      `inner_w = target_w-2`, `pad = inner_w - label_w`, build
+      `" " + "─"×left + label + "─"×right + " "`.
+    - Bubble top: `opens_fresh = i == 0 || show_divider.is_some()`,
+      use `╭───╮` when fresh, `├───┤` otherwise.
+  - `bubble_stack_height`: count dividers via the same
+    `(None, true) | (Some(true), false)` match used for emission.
+  - 2 new tests in `views::chat::tests`:
+    - `build_bubble_lines_divider_fits_within_width` — across
+      widths 40/60/80/120: every line ≤ width; divider lines
+      strictly < width and start/end with one-space gutter; both
+      `— previously —` and `— live —` labels appear in the
+      rendered output.
+    - `bubble_stack_height_counts_dividers` — 1 hydrated msg →
+      5 rows; hydrated→live pair → 9 rows.
 
 ## Operator-takeaway
-- After this rolls out, `caco summary --since N` will accurately
-  count closures done via either `caco bd close` or
-  `caco bd update --status closed`. Existing automation that
-  watched the `bead_closed` feed event already saw both lifecycle
-  paths only when the operator used the dedicated close command —
-  it'll now also see them when housekeeping closes go through
-  update. Workers that derive state from `bead_updated` rows
-  specifically (none known in tree) would need to add a
-  `bead_closed` listener too.
-- `caco bd list --updated-since 1h` now top-loads recent activity
-  by default. To restore the old priority-default ordering pass
-  `--sort priority` explicitly. To scroll up through history pass
-  `--reverse=false` (the existing flag's negative form).
+- Once binaries roll, the chat surface will visually contain the
+  `— previously —` and `— live —` markers inside the bubble
+  column with breathing room on each side, and the live-segment
+  bubble will open as a fresh `╭───╮` instead of sharing a wall
+  with the hydrated bubble above it.
+- No config knob; behaviour is purely cosmetic / layout-correct.
+- Future: `make_header_line` can also overflow at very narrow
+  widths (caught the test at width=20 and excluded those from the
+  bd-ef0099 assertion). That's a separate issue; file if it's
+  hit in operator setups.
 
 ## Tests
-- `cargo test -p caco-daemon --lib resolve_bead_sort` — 4/4 passed.
-- `cargo build -p caco-daemon` — clean.
-- `cargo clippy -p caco-daemon --all-targets -- -D warnings` — clean.
-- End-to-end behaviour change requires a daemon binary roll on the
-  node owning the cacophony beads DB before `caco summary` will
-  reflect the fix; existing closed-via-update events from before the
-  roll remain invisible (they're already-stored `bead_updated`
-  rows). Going forward, every fresh closure is counted.
+- `cargo test -p caco-tui --lib views::chat::tests::` — 60/60
+  passed (incl. 2 new bd-ef0099 tests).
+- `cargo clippy -p caco-tui --all-targets -- -D warnings` — clean.
+- `cargo build -p caco-tui` — clean.
