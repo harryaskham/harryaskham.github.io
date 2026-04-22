@@ -1,64 +1,68 @@
-# bd-bd60cb — extend runtime launch timeout to `pi` runtime
+# bd-ecf1a0 — cap persistent-agent error messages in /api/v1/ui/snapshot
 
 ## Goal
-Stop the recurring `Persistent agent caco-dev-msm-N failed during
-periodic reconcile` cascade (16 occurrences today on ms-mac).
+Bring the snapshot payload back under the bd-ecf1a0 acceptance
+target of <500 KB raw / 100 KB gzipped.
 
 ## Bead(s)
-- bd-bd60cb (P2 bug). Filed by log-monitor with the hypothesis that
-  the failures cascade from helsinki authoritative-bd 502 blips.
+- bd-ecf1a0 (P2 bug). The previous trim slices (drafts/closed beads
+  dropped, terminal-old agents dropped, ETag/304, memo cache,
+  visibility-aware client refresh) had all landed but the live
+  payload was still ~12 MB.
 
 ## Diagnosis
-Cross-referenced the bead's hypothesis with the actual `feed.jsonl`
-detail strings on this node:
+Live snapshot dump on ms-mac via /api/v1/ui/snapshot:
+- beads: 237 KB (already trimmed by earlier slices).
+- agents: 649 KB.
+- persistent_agents: 10.8 MB.
 
-  agent launch failed: daemon error: agent ms-mac-cacophony-caco-dev-msm-N:
-  bootstrap completed, but runtime launch failed: tmux session did
-  not settle on a launched runtime command (observed 'bash') for
-  configured agent runtime 'pi'.
-
-This is the post-bootstrap settle check in
-`crates/caco-daemon/src/agent/lifecycle.rs ~L1562`, not a 502 from
-`/beads`. Same shape as bd-a6a3f2 for codex: an npm-installed
-Node.js runtime whose wrapper chain (bash → npm shim → node →
-pi-cli) doesn't complete within the default 2 s window when the
-host is under load. The bd-048e5b transient-retry path covers
-tmux probe hiccups while the session is alive — it does not
-extend the wrapper-completion budget.
-
-The helsinki blip story still correlates: helsinki probe storms +
-sync 502 retries push host load up, which in turn pushes the `pi`
-wrapper past 2 s. So helsinki is the precipitating load, not the
-direct error path.
+Top offenders inside persistent_agents: three picasso-health
+persistent agents (health-ambient/health-ctrl/health-dev) each
+carrying a single `error_history[0].message` of ~3.5 MB. The
+content was the entire stderr blob of a `git clone --shared` failure
+(`unable to read sha1 file of .claude/gclaude.sh ...`). Nothing in
+the snapshot path bounded the size of error strings.
 
 ## Before state
-- `runtime_launch_timeout_secs("codex") == 10` (bd-a6a3f2).
-- `runtime_launch_timeout_secs("pi")` fell through to default == 2.
-- Persistent `caco-dev-msm-*` agents (which run the `pi` runtime)
-  cascaded into reconcile failures whenever the host was loaded.
+- `PersistentAgentSnapshot.error_history` and `.last_error` shipped
+  full-fidelity through the wire, no per-field cap.
+- One ~3.5 MB stderr blob in error_history defeats every other
+  bd-ecf1a0 trim on its own.
 
 ## After state
-- `crates/caco-daemon/src/agent/mod.rs`: `runtime_launch_timeout_secs`
-  matches `"codex" | "pi"` to the 10 s NODEJS bucket. Doc comments
-  updated to name both runtimes and reference bd-bd60cb.
-- New test `runtime_launch_timeout_pi_extended` asserts pi → 10 s
-  and pi > claude. Existing codex_extended + default tests untouched.
+`crates/caco-daemon/src/ui_stream.rs`:
+- New `SNAPSHOT_ERROR_MESSAGE_MAX_BYTES = 2048`.
+- New `truncate_snapshot_error_message(msg)` — UTF-8 boundary
+  safe; appends `… [snapshot truncated, N bytes dropped (bd-ecf1a0)]`
+  marker so operators see at a glance that trimming happened and
+  roughly how big the dropped tail was.
+- New `trim_snapshot_persistent_agent_error_messages(&mut [PA])`
+  mutates in place, covering both `.last_error` and every
+  `.error_history[].message`.
+- Applied at the snapshot-build call site immediately after
+  `build_persistent_agent_snapshots_async`.
+
+Canonical full-fidelity error remains in PersistentSentinel on
+disk; only the wire-format snapshot is trimmed.
 
 ## Diff summary
-- `crates/caco-daemon/src/agent/mod.rs` (+13/-5): one-line match arm
-  change + expanded doc comments.
-- `crates/caco-daemon/src/agent/tests.rs` (+17/-1): one new test in
-  the existing bd-a6a3f2 cluster.
+- `crates/caco-daemon/src/ui_stream.rs` (+203/-1):
+  - Constant + 2 helpers above the existing trim helpers.
+  - One in-place trim call inserted into the snapshot builder.
+  - 4 new unit tests in the existing `ui_stream::tests` module.
 
 ## Tests
 - `cargo build -p caco-daemon` — clean.
 - `cargo clippy -p caco-daemon --all-targets -- -D warnings` — clean.
-- `cargo test -p caco-daemon --lib runtime_launch_timeout` — 3/3.
+- `cargo test -p caco-daemon --lib truncate_snapshot_error` — 3/3 pass.
+- `cargo test -p caco-daemon --lib trim_persistent_agent` — 1/1 pass.
 
 ## Operator-takeaway
-After binary roll, persistent caco-dev-msm-* (and any other `pi`
-runtime persistent agents — node-ctrl, etc.) should stop cascading
-reconcile failures during helsinki blips. The fix is the same shape
-as bd-a6a3f2: extend the npm-wrapper budget. If similar failures
-appear for another node-wrapped runtime, the same one-line change
-(add it to the codex|pi match arm) applies.
+After binary roll, the snapshot for nodes carrying picasso-health
+(or any agent with a multi-MB stderr-bearing error) drops by
+~3.5 MB per offending agent. ms-mac's snapshot is expected to fall
+from ~12 MB to <1 MB. The trim is a hard ceiling of 2 KB per error
+string — if a snapshot is still oversize after this, the next slice
+is to bound `agents` (currently 649 KB; same approach: cap any
+oversized `last_error` / log-trail fields). Bead remains open for
+the next slice.
