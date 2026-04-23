@@ -1,45 +1,73 @@
-# Session summary — Profile.composes_well_with metadata (bd-f30a29)
+# Session summary — Codespaces architecture design (bd-1975be)
 
 ## Goal
 
-Add a `composes_well_with` frontmatter field on profiles so authors can declare suggested mixin stacks ("dev + merge-queue + reflect-session") without committing them as a hard `composes:` resolution chain. Surfaces as documentation in profile-creator and any future `caco profile show`.
+Land a thorough design document for treating GitHub Codespaces as
+first-class Cacophony nodes, so the implementation beads
+(bd-d8c118 `caco codespace new` CLI, bd-f32dda key distribution,
+bd-44acfb Azure remote build) have a stable contract to build
+against.
 
 ## Bead(s)
 
-- `bd-f30a29` — Profile metadata: declare `composes_well_with: [list]` so profile-creator + operators see suggested mixin stacks at a glance
+- `bd-1975be` — Design GitHub Codespaces integration architecture
 
 ## Before state
 
-- `Profile` struct had `composes: Option<Vec<String>>` for hard composition only. There was no way to advertise "you might want to layer X on top of me" without burying the guidance in prose.
-- Two recently-authored mixins (`reflect-session.md`, `collab-mode.md`) carried the suggested stack in YAML comment / paragraph form only.
+- Five sibling beads filed in the codespaces / cloud-deploy lane
+  (bd-d8c118, bd-f32dda, bd-44acfb, bd-c2cb8b, bd-8b0dbb,
+  bd-6d16a7) but no architectural document tying them together.
+- Open questions on identifier scheme, ephemeral-node lifecycle,
+  bead authorship continuity across rebuild, secrets boundary.
 
 ## After state
 
-- `cargo test -p caco-profile --lib composes_well` — 3 / 3 passed.
-- `cargo test-small` — 197 / 109 / 718 / 289 / 18 / 2805 / 51 passed, 0 failed.
-- `cargo check --workspace --tests` — clean.
+- New `docs/epics/bd-1975be-codespaces-architecture.md` covers:
+  - Motivation and goals/non-goals
+  - Identifier model: `cs-<8-char-hash>` with stable rebuild
+    continuity, persisted index, caller-string convention
+  - Full lifecycle: create / enroll / stop / resume / remove
+  - Authentication: ed25519 + tofu like the rest of the mesh,
+    one-shot enrollment token via GitHub Codespaces user secrets
+  - Tooling provisioning via devcontainer + bootstrap hook
+  - Networking: outbound-only, rendezvous-relay model (same as
+    Termux nodes)
+  - Data plane: lazy-replicating peer (sparse-checkout class),
+    pull-on-demand bead and scratchpad replication
+  - Trade-off matrix with mitigations
+  - Out-of-scope follow-ups (autoscale, pre-warming, cross-org)
+- Acceptance map at the end ticks each bd-1975be requirement.
 
 ## Diff summary
 
-- Commit: `e94441f4`
 - Files touched:
-  - `crates/caco-profile/src/model.rs` — adds `composes_well_with: Option<Vec<String>>` with `#[serde(default)]`.
-  - `crates/caco-profile/src/{lib,compose,bridge}.rs` and `crates/caco-cli/src/lib.rs` — 7 `Profile` struct literals updated with `composes_well_with: None`. Mechanical.
-  - `crates/caco-profile/src/lib.rs` — 3 new tests covering round-trip, no-validation, and default-None behaviour.
-  - `.cacophony/profiles/reflect-session.md` and `collab-mode.md` — concrete operator-facing examples; each declares its suggested stack.
-  - `.cacophony/profiles/profile-creator.md` — new "Documentation metadata" section under Frontmatter Reference so future profile-authoring agents discover the field.
-- Tests: +3 unit; 0 removed; 0 flipped.
-- Behavioural delta: zero. Resolution pipeline ignores the field.
+  - `docs/epics/bd-1975be-codespaces-architecture.md` (new, 13KB)
+- Tests: +0 / -0 / flipped 0 (design doc, no code)
+- Behavioural delta: none; this is a contract document for the
+  implementation beads.
 
 ## Operator-takeaway
 
-Profile authors can now write:
+Read before claiming bd-d8c118 / bd-f32dda. Key decisions to
+review:
 
-```yaml
-composes_well_with:
-  - dev
-  - merge-queue
-  - reflect-session
-```
+1. **Identifier hash from codespace name (not GH UUID)** — gives
+   bead authorship continuity across rebuild, pays the cost of
+   collision risk (1e-10 at 100 active codespaces).
+2. **Lazy replication, not full mirror** — codespaces are
+   ephemeral peer-consult clients, not full mesh members. Beads
+   pulled on demand via bd-cef230's `/beads/has/<id>` endpoint.
+3. **Secrets via GH user secrets, not sops-nix** — codespaces
+   are short-lived enough that operator-driven push per-codespace
+   is acceptable. NO long-term keys leak into GH environment.
+4. **Rendezvous-relay for inbound** — codespaces sit behind GH
+   NAT; mesh peers reach them through helsinki the same way they
+   reach Termux. +50-150ms RTT cost, acceptable for one-shot
+   work, unsuitable for tight controllers.
+5. **30min auto-stop is a feature, not a bug** — persistent
+   agents stay on always-on nodes. Codespaces optimise for
+   zero-friction ephemeral work (one-shot reproductions, fresh
+   sandboxes, parallel burndown spawns).
 
-and the field round-trips through the parser. Naming a non-existent profile is intentionally non-fatal so authors can suggest stacks without worrying about phantom-reference fragility. The field is *only* metadata — the resolver ignores it. The two mixin profiles I authored last week (`reflect-session`, `collab-mode`) are now annotated as live examples. A natural follow-up: `caco profile show <name>` to render the suggested stack as a section, and profile-creator-side validation that warns when `composes_well_with` references unknown profiles. Both deferred — this commit is the metadata field plus its documentation.
+If caco-ctrl wants to flip any of these decisions, this doc is
+the cheap place to do it before implementation lands.
