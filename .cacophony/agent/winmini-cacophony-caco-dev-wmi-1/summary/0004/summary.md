@@ -1,86 +1,79 @@
-# Session summary — Authorization-scopes capability matrix (bd-607960)
+# Session summary — GitHub Pages visual consistency QA (bd-c2d025)
 
 ## Goal
 
-bd-607960: caco-ctrl (project_controller) reported that the actual
-capability boundary of `project_controller` was unclear. SPEC §7.2.1
-describes scopes abstractly. This session produces an authoritative,
-empirically-grounded capability table operators can read, and pins
-the underspecified branches with negative-case tests.
+Test and validate that the GitHub Pages site renders consistently with the
+webapp design across browsers and device sizes. The bead asked for cross-
+browser/responsive testing; without a headless-browser harness in tree, the
+realistic deliverable is a static QA validator that catches the bulk of
+regressions cheaply, plus closing the responsive/a11y gaps the validator
+exposed.
 
 ## Bead(s)
 
-- `bd-607960` — Authorization scope 'project_controller' on
-  persistents: actual capability boundary is unclear, need test+docs
-- (related: bd-012d92 scope-claim plumbing, bd-315545 all_projects,
-  bd-00d930 cross_project_bead_permissions, bd-71fbf8
-  --authorization-scope CLI flag)
-
-Also touched (investigation only, released back to open):
-
-- `bd-33ca18` — caco msg speak emits both 'speak' AND 'broadcast' —
-  could not reproduce; left detailed audit findings on the bead and
-  unassigned it for needs-repro from the operator. The local DB never
-  duplicates: `handle_msg_speak` writes one row + one feed event; peer
-  ingest only materializes MessageBroadcast/MessageSent feed events
-  into project_messages, not MessageSpeak.
+- `bd-c2d025` — Test and validate GitHub Pages visual consistency.
 
 ## Before state
 
-- Failing tests: none. caco-daemon scope coverage: 36 tests across
-  worker / project_controller / cluster_controller / lifecycle.
-- No docs cheat-sheet for per-scope capabilities. Operators had to
-  read `check_agent_scope` to know what a project_controller could do.
-- Two enforcement branches were untested: persistent endpoints
-  (`/api/v1/persistent/*`), and the `Default deny` arm at the end of
-  `check_agent_scope`.
+- `docs/style.css` had **one** media query: `@media (max-width: 768px) {
+  .sidebar { display: none } }`. On mobile, navigation disappeared
+  entirely — users had to know URLs to move between pages.
+- No `prefers-reduced-motion`, no `forced-colors`, no `@media print`,
+  no `:focus-visible` styles, no skip-link.
+- Webapp (`crates/caco-web/static/style.css`) had 30+ media queries
+  including all four a11y/print categories — significant drift.
+- 19 docs HTML pages had `<main class="content">` but no
+  `id="main-content"` skip-link target.
+- No QA validator: design-token drift between docs and webapp could
+  go unnoticed; broken sidebar links could ship.
 
 ## After state
 
-- Failing tests: none. +7 scope tests (43 total covering the
-  enforcement matrix).
-- New docs page: `docs/authorization-scopes.md` — capability matrix
-  with ✓/✗/▢/◐/◑ legend, derived directly from
-  `check_agent_scope`, `check_agent_lifecycle_scope`, and
-  `check_project_scoped_endpoint`. Includes the operator-quick-checks
-  table the bead reporter asked for.
-- New tests pin the persistent-endpoint and default-deny branches so
-  the docs cannot drift from enforcement code:
-    - worker_scope_denies_persistent_endpoints
-    - project_controller_scope_allows_persistent_endpoints
-    - cluster_controller_scope_allows_persistent_endpoints
-    - worker_scope_denies_other_agent_attach
-    - project_controller_scope_allows_other_agent_attach
-    - worker_scope_denies_unrecognised_path_default_deny
-    - project_controller_scope_denies_unrecognised_path_default_deny
+- `docs/style.css` extended to 7 media queries covering tablet (1024),
+  mobile (768), small phone (480), `prefers-reduced-motion`,
+  `forced-colors: active`, and `@media print`. On mobile the sidebar
+  collapses into a horizontal pill bar above content rather than
+  disappearing — navigation is preserved at every breakpoint.
+- `.skip-link` + `:focus-visible` styles added so keyboard users can
+  jump past the sidebar and always have a visible focus ring.
+- All 19 `docs/*.html` pages got a `<a class="skip-link"
+  href="#main-content">` element after `<body>` and `id="main-content"`
+  on `<main>`.
+- New `docs/validate-pages.sh`: 141 passed, 0 warnings, 0 failed.
+  Asserts viewport + lang on every page, skip-link + main-content
+  target on every page, design-token equality across all 16 Nord
+  variables vs webapp, presence of all 6 responsive/a11y media
+  queries, balanced CSS braces, and that every sidebar nav href in
+  `index.html` resolves to an existing file.
 
 ## Diff summary
 
-- Commit: `084c2ea4`
-- Files touched:
-  - `docs/authorization-scopes.md` (+185, new): capability matrix
-  - `crates/caco-daemon/src/lib.rs` (+~75): 7 new tests
-- Tests: +7 / -0 / flipped 0
-- Behavioural delta: zero. Pure docs + characterisation tests.
+- 21 files changed, +290 / -4:
+  - `docs/style.css` — replace single 768px rule with the
+    skip-link/focus-visible block plus 6 media queries (~95 lines).
+  - `docs/validate-pages.sh` — new 178-line validator (executable).
+  - `docs/agents.html`, `docs/api.html`, `docs/architecture.html`,
+    `docs/beads.html`, `docs/cli.html`, `docs/configuration.html`,
+    `docs/controller-restart-windows.html`, `docs/daemon.html`,
+    `docs/index.html`, `docs/mcp.html`, `docs/messaging.html`,
+    `docs/networking.html`, `docs/nix.html`, `docs/pki.html`,
+    `docs/profiles.html`, `docs/quickstart.html`, `docs/testing.html`,
+    `docs/tui.html`, `docs/wearable.html` — each gets a skip-link
+    line after `<body>` and `id="main-content"` on `<main>`.
 
-## Embedded artefacts
+## Validation
 
-(none — pure docs + tests change)
+- `bash docs/validate-pages.sh`: **141 passed, 0 warnings, 0 failed.**
+- All 16 Nord palette variables verified identical to the webapp.
+- All 21 sidebar navigation links resolve.
+- CSS braces balanced (94/94).
 
 ## Operator-takeaway
 
-`docs/authorization-scopes.md` is now the canonical reference for
-"what can scope X do". The matrix is grounded in the actual
-enforcement code, and characterisation tests prevent drift. The
-follow-up `caco auth check` CLI command suggested by the bead is
-intentionally NOT in this commit — it crosses the cli/daemon
-boundary and merits its own bead (would need a new
-`GET /api/v1/auth/check` endpoint returning the caller's claims plus
-a derived allowlist). The bead text mentions this explicitly in the
-commit message so the operator can file it whenever convenient.
-
-The bd-33ca18 (speak/broadcast dup) audit was inconclusive and
-released back to open with detailed code-audit findings comment-style
-appended to the description, plus three open hypotheses (caller-ID
-inconsistency on inbox poll vs speak; version drift per bd-5c2a98;
-direct_send hooks). Needs operator repro to make further progress.
+The validator runs in <1 second and is the right surface for design-
+token drift between docs and webapp. Two follow-ups worth filing:
+(1) a real headless-browser screenshot diff (Playwright + percy-style
+baseline) when a browser harness lands in the build, and (2) a CI hook
+that runs `docs/validate-pages.sh` on every PR that touches `docs/*.html`
+or `crates/caco-web/static/style.css` so palette drift is caught at
+review time.
