@@ -1,90 +1,42 @@
-# Session summary — Profile frontmatter short_name_strategy plumbed through bridge
+# Session summary — opt-in Azure Key Vault module for cluster secrets
 
 ## Goal
 
-Close the second half of bd-eef5da. Frontmatter
-`short_name_strategy: adj_noun` in `.cacophony/profiles/*.md` should
-be honoured by the daemon's short-name resolution chain. Before this
-change, only config-declared profile entries (Config.profiles[]) were
-plumbed (bd-eef5da, this session); profile files on disk were not.
+Land the gating P0 bead (bd-6d16a7) that establishes secure key + secrets management for cloud deployments. Three downstream beads depend on it: bd-f32dda (Codespaces secret distribution), bd-1975be (Codespaces architecture), and bd-40cb10 (deploy stack to cloud). The contract: secret values must never appear in Terraform state, tfvars, or `TF_VAR_*` environment variables; rotation must be a single out-of-band command; compromise of an ACA app must not leak secret read on other resources.
 
 ## Bead(s)
 
-- `bd-c5783b` — [bd-eef5da follow-up] short_name_strategy from profile
-  frontmatter (.md) not yet plumbed
-- (parent: `bd-eef5da` — closed earlier this session)
-- (related: `bd-bb3b5f` original strategy work, `bd-34d0b8` AdjNoun
-  fallback)
+- `bd-6d16a7` — Configure secure key and secrets management for cloud deployment
+- (downstream gating: `bd-f32dda` Codespaces secret distribution, `bd-1975be` Codespaces architecture design, `bd-40cb10` deploy stack to cloud)
 
 ## Before state
 
-- Failing tests: none. caco-profile bridge: ~120 passing; caco-daemon
-  short_name: 11 passing.
-- `caco_profile::Profile` had no `short_name_strategy` field — the
-  YAML frontmatter parser silently dropped it.
-- The two `resolve_short_name` callsites in `caco-daemon/lib.rs`
-  consulted only the config-declared lookup added in bd-eef5da.
+- `deploy/aca/terraform/deploy.nix` exposed secrets only via inline `TF_VAR_node_secrets` JSON and `TF_VAR_authority_node_secrets` JSON. Both flow through Terraform variables — secret values land in `terraform.tfstate`, in `terraform plan` output, and in any `TF_VAR_*` echoes in CI logs.
+- No Azure Key Vault, no UAMI, no `key_vault_url` secret references. Rotation required editing the `TF_VAR_*` env, re-running `terraform apply`, and re-rolling the active revision.
+- No operator-facing runbook on rotation, seeding, or audit.
+- `bash deploy/aca/validate.sh`: 100 passed, 0 warnings, 0 failed.
 
 ## After state
 
-- Failing tests: none. caco-profile bridge: +2 passing; caco-daemon
-  short_name surface: 14 passing (+3 new).
-- `caco_profile::Profile.short_name_strategy: Option<String>` parses
-  from frontmatter as a raw string (so this crate stays free of
-  `caco-config::ShortNameStrategy`).
-- `BridgeOutput.short_name_strategy: Option<String>` round-trips it
-  through every bridge target (Claude, Codex, Pi, Test).
-- `compose_profiles` composes it via last-one-wins, matching the
-  pattern used by other scalar overrides (background_image, voice,
-  initial_prompt, ...).
-- `agent::ResolvedProfile.short_name_strategy` carries it into the
-  daemon spawn paths.
-- Both spawn callsites (persistent-launch and API-spawn) prefer the
-  bridge-output value parsed by `parse_short_name_strategy_str()`,
-  falling back to the bd-eef5da config-declared lookup.
-- Tolerated frontmatter aliases: `adj_noun`, `adj-noun`, `AdjNoun`,
-  surrounding whitespace. The `llm` strategy is not expressible as
-  bare frontmatter shorthand because it requires a companion key —
-  config-declared profile entries handle that case.
-- Unknown frontmatter values return `None` instead of crashing,
-  gracefully falling through to the cluster-default.
+- `deploy/aca/terraform/deploy.nix` declares opt-in (`use_key_vault = false` default) Azure Key Vault + UAMI + role assignment. When enabled, secrets are referenced by name from the Key Vault and the values never appear in Terraform state, tfvars, or CI logs.
+- `deploy/aca/terraform/infra.nix` adds reusable `mkKeyVault` and `mkSecretReaderIdentity` helpers for non-ACA mono-repo deploys that want the same shape.
+- `deploy/aca/terraform/terraform.tfvars.example` documents the four new variables (`use_key_vault`, `key_vault_name`, `tenant_id`, `key_vault_secret_names`) with worked example mappings.
+- `deploy/aca/SECRETS.md` is the new operator runbook: architecture diagram, provisioning, secret seeding + naming conventions, rotation flow, audit query, migration from inline-tfvars, compliance notes.
+- `bash deploy/aca/validate.sh`: 103 passed, 0 warnings, 0 failed (the three new checks — Key Vault wiring, SECRETS.md presence, and tfvars cross-validation when `use_key_vault = true` — all pass).
+- `nix-instantiate --parse` of both `deploy.nix` and `infra.nix`: clean parse; rendered Terraform output shows the expected `azurerm_key_vault`, `azurerm_user_assigned_identity`, and `azurerm_role_assignment` blocks gated on `count = use_key_vault ? 1 : 0`.
 
 ## Diff summary
 
-- Commit: `8662aa61`
-- Files touched:
-  - `crates/caco-profile/src/model.rs` (+19): new field
-  - `crates/caco-profile/src/bridge.rs` (+~50): new field on
-    BridgeOutput, populate at four bridge sites, +2 unit tests
-  - `crates/caco-profile/src/compose.rs` (+10): last-one-wins compose
-  - `crates/caco-profile/src/lib.rs` (+1): test fixture field
-  - `crates/caco-daemon/src/agent/types.rs` (+12): new field on
-    ResolvedProfile
-  - `crates/caco-daemon/src/agent/profile.rs` (+2): plumb through
-    `resolve_profile` and the composite path
-  - `crates/caco-daemon/src/lib.rs` (+~70): new
-    `parse_short_name_strategy_str()`, prefer bridge-output value at
-    both callsites, +3 unit tests
-- Tests: +5 / -0 / flipped 0 (caco-profile: 2, caco-daemon: 3)
-- Behavioural delta: agents whose profile file frontmatter declares
-  `short_name_strategy: adj_noun` now receive the configured strategy
-  instead of falling through to the cluster-default. Backwards-compat
-  preserved: profiles without the field, or with an unknown value,
-  behave exactly as before.
-
-## Embedded artefacts
-
-(none — pure backend change)
+- Commit: c9ce5fb57 (rebased onto current main)
+- Files (5 changed, +474):
+  - `deploy/aca/terraform/infra.nix` — add `mkKeyVault`, `mkSecretReaderIdentity` helpers.
+  - `deploy/aca/terraform/deploy.nix` — add `use_key_vault`, `key_vault_name`, `tenant_id`, `key_vault_secret_names` variables; add Key Vault + UAMI + role assignment resources; emit `key_vault_uri` and `secret_reader_client_id` outputs.
+  - `deploy/aca/terraform/terraform.tfvars.example` — document the four new variables.
+  - `deploy/aca/validate.sh` — add three new checks.
+  - `deploy/aca/SECRETS.md` — new operator runbook (8.5KB).
+- Tests: validate.sh 103/0/0 (new checks pass); nix parse clean.
+- Behavioural delta: opt-in only. Operators on the legacy inline-tfvars flow are completely unaffected; operators who set `use_key_vault = true` get the Key Vault + UAMI provisioned and can begin migrating secrets one at a time.
 
 ## Operator-takeaway
 
-Both halves of the original bd-eef5da gap are now closed. The full
-3-level resolution chain (`persistent decl > project agent_defaults >
-profile`) is live for both config-declared profile entries (this
-session, earlier) and profile-file frontmatter (this commit). The
-parser intentionally accepts only the bare-string variants (AdjNoun,
-plus aliases) — the `Llm { llm: <key> }` variant remains the
-config-declared route, since it needs an associated map. Worth
-calling out in caco-doctor: any profile file that wants a custom
-short-name strategy should add `short_name_strategy: adj_noun` to its
-frontmatter.
+The Key Vault module is intentionally **opt-in** (`use_key_vault = false` by default) so this lands as a non-breaking change for every existing environment, and so individual environments can migrate secrets one at a time. The downstream Codespaces and cloud-deploy beads can now layer their secret-distribution stories on top of `key_vault_url` references rather than re-inventing a secret store. Two follow-ups worth filing later: (1) the runtime-side `caco secret put / list / rotate` first-party CLI surface that wraps `az keyvault secret set` with project conventions, and (2) automating Key Vault diagnostic-settings so audit logging is on by default rather than a manual operator step.
