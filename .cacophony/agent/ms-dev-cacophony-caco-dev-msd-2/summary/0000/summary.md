@@ -1,88 +1,102 @@
-# Session summary — bd-f45663 timeline data generation service
+# Session summary — bd-734772 timeline ingestion pipeline + hourly refresh
 
 ## Goal
 
-Per the timeline UX bead family (TUI bd-5278e2 / web bd-fc8947 /
-android bd-47dc20 / per-project TUI bd-ec4fdc / cluster bd-cfe554 /
-visual bd-8adcec / build-pipeline bd-734772 / android-impl bd-198dbd
-/ web-impl bd-9eefcc), all surfaces need a single shared backend
-that says "what happened in this project recently". This bead is
-that backend.
+bd-f45663 (just landed) shipped the in-memory timeline service. This
+bead is the **input collection** layer that feeds it: pulls raw
+events from git log + CHANGELOG.md, merges them, hands off to the
+existing `timeline::get_or_generate_derived` for cache-aware
+generation, and refreshes on an hourly schedule for the surface
+beads to read cheaply.
 
 ## Bead(s)
 
-- `bd-f45663` — Implement timeline data generation service (P2,
-  feature) — **the backend the surface beads will read through**
+- `bd-734772` — Build timeline generation pipeline with caching (P2)
+- (depends on `bd-f45663` timeline data generation service — same
+  agent, same checkout)
+- (consumed by surface beads bd-5278e2 / bd-fc8947 / bd-47dc20 /
+  bd-ec4fdc / bd-cfe554 / bd-9eefcc / bd-198dbd)
 
 ## Before state
 
-- Each surface bead would have re-implemented its own commit / bead
-  / changelog aggregation against different data shapes.
-- No cache key for "this set of inputs produced this timeline" —
-  guaranteed to mean repeated expensive AI calls if/when the
-  AI-summarised path lands.
+- `timeline::generate_derived` worked but had no upstream — surface
+  beads would have re-implemented git-log/changelog ingestion each
+- No periodic refresh; reads always pay full generation cost
 
 ## After state
 
-- New `crates/caco-daemon/src/timeline.rs` (~430 lines) wired into
-  `caco-daemon` lib.rs.
-- `TimelineEvent { id, kind: {Commit|Changelog|Release|Bead},
-  timestamp, title, body?, actor? }`
-- `TimelineScope { max_age, min_commits }` with `Default = 48h /
-  100 commits` per the bead's "whichever is longer" criterion
-- `TimelineMode { Derived, AiSummarised }`
-- `Timeline { project, mode, scope, generated_at, inputs_hash,
-  events, narrative? }` — self-describing so cache hits need no
-  out-of-band metadata
-- `select_in_scope(events, scope, now)` honours OR-LONGER semantics
-  precisely (max of age-prefix length and commit-prefix length)
-- `compute_inputs_hash(project, mode, scope, events) -> hex sha256`
-  — canonicalised cache key. Mode + project + every event's
-  `(kind, id, ts_micros, title)` all participate, so cache rows
-  cannot collide across projects, modes, or freshness drift.
-- `sort_canonical` — `(timestamp DESC, kind, id)` so two callers
-  with the same input set produce byte-identical Timelines
-- `generate_derived` — deterministic, no model needed
-- `TimelineSummariser` trait + `NoopSummariser` so the AI mode is
-  pluggable. `generate_ai` falls back gracefully when no model is
-  wired up.
-- SQLite-backed cache (`timeline_cache` table): `init_table`,
-  `cache_put`, `cache_get`, `cache_evict_older_than`,
-  `get_or_generate_derived` convenience.
-- Cache key is `(project|mode|inputs_hash)` so changing any input
-  invalidates automatically — no TTL needed.
-- 21 unit tests covering: scope-default, all three OR-LONGER cases
-  (age longer / commits longer / both empty / under-min-commits),
-  canonical sort determinism, hash stability + sensitivity to
-  events / mode / project, derived + AI generators, cache
-  round-trip, idempotent put-replace, eviction, get-or-generate
-  hit + miss, serde Option-omission + narrative round-trip.
+- New `crates/caco-daemon/src/timeline_pipeline.rs` (~480 lines)
+  wired into `lib.rs`.
+- `SourceProvider` trait — `name()` + `collect(since)`. Determinism
+  contract documented.
+- `GitLogSource` — runs `git log -C <repo> --format=...` with NUL
+  field + RS record separators so commit subjects with newlines
+  can't break parsing. Tolerates non-repo paths (returns empty).
+- `parse_git_log` — pure function, separately tested against
+  fixture strings (multi-commit, embedded-newline subjects,
+  malformed records, empty input).
+- `ChangelogSource` — parses `## ` Markdown sections; ID slugified
+  from header text; date pulled from first `YYYY-MM-DD` substring;
+  unreleased entries fall back to `now` so they surface at top.
+- `parse_changelog` + `parse_first_iso_date` — pure functions.
+- `StaticSource` — fixed event list for tests + production
+  fallback.
+- `PipelineConfig { project, scope, since_margin }` — `since_margin`
+  widens source-side filter beyond `scope.max_age` so the
+  min_commits prefix is satisfied by older commits.
+- `build_timeline(db, cfg, sources, now)` — runs all sources,
+  merges, hands off to `timeline::get_or_generate_derived`. Source
+  failures surface as **synthetic error events** in the timeline
+  itself instead of poisoning the whole run, so a flaky `git log`
+  doesn't take down the whole timeline.
+- `PipelineRefresher` — hourly cadence by default. `is_due(now)` /
+  `mark_ran(now)` / `maybe_run(now, f)`. `maybe_run` does NOT mark
+  on error — failed runs retry on the next tick.
+- `ScheduledPipeline` — bundles config + sources + db + refresher
+  so a daemon background task can poll one `tick(now, wallclock)`
+  method.
+- 21 unit tests covering every parser path, source-error
+  resilience, cache hits across calls, refresher cadence + error
+  semantics, and a real-git tempdir end-to-end test that asserts
+  newest-first ordering and Tester-author actor extraction.
 
 ## Diff summary
 
 - Files: 1 created, 1 modified
-  - `crates/caco-daemon/src/timeline.rs` (new, ~600 lines incl. tests)
-  - `crates/caco-daemon/src/lib.rs` (+1 line: `pub mod timeline;`)
+  - `crates/caco-daemon/src/timeline_pipeline.rs` (new, ~700 lines
+    incl. tests)
+  - `crates/caco-daemon/src/lib.rs` (+1 line)
 - Tests: +21 / -0
-- Behavioural delta: zero — pure addition. No HTTP route wired yet
-  (surface beads will plumb that as they need it). The daemon now
-  exposes the timeline API to in-process consumers.
+- Behavioural delta: zero — pure addition. No HTTP route or
+  background task wired yet (surface beads + scheduler bead will
+  plumb that). The daemon now exposes the pipeline API to
+  in-process consumers.
 
 ## Operator-takeaway
 
-Surface beads (TUI / web / Android timeline views) can now consume
-`timeline::generate_derived` or `timeline::get_or_generate_derived`
-directly without each rolling its own aggregation. The AI-summarised
-mode is a one-trait-impl drop-in away — when we pick a model, only
-one place changes.
+When a timeline-view surface bead lands, it can call
+`build_timeline(db, &cfg, &sources, Utc::now())` and get a
+`Timeline` either from the cache (cheap) or freshly generated. To
+run on a schedule, wrap a `ScheduledPipeline` and `tick()` it from
+the daemon's existing periodic-task loop.
 
-The "48h or 100 commits, whichever is longer" rule is implemented
-explicitly in `select_in_scope`, with a unit test for each direction
-of the OR. Future ops can tune `TimelineScope` per-project without
-touching the generator.
+The pipeline never drops events on source failure — instead it
+emits a synthetic event titled "source 'git-log' failed" so the
+operator sees the failure in the same timeline they're reading.
+This means a broken parser on one source can never make a project's
+timeline silently empty.
 
-Cache is content-addressed (`inputs_hash`), so we never serve a stale
-result without knowing it: any change to inputs produces a different
-hash and either a fresh generation + put or a different cache row.
-`cache_evict_older_than` is a cheap maintenance hook the daemon can
-schedule.
+The `since_margin` (default 30 days) ensures we always have enough
+historical commits to satisfy the 100-commit prefix even when the
+48h window is sparse — so the "whichever is longer" rule from
+bd-f45663 always has the data it needs.
+
+## Follow-ups noted
+
+- A `BeadHistorySource` would close the third leg of the
+  three-source design (commits / changelog / bead transitions).
+  Holding off filing as a separate bead until bead-store SQL
+  surface stabilises — for now `StaticSource` covers the gap.
+- `ScheduledPipeline::tick` is sync-only; if the daemon scheduler
+  later prefers async, a thin `async tick` wrapper that spawns
+  blocking is a 5-line add.
