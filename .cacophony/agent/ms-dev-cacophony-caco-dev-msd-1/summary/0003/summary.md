@@ -1,73 +1,62 @@
-# Session summary — bd-3ae0c6 caco-web inline agent rename
+# Session summary — bd-2f3840 sidecar test coverage gaps
 
 ## Goal
 
-Add inline-edit rename to the caco-web agent detail page so operators
-can rename an agent without leaving the surface or shelling out to the
-CLI. Hooks into the existing daemon endpoint that bd-34d0b8 already
-plumbed (`POST /api/v1/agents/{id}/field/set`).
+Close the highest-leverage remaining error-path coverage gaps in
+`crates/caco-sidecar/src/lifecycle.rs::start_sidecars_as_processes`,
+and capture any newly discovered defects as follow-up beads rather
+than papering over them with tests that lie about behaviour.
 
 ## Bead(s)
 
-- `bd-3ae0c6` — [bd-34d0b8 follow-up] caco-web: agent rename UI on
-  agent detail page
-
-## Diff summary
-
-- `crates/caco-web/static/app.js`: hero `<h4>` in
-  `renderAgentInfoTab` now carries `agent-rename-display` class, a
-  click handler `startAgentRename(agentId)`, and a tooltip. New
-  `startAgentRename` swaps the heading for a focused, pre-filled
-  text input; `Enter` / blur submits, `Escape` cancels.
-- `crates/caco-web/static/style.css`: `.agent-rename-display` hover
-  affordance and `input.agent-rename-input` styling that preserves the
-  hero heading dimensions so the layout doesn't jitter on edit.
-- Behavioural delta: clicking the agent name on the detail modal opens
-  a text input pre-populated with the current `short_name` (or empty
-  when the auto-generated label was being shown). Enter or blur POSTs
-  `{field: "short_name", value: <name>}` to `/api/v1/agents/{id}/field/set`.
-  Empty value clears the short_name. ESC restores. Toast feedback on
-  success / failure; optimistic local update of `state.agents` so the
-  agents list also reflects the rename before the next snapshot
-  arrives, then a snapshot reload is scheduled at +500ms.
-- Tests: existing `cargo test -p caco-web` (45) all pass; CSS+JS are
-  static assets bundled by the existing test harness.
+- `bd-2f3840` — Improve caco-sidecar unit test coverage for lifecycle
+  and error paths.
+- Filed follow-up: `bd-45a6cb` — `start_sidecars_as_processes` returns
+  Ok for bogus launcher binary because Linux fork+exec means
+  `Command::spawn()` succeeds before the child's exec failure surfaces.
 
 ## Before state
 
-- The agent detail hero rendered the `short_name || shortId(agent.id)`
-  as a static `<h4>`. The only way to rename was `caco agent set
-  --field short_name` (or, since bd-34d0b8, `caco agent rename`).
-- The daemon endpoint `/api/v1/agents/{id}/field/set` was already
-  reachable, used by no caco-web caller.
+- `caco-sidecar/src/lib.rs`: 18 tests (up from 2 at filing).
+- `caco-sidecar/src/lifecycle.rs::start_sidecars_as_processes`:
+  3 happy-path tests (passes config + node, skips in-process, skips
+  pid-only). No coverage of mkdir-failure, alive-sidecar
+  short-circuit, or spawn-failure paths.
 
 ## After state
 
-- Click-to-edit on the hero name. ESC cancels (heading restored).
-  Enter / blur commits via `field/set`. Empty value clears the
-  short_name. Failure surfaces a toast and re-renders the heading from
-  current state.
-- Compatible with the existing detail-modal lifecycle: the `<input>`
-  is replaced back with the heading after submit/cancel, so re-render
-  paths from `loadSnapshot` keep working.
-- Hover affordance + cursor: `text` makes the editable surface
-  discoverable without an explicit pencil icon.
-- No new daemon code. No new endpoints. No bundler changes — vanilla
-  JS appended to the existing `static/app.js`, CSS appended to
-  `static/style.css`.
+- `start_sidecars_as_processes` now has 6 tests covering:
+  - happy path with config/node forwarded to child (existing)
+  - in-process services skipped (existing)
+  - pid-only services skipped (existing)
+  - **mkdir failure surfaces a structured error** (new)
+  - **alive sidecar short-circuits without invoking launcher** (new)
+  - **bogus-launcher behavioural pin** (new — documents a real bug,
+    filed as bd-45a6cb)
+- Sidecar workspace test count: 231 → 234.
+- `cargo test-small` workspace-wide green; `cargo clippy
+  -p caco-sidecar --lib --tests` clean.
 
-## Out of scope
+## Diff summary
 
-- TUI rename context-menu item (bd-09e8df, claimed by msm-3).
-- Android app rename (bd-3cf67f).
-- Optimistic conflict resolution if two operators rename the same
-  agent simultaneously — last-writer-wins on the daemon side; no UI
-  arbitration needed at this scale.
+- Commit: `9c4fc5bf` (bd-2f3840: cover three
+  start_sidecars_as_processes error paths + pin spawn-bogus-launcher
+  behavioural quirk).
+- Files touched: `crates/caco-sidecar/src/lifecycle.rs`
+  (+152 / -15 — three new tests + cleanup of one prior assertion that
+  expected impossible Err behaviour).
+- Tests: +3 / -0 / flipped 0.
+- Behavioural delta: zero — all changes are test-only.
 
 ## Operator-takeaway
 
-Agent renaming is now a one-click affordance on the web detail surface.
-The flow matches the CLI semantics: empty input clears, ESC cancels,
-Enter / blur commits, daemon-side validation surfaces as a toast.
-Two sibling surfaces (TUI bd-09e8df, Android bd-3cf67f) carry the
-same flow on their respective UIs.
+The discovery here — that `Command::spawn()` returns Ok for a
+non-existent binary because the exec failure happens in the forked
+child after spawn() has already returned — is a recurring footgun in
+Rust process supervision code and the right fix (a `child.try_wait()`
+check after spawn) is filed as bd-45a6cb. The behavioural-pin test
+is intentionally chosen over either silently leaving the gap or
+adding the fix in this session: the next implementer who lands the
+fix will see the test fail with a clear "if this assertion fails,
+also update the function to..." pointer comment, making the fix a
+one-line assertion flip instead of a coverage-gap discovery exercise.
