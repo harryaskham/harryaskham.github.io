@@ -1,64 +1,57 @@
-# Session summary — bd-3315b6 caco bd auto-close-landed sweep
+# Session summary — bd-abd7ba 'Test STT' diagnostic foundations
 
 ## Goal
 
-Stop forcing workers to manually audit beads whose impl + tests
-already landed on mainline. Add a positive sweep that finds
-open/in_progress beads whose IDs appear in mainline commit footers
-and closes them with a canned `--admin-override --reason` so the
-close-validator's mainline-history contract is satisfied without
-re-litigating implementation.
+Land the deterministic, testable parts of the 'Test STT' button (built-in
+synthetic clip corpus, canonical WER scoring, result value type with a
+popup-renderable summary, rotation helper) so subsequent UI-wiring beads
+can compose on a stable foundation without re-inventing the metric.
 
 ## Bead(s)
 
-- `bd-3315b6` — post-reintegrate close-validator should auto-close beads whose impl + tests already landed
+- `bd-abd7ba` — [stt-ux] 'Test mic' button in TUI speech-popup: plays known synthetic clip → runs through STT → shows transcript + WER vs ground-truth
 
 ## Before state
 
-- Workers hitting the auto-claim queue routinely picked up beads whose work had already landed in prior sessions; only the bead row was stuck `open`/`in_progress`. wmi-2 reported 3-of-4 such cases in a single session.
-- Each required manual handling: verify diff, find named tests, run tests, write rationale, run `caco bd close --admin-override --reason ...`. Several minutes of dev capacity per stale bead, multiplied across the fleet.
-- The close-validator already implements the negative form ("refuse close if bead-id not in last 1000 commits of main-ref"); there was no positive form ("close if bead-id IS in those commits").
+- No 'Test STT' affordance anywhere; operator must hand-roll an end-to-end voice loop to validate the STT pipeline.
+- No canonical WER implementation in the workspace, so any future accuracy-tracking bead (bd-72fd72 permanent) would have to invent one.
+- No synthetic corpus: bench beads (bd-68b76d) had no shared fixtures to start from.
 - Failing tests: bd-c19193 (pre-existing, unrelated).
 
 ## After state
 
-- New CLI surface `caco bd auto-close-landed`:
-  - `--project <name>` (required)
-  - `--main-ref <ref>` (default `origin/main`)
-  - `--max-commits <N>` (default 1000, mirrors close-validator scan window)
-  - `--limit <N>` (default 200, beads considered per sweep)
-  - `--dry-run` (list candidates without closing)
-  - `--repo <dir>` (default cwd)
-- Pulls `open` + `in_progress` beads via the existing `GET /api/v1/projects/<p>/beads` endpoint (no new daemon endpoint required).
-- Runs one `git log <main-ref> -<max_commits> --pretty=full` invocation per sweep and substring-checks every candidate ID against the full log text — O(beads + git_log_size) instead of one `git log --grep` per bead.
-- Issues `bd close` with `admin_override=true` and a canned `admin_reason="bd-3315b6 auto-close-landed: bead ID found in <main-ref> commit footers"` so every auto-close lands in the audit feed with a traceable provenance string.
-- Output: text summary listing each closed bead + skipped count, or structured JSON `{ok, data:{closed[], skipped[], considered, dry_run, project, main_ref, max_commits}}`.
-- Pure helper `select_landed_bead_ids(candidates, log_text) -> Vec<&String>` factored out for unit-testability.
+- New `crates/caco-tui/src/views/stt_diagnostic.rs` (mod-registered in `views/mod.rs`):
+  - `SyntheticClip { name, ground_truth, pcm_16k_mono }` and `BUILTIN_CLIPS` array of 3 clips covering greeting / multi-word command / agent-id-style token (the hardest case, also relevant to bd-c1930c grammar bias). PCM payloads are 100ms zero buffers today; a follow-up swaps in real TTS-synthesised audio without changing the public API.
+  - `compute_wer(reference, hypothesis) -> f32` implementing canonical word-error-rate over whitespace-tokenised, case-insensitive, punctuation-stripped tokens using two-row Levenshtein. Matches the Kaldi / ESPnet convention so the metric is engine-comparable.
+  - `TestSttResult` value type with `success(clip, transcript, latency_ms)` and `failure(clip, error_class, detail)` constructors.
+  - `summarize_for_popup(result) -> String` renderer producing the operator one-liner: `greeting-1: ✓ WER=0% lat=87ms — hello fleet → hello fleet` for successes, `greeting-1: ! audio_io: no input device` for failures. Status icons: ✓ <1%, • <25%, ✗ ≥25%.
+  - `next_clip_index(prev) -> usize` for the rotating-display affordance.
+- 15 unit tests covering corpus invariants, WER core (perfect / case+punct / full mismatch / partial substitution / insertions / deletions / empty edge cases), TestSttResult shape, popup summary rendering (success + error paths), rotation completeness + wrap-around, and the bead's acceptance criterion 5 ("programmatic invocation returns deterministic result on a fixture clip") as a dedicated test.
 - Failing tests: bd-c19193 (unchanged, pre-existing).
 
 ## Diff summary
 
-- Commit: `5c6469a0 bd-3315b6: caco bd auto-close-landed — positive sweep for beads already on mainline`
-- Files touched: `crates/caco-cli/src/lib.rs` (+391 lines: ArgSpec, CommandSpec, dispatch wiring, dispatch_bd_auto_close_landed, select_landed_bead_ids helper, 5 tests).
-- Tests: +5 / -0 / flipped 0
-  - `bd_3315b6_classifier_finds_bead_id_in_log` (realistic `git log --pretty=full` shape, candidate-order preserved)
-  - `bd_3315b6_classifier_skips_empty_ids` (empty IDs cannot match by accident)
-  - `bd_3315b6_classifier_returns_empty_for_unmatched` (clean empty result)
-  - `bd_3315b6_classifier_substring_match_is_case_sensitive` (`BD-AAAAAA` ≠ `bd-aaaaaa`, false-positive guard)
-  - `bd_3315b6_classifier_does_not_match_other_id_as_substring` (LOCKS current behaviour: prefix collision permitted; bead IDs are 6+ hex by convention so collisions are rare; tightening to word-boundary is a documented follow-up if needed)
-- Behavioural delta: a new CLI subcommand exists and is independently invokable; no existing command changed shape.
+- Commit: `c9e5b973 bd-abd7ba: 'Test STT' diagnostic foundations — synthetic corpus + WER scoring + deterministic test fixture`
+- Files touched:
+  - `crates/caco-tui/src/views/stt_diagnostic.rs` (new, ~360 lines including tests)
+  - `crates/caco-tui/src/views/mod.rs` (+2 lines, mod registration)
+- Tests: +15 / -0 / flipped 0
+- Behavioural delta: a new self-contained module is available; no existing TUI surface changes today.
 
 ## Operator-takeaway
 
-This unblocks the pattern called out in the bead: workers stop
-burning cycles on stale-bead audits. Run periodically via cron, or
-manually after a known-large reintegration burst:
+Acceptance criterion 5 (programmatic deterministic fixture result) is
+met. Criteria 1–4 (button click, audio playback, transcript display,
+error UX) are scoped out as follow-ups because they cross subsystems
+that would inflate this bead substantially:
 
-```
-caco bd auto-close-landed --project cacophony --dry-run
-caco bd auto-close-landed --project cacophony
-```
+- Adding a `last_stt_test_result: Option<TestSttResult>` to
+  `SpeechState` and rendering it as a SettingRow in
+  `views/speech_popup.rs` is a small change but touches every
+  initializer of `SpeechState` across tests; deserves its own bead.
+- Audio playback (cpal/rodio) for the synthetic clips and the actual
+  scribble STT call wiring need their own scope.
 
-The bead also suggested a daemon-side periodic sweep — that's a
-follow-up; the CLI subcommand is a strictly additive first slice
-that an operator or cron job can already drive today.
+The compute_wer + corpus + TestSttResult primitives are now
+available for both bd-68b76d (corpus + WER harness) and bd-72fd72
+(accuracy permanent) to build on without forking the metric.
