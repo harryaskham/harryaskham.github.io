@@ -1,49 +1,73 @@
-# Session summary — bd-bf1e86 cycle 5: starting/pending bead context
+# Session summary — bd-c84960 docker image provider-secret mounting
 
 ## Goal
 
-Polish cycle 5. Surface bead context for `starting` and `pending`
-agent labels — spawn-and-claim sets `bead_id` before the worker
-reaches `running`, but the display label was dropping that context
-because the catch-all match arm returned only the bare state name.
+Audit the canonical Dockerfile per the bead text ("ensure it's
+well-defined and up to date... ability to mount all the secrets we
+care about").
 
 ## Bead(s)
 
-- `bd-bf1e86` — Permanent: caco-tui subtle UX polish (cycle 5)
+- `bd-c84960` — ensure docker image is well defined and up to date,
+  hasn't been touched in a while but will be used to deploy soon so
+  ensure it runs well and has ability to mount all the secrets we care
+  about
 
 ## Before state
 
-- `agent_display_label("starting", Some("bd-123: x"), false)`
-  returned `"starting"` (bead context lost in sidebars / agent
-  lists).
-- `display_label_starting_always_raw` locked the lossy behaviour.
-- No test coverage for `pending`-with-bead.
+- Dockerfile: already in good shape — digest-pinned bases (rust,
+  nixos/nix, debian:bookworm-slim), audited runtime deps with
+  per-package rationale, multi-arch cross-compile path, non-root user.
+- container-prelude.sh: handled `CACOPHONY_LITELLM_MASTER_KEY` /
+  `CACOPHONY_WEBHOOK_TOKEN` as `materialize_runtime_secret_file`
+  (env-var → in-container file at `/run/cacophony-secrets/...`).
+- BUT: provider API keys (ANTHROPIC_*, OPENAI_API_KEY, GITHUB_TOKEN,
+  LITELLM_API_KEY) were passed only as plain env vars. Operators using
+  sops-nix / docker secrets / k8s secrets would need to either inline
+  the secret into compose env (footgun) or shell-source the file into
+  env outside the container (works but inconvenient).
+- The de-facto industry convention `VAR` + `VAR_FILE` (docker secrets,
+  k8s downward API, openshift) was not supported.
 
 ## After state
 
-- New explicit match arms produce `"starting bd-xxxx"` and
-  `"pending bd-xxxx"` when a bead is associated; bare state
-  preserved when none is.
-- `base_agent_state` reverses the new labels back to `"starting"` /
-  `"pending"` so colour / indicator lookups keep their existing
-  keyword contract.
-- Two new tests
-  (`display_label_starting_with_bead_includes_bead_id`,
-  `base_state_starting_pending_round_trip`) lock both directions.
-- Replaced the old `display_label_starting_always_raw` test.
+- New `container-prelude.sh` helper `load_provider_secrets_from_files`:
+  for each known provider env var, reads `VAR_FILE` (if set), exports
+  `VAR=<contents>`. Strips one trailing newline. Bare env wins over
+  file (file only populates when bare is unset/empty). Pairs covered:
+  ANTHROPIC_AUTH_TOKEN, ANTHROPIC_API_KEY, OPENAI_API_KEY, GITHUB_TOKEN,
+  LITELLM_API_KEY, CACO_BOOTSTRAP_TOKEN, CACO_SSH_CACO_PRIVATE_KEY,
+  CACO_SSH_CACO_WORK_PRIVATE_KEY.
+- `docker-compose.yml`: project corresponding `*_FILE` env vars in the
+  shared cacophony-common block with empty defaults so operators can
+  bind-mount `/run/secrets/<name>` and set `FOO_FILE=/run/secrets/<name>`
+  without touching the compose file.
+- `validate.sh`: new section 5 sources the helper out of the prelude
+  and exercises the file-indirection (positive read of OPENAI_API_KEY
+  from a tmp file; env-wins invariant when both are set). 3 new
+  pass-checks (37 total, all green).
+- `README.md`: documented the supported pairs + ordering semantics +
+  the additive-extension recipe.
 
 ## Diff summary
 
-- Commits: `b9cf932a`
-- Files touched: `crates/caco-tui/src/views/common.rs` (+34 / -2)
-- Tests: +2 (net +1 after replacing the now-obsolete arm-test)
-- Behavioural delta: sidebars and agent lists now read
-  `"starting bd-xxxx"` / `"pending bd-xxxx"` for spawn-and-claim
-  workers prior to first run.
+- Files touched: 4 (`deploy/compose/container-prelude.sh`,
+  `docker-compose.yml`, `validate.sh`, `README.md`).
+- Tests: +3 validator checks; no Rust test changes.
+- Behavioural delta: deploys that already pass plain env vars are
+  unaffected; the `*_FILE` path is purely opt-in. Operators can now
+  follow standard secret-mounting conventions without monkey-patching
+  compose.
 
 ## Operator-takeaway
 
-When operators see a worker stuck `starting` post-spawn, they now
-also see which bead it was meant to take, removing the need to drill
-into the agent detail to identify the assigned work. Round-trip
-preserved so no downstream colour/indicator regression.
+The Dockerfile itself didn't need surgery — it's already in excellent
+shape from prior maintenance. The gap was downstream: the runtime had
+no clean handshake for operators using mounted-secret patterns. This
+change closes that gap with the universally-recognised `*_FILE`
+convention so the image can drop into any modern secret-store-backed
+deployment without ceremony.
+
+Adding new pairs is mechanical: append the env var name to
+`load_provider_secrets_from_files()` in `container-prelude.sh`, and
+project the matching `_FILE` env in `docker-compose.yml`.
