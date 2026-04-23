@@ -1,73 +1,68 @@
-# Session summary — bd-542d54 forensic snapshot pin / rotate
+# Session summary — bd-3a1f96 wire --blocks filter
 
 ## Goal
 
-Add the operator-pin and rotation layer on top of the bd-6ac6b5 reconciler
-snapshot infrastructure so postmortem evidence (e.g. the snapshot dir that
-captures the moment the destructive-shrink guard tripped) cannot be silently
-rotated away by the daemon's retention cron. Also wire the auto-pin hook into
-the bd-53f5a7 abort path so this happens without operator intervention.
+Wire the `--blocks` filter through the bead query pipeline so operators
+can ask "what beads is X waiting on?" using the inverse of the existing
+`--depends-on` ("what beads is X blocking?"). The schema field had been
+added in bd-9006a6 as forward-compat but never plumbed through the
+handlers, the matcher, or the CLI.
 
 ## Bead(s)
 
-- `bd-542d54` — Forensic snapshot retention policy: 7d rolling + indefinite
-  pin for most-recent-post-incident snapshots
-- (rooted in postmortem epic `bd-cf99b7`; pairs with `bd-6ac6b5` snapshot
-  infrastructure and `bd-53f5a7` shrink-cap abort)
+- `bd-3a1f96` — Wire --blocks filter (inverse of --depends-on) end-to-end
+- (parent / context: `bd-9006a6` — richer triage filters)
 
 ## Before state
 
 - Failing tests: none in scope
-- `.beads/snapshots/<UTC-iso>/` directories were created by the reconciler
-  (bd-6ac6b5 criterion 1) but had no rotation, no pin mechanism, and no CLI
-  surface. The bd-542d54 bead was open and unassigned.
-- `caco bd snapshot ...` did not exist as a subcommand tree.
-- The destructive-shrink abort (bd-53f5a7) preserved the *current* on-disk
-  jsonl but did nothing to mark the most-recent snapshot as forensically
-  important — a scheduled cron could legitimately delete it 7 days later.
+- `BeadListQuery::blocks` and `AllBeadsQuery::blocks` accepted the param
+  silently and discarded it; `aggregate_bead_matches_query` had no
+  `blocks_of_ids` field; CLI did not expose `--blocks`.
+- Operators wanting to find dependency-bottlenecks had to either grep
+  bead JSON or use `caco bd graph` — neither composable with `bd list`.
 
 ## After state
 
 - Failing tests: none.
-- New module `caco-beads::snapshots` with `list`, `pin`, `unpin`, `rotate`,
-  and `auto_pin_most_recent_for_shrink_abort`. Pin sidecar lives at
-  `.beads/snapshots/<stamp>/PINNED` and stores the operator-supplied
-  `--reason` text. Default retention 7 days.
-- Reconciler's destructive-shrink abort path now calls
-  `auto_pin_most_recent_for_shrink_abort` best-effort before returning the
-  error, so the most-recent snapshot is protected without operator action.
-- New CLI subtree `caco bd snapshot {list,pin,unpin,rotate}` with MCP
-  enablement — tools advertised as `caco_bd_snapshot_list` etc.
-- 11 new tests across `caco-beads` (9 unit tests on the snapshots module +
-  1 integration test asserting the auto-pin fires on shrink abort) and
-  `caco-cli` (3 spec / MCP-name tests).
-- `cargo test-small` green; `cargo clippy -p caco-beads -p caco-cli` green;
-  `cargo test -p caco-beads --lib` 230 passed.
+- `AggregateQueryView` carries a `blocks_of_ids: Option<&HashSet<String>>`
+  that is the pre-resolved set of dependency IDs from the named target.
+- `handle_beads_list` resolves `blocks` server-side from the project's
+  store; `handle_all_beads` resolves per-project inside its project loop
+  (so the target may live in any queried project).
+- Both proxy paths forward `blocks=<id>` query param to the upstream
+  daemon.
+- CLI: `--blocks` exposed in `BD_LIST_ARGS` with help text; client
+  forwards as a query param.
+- 2 new tests: matcher unit test covering hit / miss / empty / none
+  states; CLI surface test asserting `--blocks` is exposed alongside
+  `--depends-on`.
+- Existing `depends_on / updated_since / grep` tests updated with the
+  new field as None (regex-driven mass edit; 5 sites).
+- `cargo test-small` green; `cargo clippy -p caco-daemon -p caco-cli` green;
+  targeted `aggregate_query_*` tests all passing.
 
 ## Diff summary
 
-- Commit: `9f5ff722` (rebased onto current main as `d96cdd83`)
+- Commit: `d5bbf549`
 - Files touched:
-  - `crates/caco-beads/src/snapshots.rs` (new, ~430 lines incl. tests)
-  - `crates/caco-beads/src/lib.rs` (export the new module)
-  - `crates/caco-beads/src/store.rs` (auto-pin call in shrink-abort path,
-    +1 integration test)
-  - `crates/caco-cli/src/lib.rs` (new BD_SNAPSHOT_SUBCOMMANDS branch +
-    4 dispatch functions + 3 spec tests)
-- Tests: +12 / -0 / flipped 0
-- Behavioural delta: any reconciler abort under bd-53f5a7 now leaves a
-  pinned snapshot for forensics; operators can pin any snapshot manually
-  via `caco bd snapshot pin --stamp <iso> --reason "..."` and rotate
-  unpinned old snapshots via `caco bd snapshot rotate [--retention-days N]`.
+  - `crates/caco-daemon/src/beads.rs` (schema field, view field,
+    matcher, handler resolution, proxy forwarding, +1 unit test)
+  - `crates/caco-cli/src/lib.rs` (BD_LIST_ARGS entry, query forwarding,
+    +1 surface test)
+- Tests: +2 / -0 / flipped 0 (5 existing fixtures gained the
+  `blocks_of_ids: None` field via mechanical update)
+- Behavioural delta: `caco bd list --blocks bd-XXXXXX` now returns the
+  beads listed in bd-XXXXXX's dependency set — i.e. the things bd-XXXXXX
+  is blocked by — across both single-project and `--all-projects` calls.
 
 ## Operator-takeaway
 
-The forensic-snapshot pin mechanism is now load-bearing for the bd-cf99b7
-postmortem chain: when the bd-53f5a7 shrink-cap aborts a future destructive
-write, the prior snapshot is auto-pinned and survives the bd-6ac6b5
-retention sweep until an operator runs `caco bd snapshot unpin`. The
-follow-up wiring is to schedule `caco bd snapshot rotate` from the daemon
-cron (one line in `caco-daemon`'s scheduler) — left as a small follow-up
-bead because it is a separate concern (cron plumbing) from this bead's
-contract (the pin/rotation primitives themselves). Doctor sensor for
-"pinned snapshots count" (criterion 5) is similarly a small follow-up.
+This closes a small but visible gap: `--depends-on` and `--blocks` are
+now symmetric. The notable design choice was per-project resolution in
+the global handler — the target bead may live in any of the queried
+projects, so we pay one `get_bead` lookup per project rather than
+trying to centrally resolve. Worst-case cost is O(projects); for small
+project counts (< ~20) this is negligible. Future optimisation: cache
+the resolved set inside the request scope if the same target appears
+across projects, but unlikely to matter in practice.
