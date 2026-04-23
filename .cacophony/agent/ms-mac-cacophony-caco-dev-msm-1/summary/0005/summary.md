@@ -1,45 +1,64 @@
-# Session 0005 — bd-ac9289
+# Session summary — README CLI-family table audit + caco node join
 
 ## Goal
 
-Fix caco-web Choices Resolve button always 404'ing.
+Close bd-19cc20 — README CLI-family table claimed to omit several shipped
+command families (notify, doctor, ssh/scp, claude/codex, ps/ls, node join)
+plus a stale "caco build follow-up" comment on line 89.
 
 ## Bead(s)
 
-- bd-ac9289 — claimed and worked end-to-end.
+- `bd-19cc20` — Add missing CLI families to README command table (notify,
+  doctor, ssh, shorthand commands) (was draft P3, promoted to open before
+  claiming)
 
 ## Before state
 
-`crates/caco-web/static/app.js::resolveChoice` built the URL as
-`/api/v1/choices/${choiceId}/resolve` and POSTed `{ selected_index }`.
-The daemon route table registers `/api/v1/choices/resolve` (no per-id
-path). Every Resolve click → 404 → 'Failed: HTTP 404' toast → choice
-never advanced. Android companion already used the correct shape.
+Bead was filed 4 weeks ago. README has been touched many times since by
+other agents. Audit of current README.md against the bead's six items:
+
+| Item | Bead claim | Actual state |
+|------|-----------|--------------|
+| caco notify | omitted | already in table (line 92) |
+| caco doctor | omitted | already in table (line 113) |
+| caco ssh / scp | omitted | already in table (line 112), plus mosh |
+| caco ps / ls | "after stale comment" | already in table cleanly (lines 115-116) |
+| caco claude / codex | omitted | already in table (line 119), plus pi |
+| caco node join | "join is not mentioned" | confirmed missing from caco node row |
+| stale `caco build` follow-up comment | line 89 | already removed |
+
+So 5 of 6 items + the stale comment had been silently fixed by peer
+agents in unrelated README sweeps; only `caco node join` remained.
 
 ## After state
 
-- `crates/caco-web/static/app.js`: URL is `/api/v1/choices/resolve`,
-  body carries `{ choice_id, selected_index }`.
-- `crates/caco-web/src/tests.rs::app_js_has_choices_logic`: now asserts
-  canonical URL present, `choice_id` in body, broken per-id URL form
-  absent.
-- `cargo test -p caco-web --lib`: 52/52 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+Single-line README change: `caco node` row now reads
+`Inspect node inventory and per-node status (list, show, status, join)`.
+`caco node join --help` confirmed real in the current build (not a vapor
+command).
 
 ## Diff summary
 
-```
-crates/caco-web/src/tests.rs    | +15
-crates/caco-web/static/app.js   |  +5 -2
-.cacophony/agent/.../summary/0005 | (new)
-```
+- Commit: 59616123
+- Files touched: `README.md`
+- Tests: none added (docs-only change)
+- Behavioural delta: one CLI-family table row mentions `join`.
 
 ## Operator-takeaway
 
-Choices tab on caco-web should now actually resolve choices. Wire shape
-matches android companion so both surfaces share one daemon contract.
+This is a "promoted-from-draft + audit-and-mostly-close" pattern that
+pairs well with the stale-bead sweeps from earlier in this session
+(bd-3ae0c6 / bd-68bde8 closed via admin-override as already-implemented).
+4-week-old draft beads about discovery surfaces tend to age out in
+exactly this way as peer agents incrementally fix the pieces while
+chasing other docs work.
 
-## Coordination
+If a future operator wants the README CLI-family section to be
+self-validating, file a follow-up to add a `cargo test` lane that:
+1. Walks the discovered CommandSpec tree and collects all top-level
+   command names.
+2. Greps the README CLI-family table for each name.
+3. Fails the build when a top-level family is shipped but missing from
+   the table.
 
-- Spoke claim of bd-ac9289 before starting; will speak completion + 
-  reintegrate before picking next bead.
+That would automate the audit this bead manually performed.
