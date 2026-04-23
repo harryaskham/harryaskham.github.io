@@ -1,46 +1,51 @@
-# Session summary — bd-bf1e86 cycle 7: sweep remaining "(s)" suffixes
+# Session summary — bd-cef230 PeerConsult endpoint + config
 
 ## Goal
 
-Eliminate the four remaining "(s)" parenthetical-plural hedges that
-the cycle 1-3 sweep missed. These read awkwardly at any count and
-were the last holdouts of the lazy-pluralisation pattern in TUI
-copy.
+Ship acceptance criteria 1 + 2 from bd-cef230: the lightweight
+`/beads/has/<id>` endpoint for the PeerConsult fan-out, plus the
+`peer_consult_timeout_ms` config field.
 
 ## Bead(s)
 
-- `bd-bf1e86` — Permanent: caco-tui subtle UX polish (cycle 7)
+- `bd-cef230` — [bd-5b77b9 follow-up] Daemon-side PeerConsult impl +
+  /beads/has/<id> endpoint + config
+- (parent: `bd-5b77b9` — PeerConsult trait)
 
 ## Before state
 
-- `views/agent_detail.rs:4152` — `format!("{} transition(s)", ...)`
-  in status history header.
-- `app.rs:20143` — `"✓ Expanded into {count} bead(s) in {project}"`
-  bead-expansion toast.
-- `app.rs:19238` / `:19254` — `"Archived {count} inbox item(s)"`
-  and matching unarchive toast.
+- PeerConsult trait (bd-5b77b9) was in caco-beads with a Noop default.
+  No daemon-side endpoint existed for peers to query each other.
+- No config field for consult timeout.
 
 ## After state
 
-- All four sites now use `common::pluralise(n, singular, None)` so
-  `1 transition` / `2 transitions`, `1 bead` / `3 beads`, and
-  `1 inbox item` / `5 inbox items` render correctly at every count.
-- Build + clippy clean on `caco-tui`.
+- GET /api/v1/projects/<p>/beads/has/<bead_id> registered on all 4
+  route groups. Returns `{ project, node, bead_id, has, available }`.
+  - `has` = bead exists locally and status != Deleted.
+  - `available` = project is configured on this node.
+- Config field `beads.peer_consult_timeout_ms: Option<u64>` added to
+  TopLevelBeadsConfig. None falls back to daemon-impl default (5000ms).
+- All existing test literals updated to include the new field.
+
+## Remaining scope (follow-up)
+
+- Criteria 3: DaemonPeerConsult struct implementing PeerConsult trait
+  with HTTP fan-out to peers.
+- Criteria 4: Wire into handle_bead_sync reconciler opts.
+- Criteria 5: Integration test with mock peer.
+- Criteria 6: Doctor sensor 'beads-peer-consult-rpc-healthy'.
 
 ## Diff summary
 
-- Commits: `5e1ba8f5`
-- Files touched: `crates/caco-tui/src/views/agent_detail.rs`,
-  `crates/caco-tui/src/app.rs`
-- +13 / -6 lines, no test churn (existing pluralise tests cover the
-  helper).
-- Behavioural delta: four toast/header strings now agree with English
-  number; no other observable changes.
+- Files: 4 (`crates/caco-daemon/src/beads.rs`,
+  `crates/caco-daemon/src/lib.rs`, `crates/caco-config/src/model.rs`,
+  `crates/caco-config/src/validate.rs`)
+- Tests: `cargo test-small`: 140 passed.
 
 ## Operator-takeaway
 
-Pluralisation hygiene is now uniform across all TUI copy that I have
-touched in this session — a `grep -rE '\(s\)'` over `views/` and
-`app.rs` returns only `Some(s)` and `Ok(s)` pattern matches.
-Sibling polish workers (web bd-a5e2fe, android bd-1c0bdd) should
-audit for the same `(s)` pattern in their copy.
+This is the first half of PeerConsult wiring. The endpoint is live and
+ready for DaemonPeerConsult to fan out to; the config field is plumbed.
+The remaining four criteria are deliberately scoped to a follow-up so
+this foundational work can land and be validated independently.
