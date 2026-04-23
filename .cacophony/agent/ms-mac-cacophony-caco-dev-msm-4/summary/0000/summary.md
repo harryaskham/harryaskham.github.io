@@ -1,65 +1,76 @@
-# bd-bb75b5 — webapp chat /commands now actually run
+# bd-8a56ce — profile build-time lint covers all canonical sets
 
 ## Goal
-Stop silently swallowing slash commands typed into the webapp
-chat box. Operators were picking commands from the autocomplete,
-hitting send, and seeing no observable effect because the literal
-`/foo` text was just being posted as a chat message.
+Close the remaining gaps in the bd-8a56ce profile-frontmatter
+build-time lint so a typo in any canonical-set field (not just
+hook_mixins / mcp_servers / permission_mode) fails the build
+loudly with a precise diagnostic.
 
 ## Bead(s)
-- bd-bb75b5 (P2 task) — bare title, no acceptance criteria.
-  Implemented client-side dispatch for the existing
-  `SLASH_COMMANDS` set already wired into the autocomplete.
+- bd-8a56ce (P2 feature). Primary item (hook_mixins) and two of
+  three secondary items (mcp_servers, permission_mode) had
+  already landed via existing scaffolding in
+  crates/caco-daemon/build.rs (bd-aac755 + earlier bd-8a56ce
+  slices). This slice adds the last two: authorization.scope
+  and reintegration.mode / allowed_modes.
 
 ## Before state
-- `crates/caco-web/static/app.js::sendChat` always shipped the
-  raw input body to one of three message endpoints
-  (`messages/speak`, `messages/broadcast`, `messages/send`).
-- `SLASH_COMMANDS` (10 entries) was used only by the autocomplete
-  popup; nothing read the parsed command on submit.
-- Effect: typing `/dispatch bd-xxx` and hitting send posted the
-  literal string `/dispatch bd-xxx` as a broadcast/speak. No
-  command ran.
+- crates/caco-daemon/build.rs validated `hook_mixins`,
+  `mcp_servers`, and `permission_mode` at compile time per
+  profile in `.cacophony/profiles/*.md`.
+- `authorization.scope` was caught only at runtime by serde's
+  enum rename, which surfaces less clearly than a build error
+  pointing at file + value.
+- `reintegration.mode` and `reintegration.allowed_modes` were
+  not validated at build time at all; bad values manifested as
+  reintegration failures later in the agent lifecycle.
 
 ## After state
-- `sendChat` checks for a leading `/` and, when present, calls
-  the new `dispatchSlashCommand(raw)` handler instead of falling
-  through to the message endpoints.
-- `dispatchSlashCommand` is a pure client-side router covering
-  all 10 commands the autocomplete already advertises:
-  - `/clear` blanks the input.
-  - `/help` toasts the SLASH_COMMANDS list.
-  - `/inbox`, `/agents`, `/beads`, `/who` switch the hash route
-    to the matching tab (`/beads` preserves project context).
-  - `/speak <body>` and `/broadcast <body>` reuse the existing
-    speak / broadcast REST endpoints.
-  - `/dispatch <bead-id>` POSTs `beads/{id}/dispatch`.
-  - `/claim <bead-id>` POSTs `beads/claim` with `{bead_id}` body
-    (matches the actual server route, not `/beads/{id}/claim`).
-- Unknown commands surface an explicit
-  `Unknown command: /foo. Type /help for the list.` toast
-  instead of silently posting them as chat text.
-- Empty-arg commands (`/speak`, `/broadcast`, `/dispatch`,
-  `/claim` with no operand) print a usage hint toast.
-- Successful commands clear the input and hide the autocomplete
-  dropdown via the existing `hideSlashSuggest()` helper.
+- New `KNOWN_AUTH_SCOPES` and `KNOWN_REINTEGRATION_MODES`
+  constants in build.rs synced with
+  caco-profile::canonical lists.
+- New `extract_nested_scalar_field` and
+  `extract_nested_list_field` helpers handle the
+  `parent:\n  child: value` and
+  `parent:\n  child:\n    - item` block-form YAML shapes that
+  authorization/reintegration use.
+- New `check_reintegration_mode_token` splits on commas so the
+  `direct,recorded` (bd-d48494) composition is accepted as long
+  as every component is in the known list.
+- Two new lint passes per profile in build.rs:
+  - `authorization.scope` against KNOWN_AUTH_SCOPES.
+  - `reintegration.mode` + every entry of
+    `reintegration.allowed_modes` via the comma-tolerant
+    token check.
+- Two new sync tests in
+  crates/caco-daemon/src/agent/tests.rs:
+  - `known_auth_scopes_are_in_sync_with_build_rs`.
+  - `known_reintegration_modes_are_in_sync_with_build_rs`.
+  Each fails loudly with a message naming both files to update
+  when the canonical list and build.rs sync table drift.
 
 ## Diff summary
-- `crates/caco-web/static/app.js` (+145):
-  - `sendChat` early-return + slash-command branch.
-  - New `dispatchSlashCommand(raw)` handler.
-
-No daemon contract change. All endpoints used already exist.
+- crates/caco-daemon/build.rs (+~150):
+  - Two new const tables, two helpers, one token validator, two
+    new lint loops per profile.
+- crates/caco-daemon/src/agent/tests.rs (+~50):
+  - Two new sync tests mirroring the existing
+    `_hook_mixins_in_sync` / `_mcp_servers_in_sync` /
+    `_permission_modes_in_sync` patterns.
 
 ## Tests
-- The webapp static JS bundle has no JS test runner in-tree.
-- `node --check crates/caco-web/static/app.js` — clean parse.
-- `cargo build -p caco-web` / `clippy -p caco-web --all-targets -- -D warnings` — clean.
+- `cargo build -p caco-daemon` clean (the build itself is the
+  primary acceptance: every current profile in
+  `.cacophony/profiles/` passes the new lints).
+- `cargo clippy -p caco-daemon --all-targets -- -D warnings`
+  clean.
+- 2/2 new sync tests pass.
 
 ## Operator-takeaway
-After binary roll, slash commands typed into the webapp chat box
-take effect: `/beads`, `/agents`, `/inbox` jump to the
-corresponding tab; `/speak <body>` / `/broadcast <body>` post
-narration; `/dispatch <bead>` and `/claim <bead>` actually
-dispatch and claim. Mistyped commands surface a clear error
-toast instead of vanishing into the chat log as inert text.
+After binary roll, a profile that mistypes
+`authorization.scope: workr` or
+`reintegration.mode: direct,recordedz` will fail
+`cargo build -p caco-daemon` with a `bd-8a56ce: profile … sets
+unknown reintegration.mode component …` panic naming the file
+and the offending value. The `recorded` modifier composition
+(`direct,recorded`) is preserved. No runtime change.
