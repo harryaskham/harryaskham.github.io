@@ -1,104 +1,81 @@
-# Session summary — Reattach persistent agents to surviving tmux (bd-7a035f)
+# Session summary — broken-on-main fix + bd-c16753 STT-UX split
 
 ## Goal
 
-bd-7a035f (follow-up to bd-732406): when a persistent agent's tmux
-session survives a daemon restart but the in-memory inventory has
-lost the agent record, reattach the existing pane instead of
-spawning a fresh agent record. Eliminates the duplicate-agent /
-orphan-tmux window after a `caco daemon restart`.
+Two interleaved deliverables in one session:
+
+1. **bd-54b3ee** — fix a broken-on-main `cargo check --workspace --tests`
+   failure surfaced by ms-mac-cacophony-caco-tui while validating
+   bd-b544e8: a single missing `peer_consult_timeout_ms` initializer
+   in a sidecar lifecycle test.
+2. **bd-c16753** — STT visual-indicators umbrella: surveyed existing
+   implementation (AC1 already done), then split the remaining four
+   acceptance criteria into landable sub-beads so other workers can
+   pick them up in parallel rather than this P0 blocking on a single
+   monolithic claim.
 
 ## Bead(s)
 
-- `bd-7a035f` — Implement reattach-instead-of-respawn for persistents
-  whose tmux survived a daemon restart
-- (parent: `bd-732406` — detection-only logging slice, already shipped)
-- (related: `bd-2b7a37` — symptom bead for stuck-after-restart cases)
+- `bd-54b3ee` — broken-on-main: caco-sidecar lifecycle test missing
+  `peer_consult_timeout_ms` initializer (created + claimed + landed).
+- `bd-c16753` — STT visual indicators umbrella (claimed, surveyed,
+  released back to open with split children documented).
+- `bd-7a8bc1` — child: AC4 STT error toast with open-doctor link (P1).
+- `bd-88798a` — child: AC2 partial ghost text + AC3 final-commit flash
+  (P2).
+- `bd-db10da` — child: AC5 speech-popup hide toggle (P3).
 
 ## Before state
 
-- Failing tests: none. caco-daemon agent-tests: ~700 passing.
-- Detection-only behaviour from bd-732406: when sentinel had a prior
-  tmux_session+tmux_socket and that session was still alive, the
-  daemon logged a structured warning and proceeded to spawn a fresh
-  agent record. Two consequences:
-    - Brief duplicate-agent window during which both the orphan
-      process and the fresh spawn could compete for workspace locks.
-    - Operator-visible churn — the sentinel's spoken_name / agent_id
-      changed across the restart even though the pane had survived.
+- `cargo check --workspace --tests` failed at
+  `crates/caco-sidecar/src/lifecycle.rs:3491` with E0063 missing field
+  `peer_consult_timeout_ms` in `TopLevelBeadsConfig` initializer.
+  Every other call site (caco-config `validate.rs` ~10 occurrences,
+  caco-daemon `beads.rs` / `election.rs` / `multinode.rs`) was already
+  complete; this single sidecar test was missed when the field was
+  added.
+- bd-c16753 was an open P0 with six acceptance criteria spanning the
+  TUI tab bar, speech-popup view, state machine, toasts, audio
+  chime, and tests — too large to land cleanly in one session.
 
 ## After state
 
-- Failing tests: none. +3 tests in caco-daemon (1 lib::tests, 2
-  agent::tests).
-- New: `AgentManager::reattach_persistent_agent` — re-inserts an
-  AgentInfo from disk into the live inventory + persistent_id_index
-  after re-verifying tmux liveness under the registry lock.
-- New: `recover_agent_id_from_tmux` — parses
-  `tmux -L <socket> show-environment -t <session> CACOPHONY_AGENT`
-  to recover the prior agent_id from the surviving session.
-- Wired into the bd-732406 branch of `launch_persistent_agent`:
-  before logging the orphan-tmux warning, attempt reattach. On
-  success, mark sentinel Running and `return Ok(recovered_agent_id)`.
-  On any precondition failure (no env var, terminal record, missing
-  agent.json, dead tmux), fall through to the existing
-  bd-732406 log + fresh-spawn path.
-- Refuses to resurrect terminal records (Discarded/Failed/Stopped/
-  Completed) so operator-stopped persistents stay stopped.
+- `cargo check --workspace --tests` is clean (verified locally before
+  commit).
+- bd-c16753 description is rewritten to record the survey:
+  - AC1 (the persistent red/grey/green/amber dot) is already
+    implemented at `crates/caco-tui/src/speech.rs:403-437`,
+    `crates/caco-tui/src/views/speech_indicator.rs:88-98`, and the
+    tab bar wires it at `crates/caco-tui/src/views/tab_bar.rs:106`.
+  - AC2/AC3/AC4/AC5 are not implemented and now have dedicated
+    sub-beads.
+- Three sub-beads created with explicit acceptance criteria, file
+  hints, and parent linkage so other workers can claim independently.
+- Released the umbrella back to `open` so it stays as the parent
+  tracking surface; it can close when all three children land.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-daemon/src/lib.rs` (+~115): bd-7a035f branch in
-    persistent-launch path, new `recover_agent_id_from_tmux` helper,
-    +1 unit test
-  - `crates/caco-daemon/src/agent/lifecycle.rs` (+~70):
-    `AgentManager::reattach_persistent_agent` method
-  - `crates/caco-daemon/src/agent/tests.rs` (+~60): +2 negative-case
-    tests
-- Tests: +3 / -0 / flipped 0
-- Behavioural delta:
-    - When the recovery preconditions hold, no fresh agent record /
-      no duplicate tmux session / no startup nudge — the surviving
-      pane is silently re-adopted.
-    - When any precondition fails (most common: agent.json was
-      pruned, env var unset, or session genuinely dead), behaviour
-      is identical to bd-732406 (log + spawn fresh).
+- 1 file changed, +1 / -0:
+  - `crates/caco-sidecar/src/lifecycle.rs:3491` — add
+    `peer_consult_timeout_ms: None` to the
+    `lifecycle_manager_discovers_standalone_bd_daemon_service`
+    test's `TopLevelBeadsConfig` initializer.
 
-## Embedded artefacts
+## Validation
 
-(none — pure backend change)
+- `cargo check --workspace --tests --message-format=short`: clean
+  (was 1 error before).
 
 ## Operator-takeaway
 
-After a `caco daemon restart`, persistent agents whose tmux pane
-survived will now be silently re-adopted by the new daemon instead
-of getting a duplicate agent record and orphan tmux. Watch the
-daemon log for either:
-
-    bd-7a035f: persistent <id> reattached to surviving tmux session
-               '<session>' on socket '<socket>' as agent <id>
-               (no respawn)
-
-(the happy path) or:
-
-    bd-7a035f: persistent <id> tmux session '<session>' on socket
-               '<socket>' is alive but CACOPHONY_AGENT env var
-               unrecoverable; falling through to fresh spawn
-
-(reattach declined; bd-732406 log will follow).
-
-The reattach path intentionally does NOT touch the running process
-inside tmux (no startup nudge, no init.sh re-run). If an operator
-wants to force a fresh spawn anyway, `caco agent recreate` still
-takes precedence by going through the cleanup_stale path.
-
-Note on bd-732406 base: main has since dropped the explicit
-detection-log block in `Ok(None)`; the bd-7a035f branch now lives
-inline at that callsite and is the sole reattach/log path. The
-fallback fresh-spawn behaviour is unchanged.
-
-Follow-up worth filing: an integration test that builds a real tmux
-session, kills the daemon, restarts, and asserts reattach occurred.
-The unit tests here cover only the precondition-failure branches;
-the disk+tmux happy path needs the integration harness.
+The compile fix is a one-liner; the more useful artefact here is the
+bd-c16753 split. Splitting an umbrella P0 into a P1 + P2 + P3 trio
+unblocks parallel pickup without losing the original scope — the
+umbrella stays as the tracking surface and closes when the children
+land. This is the right shape for any acceptance-criteria-list bead
+that's larger than a single session: survey first, document the
+already-done parts, then file the remaining parts as their own beads.
+A follow-up worth filing later (P3): a `caco bd split` CLI surface
+that automates this pattern (parse "## Acceptance criteria" list,
+emit one child per item, link parent, copy provenance).
