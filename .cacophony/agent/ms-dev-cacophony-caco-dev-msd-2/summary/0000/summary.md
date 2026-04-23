@@ -1,118 +1,62 @@
-# Session summary — narrator flat-window minimal output
+# Session summary — bd-5b77b9 cross-peer presence consult before reconciler removes records
 
 ## Goal
 
-Reduce narrator cognitive load. Tonight's narrator across the
-02:xx-04:xx BST window emitted ~10 multi-paragraph speak messages,
-most of which contained `fleet UNCHANGED` or `completed STILL flat`.
-Important context but pure noise on flat sweeps. The narrator profile
-should distinguish *event* from *sweep with no events* and produce
-minimal output in the latter case.
+Close the fine-grained sibling of the bd-cf99b7 incident: the local
+beads SQLite store should never be allowed to silently amplify its own
+staleness by erasing JSONL records that the rest of the cluster mesh
+still holds. The bd-53f5a7 shrink-cap (already landed) catches gross
+truncations (>5% AND >50 records). bd-5b77b9 adds a complementary
+fine-grained guard that consults peers before any per-record removal.
 
 ## Bead(s)
 
-- `bd-58ff27` — Narrator should distinguish 'event' vs 'sweep with no
-  events' so flat windows produce minimal speak output
+- `bd-5b77b9` — Cross-peer sync verification before any record removal — query mesh first, root from bd-cf99b7 (P1)
+- (parent: `bd-cf99b7` — postmortem RCA for the 2026-04-22 reconciler truncation)
+- (companion: `bd-53f5a7` — gross-failure shrink-cap, already landed by msm-3)
+- (filed follow-up: `bd-cef230` — daemon-side PeerConsult impl + /beads/has/<id> endpoint + config)
 
 ## Before state
 
-- `.cacophony/profiles/narrator.md` Idle Behavior section said only:
-  "Emit a brief 'all quiet' acknowledgement via `caco msg speak` and
-  wait for the next nudge cycle." No concrete definition of what
-  counts as quiet, no output-discipline contract, no incident-bypass
-  rule. In practice agents under this profile produced full
-  multi-paragraph narration every cycle.
-- No tests cover narrator profile content (it is prose), but
-  `cargo test -p caco-config --lib profile` exercises the YAML
-  frontmatter parse and `caco config validate` round-trips the file.
+- Failing tests: none related to this surface
+- Reconciler `BeadsStore::reconcile_with_options` had `allow_shrink: bool` only; no per-bead-ID consult layer
+- No PeerConsult abstraction existed; no daemon endpoint for per-bead presence
+- Open queue had bd-5b77b9 unclaimed despite being explicitly surfaced by caco-ctrl as high-leverage
 
 ## After state
 
-- New `### Flat-window minimal output (bd-58ff27)` subsection added
-  inside `## Idle Behavior` of `.cacophony/profiles/narrator.md`.
-- The subsection defines:
-  1. **A 5-criterion 'is this sweep flat?' heuristic** the narrator
-     compares against its own previous narration: terminal-state
-     counts moved, bead status changes, release/version bump,
-     notable node-health transition, directed operator inbox message.
-  2. **Output discipline by sweep kind**:
-     - flat → single ~25-word tick line (`"Tick HH:MM — fleet flat:
-       N agents idle, M in-flight, queue at K."`),
-     - eventful → existing multi-paragraph form,
-     - **incident → always full narration regardless of
-       classification** so flat-window suppression cannot suppress
-       failures, beads-primary outages, or stuck workers.
-  3. A '"still / unchanged / continues to" used 3+ times' anti-pattern
-     detector as a heuristic that the agent is over-budget for a
-     flat tick and should collapse further.
-  4. Anchors against the agent's own previous `caco msg speak`
-     outputs as the comparison baseline (re-read recent speaks /
-     narrator inbox entries before composing).
-- All other narrator behaviour (responsibilities, control surfaces,
-  node-health noise calibration, completion rules, etc.) preserved.
-
-## Files touched
-
-- `.cacophony/profiles/narrator.md` (+48 lines)
+- Failing tests: none introduced
+- New module `crates/caco-beads/src/peer_consult.rs` defines:
+  - `PeerPresence::{Has, MissingFromAll, MaybePresent}` with `must_preserve()` semantics (Has and MaybePresent both preserve; only MissingFromAll permits removal)
+  - `PeerConsult` trait (sync, Send + Sync, takes project + ids, returns map)
+  - `NoopPeerConsult` default that returns Has for every ID — maximally conservative, preserves legacy behaviour exactly
+  - `test_helpers::ScriptedPeerConsult` for unit tests
+- `ReconcileOptions` extended with `peer_consult: Option<Arc<dyn PeerConsult>>`; manual `Debug` impl renders the consult's `description()`
+- `ReconcileResult` extended with `peer_preserved: usize` and `peer_consult_summary: Option<String>` so operators and follow-up sensors can see the preservation count per reconcile
+- `BeadsStore::compute_peer_consult_preservation` and `splice_preserved_lines_sorted` helpers do the work; reconciler invokes them BEFORE the destructive-shrink check so the post-preservation count is what the shrink-cap evaluates
+- 3 new unit tests cover Has / unreachable / missing scenarios, all passing
+- 237/237 caco-beads lib tests pass; full workspace builds clean; `cargo test-small` (59 tests) passes
 
 ## Diff summary
 
-Single-file profile-prose change. `.cacophony/profiles/narrator.md`
-gains a new `### Flat-window minimal output (bd-58ff27)` subsection
-under `## Idle Behavior` (+48 lines, no deletions). The new
-subsection codifies a 5-criterion 'is the sweep flat?' heuristic, an
-output-discipline contract per sweep kind (flat / eventful /
-incident), an explicit incident-bypass clause so failures and
-beads-primary outages are never suppressed by flat-window logic, and
-an anti-pattern detector keyed on repeated 'still / unchanged /
-continues to' phrasing. No frontmatter changes; no Rust changes; no
-schema changes.
+- Commits: `5ad96ceb` (single squash candidate)
+- Files touched:
+  - `crates/caco-beads/src/lib.rs` (+module declaration + re-exports)
+  - `crates/caco-beads/src/model.rs` (`ReconcileOptions` peer_consult field + manual Debug; `ReconcileResult` peer_preserved + peer_consult_summary fields)
+  - `crates/caco-beads/src/peer_consult.rs` (NEW, ~310 lines including tests + docs)
+  - `crates/caco-beads/src/store.rs` (helpers + reconciler hook + 3 unit tests)
+- Tests: +6 (3 in peer_consult.rs, 3 in store.rs `bd_5b77b9` namespace) / -0
+- Behavioural delta: when `opts.peer_consult` is `None` (current default everywhere — daemon, CLI, tests) behaviour is byte-identical to before. When `Some(consult)`, removed-ID candidates are diff'd against existing JSONL and any `Has`/`MaybePresent` ID is spliced back into the new content. The bd-53f5a7 shrink-cap still applies on the post-preservation count.
 
 ## Operator-takeaway
 
-Narrators running this profile should now emit a single short tick
-line (~25 words) on flat sweeps and reserve full multi-paragraph
-narration for cycles where at least one of {terminal-state count
-moved, bead status changed, release landed, notable node-health
-transition, directed inbox message} occurred. Failures, stuck
-workers, and beads-primary outages always bypass the flat-window
-suppression. Watch the next ~24 hours of narrator output — if flat
-sweeps still produce paragraphs, the profile prose may need to be
-replaced or supplemented by a programmatic state-hash check (called
-out as a follow-up below). No worker beads change behaviour; only
-agents launched under the `narrator` profile are affected.
-
-## Validation
-
-- `cargo test -p caco-config --lib profile` → 13/13 PASS (frontmatter
-  parse exercised across the profile-loading suite).
-- `caco config validate` → "config valid" (8 nodes, 7 projects). This
-  loads and merges the modified narrator profile end-to-end, so a
-  YAML break in the new subsection's containing frontmatter would
-  surface here. (The new content is body-only, not frontmatter.)
-- `cargo test-small` → 716+286+18+2798+45 PASS green (run earlier in
-  session under bd-eef5da; nothing in this commit touches Rust).
-- Did not run full workspace tests per merge-queue mixin and the
-  zero-Rust-diff scope.
-
-## Notes / follow-ups
-
-- Pure profile-prompt change: behavioural improvement depends on
-  the narrator runtime actually following the new output contract.
-  Worth a 24-hour observation window — if narrators still emit full
-  paragraphs on flat sweeps, the heuristic may need tightening or
-  the runtime may need a programmatic delta check rather than a
-  profile-prose nudge.
-- The bead's title mentions "tracking last-spoken state hash". This
-  patch implements the *behavioural* equivalent (the agent re-reads
-  its own prior speaks) rather than a programmatic state-hash
-  primitive. A follow-up could add a `narrator_state_hash` MCP tool
-  if prose discipline proves insufficient.
-- Earlier in this session: bd-eef5da (short_name profile fallback)
-  was filed and patched but obsoleted mid-session by parallel work
-  from ms-mac ephemeral `mab6fpzek734d79t` landing the same
-  resolve_short_name → AdjNoun fallback under bd-34d0b8 (commit
-  0ed3aa48). My patch was dropped, the bead was annotated with the
-  remaining unimplemented (1) scope (profile_strategy bridge-output
-  plumbing at both spawn callsites), and the branch was force-pushed
-  back to clean.
+This bead is **half** the protection. The trait + reconciler hook is
+in place and ready to defend the cluster, but it currently always uses
+`NoopPeerConsult` (which preserves everything) because no daemon-side
+implementation is wired yet. The follow-up `bd-cef230` wires the actual
+HTTP fan-out, the timeout config (`beads.peer_consult_timeout_ms`,
+default 5000ms), and the doctor sensor. Until that lands, the runtime
+behaviour is unchanged from main — but the abstraction is durable and
+the daemon-side impl is a localised follow-up that can be claimed by
+any worker. Strictly additive: turning the consult on can only ADD
+preservation; it can never remove existing safety.
