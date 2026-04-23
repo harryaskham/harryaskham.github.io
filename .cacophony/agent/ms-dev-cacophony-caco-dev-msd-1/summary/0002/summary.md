@@ -1,106 +1,66 @@
-# Session summary — bd-68bde8 caco audio speak voice-filter post-processing
+# Session summary — bd-ea6668 beads-sync 500 observability
 
 ## Goal
 
-Wire the existing sox-based voice-filter pipeline (already used by
-`caco msg speak` via the playback-side TTS daemon loop) through the
-direct `/api/v1/audio/speech` daemon endpoint so a caller can request
-filtered audio in a single round-trip via `caco audio speak
---voice-filter <preset>`.
+Make the recurring `POST /beads/sync -> 500` on ms-mac daemon
+diagnosable from daemon.log without needing a debugger or
+out-of-band tracing. Also stop counting operationally-distinct
+failure modes (transient git, lock contention, destructive-write
+refusal) as generic 500s in dashboards.
 
 ## Bead(s)
 
-- `bd-68bde8` — [bd-45ea63 follow-up] caco audio speak --voice-filter
-  post-processing
-
-## Diff summary
-
-- `crates/caco-daemon/src/audio.rs`: +`apply_voice_filter_preset` and
-  `run_sox_filter` helpers; +`voice_filter: Option<String>` on
-  `SpeechRequest`; call site in `handle_speech` between bytes-received
-  and size/event emission; 9 existing `SpeechRequest` literals in
-  handlers + tests updated to `voice_filter: None`; 3 new unit tests
-  for the preset helper (none / unknown / non-WAV passthrough).
-- `crates/caco-cli/src/lib.rs`: +`--voice-filter` arg spec on
-  `caco audio speak`; threaded through dispatch into
-  `dispatch_audio_speak` and `build_audio_speech_request_body`; 1 new
-  unit test pinning voice-filter-only-mode + 2 existing tests updated
-  for the new helper signature.
-- Behavioural delta: `caco audio speak --voice-filter <preset> --text
-  "..."` returns sox-filtered WAV from the daemon in a single round
-  trip; soft-fails to unfiltered audio on missing sox / non-WAV /
-  timeout / unknown preset.
-- Tests: +4, all pass. 104 daemon `audio::tests::*` pass; cargo
-  test-small green; clippy clean.
+- `bd-ea6668` — POST /beads/sync -> 500 recurs every ~20min on
+  ms-mac daemon — no handler-side trace logged.
 
 ## Before state
 
-- `caco audio speak` had `--speed` and `--instructions` from the
-  bd-45ea63 slice, but no way to request a sox preset filter.
-- The sox preset effect chain lived in `caco-tui::voice_filter`,
-  unreachable from `caco-daemon` because the `tui → daemon` dep
-  direction blocks the reverse.
-- `caco_config::VoiceFilterPreset::to_sox_args` already exposed the
-  per-preset effect chain in a crate that the daemon does depend on.
+- `bead_error_response()` matched only `NotFound` /
+  `InvalidOperation` / `AlreadyExists` and dumped every other
+  variant (Git, GitTimeout, Db, Io, SyncInProgress,
+  DestructiveShrinkRefused, Other) into a generic `internal_error`
+  with NO log entry.
+- 11 occurrences in 3.7h on ms-mac with the http-layer line
+  `POST /api/v1/projects/cacophony/beads/sync -> 500` and zero
+  handler-side context in the surrounding ±30 lines of daemon.log.
+- Task-join panics inside `spawn_blocking` likewise made it into the
+  response body but not into daemon.log.
 
 ## After state
 
-- New `voice_filter: Option<String>` field on `audio::SpeechRequest`,
-  serde-default so existing callers and the daemon's other internal
-  call sites are unaffected (all 9 remaining `SpeechRequest` literals
-  in tests/handlers updated to set `voice_filter: None`).
-- New daemon-internal helpers in `crates/caco-daemon/src/audio.rs`:
-  - `apply_voice_filter_preset(audio_bytes, preset_name)` — resolves
-    the preset via `caco_config::VoiceFilterPreset::from_name`,
-    bails out with a soft warning on `none` / unknown preset / non-WAV
-    input / sox failure, and returns unfiltered bytes in all failure
-    paths.
-  - `run_sox_filter(audio_bytes, effects)` — minimal sox runner: pipes
-    bytes through `sox -t wav - -t wav - <effects>` with a 10s
-    deadline; kills the child on timeout. No daemon-host dependency on
-    the caco-tui crate.
-- Wired into `handle_speech` after the upstream provider returns audio
-  bytes and before the response headers are built, so `size_bytes` and
-  the `speech_finished` UI/feed events reflect the filtered output.
-- New `--voice-filter` flag on `caco audio speak` (CLI arg spec, dispatch
-  arg, JSON body forwarding via `build_audio_speech_request_body`).
-- Tests added:
-  - daemon-side: `apply_voice_filter_preset` returns input unchanged for
-    `none`, unknown preset, and non-WAV input — deterministic on any
-    host because no sox invocation is reached.
-  - cli-side: `build_audio_speech_request_body` now omits `voice_filter`
-    when caller passes `None` and forwards the preset name when set;
-    extra `audio_speak_request_body_voice_filter_only` test pins the
-    isolation of the new field from the existing speed/instructions
-    overrides.
-- All 104 daemon `audio::tests::*` pass; 3 new cli tests pass; cargo
-  test-small green; clippy clean (preexisting build-script warning
-  unchanged).
+- New `bead_error_response_for(request_id, err, operation)` logs a
+  structured `[bd-ea6668] beads-{op} {kind} request_id=... cause=...`
+  line for every 5xx-producing variant.
+- Status classification:
+  - `BeadsError::Git` → `503 Service Unavailable`
+  - `BeadsError::GitTimeout` → `504 Gateway Timeout`
+  - `BeadsError::SyncInProgress` → `429 Too Many Requests`
+  - `BeadsError::DestructiveShrinkRefused` → `409 Conflict`
+  - `BeadsError::Db` / `Io` / `Other` → `500` with logged cause
+- `handle_beads_sync` now wires the new function with `operation=
+  "sync"` and also logs task-join panics with the same format.
+- Existing `bead_error_response()` retained as a thin delegate so
+  every other bead handler keeps its current behaviour.
+- `cargo test-small` green; `cargo clippy -p caco-daemon` clean.
 
-## Soft-fail policy (matches caco-tui pipeline)
+## Diff summary
 
-- Missing sox → unfiltered audio + eprintln warning, no error to caller.
-- Non-WAV format (mp3/opus/etc) → unfiltered audio + warning.
-- sox timeout (10s) → kill child, return unfiltered audio.
-- Unknown preset name → unfiltered audio + warning. `none` is the
-  documented opt-out.
-
-## Out of scope for this bead
-
-- Rotation/config-driven filter selection (already happens in `caco msg
-  speak` at the playback side; not relevant for the synchronous
-  audio/speech endpoint where the caller controls the preset).
-- SSML express-as block (bd-5b199b).
-- Migrating `caco-tui::voice_filter` into a shared crate — the daemon's
-  needs are met by the existing `VoiceFilterPreset::to_sox_args` in
-  caco-config plus a small inline runner. Crate-extraction can wait
-  until a third caller appears.
+- Commit: `ead43e03` (bd-ea6668: structured error logging + HTTP
+  status classification for /beads/sync).
+- Files touched: `crates/caco-daemon/src/beads.rs` (+110 / -3).
+- Tests: +0 / -0 / flipped 0 (no behavioural test was previously
+  pinning the all-500-no-log behaviour).
+- Behavioural delta: clients hitting transient git failures now see
+  503/504 and may retry; clients racing on the sync lock now see 429
+  with a specific error code. Operators see the inner cause in
+  daemon.log on every 5xx.
 
 ## Operator-takeaway
 
-`caco audio speak --voice-filter telephone --text "..."` now returns
-filtered WAV audio in one call, without the playback-side TTS daemon
-detour. Filter coverage matches the existing 10 presets (telephone,
-hall, lofi, underwater, radio, whisper, cave, megaphone, robot,
-vintage). Soft-fails to unfiltered audio on any sox unavailability so
-deployment regressions are warning-level, not breakage.
+The 20-minute beads-sync 500 cadence is now self-diagnosing — the
+next time it fires, daemon.log will carry the inner cause (git
+timeout, db busy, peer fan-out failure, etc.) so root cause can be
+identified without attaching a debugger. The auto-filed per-project
+duplicate beads (bd-1e544d, bd-29fcf4, bd-2d2904, bd-295650,
+bd-061810 etc.) should now produce actionable evidence on their next
+firing and can be closed once the root cause is identified.
