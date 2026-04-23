@@ -1,111 +1,88 @@
-# Session summary — bd-f303f4 caco-web STT visual indicators in workspace chat pane
+# Session summary — bd-f45663 timeline data generation service
 
 ## Goal
 
-Operator wants to direct the fleet by voice. The flaky existing STT
-(scribble/whisper) needs **visible** mic-state indicators across both
-TUI and web surfaces so the operator knows when speech is being heard
-vs ignored. This bead is the web-side slice; bd-c16753 is the TUI
-sibling.
-
-Per Harry's Apr-23 note: "needs clear visual indicators for when
-speech is correctly detected and our UX polish passes should test it
-out with synthetic speech and ensure the live-voice-call flow works
-for operator to guide fleet by talking with controllers."
+Per the timeline UX bead family (TUI bd-5278e2 / web bd-fc8947 /
+android bd-47dc20 / per-project TUI bd-ec4fdc / cluster bd-cfe554 /
+visual bd-8adcec / build-pipeline bd-734772 / android-impl bd-198dbd
+/ web-impl bd-9eefcc), all surfaces need a single shared backend
+that says "what happened in this project recently". This bead is
+that backend.
 
 ## Bead(s)
 
-- `bd-f303f4` — Visual STT indicators in caco-web workspace chat pane (P1)
-- (parent epic: `bd-9496d1` xplat STT + voice-call-with-controller)
-- (sibling: `bd-c16753` same indicators in TUI)
-- (consumer of the wire format from the just-landed `bd-a17114`
-  caco-stt-protocol crate — wire vocabulary `partial`/`final`/
-  `silence`/`error`/`started`/`stopped` directly informed the
-  WorkspaceSttMic event names)
+- `bd-f45663` — Implement timeline data generation service (P2,
+  feature) — **the backend the surface beads will read through**
 
 ## Before state
 
-- caco-web workspace chat pane (bd-eaae6a) had no STT entry-point
-- No mic widget, no visual indicators, no way for operator to dictate
-  into the compose box
-- Existing `crates/caco-daemon/src/scribble_stt.rs` covers the
-  daemon-side engine but no browser-facing UX consumed it
+- Each surface bead would have re-implemented its own commit / bead
+  / changelog aggregation against different data shapes.
+- No cache key for "this set of inputs produced this timeline" —
+  guaranteed to mean repeated expensive AI calls if/when the
+  AI-summarised path lands.
 
 ## After state
 
-- New `crates/caco-web/static/workspace-stt-mic.js` (~340 lines):
-  idempotent `window.WorkspaceSttMic` namespace exposing
-  `mount(hostEl, opts)` factory, `STATES` enum, `STATE_LABELS`,
-  `browserSupportsSTT()` capability probe.
-- Per-instance API: `start()`, `stop()`, `toggle()`, `destroy()`,
-  `onPartial`, `onFinal`, `onState`, `onError`. Also dispatches a
-  `stt-final` CustomEvent for non-callback consumers.
-- Two modes: `push-to-talk` (hold Space, Esc to abort) and
-  `always-on` (VAD-driven, auto-restart on engine end).
-- Browser engine: webkit-prefixed SpeechRecognition with the standard
-  unprefixed fallback. Firefox surfaces a clear 'browser STT
-  unavailable' state instead of failing silently.
-- New `crates/caco-web/static/workspace-stt-mic.css` (~140 lines):
-  4-state coloured dot (grey/green/amber-pulsing/blue-slow-pulse/red),
-  inline partial-transcript ghost text, brief final-commit flash for
-  visible 'heard you' confirmation. `prefers-reduced-motion`
-  respected throughout.
-- `crates/caco-web/static/workspace-chat-pane.js` modified: auto-
-  mounts mic widget if `WorkspaceSttMic` is loaded; on final-commit
-  appends to compose textarea with smart spacing, focuses, moves
-  caret to end. Wrapped in try/catch so a mic mount failure can
-  NEVER break the chat pane. Per acceptance criterion 3, NEVER
-  auto-sends — operator confirms with Enter.
-- `crates/caco-web/static/workspace-chat-pane.css` modified: styles
-  the new `.wcp-mic-row` container, with `:empty` collapse so layout
-  doesn't shift when STT is unavailable.
-- 4 new Rust embed-contract tests in `crates/caco-web/src/tests.rs`,
-  all pure-Rust per bd-d5b850 perf concern (no node spawns):
-  - `workspace_stt_mic_js_is_embedded` — pins the public surface,
-    states, modes, engine probe, final-flash class, CustomEvent
-  - `workspace_stt_mic_css_is_embedded` — pins all 4-state classes
-    + reduced-motion + flash
-  - `workspace_chat_pane_mounts_stt_mic_widget_bd_f303f4` — pins
-    chat pane wiring + the no-auto-send invariant
-  - `workspace_chat_pane_css_styles_mic_row` — pins mic-row CSS
+- New `crates/caco-daemon/src/timeline.rs` (~430 lines) wired into
+  `caco-daemon` lib.rs.
+- `TimelineEvent { id, kind: {Commit|Changelog|Release|Bead},
+  timestamp, title, body?, actor? }`
+- `TimelineScope { max_age, min_commits }` with `Default = 48h /
+  100 commits` per the bead's "whichever is longer" criterion
+- `TimelineMode { Derived, AiSummarised }`
+- `Timeline { project, mode, scope, generated_at, inputs_hash,
+  events, narrative? }` — self-describing so cache hits need no
+  out-of-band metadata
+- `select_in_scope(events, scope, now)` honours OR-LONGER semantics
+  precisely (max of age-prefix length and commit-prefix length)
+- `compute_inputs_hash(project, mode, scope, events) -> hex sha256`
+  — canonicalised cache key. Mode + project + every event's
+  `(kind, id, ts_micros, title)` all participate, so cache rows
+  cannot collide across projects, modes, or freshness drift.
+- `sort_canonical` — `(timestamp DESC, kind, id)` so two callers
+  with the same input set produce byte-identical Timelines
+- `generate_derived` — deterministic, no model needed
+- `TimelineSummariser` trait + `NoopSummariser` so the AI mode is
+  pluggable. `generate_ai` falls back gracefully when no model is
+  wired up.
+- SQLite-backed cache (`timeline_cache` table): `init_table`,
+  `cache_put`, `cache_get`, `cache_evict_older_than`,
+  `get_or_generate_derived` convenience.
+- Cache key is `(project|mode|inputs_hash)` so changing any input
+  invalidates automatically — no TTL needed.
+- 21 unit tests covering: scope-default, all three OR-LONGER cases
+  (age longer / commits longer / both empty / under-min-commits),
+  canonical sort determinism, hash stability + sensitivity to
+  events / mode / project, derived + AI generators, cache
+  round-trip, idempotent put-replace, eviction, get-or-generate
+  hit + miss, serde Option-omission + narrative round-trip.
 
 ## Diff summary
 
-- Files: 6 touched (2 created, 4 modified)
-  - `crates/caco-web/static/workspace-stt-mic.js` (new, ~340 lines)
-  - `crates/caco-web/static/workspace-stt-mic.css` (new, ~140 lines)
-  - `crates/caco-web/static/workspace-chat-pane.js` (+~38 lines)
-  - `crates/caco-web/static/workspace-chat-pane.css` (+12 lines)
-  - `crates/caco-web/src/tests.rs` (+4 tests, ~110 lines)
-- Tests: +4 / -0
-- Behavioural delta: the chat pane gains a mic widget when the new
-  `workspace-stt-mic.js` is loaded. Existing chat pane behaviour is
-  unchanged when the mic module is absent (the `.wcp-mic-row` div
-  collapses via `:empty`).
+- Files: 1 created, 1 modified
+  - `crates/caco-daemon/src/timeline.rs` (new, ~600 lines incl. tests)
+  - `crates/caco-daemon/src/lib.rs` (+1 line: `pub mod timeline;`)
+- Tests: +21 / -0
+- Behavioural delta: zero — pure addition. No HTTP route wired yet
+  (surface beads will plumb that as they need it). The daemon now
+  exposes the timeline API to in-process consumers.
 
 ## Operator-takeaway
 
-This is the **visible operator confirmation** that voice direction is
-working. Before this bead, scribble/whisper transcripts arrived in
-silence — the operator had to guess whether the mic was even open.
-Now: dot colour at-a-glance state, pulsing animation when speech is
-detected, ghost-text partial that materialises as the operator
-speaks, and a brief flash on the line when a final-commit happens.
+Surface beads (TUI / web / Android timeline views) can now consume
+`timeline::generate_derived` or `timeline::get_or_generate_derived`
+directly without each rolling its own aggregation. The AI-summarised
+mode is a one-trait-impl drop-in away — when we pick a model, only
+one place changes.
 
-Push-to-talk (Space) is the default because that's the safer mode for
-voice direction: operator deliberately presses to speak, releases to
-commit. Always-on mode is one button-press away for hands-free
-sessions.
+The "48h or 100 commits, whichever is longer" rule is implemented
+explicitly in `select_in_scope`, with a unit test for each direction
+of the OR. Future ops can tune `TimelineScope` per-project without
+touching the generator.
 
-The mic widget is fully decoupled from the daemon-side engine — it
-uses the browser SpeechRecognition API right now, but the same
-WorkspaceSttMic surface can be re-pointed at the daemon's scribble
-stream over WebSocket once bd-128ea6 stabilizes that path. The
-`onFinal` / `onPartial` callback shape and the `stt-final` CustomEvent
-are deliberately wire-shape-compatible with the bd-a17114
-caco-stt-protocol crate's `StreamEvent::{Partial, Final}` variants.
-
-Next sibling beads in this lane:
-- bd-c16753 (TUI) — same 4-state indicators in speech_popup.rs
-- bd-abd7ba — 'Test STT' button in speech-popup
-- bd-07d590 — voice-call orchestration end-to-end
+Cache is content-addressed (`inputs_hash`), so we never serve a stale
+result without knowing it: any change to inputs produces a different
+hash and either a fresh generation + put or a different cache row.
+`cache_evict_older_than` is a cheap maintenance hook the daemon can
+schedule.
