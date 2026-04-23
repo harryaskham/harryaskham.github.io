@@ -1,62 +1,75 @@
-# Session summary — bd-5b77b9 cross-peer presence consult before reconciler removes records
+# Session summary — bd-a17114 caco-stt-protocol crate (streaming STT wire contract)
 
 ## Goal
 
-Close the fine-grained sibling of the bd-cf99b7 incident: the local
-beads SQLite store should never be allowed to silently amplify its own
-staleness by erasing JSONL records that the rest of the cluster mesh
-still holds. The bd-53f5a7 shrink-cap (already landed) catches gross
-truncations (>5% AND >50 records). bd-5b77b9 adds a complementary
-fine-grained guard that consults peers before any per-record removal.
+Land the **wire contract** for the streaming STT subsystem so the
+parallel children of bd-9496d1 (xplat STT epic) can land independently
+without coordinating SHAs: the engine MVP (bd-71ce98), the WER bench
+(bd-68b76d), the grammar-bias work (bd-c1930c), and `caco voice call`
+(bd-a55d88) all consume the same JSONL shape.
 
 ## Bead(s)
 
-- `bd-5b77b9` — Cross-peer sync verification before any record removal — query mesh first, root from bd-cf99b7 (P1)
-- (parent: `bd-cf99b7` — postmortem RCA for the 2026-04-22 reconciler truncation)
-- (companion: `bd-53f5a7` — gross-failure shrink-cap, already landed by msm-3)
-- (filed follow-up: `bd-cef230` — daemon-side PeerConsult impl + /beads/has/<id> endpoint + config)
+- `bd-a17114` — Streaming transcript protocol contract (P1)
+- (parent epic: `bd-9496d1` xplat STT + voice-call-with-controller)
+- (peers consuming this contract: `bd-71ce98` MVP engine,
+  `bd-a55d88` voice-call duplex, `bd-68b76d` WER harness,
+  `bd-c1930c` grammar bias)
 
 ## Before state
 
-- Failing tests: none related to this surface
-- Reconciler `BeadsStore::reconcile_with_options` had `allow_shrink: bool` only; no per-bead-ID consult layer
-- No PeerConsult abstraction existed; no daemon endpoint for per-bead presence
-- Open queue had bd-5b77b9 unclaimed despite being explicitly surfaced by caco-ctrl as high-leverage
+- No crate, no types, no tests for the streaming STT wire format
+- Existing `crates/caco-daemon/src/scribble_stt.rs` covers a non-
+  streaming local-Whisper transcribe call; not a streaming wire
+  protocol
 
 ## After state
 
-- Failing tests: none introduced
-- New module `crates/caco-beads/src/peer_consult.rs` defines:
-  - `PeerPresence::{Has, MissingFromAll, MaybePresent}` with `must_preserve()` semantics (Has and MaybePresent both preserve; only MissingFromAll permits removal)
-  - `PeerConsult` trait (sync, Send + Sync, takes project + ids, returns map)
-  - `NoopPeerConsult` default that returns Has for every ID — maximally conservative, preserves legacy behaviour exactly
-  - `test_helpers::ScriptedPeerConsult` for unit tests
-- `ReconcileOptions` extended with `peer_consult: Option<Arc<dyn PeerConsult>>`; manual `Debug` impl renders the consult's `description()`
-- `ReconcileResult` extended with `peer_preserved: usize` and `peer_consult_summary: Option<String>` so operators and follow-up sensors can see the preservation count per reconcile
-- `BeadsStore::compute_peer_consult_preservation` and `splice_preserved_lines_sorted` helpers do the work; reconciler invokes them BEFORE the destructive-shrink check so the post-preservation count is what the shrink-cap evaluates
-- 3 new unit tests cover Has / unreachable / missing scenarios, all passing
-- 237/237 caco-beads lib tests pass; full workspace builds clean; `cargo test-small` (59 tests) passes
+- New `crates/caco-stt-protocol/` workspace member, zero-engine deps
+  (serde + serde_json + thiserror only). Library compiles standalone
+  in a couple seconds; full workspace builds clean.
+- `StreamEvent` enum: `Started { protocol, engine, sample_rate }`,
+  `Partial { seq, text, t_start_ms, t_end_ms }`, `Final {…}`,
+  `Silence { seq, duration_ms, t_end_ms }`, `Error { code, message }`,
+  `Stopped { reason: StopReason }`
+- `StreamCommand` enum: `Reset`, `Stop` — written to engine stdin
+  one JSONL per line
+- `StopReason` enum: `Requested`, `InputClosed`, `Error`
+- Constants: `PROTOCOL_VERSION = 1`, `latency::MEDIAN_PARTIAL_MS_TARGET
+  = 300`, `latency::P95_PARTIAL_MS_TARGET = 600` (documenting
+  bd-a17114 acceptance criterion 4)
+- Helpers: `serialize_event`, `serialize_command`, `parse_event`,
+  `parse_command`, `parse_event_lenient` (forward-compat: unknown
+  `type` yields `Ok(None)`), `event_has_transcript`,
+  `transcript_payload`, `is_terminal`
+- 19 unit tests covering per-variant round-trip, lenient forward-
+  compat, error paths, the bd-a17114 criterion-5 two-phrase-two-
+  finals scenario, the criterion-6 mid-stream reset semantics, and
+  pinning `PROTOCOL_VERSION` + `KNOWN_EVENT_TYPES` against
+  accidental drift
 
 ## Diff summary
 
-- Commits: `5ad96ceb` (single squash candidate)
-- Files touched:
-  - `crates/caco-beads/src/lib.rs` (+module declaration + re-exports)
-  - `crates/caco-beads/src/model.rs` (`ReconcileOptions` peer_consult field + manual Debug; `ReconcileResult` peer_preserved + peer_consult_summary fields)
-  - `crates/caco-beads/src/peer_consult.rs` (NEW, ~310 lines including tests + docs)
-  - `crates/caco-beads/src/store.rs` (helpers + reconciler hook + 3 unit tests)
-- Tests: +6 (3 in peer_consult.rs, 3 in store.rs `bd_5b77b9` namespace) / -0
-- Behavioural delta: when `opts.peer_consult` is `None` (current default everywhere — daemon, CLI, tests) behaviour is byte-identical to before. When `Some(consult)`, removed-ID candidates are diff'd against existing JSONL and any `Has`/`MaybePresent` ID is spliced back into the new content. The bd-53f5a7 shrink-cap still applies on the post-preservation count.
+- Files: 4 created, 1 modified
+  - `Cargo.toml` — added crate to workspace `members`
+  - `crates/caco-stt-protocol/Cargo.toml` (new)
+  - `crates/caco-stt-protocol/src/lib.rs` (new, ~430 lines incl. tests)
+- Tests: +19 / -0
+- Behavioural delta: zero — pure addition. No existing crate depends
+  on this one yet; consumers will pick it up as their own beads land.
 
 ## Operator-takeaway
 
-This bead is **half** the protection. The trait + reconciler hook is
-in place and ready to defend the cluster, but it currently always uses
-`NoopPeerConsult` (which preserves everything) because no daemon-side
-implementation is wired yet. The follow-up `bd-cef230` wires the actual
-HTTP fan-out, the timeout config (`beads.peer_consult_timeout_ms`,
-default 5000ms), and the doctor sensor. Until that lands, the runtime
-behaviour is unchanged from main — but the abstraction is durable and
-the daemon-side impl is a localised follow-up that can be claimed by
-any worker. Strictly additive: turning the consult on can only ADD
-preservation; it can never remove existing safety.
+The wire shape is intentionally tiny and snake_case so a human
+operator can `tail -f` an STT stream JSONL file and read along. The
+forward-compat `parse_event_lenient` path means future event kinds
+(e.g. confidence scores, speaker-id tags) can be added without
+breaking existing consumers. The `KNOWN_EVENT_TYPES` test guards
+against the typical drift bug (new variant added to enum but lenient
+parser still drops it).
+
+`PROTOCOL_VERSION` lives in the `Started` event so consumers detect
+drift on connect rather than mid-stream.
+
+The `latency::*` constants are documentation, not enforcement —
+engine implementors can opt their own benches into them.
