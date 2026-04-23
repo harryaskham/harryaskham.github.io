@@ -1,23 +1,27 @@
-# Session summary — bd-3bbc6f caco cron list/show improvements
+# Session summary — bd-ea6f3d caco cert status improvements
 
 ## Goal
-Make multi-line shell cron commands inspectable without --json + jq.
+Surface days_remaining + warning signal in `caco cert status` text mode; add --node filter; standardize JSON envelope.
 
 ## Bead(s)
-- `bd-3bbc6f` — caco cron list COMMAND column severely truncated
+- `bd-ea6f3d` — caco cert status text drops days_remaining + warning; no --node filter; JSON omits envelope
 
 ## Before state
-- `caco cron list` truncated COMMAND column to ~50 chars, hiding 60+ line shell scripts behind ellipsis. No --name filter or focused-inspection subcommand existed; operators had to use --json + jq.
+- Text mode rendered a 7-days-to-expiry cert identically to a healthy one (just with a closer date). days_remaining and warning flag present in JSON but absent from text output.
+- No --node filter; multi-node clusters had no focused inspection path short of grep.
+- JSON output emitted bare StatusResult instead of the standard {ok, data:...} envelope used by sister commands.
+- cert status registered as arg-less leaf so help/tab-completion couldn't surface any flags.
 
 ## After state
-- `caco cron list --name <substr>` filters entries by name substring.
-- `caco cron list --verbose` renders each entry as a multi-line block with full command output.
-- `caco cron show --name <name>` adds a dedicated focused-inspection subcommand with exact match, JSON support, and empty-name guard.
-- CommandSpec for cron list upgraded from mcp_leaf to full CommandSpec; cron show added.
+- Text mode prefixes warning rows with ⚠ and missing rows with ✗; appends "(N days remaining)" inline. CA gets the same treatment.
+- `--node <name>` filter scopes status to one configured node; rejects unknown/empty.
+- JSON wrapped in `{ok, data:{ca, ca_key_present, nodes}}` envelope.
+- CERT_STATUS_ARGS registered; cert status upgraded from leaf to full CommandSpec.
+- 2 new tests pin the contract.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+158 / -3): CRON_LIST_ARGS (--name, --verbose), CRON_SHOW_ARGS (--name), dispatch_cron_show, verbose rendering branch in dispatch_cron_list, CommandSpec registrations for list+show.
-- Tests: 0 new (dispatch functions hit config read path). `cargo test-small` passes (146).
+- `crates/caco-cli/src/lib.rs` (+146 / -27): CERT_STATUS_ARGS, dispatch_cert_status rewrite (filter + envelope + warning prefixes), 2 new tests in `tests` module.
+- All tests pass (146 small + 1099 caco-cli unit).
 
 ## Operator-takeaway
-`caco cron list --verbose` and `caco cron show --name speaking-clock` now surface the full multi-line command body. No more --json + jq for basic inspection.
+`caco cert status` now visibly distinguishes warning from healthy certs and exposes --node for focused inspection. JSON consumers should migrate from `payload.ca` to `payload.data.ca`.
