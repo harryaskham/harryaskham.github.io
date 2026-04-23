@@ -1,58 +1,60 @@
-# Session summary — bd-61c620 Failed-state checkouts reclaimable by prune
+# Session summary — bd-b327cd TTS setter validation + format consistency
 
 ## Goal
 
-Make `caco agent prune --include-discarded` actually free the disk
-held by Failed-state agent checkouts, so the 63 GiB stranded on
-ms-mac (12 Failed agents, largest 26 GiB) can be reclaimed without
-manual `rm -rf`.
+Stop `caco tts set-voice / set-model / set-speed` from silently
+mutating cluster TTS state with bogus values. Validate every setter
+argument BEFORE the cluster-mutating HTTP call lands at the daemon,
+using the daemon's own enumeration endpoints as the source of truth
+so the allowed set never drifts from what the daemon supports.
 
 ## Bead(s)
 
-- `bd-61c620` — caco agent prune --include-discarded ignores Failed-state checkouts — 63 GiB stranded on ms-mac
+- `bd-b327cd` — [CRITICAL UX] caco tts set-voice / set-model / set-speed accept ANY value with no validation; format inconsistency between setters
 
 ## Before state
 
-- bd-343e4f (this agent, prior cycle) extended `dispatch_agent_prune` to bring `Failed` into the include-discarded set so the planner *would* see it.
-- But the planner saw it and immediately re-protected it: `dispatch_agent_prune` protects every checkout whose bead is non-Closed/Deleted, regardless of agent state. Failed agents typically keep an open / in-progress bead because another agent is expected to retry the work on a fresh checkout, so all 12 Failed agents on ms-mac were marked protected and the dry-run reported `0 candidates / 0 B would free`.
+- `caco tts set-voice --voice zzz-no-such-voice` returned `TTS daemon voice set to: zzz-no-such-voice` and the daemon happily persisted the bogus voice; cluster TTS would then fail on the next utterance.
+- `caco tts set-model --model bogus-model-xyz` had the same accept-anything behaviour.
+- `caco tts set-speed` parsed the value as f32 but did not bounds-check it; `--speed 9999` or `--speed -1` would silently land at the daemon.
+- Format inconsistency: `set-model` fell into the JSON default arm (`{"model":"...","ok":true}`) while `set-voice` and `set-speed` returned `TTS daemon X set to: Y` text. Scripts and operators saw two different shapes from sibling setters.
 - Failing tests: bd-c19193 (pre-existing, unrelated).
 
 ## After state
 
-- New helper `should_protect_terminal_checkout_from_prune(state, bead_status) -> bool` codifies the protection rule per terminal state:
-  - `Failed` → never protected. The run ended without success and no recovery remains in the failed checkout itself; the bead's open status protects future work, not the dead target/ tree.
-  - `Completed` → protected when bead is open / in_progress / draft / permanent / unreachable; eligible only when bead is closed / deleted.
-  - `Stopped` / `Discarded` → same semantics as Completed.
-- `dispatch_agent_prune` calls the helper instead of inlining the predicate, keeping the call site small and the rule unit-testable.
+- New helpers in `crates/caco-cli/src/lib.rs`:
+  - `validate_tts_speed(f32)` enforces `MIN_TTS_SPEED..=MAX_TTS_SPEED` (0.25..=4.0, the OpenAI audio.speech documented range) and rejects NaN/Infinity.
+  - `validate_tts_voice(client, base, voice)` pre-fetches `/api/v1/tts/voices`, parses both object-form (`{name, source}`) and bare-string voice payloads via `collect_known_voice_names`, and refuses with `unknown TTS voice 'X' — available: a, b, c` when the value is not in the daemon's enumeration.
+  - `validate_tts_model(client, base, model)` pre-fetches `/api/v1/tts/config`, parses `tts_models` / `models` / legacy single-string `model` shapes via `collect_known_model_names`, refuses with the same friendly error format.
+- `dispatch_tts_control` calls the three validators before any state-mutating HTTP request, so a bogus value never reaches the daemon.
+- Network-fetch failure during validation falls through to the dispatch path on purpose: a transient unreachable-daemon must not turn into a hard refusal that blocks recovery; the dispatch path itself surfaces the real connectivity error.
+- `set-model` now returns `TTS daemon model set to: <model>` matching its siblings; `--json` still produces the structured payload for both.
 - Failing tests: bd-c19193 (unchanged, pre-existing).
 
 ## Diff summary
 
-- Commit: `1e86c2da bd-61c620: caco agent prune --include-discarded must reclaim Failed-state checkouts`
-- Files touched: `crates/caco-cli/src/lib.rs` (+134 / -10).
-- Tests: +7 / -0 / flipped 0
-  - `bd_61c620_failed_state_never_protected_by_open_bead`
-  - `bd_61c620_failed_state_never_protected_by_in_progress_bead`
-  - `bd_61c620_failed_state_never_protected_when_bead_unreachable`
-  - `bd_61c620_completed_state_protected_by_open_bead` (regression guard for Completed semantics)
-  - `bd_61c620_completed_state_not_protected_by_closed_bead`
-  - `bd_61c620_completed_state_protected_when_bead_unreachable`
-  - `bd_61c620_stopped_and_discarded_follow_completed_semantics`
-- Behavioural delta: with this commit landed, `caco agent prune --project cacophony --include-discarded` will surface Failed-state checkouts as eligible targets for the retention planner. The planner still applies hours/count/bytes policy thresholds, so Failed agents younger than the configured retention window remain untouched.
+- Commit: `e8e2f992 bd-b327cd: validate caco tts set-voice / set-model / set-speed before dispatch`
+- Files touched: `crates/caco-cli/src/lib.rs` (+276 / -0).
+- Tests: +10 / -0 / flipped 0
+  - `bd_b327cd_speed_validation_accepts_documented_range`
+  - `bd_b327cd_speed_validation_rejects_out_of_range`
+  - `bd_b327cd_speed_validation_rejects_non_finite`
+  - `bd_b327cd_known_voices_object_form`
+  - `bd_b327cd_known_voices_string_form_tolerated`
+  - `bd_b327cd_known_voices_missing_yields_empty`
+  - `bd_b327cd_known_models_tts_models_field`
+  - `bd_b327cd_known_models_models_fallback`
+  - `bd_b327cd_known_models_single_model_legacy_shape`
+  - `bd_b327cd_known_models_missing_yields_empty`
+- Behavioural delta: bogus voice / model / speed values are refused at the CLI before any daemon call. Valid values flow through unchanged. Daemon-side behaviour is unmodified.
 
 ## Operator-takeaway
 
-Reclaim the stranded 63 GiB on ms-mac with:
-
-```
-caco agent prune --project cacophony --include-discarded
-```
-
-(Drop `--dry-run` once the operator has eyeballed the dry-run output
-which now also lists everything the planner declined to consider per
-bd-343e4f.) Failed agents younger than the project's `hours`
-retention threshold will still be kept; the policy boundary is
-honoured. If the rolling restraint is too aggressive, tighten
-retention via the per-project policy stanza; this fix only removes
-the all-or-nothing gate that previously hid every Failed checkout
-behind its still-open bead.
+The footgun is closed: typo'd voices and models cannot break live
+cluster TTS through `caco tts set-*` anymore. The validators use the
+daemon's own enumeration so adding a new voice or model on the
+daemon-side automatically widens the acceptable CLI set with no
+duplication. The format-consistency change (set-model now emits
+text by default) brings sibling setters into line; any caller that
+was parsing the JSON default of set-model should switch to `--json`
+explicitly for the structured payload.
