@@ -1,102 +1,81 @@
-# Session summary — profile frontmatter composes: field
+# Session summary — bd-49724c: stop failing restarts that are merely slow
 
 ## Goal
 
-Let a host profile (e.g. `dev`, `worker`) declare a default mixin
-stack to prepend whenever it is referenced in an agent's profile
-selection, so adding a new default mixin doesn't require editing
-every agent definition that uses the host. Operator's motivating
-case: get session-recording into every agent that uses worker.md /
-dev.md by setting it once in the .md frontmatter instead of
-duplicating it across every entry in cacophony_persistent.yaml.
+Operator complaint (bd-49724c): `caco agent restart` almost always shows
+a failure in the TUI/CLI even though the agent itself comes up moments
+later and is fine. Operator's prescription: "agent start.timeout =
+remove, just show starting... and let logs / attach reveal any slow
+start." Make resumes/restarts stop surfacing spurious failures.
 
 ## Bead(s)
 
-- `bd-b1fdc8` — Profile frontmatter: add 'composes:' field to let a profile declare default mixin stack
+- `bd-49724c` — restarts always show as failures but agent comes up anyway
 
 ## Before state
 
-- `Profile` struct (caco-profile/src/model.rs) had `hook_mixins:` for
-  hook composition but no `composes:` for profile-level composition.
-- The only way to add a default mixin to dev/worker was to edit every
-  agent definition's `profile: [...]` list — operators kept getting
-  asked to "add session-recording to all the X agents", and the change
-  was always a sweep across many YAML entries instead of a single
-  edit to dev.md.
-- Tests: no profile-composes tests existed.
-- `cargo test-small`: clean.
+- `AgentManager::resume_inner()` in `crates/caco-daemon/src/agent/lifecycle.rs`
+  used `wait_for_non_shell_runtime_on()` with `runtime_launch_timeout_secs()`
+  (2s for claude, 10s for codex/pi) and, on `RuntimeLaunchState::NotConfirmed`,
+  hard-failed: killed the tmux session (`kill_tmux_session_on`), set
+  `state = Failed` + `resume_blocker = RuntimeLaunchFailed`, and returned
+  `DaemonError::Other("resume bootstrap completed, but runtime launch failed:
+  tmux session did not settle ...")`.
+- TUI consumed that as `ActionResult::AgentRestartFailed` and toasted
+  "✗ agent restart failed for ..." even when the user could attach into
+  a live, healthy session a second later.
+- Failing tests (relevant subset): none — touched code path was not
+  asserted by unit tests beyond the generic `ResumeBlocker` enum
+  classification (still passing).
 
 ## After state
 
-- `Profile.composes: Option<Vec<String>>` added with rustdoc covering
-  prepend semantics, transitive composition, dedup rule, cycle
-  detection, and independence from `hook_mixins`.
-- New helper `expand_composes(names, profile_dirs)` in
-  `caco-daemon::agent::profile`:
-  - Walks the input list, recursively prepending each profile's
-    composes entries before the host slot.
-  - Order-preserving de-duplication via `HashSet<String>` of seen
-    names (first occurrence wins).
-  - Cycle detection via `HashSet<String>` of in-progress names;
-    revisiting an in-progress name returns
-    `DaemonError::Other("profile composition cycle detected at '<name>' (bd-b1fdc8)")`.
-  - Tolerates unknown profile names (downstream resolver remains the
-    canonical source of the not-found error).
-- `resolve_profile_selection_with_overrides` now expands `composes`
-  for both `Single` and `Composite` selections. A `Single` whose
-  profile declares composes is routed through the composite-resolve
-  path so the prepended profiles are loaded, bridged, and merged via
-  the existing rules.
-- 8 new unit tests under `agent::tests`:
-  `expand_composes_no_composes_returns_input`,
-  `expand_composes_prepends_at_slot_in_order`,
-  `expand_composes_dedup_explicit_mention`,
-  `expand_composes_transitive_chain`,
-  `expand_composes_detects_self_cycle`,
-  `expand_composes_detects_indirect_cycle`,
-  `expand_composes_tolerates_unknown_profile_names`,
-  `expand_composes_diamond_dedup`.
-- 1 new integration test `resolve_profile_selection_single_with_composes_expands_to_composite`
-  that writes session-recording with `env: CACO_SESSION_RECORDING=1`,
-  composes it from dev, selects `dev` as a `Single`, and asserts the
-  resolved profile pulls session-recording's env value through.
-- 7 Profile struct-literal sites updated with `composes: None` to
-  satisfy the new field (caco-cli, caco-profile/lib.rs, compose.rs,
-  bridge.rs).
-- SPEC.md: new section 16.5.1a "Profile Composition (`composes:`)"
-  documenting the contract.
-- `cargo test -p caco-profile --lib`: 277 passed, 0 failed.
-- `cargo test -p caco-daemon --lib expand_composes resolve_profile`:
-  13 passed (8 expand + 5 resolve), 0 failed.
-- `cargo test-small`: 195 + 107 + 716 + 277 + 18 + 2776 + 43 = 4132
-  tests, 0 failed.
+- Same probe still runs and the timeouts are unchanged. But on
+  `NotConfirmed` (after the existing `bd-96af85` / `bd-8bfa4d`
+  normalisation+interpreter acceptance), the path now branches on
+  tmux liveness:
+  - Tmux still alive → log a `bd-49724c` warning and let resume
+    continue (the agent settles into `Running` like normal). Watchdog
+    / heartbeat is the safety net for genuinely-stuck runtimes.
+  - Tmux genuinely dead → keep the hard failure, but with
+    `ResumeBlocker::TmuxSessionExited` (more accurate than
+    `RuntimeLaunchFailed` for that case).
+- Create path (initial spawn) is unchanged: a brand-new agent that
+  never brings its runtime up is still a real failure surfaced
+  immediately.
+- `cargo build -p caco-daemon` clean. `cargo clippy -p caco-daemon`
+  clean. `cargo test-small` clean. Targeted
+  `resume_blocker_*` tests still pass (8/8).
 
 ## Diff summary
 
-- Commit: `9851e4fa`
-- Files touched (8): `SPEC.md`,
-  `crates/caco-profile/src/model.rs` (+ field & rustdoc),
-  `crates/caco-profile/src/{lib,compose,bridge}.rs` (struct-literal
-  updates),
-  `crates/caco-cli/src/lib.rs` (struct-literal update),
-  `crates/caco-daemon/src/agent/profile.rs` (expand_composes
-  + Single/Composite expansion wiring),
-  `crates/caco-daemon/src/agent/tests.rs` (+9 tests).
-- Tests: +9 / -0 / flipped 0
-- Behavioural delta: profiles that set `composes: [...]` now
-  transparently prepend those names whenever they are referenced.
-  Profiles without `composes:` retain the previous resolution
-  semantics exactly (the only change to the no-composes path is the
-  added Profile field, which is None and bypasses the new branch).
+- Commit: `161d0c1c` on
+  `agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-3`.
+- Files touched:
+  `crates/caco-daemon/src/agent/lifecycle.rs` (resume runtime-launch
+  verification branch, ~+35/-13 lines).
+- Tests: no test changes. The generic `ResumeBlocker` /
+  `is_retryable` / `Display` tests still pass; no test asserted the
+  resume-NotConfirmed-on-alive-tmux failure semantics, so no test
+  needed to flip.
+- Behavioural delta: persistent + manual restarts of `claude` /
+  `codex` / `pi` agents that take longer than the runtime probe
+  timeout to settle no longer flap to `Failed` / kill their tmux
+  sessions. The TUI / CLI will continue to show "starting…" until
+  the agent reports activity, exactly as the operator requested.
+  Real failures (tmux died) still surface, with a more accurate
+  blocker.
+
+## Embedded artefacts
+
+(none — small textual diff)
 
 ## Operator-takeaway
 
-After this lands, you can drop `composes: [session-recording]` into
-`.cacophony/profiles/dev.md` (or worker.md) once and every agent
-that uses `dev` will pick it up automatically. The opposite
-direction also works: keeping the explicit `session-recording` entry
-in an agent's `profile: [...]` list is still safe — the dedup rule
-prevents double-composition. If we ever want strict-mode
-validate-time warnings for unknown composed profile names, that
-plumbing should hook into `validate_config` rather than the runtime
-resolver; out of scope for this bead, intentionally minimal.
+The "always-failed restart" was caused by a fixed 2s/10s probe in
+`resume_inner` that killed the tmux session on the first
+NotConfirmed observation. The session was virtually always still
+alive at that point. Now the probe is advisory: if tmux is alive we
+keep the session and let the watchdog do the eventual liveness
+arbitration. Net effect: fewer false-failed restarts, no loss of
+real-failure detection, no change to create-path semantics.
