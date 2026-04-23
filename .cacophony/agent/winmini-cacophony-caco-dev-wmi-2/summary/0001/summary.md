@@ -1,95 +1,67 @@
-# Session summary — TUI merge-queue panel (bd-8a7d08)
+# Session summary — bd-d4d8dd close-out: doc the priority-ordered next_ready_bead contract on SpawnAndClaimParams
 
 ## Goal
 
-Land the second viewer surface for the merge-queue feature stack: a
-caco-tui panel under Cluster > Merge Queue that visualises in-flight
-reintegrations and recent accept/reject outcomes, sourced from the
-existing `caco agent merge-queue list --json` CLI primitive
-(bd-9d58cb). caco-web (wmi-1) and android (other agent) are landing in
-parallel; this is the TUI follow-up.
+bd-d4d8dd asked for priority-ordered selection in
+`SpawnAndClaim`'s `next_ready_bead` resolver, with tests and docs.
+On audit the implementation, lower-layer tests, and the SPEC §
+"spawn-oriented actions" line had all already landed in earlier
+sessions but the bead was never closed and the user-facing
+`SpawnAndClaimParams.bead` rustdoc still just said "typically
+next_ready_bead" with no mention of the priority-ordering contract.
+This session closes the bead by tightening the rustdoc (the only
+remaining acceptance-criterion #3 gap) and verifying the existing
+tests still pin the contract.
 
 ## Bead(s)
 
-- `bd-8a7d08` — [bd-9d58cb follow-up] TUI: merge-queue panel
-- (drive-by fix in same commit: removed a duplicate
-  `artefact_commit: None` field that landed twice during a rebase race
-  with bd-a6a454, and two clippy warnings in
-  `dispatch_agent_merge_queue_list` near where the bead's surface
-  consumes the same JSON contract.)
+- `bd-d4d8dd` — Priority-ordered bead selection for `spawn_and_claim`
+  (`next_ready_bead` should walk P0 → P3).
 
 ## Before state
 
-- Failing tests: `cargo clippy --workspace --all-targets -- -D warnings`
-  failed with three errors in `crates/caco-cli/src/lib.rs` —
-  `E0062 field artefact_commit specified more than once` (rebase
-  collision) and two `clippy::redundant_closure /
-  unnecessary_lazy_evaluations` lints near
-  `dispatch_agent_merge_queue_list`.
-- Existing surfaces: `caco agent merge-queue list --json` CLI primitive
-  was the only viewer for merge-queue activity; no TUI / web / android
-  surface bound to it yet.
-- `cargo test-small`: 4187 tests passing.
+- `BeadsStore::list_ready` already orders `priority ASC, created_at ASC`.
+- `BeadsStore::claim_next_ready` already walks that ladder, retrying
+  on race-loss.
+- Two pinning tests already passing in `caco-beads`:
+  - `claim_next_ready_walks_priority_ladder_p0_to_p3`
+  - `claim_next_ready_ties_break_by_created_at_within_priority`
+- SPEC §"spawn-oriented actions" already names bd-d4d8dd as the
+  source of the contract.
+- Gap: `caco-config::SpawnAndClaimParams.bead` rustdoc only said
+  "Bead reference, typically `next_ready_bead`." — no mention of
+  priority order, tie-break, ready-set definition, or the resolution
+  path. Anyone reading the config schema in isolation could not tell
+  whether selection was FIFO, priority-ordered, or arbitrary.
 
 ## After state
 
-- `cargo clippy --workspace --all-targets -- -D warnings`: PASS clean.
-- `cargo test-small`: PASS, 4189 tests (7 new in `views::merge_queue` —
-  full and empty JSON parse, status colour + glyph mapping,
-  `relative_age` formatting + garbage fallback, `entry_line` content;
-  one moved nav row index assertion delta absorbed into existing
-  `nav::tests::empty_tree`).
-- New TUI panel: Cluster > Merge Queue. Frost (NORD8) accent, ⛓ icon.
-  Renders `In-flight (n)` and `Recent (n)` sections; per-row
-  status badge (▶ / ✓ / ✗ / ·) with Nord colours
-  (in_flight=NORD8, accepted=NORD14, rejected=NORD11, unknown=NORD3),
-  agent_id, bead_id, mode, branch, relative age. Empty state and
-  loading state render cleanly.
+- `SpawnAndClaimParams.bead` rustdoc spells out the full selector
+  semantics: ready = open + unassigned + unblocked (incl. permanent),
+  ordering is `priority ASC, created_at ASC`, P0→P1→P2→P3 with FIFO
+  tie-break within priority, and names the resolution path
+  (`claim_next_bead_goal → BeadsStore::claim_next_ready →
+  BeadsStore::list_ready`) plus the two pinning tests and SPEC line.
+- `cargo test -p caco-beads --lib claim_next_ready`: 8/8 pass.
+- `cargo test-small`: 57/57 pass.
+- `cargo clippy -p caco-config --tests`: clean.
 
 ## Diff summary
 
-- Commits: `5b14de9a`
-- Files touched (12, +548 / -16):
-  - `crates/caco-tui/src/views/merge_queue.rs` (NEW, +396) — view +
-    parse + 7 tests
-  - `crates/caco-tui/src/views/mod.rs` — module export
-  - `crates/caco-tui/src/nav.rs` — `NavNode::ClusterMergeQueue`,
-    `ContentPane::ClusterMergeQueue`, depth + collapse-key + nav-tree
-    row insertion + `from_nav_node` mapping + tree row count test
-    fix-up
-  - `crates/caco-tui/src/views/nav_tree.rs` — Nord colour + style
-    arms for the new node
-  - `crates/caco-tui/src/views/tab_bar.rs` — breadcrumb arm
-  - `crates/caco-tui/src/views/pane_tabs.rs` — persistent-selection
-    label
-  - `crates/caco-tui/src/workspace.rs` — `PersistentSelection`
-    round-trip
-  - `crates/caco-tui/src/shell_cwd.rs` — global-pane match arm
-  - `crates/caco-tui/src/state/mod.rs` — `merge_queue_report` /
-    `_fetched` / `_error` cache
-  - `crates/caco-tui/src/event.rs` — `MergeQueueFetched` /
-    `MergeQueueFailed` ActionResult variants + Debug impls
-  - `crates/caco-tui/src/app.rs` — `DaemonReadKey::MergeQueue`,
-    `request_merge_queue` fetcher (subprocess to
-    `caco agent merge-queue list --json`), ActionResult dispatch arms,
-    `is_global_pane` match arm
-  - `crates/caco-cli/src/lib.rs` (drive-by, +5 / -8) — dedupe
-    duplicate `artefact_commit` field + clippy fixes
-- Tests: +7 new (all in `views::merge_queue::tests`) / 0 removed /
-  1 flipped (`nav::tests::empty_tree` row count 23→24 + new row
-  assertion).
-- Behavioural delta: new sidebar entry under Cluster section opens a
-  read-only merge-queue panel that auto-fetches via the CLI primitive
-  on first render; no daemon API or SSE subscription yet (placeholder
-  for when bd-2c399b lands the queue daemon and SSE feed).
+- Files touched:
+  - `crates/caco-config/src/model.rs` — extended rustdoc on
+    `SpawnAndClaimParams.bead` (no behavioural change).
+- Tests: 0 added, 0 removed, 0 flipped — relying on the two existing
+  bd-d4d8dd-tagged tests in `caco-beads` to pin the contract.
+- Behavioural delta: none. Doc-only.
 
 ## Operator-takeaway
 
-The merge-queue viewer story is now two-of-three: caco-web (wmi-1) and
-TUI (this commit) both render the same JSON contract that bd-9d58cb's
-CLI primitive emits. Android (bd-7430c1) is the remaining surface.
-Once bd-2c399b lands a real daemon-side queue with an SSE feed, both
-the TUI fetcher (`request_merge_queue` in `app.rs`) and the web
-implementation should be re-pointed at the daemon API / event stream
-so the panels update without a polling refresh — the JSON shape is
-shared so the contract should not need to change.
+bd-d4d8dd's behavioural goal landed silently in a prior session
+(daemon, beads-store, SPEC, tests all already in place) but the bead
+was never closed. The only remaining gap was a thin schema-doc on
+`SpawnAndClaimParams.bead`, now fixed. If you ever audit closed
+beads against open ones again, treat in-progress beads with no
+session diffs and matching `cargo test -p <crate> --lib <test>` greens
+as candidates for "implementation already landed; close after a
+documentation/audit pass" rather than re-implementing from scratch.
