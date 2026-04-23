@@ -1,68 +1,65 @@
-# bd-a3ee9d — TUI sidebar Closed/Draft counts now correct
+# bd-bb75b5 — webapp chat /commands now actually run
 
 ## Goal
-Stop the TUI/web sidebar from rendering Closed (0) / Draft (0)
-when the underlying store has thousands of closed and draft beads.
+Stop silently swallowing slash commands typed into the webapp
+chat box. Operators were picking commands from the autocomplete,
+hitting send, and seeing no observable effect because the literal
+`/foo` text was just being posted as a chat message.
 
 ## Bead(s)
-- bd-a3ee9d (P2 bug), Option A from the design notes:
-  ship per-status counts in the snapshot and have the TUI read
-  badge totals from those counts, not from the trimmed bead list.
-  Option B (lazy fetch on subsection click) deferred.
+- bd-bb75b5 (P2 task) — bare title, no acceptance criteria.
+  Implemented client-side dispatch for the existing
+  `SLASH_COMMANDS` set already wired into the autocomplete.
 
 ## Before state
-- Daemon: `compute_bead_stats` only tallied open / in_progress /
-  closed / blocked. `ProjectBeadStats` had no draft or permanent
-  fields. `trim_snapshot_beads` (bd-ecf1a0) drops closed/draft
-  beads from the wire payload.
-- TUI: `bead_counts_global` / `bead_counts_for_project` iterated
-  `self.beads` (the trimmed set) so Closed / Draft buckets always
-  read 0. During the bd-cf99b7 incident this fooled the operator
-  into spending ~30 min investigating phantom data loss while
-  `/api/v1/beads` correctly reported 1054 closed beads on disk.
+- `crates/caco-web/static/app.js::sendChat` always shipped the
+  raw input body to one of three message endpoints
+  (`messages/speak`, `messages/broadcast`, `messages/send`).
+- `SLASH_COMMANDS` (10 entries) was used only by the autocomplete
+  popup; nothing read the parsed command on submit.
+- Effect: typing `/dispatch bd-xxx` and hitting send posted the
+  literal string `/dispatch bd-xxx` as a broadcast/speak. No
+  command ran.
 
 ## After state
-- Daemon: `ProjectBeadStats` grows `draft` and `permanent` fields
-  (`#[serde(default)]` for backwards compatibility with older
-  TUI clients). `compute_bead_stats` tallies draft + permanent.
-  Stats are still computed from the unfiltered store BEFORE the
-  snapshot trim runs.
-- TUI: `bead_counts_global` / `bead_counts_for_project` retain
-  iteration over `self.beads` for buckets that survive the trim,
-  then override `closed` and `draft` from `self.bead_stats`
-  (sum across projects for global; matching `ProjectBeadStats`
-  entry per-project). `total` is recomputed from the corrected
-  per-section sum so the badge total is consistent with the
-  per-section badges. The override is conditional
-  (`stats > 0 || bucket == 0`) so a TUI talking to a
-  not-yet-trimming daemon (mixed-version cluster) doesn't
-  regress.
+- `sendChat` checks for a leading `/` and, when present, calls
+  the new `dispatchSlashCommand(raw)` handler instead of falling
+  through to the message endpoints.
+- `dispatchSlashCommand` is a pure client-side router covering
+  all 10 commands the autocomplete already advertises:
+  - `/clear` blanks the input.
+  - `/help` toasts the SLASH_COMMANDS list.
+  - `/inbox`, `/agents`, `/beads`, `/who` switch the hash route
+    to the matching tab (`/beads` preserves project context).
+  - `/speak <body>` and `/broadcast <body>` reuse the existing
+    speak / broadcast REST endpoints.
+  - `/dispatch <bead-id>` POSTs `beads/{id}/dispatch`.
+  - `/claim <bead-id>` POSTs `beads/claim` with `{bead_id}` body
+    (matches the actual server route, not `/beads/{id}/claim`).
+- Unknown commands surface an explicit
+  `Unknown command: /foo. Type /help for the list.` toast
+  instead of silently posting them as chat text.
+- Empty-arg commands (`/speak`, `/broadcast`, `/dispatch`,
+  `/claim` with no operand) print a usage hint toast.
+- Successful commands clear the input and hide the autocomplete
+  dropdown via the existing `hideSlashSuggest()` helper.
 
 ## Diff summary
-- `crates/caco-daemon/src/ui_stream.rs` (+~30):
-  - `ProjectBeadStats { draft, permanent }`.
-  - `compute_bead_stats` arms for `"draft"` and `"permanent"`.
-  - New unit test `compute_bead_stats_counts_draft_and_permanent`.
-- `crates/caco-tui/src/state/mod.rs` (+~30):
-  - `bead_counts_global` + `bead_counts_for_project` override
-    `closed` / `draft` from `bead_stats` and recompute `total`.
-- `crates/caco-tui/src/state/tests.rs` (+~85):
-  - 2 new tests asserting the override surfaces correct totals
-    when `self.beads` is trimmed.
-- `crates/caco-tui/src/app/benchmark_support.rs`,
-  `crates/caco-tui/src/views/project_overview.rs`: synthetic
-  fixtures grow the two new fields.
+- `crates/caco-web/static/app.js` (+145):
+  - `sendChat` early-return + slash-command branch.
+  - New `dispatchSlashCommand(raw)` handler.
+
+No daemon contract change. All endpoints used already exist.
 
 ## Tests
-- `cargo build -p caco-daemon -p caco-tui` — clean.
-- `cargo clippy -p caco-daemon -p caco-tui --all-targets -- -D warnings` — clean.
-- 3/3 new tests pass.
+- The webapp static JS bundle has no JS test runner in-tree.
+- `node --check crates/caco-web/static/app.js` — clean parse.
+- `cargo build -p caco-web` / `clippy -p caco-web --all-targets -- -D warnings` — clean.
 
 ## Operator-takeaway
-After the binary rolls, the TUI/web sidebar's Closed and Draft
-badge counts will match what `caco bd list --status closed` and
-`caco bd list --status draft` report. The wire snapshot stays
-trimmed (still small per bd-ecf1a0); only the badge counts gain
-the missing buckets via `bead_stats`. Lazy-load of closed bead
-bodies on subsection click is the remaining follow-up Option B
-on the bead — left open.
+After binary roll, slash commands typed into the webapp chat box
+take effect: `/beads`, `/agents`, `/inbox` jump to the
+corresponding tab; `/speak <body>` / `/broadcast <body>` post
+narration; `/dispatch <bead>` and `/claim <bead>` actually
+dispatch and claim. Mistyped commands surface a clear error
+toast instead of vanishing into the chat log as inert text.
