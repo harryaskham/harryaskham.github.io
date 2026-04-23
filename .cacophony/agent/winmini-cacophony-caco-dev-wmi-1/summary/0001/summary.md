@@ -1,82 +1,36 @@
-# Session summary — caco-web merge-queue page + daemon endpoint
+# Session summary — docs/profiles.html: shipped profiles, mixins, frontmatter fields
 
 ## Goal
 
-Land the caco-web viewer surface for the merge queue so operators get a
-browser-rendered live view of in-flight reintegrations and recent
-accept/reject outcomes — the third leg of the bd-9d58cb viewer trio
-(CLI primitive already landed; TUI follow-up bd-8a7d08 in progress on
-wmi-2). Also extract the report-building logic into a shared daemon
-module so all surfaces bind to one source of truth.
+Bring `docs/profiles.html` into alignment with the actual shipped profile fleet under `.cacophony/profiles/` (54 profiles vs the ~25 the docs covered) and with the frontmatter and hook-phase fields that real profiles use day-to-day. The page was operator-misleading: it showed a generic skeleton, missed every mixin shape, omitted authorization scope details, and silently dropped half the shipped profiles.
 
 ## Bead(s)
 
-- `bd-ca65a4` — [bd-9d58cb follow-up] caco-web: merge-queue page
-- (parent epic: `bd-9d58cb` — merge queue viewer surfaces)
-- (related: `bd-2c399b` — merge queue daemon service; will eventually
-  replace the audit-event aggregation with a real queue store)
-- (sibling: `bd-8a7d08` TUI panel, `bd-7430c1` android screen)
+- `bd-31b6be` — Update profiles docs to cover shipped profiles and undocumented frontmatter fields
 
 ## Before state
 
-- Failing tests: none in caco-web (48 passing) or caco-daemon
-  (merge_queue scope: 0)
-- No `/api/v1/merge-queue` endpoint; the only way to read the report
-  was running `caco agent merge-queue list` from a shell.
-- caco-web had no merge-queue affordance in the sidebar or routes.
+- `docs/profiles.html`: 331 lines, ~25 of 54 shipped profiles documented, no mixin section, frontmatter table missing `disallowedTools`, `type`, `environment`, `restart`, `stop_hook_delay`; `authorization` row showed only the wrong values (`worker`, `controller`); `reintegration` row had no field-shape detail.
+- Hook phases table mentioned `on_stop`, `on_session_end`, `on_notification` only by trigger time, no operational notes.
+- No section explaining the persistent vs one-shot vs mixin distinction even though it is structurally fundamental to how the daemon treats each profile.
+- Failing tests: none (docs-only).
 
 ## After state
 
-- Failing tests: none. caco-web 51 passing (+3 net new); caco-daemon
-  merge_queue: 3 passing (new module).
-- New daemon module `caco-daemon/src/merge_queue.rs` with
-  `MergeQueueEntry`, `MergeQueueReport`, `build_report()`,
-  `extract_bead_id_from_goal()`, `read_agent_result()`. JSON shape
-  drops `None` optional fields.
-- New `GET /api/v1/merge-queue` handler registered on both local and
-  remote routers, with `?project=`, `?since=` (default `24h`),
-  `?limit=` (default 50, clamped to [1, 500]). Marked as read-only
-  info endpoint so any auth scope can observe.
-- caco-web: new sidebar item "Merge Queue" (keyboard shortcut `m`)
-  with badge showing in-flight count, dedicated view with project +
-  since selectors, refresh button, and two panels (In-flight, Recent).
-  Polling: 30s while view active, 2m in background to keep badge
-  current. Status badges colour-coded per Nord palette (in_flight
-  → nord8, accepted → nord14, rejected → nord11). Rows clickable to
-  open the agent detail modal.
-- Hash routing: `#merge-queue` deep-linkable.
+- `docs/profiles.html`: 375 lines, all 54 shipped profiles listed and grouped by category (worker / one-shot, persistent coordinators, mixins), each with a one-line purpose.
+- Frontmatter table now documents `disallowedTools`, `type`, `environment`, `restart`, `stop_hook_delay`; `authorization` row links to `authorization-scopes.md` and lists all three scopes (`worker`, `project_controller`, `cluster_controller`); `reintegration` row covers the `mode` enum, `allowed_modes`, and the `,recorded` suffix.
+- Hook phases table now annotates `on_stop` (`stop_nudge_text` + `stop_hook_delay`), `on_session_end` (block premature exits), and `on_notification` (inbox / watchdog / choice resolution).
+- New section "Persistent vs One-Shot vs Mixin Profiles" explains the three operationally distinct shapes and what `reintegration: none` actually means for persistent agents.
+- Failing tests: none. `cargo test-small` green (57 passed).
+- HTML still parses cleanly (Python `html.parser` round-trip).
 
 ## Diff summary
 
-- Commit: `03db8201`
-- Files touched:
-  - `crates/caco-daemon/src/lib.rs` (+~60: handler, route x2,
-    read-only-info-endpoint allowlist, module declaration)
-  - `crates/caco-daemon/src/merge_queue.rs` (new, 313 lines incl.
-    3 unit tests)
-  - `crates/caco-web/src/tests.rs` (+72: 3 new tests for view,
-    loader, styles)
-  - `crates/caco-web/static/index.html` (+50: nav item + view markup)
-  - `crates/caco-web/static/app.js` (+~190: VALID_VIEWS extension,
-    keyboard shortcut, switchView hook, accent map, loadMergeQueue,
-    renderMergeQueue, renderMergeQueueRow, polling)
-  - `crates/caco-web/static/style.css` (+~115: `.mq-row`, status
-    badges, panel-count chip, error empty-state)
-- Tests: +6 / -0 / flipped 0
-- Behavioural delta: new HTTP endpoint, new browser page, no
-  existing surface changes in any code path.
-
-## Embedded artefacts
-
-(none — pure code change; visible after the next caco-web rollout)
+- Commit: ceffc1bc4
+- File: `docs/profiles.html` (+72 / −28)
+- No code changes. Pure documentation.
+- Behavioural delta: none for the runtime; operator-readability of `docs/profiles.html` materially improved.
 
 ## Operator-takeaway
 
-The merge-queue viewer trio now has its caco-web leg in place. The
-daemon endpoint is the right shared primitive — once bd-2c399b lands
-a real queue store, only `merge_queue::build_report` swaps to read
-from it; the JSON shape, the route, and every consuming surface
-(CLI, web, TUI, android) stay unchanged. The polling cadence is
-intentionally light (1 GET per 30s/2m) since SSE for
-`merge_queue.{submitted,started,accepted,rejected}` is gated on
-bd-2c399b adding the event kinds.
+`.cacophony/profiles/` has grown to 54 profiles split across one-shot workers, persistent coordinators, and pure mixins, but the docs page lagged badly — anyone reading it would have walked away with the wrong mental model of what fields real profiles use and what the persistent / mixin shapes mean for the lifecycle. Worth setting up a periodic doc-vs-disk drift check (e.g. a `repo-health` sweep or a CI test that asserts every profile in `.cacophony/profiles/` appears in `docs/profiles.html`) so this doesn't slide again.
