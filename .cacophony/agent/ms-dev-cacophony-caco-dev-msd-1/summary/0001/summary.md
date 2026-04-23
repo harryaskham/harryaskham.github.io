@@ -1,64 +1,59 @@
-# Session summary — bd-45ea63 audio speak per-invocation overrides (slice 1)
+# Session summary — bd-c19193 agent_summary tests stack overflow
 
 ## Goal
 
-Land the small, immediately-deliverable slice of bd-45ea63: add
-`--speed` and `--instructions` flags to `caco audio speak` so callers
-can override `values.speed` and pass voice-instructions for a single
-synthesis without round-tripping through config edits. File two
-follow-up beads for the larger SSML express-as block and voice-filter
-post-processing pieces.
+Fix the broken-on-main test failure
+`agent_summary_exclude_routine_node_health_hides_mismatch_and_advisory`
+in `crates/caco-cli/src/lib.rs`, which SIGABRTed with a stack overflow
+under `cargo test` from a clean checkout.
 
 ## Bead(s)
 
-- `bd-45ea63` — TTS: ssml.azure_express_as block + caco audio speak
-  --filter/--express-as/--speed flags (re-scoped to "partial — slice 1
-  landed; follow-ups bd-68bde8 and bd-5b199b track the rest")
-- `bd-68bde8` — (filed) caco audio speak --voice-filter post-processing
-- `bd-5b199b` — (filed) SSML azure_express_as config block + --express-as flag
+- `bd-c19193` — [broken-on-main] agent_summary_exclude_routine_node_health_hides_mismatch_and_advisory stack overflow.
+  - Originally announced by msd-4 (broken-on-main observation), then
+    handed off to me when msd-4 chose to focus on bd-f49a71 reintegration.
 
 ## Before state
 
-- `caco audio speak` accepted `--model`, `--voice`, `--text`, `--format`,
-  `--output`, `--stdout`. No way to override the configured speed or
-  pass voice-instructions per call.
-- `SpeechRequest` on the daemon side already had `speed: Option<f32>`
-  and `instructions: Option<String>` fields — they were just unreachable
-  from the CLI surface.
-- `.cacophony/tts.yaml` carried a `# TODO (bd-45ea63)` block for the
-  full Azure SSML express-as design.
+- `cargo test -p caco-cli --lib agent_summary_exclude_routine_node_health`
+  reliably aborted with `thread '...' has overflowed its stack`.
+- Investigation showed the sibling test
+  `agent_summary_text_separates_actionable_and_advisory_node_health`
+  has the identical failure mode — both call into the same
+  `dispatch_agent_summary` path whose monomorphisations overflow the
+  default 2 MB test-thread stack.
+- Confirmed root cause by passing under
+  `RUST_MIN_STACK=33554432 cargo test ...` — pure stack-budget issue.
 
 ## After state
 
-- Two new flags on `caco audio speak`:
-  - `--speed <f32>` — parsed, validated, forwarded as `speed` in the
-    `/api/v1/audio/speech` request body.
-  - `--instructions <string>` — forwarded as `instructions`.
-- Both flags omitted by default so the daemon's existing config-resolved
-  defaults remain in effect; only present in the JSON body when the
-  caller supplied them.
-- New helper `build_audio_speech_request_body` extracted for testability.
-- Unit tests cover both invariants (omitted-defaults vs all-set).
-- Two follow-up beads (`bd-68bde8`, `bd-5b199b`) carry the larger
-  voice-filter pipeline and SSML express-as workstreams. The original
-  bead description is updated to flag the partial landing and link
-  follow-ups.
+- Both agent_summary tests wrapped in the existing
+  `run_help_test_with_large_stack` helper (16 MB stack via
+  `RUN_DISPATCH_STACK_SIZE` — same budget production gets in
+  `pub fn run()`, established by bd-e4f3e3 / bd-a7441a).
+- `cargo test -p caco-cli --lib agent_summary` — both tests pass.
+- `cargo test-small` workspace-wide green; `cargo clippy -p caco-cli
+  --lib --tests` clean.
+- No production code changes — purely a test-runner stack fix.
 
 ## Diff summary
 
-- Files touched: `crates/caco-cli/src/lib.rs` (CLI surface, dispatch,
-  helper extraction, two unit tests; `#[allow(clippy::too_many_arguments)]`
-  on the now 9-arg dispatch fn).
-- Tests: +2, all pass.
-- Behavioural delta: `caco audio speak --speed 1.4 --instructions "warm
-  and conspiratorial" --text "..."` now reaches the daemon's existing
-  speed/instructions handling instead of falling back to defaults.
+- Commit: `bf75e1a4` (bd-c19193: agent_summary tests overflow default
+  2MB stack — wrap in run_help_test_with_large_stack).
+- Files touched: `crates/caco-cli/src/lib.rs` (test wrapping only).
+- Tests: +0 / -0 / flipped 2 (both moved from `#[test] fn body` to
+  `#[test] fn run_help_test_with_large_stack(|| body)`).
+- Behavioural delta: zero. Production dispatch path is unchanged.
 
 ## Operator-takeaway
 
-Small, immediately-useful slice landed in isolation rather than
-holding back on the full bd-45ea63 multi-week SSML + filter
-implementation. The two follow-up beads carry the remaining work,
-and the parent bead description now tells the story of the partial
-landing so anyone picking it up next will know which file the
-unfinished bits live in.
+The 16 MB `run_help_test_with_large_stack` helper has now absorbed
+its 11th caller in this file. The recurring pattern is: any test that
+re-enters the CLI dispatch tree (`run`, `dispatch_agent_summary`,
+choices/MCP dispatch helpers) needs the larger stack because the
+release path uses 16 MB. The default `#[test]` 2 MB budget is too
+small for this monomorphisation tree, and it's worth treating
+"new test calls into dispatch" as a coding rule that mandates the
+helper. A future polish task could extract this into a custom
+`#[caco_dispatch_test]` attribute macro so the helper is invoked
+automatically.
