@@ -1,96 +1,74 @@
-# Session 0016 — bd-9e836f (caco doctor --strict exit code)
+# Session 0016 — bd-d21634: bead submission validation
 
 ## Goal
+Establish guidelines + enforce a daemon-side validator that prevents
+the class of vague / malformed beads bd-5993ed had to clean up.
 
-Add `--strict` flag to `caco doctor` so CI gates can fail when the
-fleet is unhealthy. Maps worst-severity check to exit code:
-2 (critical/error/fail), 1 (warning/warn), 0 (ok / unknown).
-Default behaviour unchanged — `caco doctor` (no `--strict`) still
-exits 0 regardless.
+## Decisions
+- **Two-tier validator**: hard errors always block; soft warnings
+  block unless `--force` is passed. Permanent / placeholder beads
+  legitimately have minimal descriptions; `--force` is their escape hatch.
+- **Internal callers bypass**: `BeadsStore::create_bead()` keeps its
+  permissive shape so 250+ existing tests, sync reconcile, cross-
+  project moves, and importers all continue to work without churn.
+  Operator-driven submissions go through the daemon API which calls
+  `create_bead_with_force()` instead.
+- **Hard-error rules** focus on the bd-5993ed-class failures:
+  `<UNKNOWN>` deps (LLM bead-expand sentinel), free-form English
+  deps (`research-private-distribution`), uppercase / wrong-length
+  bd-ids, empty title, oversized title.
+- **Soft warnings** nudge toward better titles + descriptions.
 
-Bead self-filed as a bd-262bd5 follow-up after observing during
-session 0015 that operator-on-call CI usage needs an exit-code
-contract.
-
-## Bead(s)
-
-- **bd-9e836f** — primary (self-filed follow-up to bd-262bd5).
-
-## Before state
-
-`caco doctor` always exits 0. The bd-262bd5 work shipped --top N for
-ranked text output but no machine-readable exit signal. CI scripts
-had to grep stdout or parse JSON to detect critical issues.
-
-## After state
-
-- New `compute_doctor_strict_exit_code(checks)` helper: pure function
-  returning 2/1/0 based on worst-severity check. Mirrors the rank
-  function used by `select_top_doctor_checks` (critical/error/fail =
-  level 2; warning/warn = level 1; everything else = 0).
-- `dispatch_doctor` signature now returns `(String, u8)` — the second
-  element is the strict-derived exit code, computed regardless of
-  `--strict`. Caller decides whether to apply.
-- Doctor arm of the top-level dispatcher reads `--strict` flag; if
-  set, stores the strict exit code in a new outer
-  `doctor_exit_override: Option<u8>` variable.
-- Final `Outcome` wrap honours `doctor_exit_override.unwrap_or(0)`
-  so all other commands keep exit 0 by default.
-- `--strict` registered in `DOCTOR_ARGS` so help-json + MCP advertise
-  the new flag.
-- 2 existing test sites updated to destructure the new tuple return.
+## Code
+- `crates/caco-beads/src/validation.rs` (NEW, 14k)
+  - `Severity {Error, Warning}`, `ValidationIssue`, `ValidationReport`
+  - `validate_create_params()` runs all rules
+  - `is_valid_bead_id()` strict `bd-[0-9a-f]{6}` check
+  - `strip_bracket_prefix()` so `[stt-xplat]` doesn't inflate length
+  - 11 unit tests
+- `crates/caco-beads/src/error.rs`
+  - New `BeadsError::ValidationFailed { report, rendered }` variant
+- `crates/caco-beads/src/store.rs`
+  - `create_bead_with_force()` runs validator, calls inner
+  - `create_bead()` now bypass-mode (internal callers unchanged)
+  - `create_bead_inner()` private workhorse
+- `crates/caco-daemon/src/beads.rs`
+  - `CreateBeadRequest` gains `force: bool` (defaults false)
+  - `handle_create_bead` calls `create_bead_with_force`
+  - `bead_error_response_for` maps `ValidationFailed` to HTTP 422
+    with structured `issues: [...]` array
+- `crates/caco-cli/src/lib.rs`
+  - `BD_CREATE_ARGS` gains `--force`
+  - `dispatch_bd_create` forwards `body["force"] = true`
+- `docs/bead-submission-guidelines.md` (NEW, 5.9k)
+  - TL;DR, validator rules table, title style, description structure,
+    deps rules, labels conventions, priority ladder, filing flow
 
 ## Tests
+- `cargo test -p caco-beads --lib`: 253 passed (242 existing + 11 new)
+- `cargo test -p caco-cli --lib bd_create`: 9/9 pass
+- `cargo test-small`: 161 passed
+- `cargo clippy`: clean (pre-existing warnings only)
+- (Pre-existing stack overflow in
+  `tests::config_distribute_with_distribute_command_node_uses_command`
+  reproduces on stash-clean main; not introduced by this change.)
 
-- New: `doctor_strict_exit_code_picks_worst_severity` (unit) — locks
-  the contract: ok-only → 0, any warning → 1, any critical/error/fail
-  → 2 (dominates warning), unknown statuses count as 0.
-- New: `doctor_help_json_advertises_strict_flag` (help-json contract).
-- All 13 existing doctor tests still pass.
+## Operator Acceptance Criteria
+- [x] Guidelines document is created and shared
+      (`docs/bead-submission-guidelines.md`)
+- [x] Submission template/form is implemented
+      (markdown body template embedded in guidelines doc; CLI flags
+      surface the structured fields)
+- [x] Validation rules are enforced
+      (daemon-side validator wired into `handle_create_bead`)
+- [-] Team is trained on proper bead submission
+      (out of scope for code; doc is the artefact for fleet training)
 
-## Validation
+## Mainline marker
+`docs/bead-submission-guidelines.md` carries the bd-d21634 reference so
+`caco bd close` mainline-validation passes.
 
-- `cargo test -p caco-cli --lib doctor_`: 13/13 PASS (2 new + 11
-  pre-existing).
-- `cargo test-small`: 4255+ tests across 8 binaries, 0 failures.
-- `cargo clippy -p caco-cli -p caco-daemon -p caco-beads -p caco-web
-  --all-targets -- -D warnings`: clean.
-
-## Diff summary
-
-```
-crates/caco-cli/src/lib.rs                       | ~+95 / -10
-.cacophony/agent/.../summary/0016                | (new)
-```
-
-## Operator-takeaway
-
-```bash
-# CI gate examples:
-caco doctor --strict                # exit 2 if any critical, 1 if warning
-caco doctor --strict --json         # JSON envelope unchanged; exit code set
-caco doctor --strict --top 5        # --top is cosmetic; exit reflects full set
-
-# Explicit "warnings are OK, only critical fails the build" pattern:
-caco doctor --strict || [ $? -lt 2 ]
-```
-
-JSON envelope is identical with or without --strict — only the exit
-code changes — so existing JSON parsers don't need updating.
-
-## Coordination
-
-- Spoke claim with planned scope.
-- Will speak completion + reintegrate.
-
-## Notes for next time
-
-- The `doctor_exit_override: Option<u8>` pattern is reusable: any
-  command that wants a custom exit code can opt in by setting it
-  before falling through to the final `Outcome` wrap. If a third
-  command needs custom exit codes, consider promoting this to a
-  proper `RuntimeOutcome` enum.
-- `caco fleet snapshot` (bd-1b713a) is also exit-0-only and could
-  use the same pattern. If operators ask for `caco fleet snapshot
-  --strict`, the helper here generalises (severity is on
-  `errors[]`).
+## Constraints honored
+- No docker
+- Merge-queue mixin: caco-beads + caco-cli targeted + test-small + clippy
+- Speaking claim/close via `caco msg speak`
