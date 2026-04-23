@@ -1,39 +1,92 @@
-# Session summary — caco agent backfill-short-names (bd-8eaedf)
+# Session summary — release CLI ergonomics (bd-fca3e1, partial)
 
 ## Goal
 
-Follow-up to bd-34d0b8. The lifecycle fix lands new agents with their resolved adj_noun label, but every agent already on disk shipped with `short_name: null`. Add a one-shot backfill command (and a daemon endpoint) so the operator can retroactively name the existing fleet.
+Address a multi-part bug report on `caco release list` / `caco
+release status` ergonomics: (1) operators couldn't see job age in
+the text output despite the data being in the JSON, (2) sister
+subcommands had inconsistent JSON envelopes, (3) `--job-id` and
+`--release-id` were rejected as natural-guess aliases for `--id`,
+and (4) error formatting on not-found was the legacy boxed style
+instead of the unified template.
+
+This session takes the four CLI-only / cheap fixes; the JSON
+envelope inconsistency and the deeper queued-job operational
+issues are flagged for follow-up but left untouched.
 
 ## Bead(s)
 
-- `bd-8eaedf` — [bd-34d0b8 follow-up] caco agent backfill-short-names
+- `bd-fca3e1` — caco release list shows 21 jobs STUCK in 'queued'
+  state with no queued_at timestamp visible … (multi-issue test-
+  user sweep)
 
 ## Before state
 
-- After bd-34d0b8 landed, only newly-spawned agents got short_names. The 173 pre-existing agents on disk remained null.
-- No CLI verb existed to fix them in bulk; the operator would have to call `caco agent rename --id X --name Y` per agent.
+- `caco release list` text output: 5 columns
+  (state/id/channel/strategy/node). Age field not shown — operator
+  could not distinguish a 5-minute-old queued job from a 12-day-
+  old stuck one without dropping into `--json`.
+- `caco release status` rejected `--job-id` and `--release-id`
+  with the bd-b76723 unknown-flag warning + a generic "--id is
+  required for release status" error.
+- Not-found error was rendered as `caco release status — error\n
+  Error: release job not found: bogus` (boxed, divergent from the
+  unified `error: <msg> (<hint>)` template).
 
 ## After state
 
-- `cargo test -p caco-daemon --lib backfill_short_names` — 3 / 3 passed.
-- `cargo test-small` — 197 / 109 / 718 / 286 / 18 / 2805 / 48 passed, 0 failed.
-- `cargo check --workspace --tests` — clean.
-- `caco agent backfill-short-names --help` works; `--dry-run / --regenerate / --project` all wired.
+- Text output gains a per-row age column (compact `1h2m` /
+  `6d18h` format) and a `⚠ stuck` marker on queued jobs older
+  than 24h. A footer summarises the stuck count and points at
+  `caco release sync`. Verified live against the cluster:
+  21/21 stuck jobs flagged correctly with ages spanning
+  1d6h to 12d11h.
+- `RELEASE_STATUS_ARGS` declares `--job-id` and `--release-id` as
+  documented aliases for `--id`. `dispatch_release_status` reads
+  them with `.or_else(...)` cascade; the missing-flag error now
+  mentions all three forms and points operators at
+  `caco release list`.
+- Not-found error now flows through the standard `CliError::new`
+  path: `error: release job not found: bogus (run `caco release
+  list` to see queued/active jobs)` — single-line, no boxing,
+  matches the bd-b7392e family fix.
+- New `humanize_age_secs` helper covers the s/m/h/d ranges with
+  negative-input clamping (avoids confusing "-3s" output when
+  daemon clock is slightly ahead of CLI clock).
 
 ## Diff summary
 
-- Commit: `394c056a`
 - Files touched:
-  - `crates/caco-daemon/src/lib.rs` — new `handle_agents_backfill_short_names` + route registration on both router setups; 3 new unit tests.
-  - `crates/caco-cli/src/lib.rs` — new `AGENT_BACKFILL_SHORT_NAMES_ARGS`, CommandSpec, dispatch arm, and `dispatch_agent_backfill_short_names` HTTP client with pretty + JSON output.
-- Tests: +3 unit; 0 removed; 0 flipped.
-- Behavioural delta: opt-in operator command. Without invocation, nothing changes. With invocation, agents whose project has a strategy get a label; agents without a configured strategy get a `no_strategy_configured` skip reason in the response.
+  - `crates/caco-cli/src/lib.rs` — `RELEASE_STATUS_ARGS` aliases,
+    `dispatch_release_status` flag cascade + standard-error path,
+    `dispatch_release_list` text-output upgrades,
+    `humanize_age_secs` helper, +2 unit tests
+- Tests: +2 / -0 / flipped 0
+- Behavioural delta: text-mode operator visibility on stuck
+  release jobs; alias affordance for `--job-id` / `--release-id`;
+  unified error format for release-status not-found.
 
 ## Operator-takeaway
 
-To retroactively name the fleet:
-  - `caco agent backfill-short-names --dry-run` to preview cluster-wide proposals.
-  - `caco agent backfill-short-names --project cacophony` to apply for one project.
-  - `caco agent backfill-short-names --regenerate` to force a re-roll even on agents that already have a name (rare).
+Run `caco release list --status queued` to immediately see the
+21 stuck jobs with ages and the suggested `caco release sync`
+remediation. The footer count gives an at-a-glance health
+signal without needing `--json | jq` ceremony.
 
-The handler intentionally consults only `agent_defaults.short_name_strategy` — not per-persistent-decl overrides — because backfill is the operator-facing "apply project default to whatever is null" verb. If anyone needs per-decl backfill it can be a tiny follow-up. The daemon currently restarts every few minutes on this fleet; backfill is safe to run again after each restart since named agents are skipped without `--regenerate`.
+`caco release status --job-id <id>` and `--release-id <id>` now
+work. Canonical remains `--id`.
+
+Out of scope for this session (filed as future-session items):
+- **Issue 1, deeper**: stuck-queued jobs are a release-pipeline
+  health issue. The CLI now surfaces them clearly, but `caco
+  release sync` may itself be stuck (see bd-503735). Operator
+  attention recommended.
+- **Issue 2**: `release list --json` envelope (`{ok, releases,
+  meta}`) vs `release config --json` (`{ok, data, meta}`)
+  inconsistency — third intra-namespace mismatch. Resolution
+  needs a cross-cutting envelope conformance test + a deprecation
+  window for the divergent shape; too invasive for this session.
+- **Pattern**: 6 surfaces now want `--id` aliases. A dispatcher-
+  level flag-aliases registry would be the right fix; this
+  session takes the local one-surface approach because the
+  registry needs a design pass touching every dispatch arm.
