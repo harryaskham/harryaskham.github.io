@@ -1,40 +1,89 @@
-# Session summary — caco bd list richer triage filters (bd-9006a6)
+# Session summary — Timeline view UI design (bd-db60a1)
 
 ## Goal
 
-Add `--depends-on`, `--updated-since`, and `--grep` to `caco bd list` so triage stops needing `caco bd list ... | grep ... | head` pipelines. The other filters the bead requested (`--no-assignee`, `--label`, `--type`, comma-separated values) already exist.
+Land a contract document for a cross-surface (TUI / web /
+Android) timeline view that displays project events
+chronologically. Unblocks the implementation lane:
+bd-734772 pipeline, bd-22cf2c caching, bd-8adcec TUI visual,
+bd-5278e2/bd-ec4fdc/bd-cfe554 TUI views, bd-198dbd/bd-47dc20
+Android, bd-fc8947 web.
 
 ## Bead(s)
 
-- `bd-9006a6` — caco bd query: filter by depends-on / blocks / labels / activity-window
+- `bd-db60a1` — Design timeline view UI component
 
 ## Before state
 
-- `caco bd list` accepted `--status / --priority / --type / --label / --since / --before / --assignee / --creator / --unassigned`, but not `--depends-on`, `--updated-since`, or `--grep`.
-- Triage required `caco bd list --status open --json | jq '.[] | select(.dependencies[] == "bd-X")'` (or worse, `| grep`).
+- 12 sibling beads filed in the timeline lane with no shared
+  contract — each surface would have re-derived event shape,
+  filter semantics, and visual grammar independently.
+- No agreement on event kinds, daemon endpoint shape, or scope
+  semantics (per-project vs cluster).
 
 ## After state
 
-- `cargo test -p caco-daemon --lib aggregate_query_` — 3 / 3 passed (new tests).
-- `cargo test-small` — 197 / 109 / 718 / 289 / 18 / 2805 / 52 passed, 0 failed.
-- `cargo check --workspace --tests` — clean.
-- `caco bd list --help` lists the three new flags.
+- New `docs/epics/bd-db60a1-timeline-view-design.md` (~13.8KB)
+  covers:
+  - Goals/non-goals (read-only nav surface, not a viewer; no
+    real-time push in v1; no AI summarisation in v1)
+  - Single canonical event schema served at
+    `GET /api/v1/projects/{project}/timeline` and
+    `/api/v1/timeline` (cluster scope)
+  - Six initial event kinds: commit_landed, release_tagged,
+    bead_closed, bead_filed, agent_failed, reintegration —
+    extensible without API churn
+  - Query params (from / to / kinds / actor / limit / cursor)
+    with bd-83a8ed `--since` parser reuse
+  - Visual grammar: chip primitive (glyph + title +
+    timestamp), 3 density tiers (TUI compact / TUI full+Android
+    / web roomy), nord palette only, no new colors
+  - Day-grouping with sticky headers
+  - Click-through link semantics (bead / commit / release /
+    agent / message)
+  - Filter affordance (kinds / actor / range presets) — URL-
+    state on web, in-memory on TUI/Android
+  - Cluster scope: project badge with deterministic-hash color
+  - Surface adaptation rules per-platform (TUI new
+    `views/timeline.rs`, web new `workspace-timeline-pane.js`
+    following bd-b9e32e log-pane pattern, Android
+    `TimelineFragment`)
+  - Performance targets (< 500ms cold, < 100ms warm) with
+    caching strategy delegated to bd-22cf2c
+  - Trade-off matrix and out-of-scope follow-ups
+  - Acceptance map ticking each bd-db60a1 requirement
 
 ## Diff summary
 
-- Commit: `25502f12`
 - Files touched:
-  - `crates/caco-daemon/src/beads.rs` — `BeadListQuery` and `AggregateQueryView` gain `depends_on / updated_since / grep`. `aggregate_bead_matches_query` checks them. Forwarder serialises them as query params. 3 new unit tests.
-  - `crates/caco-daemon/src/lib.rs` — `simple_percent_encode` promoted to `pub(crate)` so the beads forwarder can reuse it for the grep needle without pulling in a url crate.
-  - `crates/caco-cli/src/lib.rs` — `BD_LIST_ARGS` gains the three flags. `dispatch_bd_list` plumbs them through. Small in-file `percent_encode_query` helper for the CLI side.
-- Tests: +3 unit; 0 removed; 0 flipped.
-- Behavioural delta: opt-in only. Existing callers see no change.
+  - `docs/epics/bd-db60a1-timeline-view-design.md` (new)
+- Tests: +0 / -0 / flipped 0 (design doc, no code)
 
 ## Operator-takeaway
 
-Triage workflows now have direct support:
-  - `caco bd list --depends-on bd-2c399b` — find every bead blocked by the merge-queue daemon.
-  - `caco bd list --updated-since 1h --status in_progress` — find recently-touched in-flight beads.
-  - `caco bd list --grep reconcile --status open` — find every open bead about reconciliation by full-text search across title + description.
+Read before claiming any bead in the timeline lane (12 beads).
+Five key decisions to review:
 
-`--depends-on` currently takes a single ID; multi-ID and reverse-graph (`--blocks`) queries are deferred to a `/api/v1/projects/{p}/beads/graph` endpoint when the operator needs them. `--type` and `--status` already accept comma-separated values; the description of bd-9006a6 listed `--type bug,feature` as missing but it works today.
+1. **Pull-only in v1, push deferred to bd-734772 pipeline** —
+   surfaces poll on mount + every 60s. Avoids over-coupling the
+   contract to SSE infrastructure that's still being built.
+2. **Six event kinds locked in** — daemon-side enumerator must
+   only emit these until a follow-up bead extends the registry.
+   New kinds = additive, no breaking changes.
+3. **Single envelope, all surfaces** — start minimal; add
+   optional fields under `#[serde(default)]` rather than
+   per-surface variants. Keeps the daemon contract honest.
+4. **Cluster scope opt-in** — surfaces start in per-project
+   scope; operator flips to cluster via toggle (TUI `Tab`, web
+   breadcrumb, Android segmented control).
+5. **Reuse existing primitives** — nord palette only, existing
+   icons, follow the bd-b9e32e workspace-log-pane.js mount
+   pattern for web. No new design tokens.
+
+If caco-ctrl wants to flip any of these, this doc is the cheap
+place to do it before bd-734772 / bd-8adcec land.
+
+This is the second design doc landed this session (after
+bd-1975be Codespaces architecture). Both follow the same
+shape: 11-12 sections, acceptance-map at end, trade-off matrix.
+The pattern is settling — future design beads should adopt it.
