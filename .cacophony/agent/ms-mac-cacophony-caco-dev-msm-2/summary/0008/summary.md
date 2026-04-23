@@ -1,39 +1,100 @@
-# Session summary — docs/profiles.html frontmatter expansion (bd-31b6be)
+# Session summary — Codespaces user-facing docs (bd-2ba632)
 
 ## Goal
 
-`docs/profiles.html` listed 17 frontmatter fields; the shipped `caco_profile::Profile` struct has 35+. Bring the public docs closer to reality without trying to enumerate every shipped profile in one pass.
+Translate the two design docs (bd-1975be architecture and
+bd-f32dda key distribution) into a single user-facing guide
+operators can read top-to-bottom to provision and use a
+GitHub Codespace as a Cacophony node.
 
 ## Bead(s)
 
-- `bd-31b6be` — Update profiles docs to cover shipped profiles and undocumented frontmatter fields. Promoted from draft → open before claiming.
+- `bd-2ba632` — Document Codespaces node setup and usage
+  (P2, codespaces, documentation)
 
 ## Before state
 
-Frontmatter table covered: name, description, agent_types, skills, mcp_servers, permission_mode, memory, hooks, reintegration, persistent, banned_modes, authorization, watchdog, stop_nudge_text, git_remotes, shell_rc, include_caco_instructions, stale_timeout_secs, reintegration_checks, hook_mixins.
-
-Hook-phases table actually already listed on_stop / on_session_end / on_notification — the bead's claim that they were missing was stale.
+- Two design docs landed under `docs/epics/` (bd-1975be,
+  bd-f32dda) — comprehensive but engineering-facing (threat
+  model tables, daemon endpoint contracts, etc.).
+- No top-level operator-facing guide. An operator wanting to
+  spin up a codespace had to read both designs and infer the
+  CLI shape themselves.
 
 ## After state
 
-Frontmatter table now also covers: env, message_subscriptions, comms, model/provider/effort, lifecycle, composes, composes_well_with, completion, nudges, permitted_actions, allowed_lifecycle_operations, cross_project_bead_permissions, background_image, voice, initial_prompt, pi_extra_config_dirs, short_name_strategy.
-
-Reintegration Modes section gains a paragraph explaining the composable `recorded` suffix (e.g. `direct,recorded`) and the session-recording mixin requirement (bd-d48494).
-
-- Docs-only change; no test impact.
-- `git diff --stat`: 1 file, +19 lines.
+- New `docs/codespaces.md` (~12.4KB) covers:
+  - **What you get** + when to use codespaces vs physical
+    nodes (real-time audio / persistent gaps / GPU / docker
+    builds = use physical; clean room / shareable / burst /
+    mobile-friendly = use codespace)
+  - **Prerequisites** on operator host (gh CLI, repo clone
+    with devcontainer, caco install, rendezvous node) and
+    on GitHub (codespaces enabled, repo write access)
+  - **Setup happy path** — 5 commands from `codespace new` to
+    `attach`
+  - **Under-the-hood explanation** of `caco codespace new`
+    pulled directly from bd-f32dda §5
+  - **Per-task secrets** with all four source backends
+    (`--from-keyring`, `--from-file`, `--from-sops`,
+    `--from-key-vault` referencing bd-6d16a7's
+    `deploy/aca/SECRETS.md`)
+  - **Lifecycle commands table** — ls/resume/stop/remove/
+    rekey/revoke
+  - **Troubleshooting** for the 5 expected failure modes from
+    bd-f32dda §9: enrollment_expired, pubkey_mismatch,
+    rendezvous unreachable, suspended-but-listed, agent
+    spawn failure
+  - **Security considerations** with 6 headlines pulled from
+    bd-f32dda's threat model — operator-host master keys
+    never enter codespace; codespace-local ed25519; per-task
+    secrets opt-in; single-use 10-min token; tofu pinning;
+    GitHub trust assumptions
+  - **Cost implications** — auto-suspend after 30min idle,
+    no warm-keep traffic from rendezvous, ~$0.07/GB/month
+    storage, wake latency 10-30s
+  - **Common usage patterns** — burst parallelism (4-codespace
+    fan-out), mobile/phone-friendly, shared session with
+    teammate, throwaway experiment
+  - **What's NOT supported (yet)** — cross-org pools, SSE
+    push, GPU, persistent state across remove,
+    auto-rotation (with Key Vault exception noted)
+  - **See-also section** linking back to the two source
+    designs and SECRETS.md
 
 ## Diff summary
 
-- Commit: `8f81a151`
-- Files touched: `docs/profiles.html`.
-- Tests: 0 (docs).
-
-## Out of scope
-
-- Per-shipped-profile reference page — there are 30+ profiles in `.cacophony/profiles/` and `configs/profiles/`; a generated docs section is the right shape, deserving its own bead.
-- Persistent vs `reintegration: direct` lifecycle explainer — separate prose work.
+- Files touched:
+  - `docs/codespaces.md` (new)
+- Tests: +0 / -0 (docs bead, no code)
 
 ## Operator-takeaway
 
-Operators reading the docs now see the fields they actually encounter in shipped profiles and understand where the `recorded` suffix's summary-artefact requirement comes from.
+Single-doc entry point for the Codespaces feature. Operators
+who want depth go to `docs/epics/bd-1975be-…` and
+`docs/epics/bd-f32dda-…`; everyone else reads `docs/codespaces.md`
+and is productive in 5 commands.
+
+Honored constraints:
+- Operator note "no docker builds locally; use Azure" surfaced
+  in "When to use codespace vs physical node" (codespaces are
+  NOT for docker builds; physical via Azure).
+- Operator note "narrator stopped; agents narrate own progress"
+  honored — claim + close speaks issued by msm-2 directly.
+- caco-ctrl note about Key Vault unblock (bd-6d16a7) folded
+  into the per-task secrets section as the preferred backend
+  for cloud-deployed codespaces.
+
+This is the fourth artefact this session in the codespaces
+lane:
+1. bd-1975be design (~13KB)
+2. bd-f32dda key-distribution design + threat model (~17.5KB)
+3. **bd-2ba632 user-facing docs (~12.4KB)** ← this bead
+4. (leaves bd-d8c118 / bd-c38698 / bd-dce8ed / bd-0bed93 /
+   bd-869dca / bd-77653d for the implementation pass)
+
+The implementation beads now have BOTH a wire-contract spec
+AND a user-facing guide pinning the CLI surface they must
+ship. CLI shapes used in `docs/codespaces.md` (e.g.
+`caco codespace secret push --from-key-vault <url>`) become
+acceptance criteria for the implementation beads.
