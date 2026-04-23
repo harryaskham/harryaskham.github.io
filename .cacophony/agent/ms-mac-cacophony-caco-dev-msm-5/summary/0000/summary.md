@@ -1,55 +1,55 @@
-# Session summary 0000 — bd-02f7a3: caco bd reconcile-log
+# Session summary — workspace-view bead-detail pane (bd-1328dd)
 
 ## Goal
 
-Add the operator-facing surface that consumes the bd-4c0e22
-reconciler-commit format (`prev=P new=Q delta=±D` + `⚠
-DESTRUCTIVE` prefix), so listing recent reconciles or
-specifically the destructive ones is one command not a
-forensic dig.
+Implement the Workspace View bead-detail pane: a pane type that follows
+the bead-selected event across the new caco-web workspace, fetches and
+renders the full bead record (with markdown description, parent/children,
+recent activity), and exposes claim/unclaim/status/assign/priority
+actions — while letting the operator pin it off the follow stream.
 
 ## Bead(s)
 
-- `bd-02f7a3` (filed by msm-5 this session as a bd-4c0e22
-  follow-up).
+- `bd-1328dd` — [workspace-view] Bead detail pane with cross-pane follow-selection
+- parent epic: `bd-027e9d` — caco-web Workspace View
 
 ## Before state
 
-- Reconciler commits self-describe (per bd-4c0e22) but the
-  only way to read them is `cd ~/.cacophony/beads/<p> &&
-  git log --grep='sync reconcile'`. Not glanceable.
+- Failing tests: none in caco-web
+- No bead-detail pane existed; the only workspace-visible scaffolding
+  was the MVP contracts (bd-a78749) and the pane-tree (bd-232e03) —
+  both already landed.
+- caco-web static bundle had no Workspace.panes registry consumer yet.
 
 ## After state
 
-- New `caco bd reconcile-log` subcommand registered under
-  `BD_SUBCOMMANDS`.
-- Args: `--project` (required), `--limit` (default 50),
-  `--destructive-only` flag, `--json` envelope.
-- Reads `git log` on `paths.project_beads(project)`; no
-  daemon round-trip.
-- Parses each subject for `prev=N`, `new=N`, `delta=±N`,
-  plus `imported/exported/skipped` counts.
-- `--destructive-only` keeps `delta<0` or `⚠ DESTRUCTIVE`
-  prefixed entries only.
-- Tolerates legacy (pre-bd-4c0e22) format by skipping +
-  surfacing a friendly explainer in the no-results case.
-- Plain mode renders a fixed-width table; `--json` emits
-  `{ok, data: {project, count, entries: [...]}}`.
+- Failing tests: none. `cargo test -p caco-web --lib` = 72 passed
+  (+11 new tests pinning the bead-detail contract). `cargo clippy -p
+  caco-web --tests` clean.
+- New assets embedded in the caco-web static bundle:
+  `workspace-bead-detail.js`, `workspace-bead-detail.css`.
+- Pane registers itself as `window.Workspace.panes['bead-detail']` so
+  the pane-tree can instantiate it from saved layouts.
 
 ## Diff summary
 
-- Files (1): `crates/caco-cli/src/lib.rs` (+204 lines).
-- `cargo build -p caco-cli`: clean.
-- `cargo clippy -p caco-cli --all-targets -- -D warnings`:
-  clean.
-- Live-tested: `caco bd reconcile-log --project cacophony
-  --limit 5` returns the legacy-format explainer correctly
-  (no new-format commits exist yet since bd-4c0e22 is
-  brand-new).
+- Commit: `ba5ce55d`
+- Files touched:
+  - `crates/caco-web/static/workspace-bead-detail.js` (new, 16 KB)
+  - `crates/caco-web/static/workspace-bead-detail.css` (new, 2.7 KB)
+  - `crates/caco-web/src/tests.rs` (+11 tests)
+- Tests: +11 / -0 / flipped 0
+- Behavioural delta: none for existing routes. The pane is a new
+  embedded asset available for the pane-tree to mount when a layout
+  references `type: 'bead-detail'`.
 
 ## Operator-takeaway
 
-`caco bd reconcile-log --project cacophony` shows recent
-reconciler activity. `--destructive-only` immediately shows
-any reconciles that have net-deleted records. Doctor sensor
-+ web/TUI surfaces deferred to follow-on slices.
+The detail pane is designed to be loaded into an already-landed pane
+tree without any coupling to the still-in-flight MVP route. It shims a
+minimal Workspace.bus if none exists, so it boots clean standalone and
+composes cleanly once MVP lands. All acceptance-criteria invariants are
+covered by Rust tests that inspect the embedded JS string — no headless
+browser needed for CI, but the `_renderCount` instrumentation is there
+for a future Playwright/jsdom test to assert the three-selections /
+three-renders AC #7 end-to-end.
