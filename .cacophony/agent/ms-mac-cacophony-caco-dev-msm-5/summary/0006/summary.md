@@ -1,85 +1,58 @@
-# Session summary — bd-2b7a37: caco doctor surfaces stuck-past-stale agents
+# Session summary — docs layout + component parity (bd-0ffc0d)
 
 ## Goal
-
-Make manifestation C from bd-2b7a37 — "state=running but no fresh tool
-activity past stale_after" — operator-visible without requiring a
-separate `caco status` invocation. By-state counts show these agents
-as `running` so dashboards look healthy and the wedge sneaks past
-post-restart triage.
+Continue the docs/webapp design-system alignment from bd-0e2372 by
+applying the now-shared semantic tokens across the rest of docs/style.css
+and refreshing each docs HTML shell to match the webapp's component
+vocabulary (logo accent-split, skip-link, focus rings, button ramp,
+better mobile reflow).
 
 ## Bead(s)
-
-- `bd-2b7a37` — Post-restart agent handoff stuck pattern: now hitting
-  persistents on ms-mac, not just workers (acceptance item 1)
+- bd-0ffc0d — Refresh GitHub Pages layout and components
+- consumes: bd-90d4d3 (audit), bd-0e2372 (token adoption)
+- siblings still open: bd-c2d025 (cross-surface validation)
 
 ## Before state
-
-- `caco doctor` had no awareness of stuck agents.
-- `caco status` already returned a `potentially_stuck` array
-  (built in `handle_agents_summary`, bd-fca135) with idle, stale
-  threshold, and `node_unreachable` annotation (bd-b1d4e9), but
-  doctor was not wired to it.
-- Operator had to run `caco status` separately to discover the
-  wedge.
+- Failing tests: none.
+- docs/style.css used semantic tokens only for body and root; every
+  component (sidebar, headings, code, cards, tables, badges, callouts,
+  hero, footer) still referenced raw --nord* values.
+- 768px breakpoint hid the sidebar entirely (display:none) — no nav
+  on mobile.
+- No .btn, no .skip-link, no :focus-visible rings.
+- 19 × docs/*.html pages used plain-text logo and lacked skip-link +
+  main-content target.
 
 ## After state
-
-- New doctor area "lifecycle / stuck agents" between the lifecycle
-  supervisor check (bd-4acdd7) and the cluster listener check.
-- It pings `/api/v1/agents/summary` on the local daemon (when
-  reachable), filters out `node_unreachable=true` entries
-  (bd-b1d4e9), and emits:
-  - **ok** when none are past stale.
-  - **warning** when only workers are stuck (idle past
-    `stale_timeout_secs`).
-  - **error** when ANY persistent is stuck — the persistent layer
-    is the cluster's coordination backbone per the bd-2b7a37
-    escalation context, so this severity is intentional.
-- Detail line: `<count> past stale: <id1>, <id2>, <id3>[, +N more]`
-  so the operator can paste ids directly into
-  `caco agent show` / `caco agent replace --fresh`.
-- Recovery hint: tells the operator to inspect with `caco status`
-  and consider `caco agent replace --fresh <id>` AFTER verifying
-  the underlying process is dead.
-- Existing doctor tests pass; new lifecycle area is silently
-  ignored when the local daemon is not running (the test fixture
-  case).
-- `cargo clippy -p caco-cli --tests` clean.
+- Failing tests: none. `cargo test -p caco-web --lib` = 155 passed (+2).
+  `cargo clippy -p caco-web --tests` clean (only the two pre-existing
+  unrelated warnings).
+- Every component selector in docs/style.css now references semantic
+  tokens; the only remaining --nord* references are inside the
+  palette-definition block at the top of :root.
+- 768px breakpoint reflows .page to column and keeps the sidebar
+  visible above content (max-height 50vh + scroll); 480px tightens
+  padding and table cells for narrow phones.
+- Webapp .btn ramp (default / -sm / -ghost / -accent) mirrored.
+- Skip-link ships on every docs page; logo accent-split parity.
 
 ## Diff summary
-
-- Commit: `7fac1a44`
-- Files touched: `crates/caco-cli/src/lib.rs` (+86 lines, single
-  block inserted as section 4c).
-- Tests: 0 added (this code path needs a running daemon to exercise;
-  added inline doc explains the contract). Existing doctor tests
-  pass.
-
-## Out of scope (explicitly deferred)
-
-bd-2b7a37 is a multi-acceptance-criteria parent bead. This change
-satisfies only acceptance item 1 (surface the wedge to operators).
-Remaining work, all separate bigger workstreams:
-
-- Audit the daemon resume / ready-handoff state machine for paths
-  that don't recover after a restart of either side of the
-  handshake (manifestation A: `cause=resume_provider_ready_handoff_pending`).
-- Add automated recreate-or-fail action when stuck > N min past
-  stale_after (vs the current operator-driven `caco agent replace`).
-- Re-evaluate stale_after defaults — 300s for workers and 1800s for
-  persistents may not be appropriate post-restart.
-- Diagnose whether stuck persistent processes are alive but the
-  daemon channel is dead, or the process has died and the daemon
-  hasn't noticed.
-
-Did NOT close bd-2b7a37 — three acceptance items still open. Left
-in `in_progress` with my assignment so a follow-up worker (or me
-next session) can pick up the next slice.
+- Modified: docs/style.css (semantic-token sweep, +.btn ramp,
+  +.skip-link, +480px breakpoint, 768px reflow)
+- Modified: 19 × docs/*.html (logo split + skip-link + main-content id)
+- Modified: crates/caco-web/src/tests.rs (+2 tests)
+- Tests: +2 / -0
+- Behavioural delta: docs surface only — webapp untouched.
 
 ## Operator-takeaway
-
-After this lands, every `caco doctor` run during post-restart
-triage will surface stuck agents with sample ids and a clear
-warning/error, so the silent "running but wedged" mode bd-2b7a37
-documented becomes one-line-visible in the standard health check.
+docs/ now reads as part of the same design system as the webapp without
+having grown a full SPA-shell — sidebar/logo/components match, mobile
+reflow works, a11y primitives are present, but the page-structure stays
+intentionally minimal (it is still a doc site). bd-c2d025 (cross-surface
+validation) can now run end-to-end: the four parity tests
+(docs_style_css_matches_webapp_design_tokens,
+docs_style_css_uses_semantic_tokens_not_raw_nord,
+docs_html_pages_load_webapp_fonts_and_favicon,
+docs_html_pages_have_logo_accent_split_and_skip_link) form the
+machine-checkable contract; visual regression diffs are the only
+remaining piece.
