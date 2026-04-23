@@ -1,45 +1,75 @@
-# Session summary — bd-bf1e86 cycle 4: staleness months & years tiers
+# Session summary — bd-09f314 cycle 1 a11y polish
 
 ## Goal
 
-Continue the polish bead. Stop long-stale beads/peers/agents from
-rendering as `13w` / `26w` / `108w`; add a months tier at 4w and a
-years tier at 12mo so older items read as `3mo` / `1y` like every
-other modern app.
+Run cycle 1 of the workspace-view polish + a11y permanent (bd-09f314).
+Pick one pane, audit it, apply the every-cycle checklist, ship.
 
 ## Bead(s)
 
-- `bd-bf1e86` — Permanent: caco-tui subtle UX polish (cycle 4)
+- `bd-09f314` — [PERMANENT] [workspace-view] Ongoing polish + a11y
+- (parent: `bd-027e9d` — caco-web Workspace View epic)
+- (target: `bd-eaae6a` chat pane, landed earlier this session)
 
 ## Before state
 
-- `human_staleness` topped out at the weeks tier; bd lists with
-  6-month-old or year-old entries showed `26w` / `108w`.
-- 8 existing tests covered seconds/minutes/hours/days/weeks
-  boundaries; none for >7d behaviour.
+- Chat pane (workspace-chat-pane.js / .css) shipped with basic ARIA on
+  the root + tail + mode group + compose textarea, but the project
+  input, target input, send button, and individual mode buttons had no
+  aria-label.
+- No focus-visible ring; default browser outlines were the only
+  affordance and would be hard to spot against the dark theme.
+- Send button gave no disabled affordance while a request was in
+  flight.
+- Empty state used a plain `.wcp-empty` div with no role; missed the
+  canonical `window.emptyState()` helper (bd-1c0bdd convention).
+- No reduced-motion guard around the (just-added) micro-interaction.
 
 ## After state
 
-- `human_staleness` switches to `Nmo` at 4w and `Ny` at 12mo using
-  30-day months and 365-day years (operator-friendly defaults).
-- Two new tests:
-  `staleness_months_tier_kicks_in_at_4w` (3w/30d/90d) and
-  `staleness_years_tier_kicks_in_at_12mo` (365d/800d).
-- All 21 staleness tests pass; clippy clean on caco-tui.
+- Every interactive element now carries an aria-label:
+  project / target / compose / send / per-mode buttons.
+- `aria-keyshortcuts` on compose + send announces Enter / Shift+Enter
+  to assistive tech.
+- Send button toggles `aria-disabled` + DOM `disabled` while a request
+  is pending, with a CSS affordance (opacity 0.5 + grayscale + cursor:
+  not-allowed).
+- Empty state prefers `window.emptyState({ icon, hint })` when caco-web
+  exposes it; the in-pane fallback gains `role='status'` +
+  `aria-live='polite'` + a 💬 prefix icon.
+- CSS `:focus-visible` ring (2px `--accent` outline + 2px offset; inset
+  for the mode buttons to preserve the tight grouping).
+- High-contrast border default for inputs (`border-color-strong`).
+- Smooth 160ms fade-in for new tail rows; gated on
+  `prefers-reduced-motion: reduce`.
+- New contract test `workspace_chat_pane_a11y_polish_cycle1` pins the
+  surface so a future refactor that drops any of these breaks loudly.
 
 ## Diff summary
 
-- Commits: `4408d9ce`
-- Files touched: `crates/caco-tui/src/views/common.rs` (+34 / -1)
-- Tests: +2
-- Behavioural delta: any caller of `human_staleness` /
-  `human_staleness_ago` (bead lists, peer rows, agent staleness
-  displays) now uses months & years for >4w / >12mo ages.
+- Files touched:
+  - `crates/caco-web/static/workspace-chat-pane.js` (5 inline aria
+    additions + send-button disabled toggling + emptyState fallback)
+  - `crates/caco-web/static/workspace-chat-pane.css` (focus-visible
+    ring, high-contrast inputs, empty-state icon, fade-in keyframes,
+    disabled-send affordance)
+  - `crates/caco-web/src/tests.rs` (+1 cycle-1 contract test)
+- Tests: `cargo test -p caco-web`: 140 passed (incl. 1 new). 
+  `cargo test-small`: 120 passed.
 
 ## Operator-takeaway
 
-Stale items now read in operator-friendly tiers; the change is
-purely additive and backward-compatible with all existing call
-sites. Sibling polish workers on web (bd-a5e2fe) and Android
-(bd-1c0bdd) should consider mirroring the same tier breakpoints in
-their respective duration formatters for cross-surface consistency.
+Permanent beads cycle every session — this one focuses on accessibility
+and visual polish across workspace-view panes. Cycle 1 did the chat
+pane only; future cycles should pick a different pane (terminal, log,
+detail, bead-list, saved-views) and run the same checklist:
+
+1. ARIA labels on every interactive
+2. Visible focus-visible ring
+3. Colour-contrast AA spot-check
+4. Empty-state via canonical helper
+5. Micro-interactions with reduced-motion guard
+6. Pin the contract in tests.rs
+
+The contract-test pattern doubles as documentation of what "polished"
+means for a pane in this codebase.
