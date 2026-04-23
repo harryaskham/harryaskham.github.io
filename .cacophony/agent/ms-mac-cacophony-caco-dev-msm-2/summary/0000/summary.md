@@ -1,43 +1,46 @@
-# Session summary — Reject anonymous-caller bead mutations (bd-43db78)
+# Session summary — reflection drafts (post stand-down)
 
 ## Goal
 
-Close the accountability hole that allowed 22 "unknown"-creator beads to be
-filed against the cacophony project, including 3 spam beads at
-2026-04-23T01:22:40Z that polluted the P0 queue and wasted msm-5 dev capacity.
+Land reflection drafts for the three beads closed this session
+(bd-43db78, bd-aac755, bd-83a8ed) onto main per operator stand-down
+instruction. The reflect-session mixin's drafts had not yet been
+filed because earlier reintegrations whitelisted only summary
+artefacts.
 
 ## Bead(s)
 
-- `bd-43db78` — Investigate: 3 fake beads (login/auth/JWT) filed at 01:22Z by creator='unknown'
+- None claimed; this is a stand-down reintegration carrying
+  artefacts only.
 
 ## Before state
 
-- Failing tests: 7 pre-existing broken-on-main (stack overflows in persistent_recreate family, filer.md YAML parse, retention_sweep)
-- 22 historical bead_created events with `sender: "unknown"` in feed.jsonl
-- `resolve_caller()` silently fell back to literal `"unknown"` when no identity was present
-- No caller-identity validation at any bead-mutating endpoint
+- Three closed beads from this session (bd-43db78, bd-aac755,
+  bd-83a8ed) had no reflection drafts on disk — earlier reintegrates
+  whitelisted only summary artefacts and the reflect-session mixin
+  drafts had not yet been authored.
 
 ## After state
 
-- Failing tests: same 7 pre-existing broken-on-main (unchanged by this diff)
-- All bead-mutating endpoints reject anonymous callers with 400 + `missing_caller_identity`
-- `bearer_auth_middleware` synthesizes `x-caco-caller` from token identity when absent
-- Forwarded peer requests are exempt (originating node is enforcement point)
-- 8 new passing tests covering the enforcement and regressions
+- Three reflections under
+  `.cacophony/agent/ms-mac-cacophony-caco-dev-msm-2/reflections/`:
+  - `0000-unknown-caller-fallback.md` — generalises bd-43db78 into
+    an antipattern: sentinel-string defaults for security-relevant
+    identity fields.
+  - `0001-profile-lint-drift.md` — generalises bd-aac755 into the
+    "validation at consumption time needs an authoring-time mirror"
+    rule.
+  - `0002-best-effort-time-filter.md` — documents the precision /
+    invasiveness trade-off taken in bd-83a8ed and why "best-effort"
+    is fine when the slop is bounded and documented.
 
 ## Diff summary
 
-- Commits: 1 (pending)
-- Files touched: `crates/caco-daemon/src/beads.rs`, `crates/caco-daemon/src/lib.rs`
-- Tests: +8 new
-- Behavioural delta: bead create/update/delete/claim/close/unclaim/expand/rewrite/dispatch endpoints now reject requests where the resolved caller is empty, whitespace-only, or the literal sentinel "unknown". Auth middleware synthesizes caller identity from bearer token claims when no explicit header is present.
+- Commits: 1
+- Files touched: 3 reflection drafts + this summary
+- Tests: none (docs only)
 
 ## Operator-takeaway
 
-The root cause of the fake-bead incident was the `beads/expand` endpoint called
-from the cluster router without a `x-caco-caller` header. Any authenticated
-request that omitted the header fell through to `"unknown"`. The two-layer fix
-(middleware synthesis + handler rejection) ensures this cannot recur while
-remaining transparent to all first-party callers. The 22 historical
-"unknown"-creator beads are all pre-existing and benign (bd-sync close events
-on legitimate beads from early project history).
+Per harry's request, reflections are now on the agent branch and
+will land on main via this reintegrate. Stand-down complete.
