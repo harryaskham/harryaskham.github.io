@@ -1,71 +1,93 @@
-# Session 0006 — bd-517e52
+# Session summary — caco choices list/current honesty fixes
 
 ## Goal
 
-First-slice implementation of duplicate-of bead linking, deferred from
-the broader spec into a CLI-only composition that ships now and paves
-the way for a richer schema-level model later.
+Close bd-914ceb — three closely related CLI honesty issues in `caco
+choices list` and `caco choices current`, all sibling misses of the
+bd-bc52ef family (silent-no-op-on-unknown-input) and the bd-b76723
+family (unrecognised-flag warning + ignored).
 
 ## Bead(s)
 
-- bd-517e52 — claimed and worked end-to-end. First slice; richer model
-  (BeadStatus::Duplicate variant, duplicate_of FK column, reverse-lookup
-  on `bd info`, `bd create --check-duplicates`) deliberately deferred to
-  follow-up beads to keep this change surgical.
+- `bd-914ceb` — caco choices list --status accepts undocumented
+  'unavailable' (works fine), and silently accepts any other bogus value
+  (sibling of bd-cd2ec9 family)
 
 ## Before state
 
-No first-class way to express "this bead is a duplicate of bd-XXX,
-absorb its context." Operators were closing duplicate beads manually
-and either dropping context or hand-pasting it across.
+```
+$ caco choices list --help | grep -- --status
+  --status    Filter by status: active, resolved, all (default: all).
+              ✗ omits 'unavailable' which is a populated, queryable state
+
+$ caco choices list --status unavailable --limit 3
+3 choice(s) (filter: unavailable):
+  ...                                              # ✓ daemon supports it,
+                                                   #   help just doesn't say so
+
+$ caco choices list --status bogus
+no choices (filter: bogus)                          # ✗ silent
+
+$ caco choices current --project cacophony
+warning: bd-b76723: caco choices current received unrecognised flag(s)
+5 active choice(s):
+  ... (helsinki-tendril-..., midi2hid-..., cacophony-...)
+                                                    # ✗ returns whole cluster
+```
 
 ## After state
 
-`caco bd update --bead-id bd-DUP --duplicate-of bd-CANON` now:
+```
+$ caco choices list --help | grep -- --status
+  --status    Filter by status: active, resolved, unavailable, all (...)
 
-  1. Appends a `Merged duplicate: bd-DUP <title>` addendum to bd-CANON's
-     description (target absorbs the duplicate's context).
-  2. Closes bd-DUP and appends a `Duplicate of bd-CANON` marker line to
-     its description so the link is greppable both ways.
+$ caco choices list --status bogus
+error: unknown --status value 'bogus'. Allowed: active, resolved,
+unavailable, all
 
-Validation:
-  - Refuses to combine with other field flags (--title, --status, ...).
-  - Rejects self-reference.
-  - Rejects targets whose status is closed/deleted.
-  - Idempotent on re-run (detects existing markers).
+$ caco choices list --status unavailable --limit 2
+2 choice(s) (filter: unavailable):                  # unchanged ✓
 
-`cargo test-small`: 52/52 PASS. `cargo clippy --workspace --all-targets
--- -D warnings`: clean.
+$ caco choices current --project cacophony
+2 active choice(s) (project: cacophony):
+  choice-... (helsinki-cacophony-choices-general, 5 options)
+  choice-... (helsinki-cacophony-choices-spec, 5 options)
+
+$ caco choices current
+5 active choice(s):                                 # unfiltered unchanged ✓
+```
+
+`cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
+clean.
 
 ## Diff summary
 
-```
-crates/caco-cli/src/lib.rs                | +266 -1
-.cacophony/agent/.../summary/0006         | (new)
-```
-
-Inside that diff:
-  - BD_UPDATE_ARGS: added `--duplicate-of` ArgSpec.
-  - dispatch_bd_update: early branch routing to new helper, with
-    field-conflict / self-reference guards.
-  - dispatch_bd_update_duplicate_of: new helper, two GETs + two PATCHes,
-    idempotent, status-validated.
-  - tests: 2 new + 1 extended (help-json assertion).
-  - bd-c5783b broken-on-main fix: added `short_name_strategy: None` to
-    test-fast-gate Profile fixture (~line 74918). Spoke ownership before
-    editing.
+- Commit: 74312197
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: +1 (`choices_list_status_validator_includes_unavailable_and_rejects_bogus`)
+- Behavioural delta:
+  1. `--status` validator added to `dispatch_choices_list` rejecting
+     anything outside `[active, resolved, unavailable, all]`.
+  2. `CHOICES_LIST_ARGS --status` summary now mentions `unavailable`.
+  3. `CHOICES_CURRENT_ARGS` introduced with `--project`; `current` is
+     promoted from `mcp_leaf` to a full `CommandSpec` with args.
+  4. `dispatch_choices_current` accepts `Option<&str>` project and
+     applies a client-side filter against the `project` field of each
+     active choice, recomputing the displayed count and JSON
+     `data.count` to match.
 
 ## Operator-takeaway
 
-For operator triage workflow:
-  `caco bd update --bead-id bd-deadbe --duplicate-of bd-canonical`
-closes the duplicate, copies its description into the canonical bead's
-description as a clearly delimited section, and stamps both ends so a
-later `grep` for either ID surfaces the link. No schema work needed.
+The `--project` filter on `current` is client-side (filter the choices
+array after the round-trip) rather than a daemon API addition, since
+extending `GET /api/v1/choices` with a Query<{project}> would have
+been a separate coordination step. If/when a future bead wants to push
+the filter server-side (for very large clusters), the migration is one
+commit: add `Query<CurrentChoicesQuery>` to `handle_current_choices`
+and short-circuit the client-side filter when the daemon responds with
+`server_filtered=true`.
 
-## Coordination
-
-- Spoke claim of bd-517e52 before starting.
-- Spoke `[broken-on-main]` notice before fixing the
-  `short_name_strategy` field on the test-fast-gate fixture.
-- Will speak completion + reintegrate before picking next bead.
+Help-text-as-discovery: validator error messages enumerate the
+allowed-list precisely so an operator who guesses the wrong filter
+sees the full set without needing to read source. This pattern keeps
+paying off — file follow-ups every time a sibling-miss surfaces.
