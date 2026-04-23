@@ -1,39 +1,85 @@
-# Session summary — short_name dropped + missing from list JSON (bd-34d0b8)
+# Session summary — agent Scratch tab (bd-f6d1ea)
 
 ## Goal
 
-The bead asks for "ability to rename agents in TUI / android / webapp" AND "work out why many agents do not end up with an assigned shortname automatically". The CLI verb (`caco agent rename`) and the daemon `field/set` endpoint already exist; the dispatching UI surfaces are filed as separate follow-ups (bd-09e8df / bd-3ae0c6 / bd-3cf67f). The unanswered question — *why are short_names so often unset even when adj_noun is configured* — turned out to be the load-bearing slice for this session, and fixing it required also surfacing the labels in list JSON so any UI can read them.
+Give operators a one-keystroke view of every scratchpad note an
+agent has edited, without leaving the agent detail panel. Closes
+the gap where scratchpad authorship is invisible from the per-agent
+TUI flow — operators previously had to `caco scratch list` and
+eyeball the `last_writer` column.
 
 ## Bead(s)
 
-- `bd-34d0b8` — Ability to rename agents in the TUI / android / webapp; investigate missing short_names
+- `bd-f6d1ea` — Agent panel in tui: scratch tab, which lists all
+  scratchpads an agent edited
 
 ## Before state
 
-- Project `cacophony` has `agent_defaults.short_name_strategy: { strategy: adj_noun }`.
-- `caco agent list --json` over 173 live agents returned `0` with `short_name` populated.
-- `caco agent get --id $CACO_AGENT_ID --field short_name` returned `null` for the persistent agent this very session was running under, even though `resolve_short_name` is called in the create path.
-- `agent_list_row_json` did not include `short_name` / `spoken_name` / `agent_name` keys at all in its output.
-- `SnapshotAgentRow` had no fields for these labels, so even if local rows surfaced them, peer rows would not.
+- `AgentDetailTab` had 10 variants (Home/Attach/Diff/Terminal/
+  Logs/Summary/Session/ComputerUse/Failure/Chat). No surface for
+  scratchpad authorship.
+- `GET /api/v1/scratchpads` accepted `project` + `limit` only.
+- Operators needed `caco scratch list` to see scratchpads, with no
+  filter for "edited by agent X".
 
 ## After state
 
-- `cargo test -p caco-daemon --lib agent_list_row_json` — 2 / 2 passed (new tests).
-- `cargo test-small` — 197 / 109 / 718 / 286 / 18 / 2797 / 45 passed, 0 failed.
-- `cargo check --workspace --tests` — clean.
-- New agents launched on `cacophony` will arrive with their resolved `short_name` populated; list JSON exposes the three label fields (and emits null, not absent, when unset).
+- New `AgentDetailTab::Scratch` variant wired into all 4 cycle
+  tables (next, prev, next_skip_attach, prev_skip_attach).
+- New `render_agent_scratch_tab` view: shows "Loading…" until
+  fetch completes, then a list of `{id, name, content-preview}`
+  for each scratchpad the agent last-wrote-to.
+- New `ScratchNoteEntry` lightweight type + `agent_scratch_notes`
+  cache field on `TuiState`.
+- New daemon query param `last_writer_contains` on
+  `GET /api/v1/scratchpads` — applied as `.retain(...)` over the
+  `query_notes` result. Empty needle short-circuits.
+- New client method `list_scratchpad_notes_filtered`; original
+  `list_scratchpad_notes` delegates for back-compat.
+- New `request_agent_scratch_notes` async fetch (capped at 100
+  notes) + 2 `ActionResult` variants wired into the dispatch
+  loop, triggered when the Scratch tab becomes active.
 
 ## Diff summary
 
-- Commit: `4729abed`
 - Files touched:
-  - `crates/caco-daemon/src/agent/lifecycle.rs` — fix the dropped `req.short_name` in the success-path `AgentInfo` literal (`line 1736`). This is the root bug.
-  - `crates/caco-daemon/src/lib.rs` — add `short_name`, `spoken_name`, `agent_name` to `agent_list_row_json()` and to the two peer-snapshot merge sites (`/api/v1/agents` and `/api/v1/projects/{p}/agents`). Two new unit tests.
-  - `crates/caco-daemon/src/replication.rs` — `SnapshotAgentRow` gains the three label fields (with `#[serde(default, skip_serializing_if = "Option::is_none")]` for forwards compatibility with peers that pre-date the change). `build_snapshot_agents` populates them.
-  - `crates/caco-daemon/src/{beads,ui_stream}.rs` and `tests/{daemon,multinode}.rs` — 38 `SnapshotAgentRow` test literals updated to include the new fields. Mechanical.
-- Tests: +2 unit; 0 removed; 0 flipped.
-- Behavioural delta: persistent and worker agents that go through the create path now persist their resolved short_name. List endpoints surface the three label fields on every row (null when unset).
+  - `crates/caco-tui/src/state/mod.rs` — enum variant, label,
+    4 cycle tables, `ScratchNoteEntry`, `agent_scratch_notes`
+    field + constructor init
+  - `crates/caco-tui/src/state/tests.rs` — 5 unit tests
+  - `crates/caco-tui/src/views/agent_detail.rs` — render arm +
+    `render_agent_scratch_tab` function (~85 LOC) + Wrap import
+  - `crates/caco-tui/src/event.rs` — 2 `ActionResult` variants +
+    Debug impl
+  - `crates/caco-tui/src/client.rs` — `list_scratchpad_notes_-
+    filtered` method (delegating shim from original)
+  - `crates/caco-tui/src/app.rs` — `request_agent_scratch_notes`
+    method + tab-active trigger + 2 ActionResult handlers
+  - `crates/caco-daemon/src/lib.rs` — new query param + in-handler
+    `.retain()` filter
+  - `crates/caco-daemon/src/scratchpad.rs` — 1 unit test pinning
+    the filter contract
+- Tests: +6 / -0 / flipped 0
+- Behavioural delta: TUI gains a scratch authorship surface;
+  daemon gains a writer-substring query parameter (back-compat,
+  existing callers unchanged).
 
 ## Operator-takeaway
 
-After this lands, every newly-spawned agent on a project with `short_name_strategy` configured will get its `short_name` populated and visible in `caco agent list --json` and `/api/v1/agents`. **Existing agents already on disk will not retroactively get names** — they'd need a one-shot reassignment pass (a small follow-up: `caco agent backfill-short-names` or a daemon migration). I deliberately did not write that migration in this commit because the operator may want to choose between "regenerate everywhere" vs "leave the historical fleet alone and only name new agents". The TUI / web / android rename UX follow-ups (bd-09e8df / bd-3ae0c6 / bd-3cf67f) now have a real `short_name` field to read and write against; before this they would have been wired to a permanently-null surface.
+Cycle tabs in the agent detail panel — `Scratch` now sits between
+`Chat` and `Home` (and between `Chat` and `Home` in the
+skip-attach variant for stopped/failed agents). First open of the
+tab fires an async fetch; subsequent opens are cache hits.
+Refresh requires re-selecting the agent (cheap re-fetch on
+re-trigger isn't in this slice; a 30s TTL would be a good follow-
+up if operators ask for it).
+
+The daemon endpoint accepts `?last_writer_contains=<substring>`
+(URL-encoded) as a back-compat query param. Empty string =
+no-op = full list. Tested at the data-shape level; the handler-
+level integration test would be a small follow-up.
+
+A future session should consider replacing the 4 hand-maintained
+match-table cycle functions in `AgentDetailTab` with a single
+`&[AgentDetailTab]` slice + `cycle_index` helper — see reflection
+`0003-tab-cycle-table-doom.md`.
