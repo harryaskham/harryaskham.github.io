@@ -1,93 +1,67 @@
-# Session 0003 — bd-acddf6 + bd-274c2d cycle
+# Session summary — caco prune list/run filter validation
 
 ## Goal
 
-Reduce the operator log-noise burst that ms-dev's peer-reachability flap was
-producing (5 ERROR-level lines per probe cycle, ~every 7-15 min, across the
-ms-mac → ms-dev /diff endpoint for each of msd-{1..5}).
-
-Acceptance criterion 2 from bd-acddf6: return a structured "peer unreachable"
-response instead of a 502 storm so dashboards don't light up red.
+Close bd-cd2ec9 — sibling miss of the bd-bc52ef silent-no-op-on-unknown
+family. `caco prune list/run` was returning a friendly "no prunable
+agents" / "nothing to prune" line on garbage filter values
+(`--state notreal`, `--node notarealnode`, `--project nonexistent`,
+`--id nonexistent_id`) instead of erroring with a useful suggestion.
 
 ## Bead(s)
 
-- **bd-acddf6** — claimed and worked. Implementation lands criterion 2 (and
-  partially criterion 3 indirectly). Criterion 1 (fixing the underlying
-  network flap) is out of scope for this session.
-- **bd-274c2d** — incidentally caught and fixed two unrelated
-  broken-on-main clippy errors in `crates/caco-cli/src/lib.rs`
-  (merge-queue list dispatcher: redundant_closure + useless_or_else_closure)
-  that were blocking `cargo clippy --workspace --all-targets`.
+- `bd-cd2ec9` — [CLI honesty] caco prune list/run silently return 'no
+  prunable / nothing to prune' for unknown --state, --node, --project,
+  --id (sibling of bd-bc52ef family)
 
 ## Before state
 
-- `cargo clippy --workspace --all-targets -- -D warnings`: FAIL with two
-  clippy errors at lines 38221 / 38229 (recently landed code).
-- All 27 forward-error call sites in `crates/caco-daemon/src/lib.rs` build
-  and return the same hand-rolled `(BAD_GATEWAY, ErrorEnvelope::new("remote_forward_failed", ...))`
-  tuple regardless of whether the underlying error was a known peer
-  unavailability (peer marked unreachable/degraded) or a real forwarding bug
-  (mTLS, parse, network glitch). 502s ≥500 → `telemetry_middleware` routes them
-  through `report_structured_log_error_best_effort` → project Errors tab.
+All five reproduction cases from the bead silently returned the empty
+result with exit 0. Operators discovered typos only by manually
+diffing against `caco agent list` / `caco config show projects` /
+`caco config show nodes`.
 
 ## After state
 
-- `crates/caco-daemon/src/lib.rs`:
-  - New `is_peer_unavailable_error(msg: &str) -> bool` recognising the
-    canonical strings from `peer_api_unavailable_message`.
-  - New `forward_failure_response(agent_id, remote_node, fwd_err, request_id) -> Response`
-    returning `503 SERVICE_UNAVAILABLE` + `peer_unreachable` for known
-    peer-unavailable errors, else `502 BAD_GATEWAY` + `remote_forward_failed`.
-  - 26 call sites swept to use the helper (covers `/diff`, `/artefacts`,
-    `/status`, `/attach`, `/logs`, persistent-agent forwarding paths).
-  - `telemetry_middleware` now `if status >= 500 && status != 503` so the
-    new 503 path doesn't fan out to the project Errors tab.
-  - New unit test `forward_failure_response_distinguishes_unreachable_peer_from_real_failure`
-    locks both branches end-to-end including JSON envelope shape.
+```
+$ caco prune list --state notreal
+error: unknown --state value 'notreal'. Allowed: pending, starting,
+running, waiting, blocked, recovering, retrying, stale, stalled,
+paused, completed, failed, stopped, discarded
+$ caco prune list --node notarealnode
+error: unknown node: notarealnode. Defined: ms-mac, ms-dev, helsinki, …
+$ caco prune list --project nonexistent
+error: unknown project: nonexistent. Defined: a.skh.am, cacophony, …
+$ caco prune run --dry-run --id nonexistent_id
+error: no agent with id 'nonexistent_id' (use `caco agent list` to enumerate known agents)
+$ caco prune run --dry-run --project nonexistent
+error: unknown project: nonexistent. Defined: …
+```
 
-- `crates/caco-cli/src/lib.rs`: two-line clippy fix on the recently-landed
-  merge-queue list dispatcher.
+Happy path unchanged (`caco prune list`, `caco prune list --state
+completed`, `caco prune list --state stopped,completed` all work).
 
-- Validation:
-  - `cargo clippy --workspace --all-targets -- -D warnings`: clean (~6.5s incremental)
-  - `cargo test-small`: PASS (45/45 caco-web final binary, full sweep clean, ~87s)
-  - `cargo test -p caco-daemon --lib forward_failure_response_distinguishes --test-threads=1`: PASS
+`cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
+clean. Three new unit tests on the shared validator.
 
 ## Diff summary
 
-```
-crates/caco-cli/src/lib.rs    |   4 +-
-crates/caco-daemon/src/lib.rs | 408 ++++++++++++++++-----------------
-2 files changed, 185 insertions(+), 290 deletions(-)
-```
-
-Net reduction in caco-daemon lib.rs because the swept call sites were
-9-line hand-rolled tuples and the helper call is a single line. The new
-helper + test add ~95 lines.
+- Commit: 0aba4bd5
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: +3 / -0
+- Behavioural delta: filter validation at the top of `dispatch_prune_list`
+  / `dispatch_prune_run` via a shared `validate_prune_filters` helper.
 
 ## Operator-takeaway
 
-Two things should improve immediately on next cycle:
+Same shape as the existing bd-bc52ef family. The validator is a single
+function so when the next sibling-miss surfaces (and it will — the
+unrelated nudge in the bead points at the `--state` default for
+`prune list` arguably hiding most reclaimable disk in `stopped` agents),
+we can extend the same helper rather than re-implementing per-dispatch.
 
-1. **Errors tab quietens.** ms-dev peer flap will keep producing /diff
-   bursts at the access-log layer, but they'll be 503 (not 502) and they
-   won't be routed to the structured project-error pipeline. Operators
-   stop getting red-lit dashboards for a known transient peer outage.
-
-2. **Clients can act on the right signal.** A 503 + `peer_unreachable`
-   envelope tells the TUI / web UI to show "node ms-dev is currently
-   unreachable" with a single banner per peer, rather than 5 generic
-   "remote_forward_failed" toasts per probe cycle. Wire-compat: existing
-   502 + `remote_forward_failed` is preserved for genuine forwarding bugs,
-   so anything keying off that code still works for the cases that
-   matter.
-
-Underlying ms-mac↔ms-dev tailnet flap is unchanged and remains worth
-investigating; this change is the noise-reduction half of bd-acddf6.
-
-## Coordination
-
-- Spoke claim of bd-acddf6 before starting.
-- Spoke status mid-session (clippy fix opportunistic).
-- `winmini:wmi-2` had earlier announced intent to fix the same caco-cli
-  clippy error in this session; sent broadcast that this commit covers it.
+The unrelated nudge from the test-user (default `--state completed` may
+be hiding the heavier `stopped`-state reclaimable rows) is NOT addressed
+here — it's a default-behaviour question, not a silent-on-bad-input
+bug, and the bead explicitly flagged it as a separate observation.
+File a follow-up if an operator confirms that's a problem in practice.
