@@ -1,43 +1,74 @@
-# Session 0007 — bd-274c2d cycle
+# Session summary — fix persistent_recreate test isolation
 
 ## Goal
 
-Permanent test-suite-health cycle as fallback workload; this cycle also
-caught and fixed an inline duplicate-field broken-on-main.
+Resolve bd-03a276: two `caco-daemon` lib tests
+(`persistent_recreate_relaunches_project_controller_replacement` and
+`running_persistent_agent_recreate_forces_destructive_relaunch`) were
+failing intermittently with a tmux socket dial error followed by a 30s
+handler timeout returning 500 instead of 200. Diagnose root cause and
+land a fix without disturbing production code paths.
 
 ## Bead(s)
 
-- bd-274c2d (permanent) — cycle entry appended to description.
+- `bd-03a276` — [broken-on-main] persistent_recreate tests fail with tmux
+  socket dial error then 30s handler timeout
+- (also closed earlier in session: `bd-4cbb82` — caco-web Dispatch button
+  always 422s — fix already on main from prior session, leaked claim)
 
 ## Before state
 
-HEAD 829d09c8. `cargo clippy --workspace --all-targets -- -D warnings`
-broken with E0062 duplicate-field on `short_name_strategy` in the
-caco-cli `test-fast-gate` Profile fixture. My own bd-517e52 commit
-added the field; the same field landed independently via bd-c5783b
-reintegrate on main.
+- Failing tests in `cargo test -p caco-daemon --lib persistent`:
+  - `persistent_recreate_relaunches_project_controller_replacement`
+  - `running_persistent_agent_recreate_forces_destructive_relaunch`
+- Failure shape:
+  - `bd-7e2934: tmux set-environment -g PATH failed on socket
+    'caco-agent-cacophony-localhost-cacophony-ctrl': error connecting to
+    /private/tmp/tmux-501/caco-agent-cacophony-localhost-cacophony-ctrl
+    (No such file or directory)`
+  - `bd-3a85f7: handler timed out after 30s — POST
+    /api/v1/persistent/<id>/recreate; returning 500`
+  - `assertion left == right failed: left: 500, right: 200`
+- Both tests passed in isolation but failed when other `persistent*`
+  tests ran in parallel.
 
 ## After state
 
-- Removed my redundant copy of `short_name_strategy: None` from
-  `crates/caco-cli/src/lib.rs` (~line 75280); kept main's copy.
-- `cargo test-small`: 52/52 PASS.
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
-- bd-274c2d description appended with cycle entry.
+- Failing tests: none (in scope). `cargo test -p caco-daemon --lib
+  persistent` is now 135/135 passing.
+- Five other lib tests still failing on main, all confirmed pre-existing
+  and unrelated:
+  - `retention_sweep_skips_non_completed_agents` → filed `bd-578267`
+  - Four `all_embedded_profile*` tests (filer.md frontmatter parse) →
+    filed `bd-b4e52e`
+- `cargo clippy -p caco-daemon --tests --no-deps` clean.
 
 ## Diff summary
 
-```
-crates/caco-cli/src/lib.rs        | -3
-.cacophony/agent/.../summary/0007 | (new)
-```
+- Commits: `b91cd037` — bd-03a276: parameterize persistent_recreate test
+  fixture decl key
+- Files touched: `crates/caco-daemon/src/lib.rs` (+14 / -2)
+- Tests: 0 added / 0 removed; 2 fixed (no longer flaky under parallel
+  execution).
+- Behavioural delta: test-only. No production code changed. The
+  `setup_persistent_recreate_test_fixture` helper now derives a unique
+  persistent decl key from `(profile_name, std::process::id())` instead
+  of hard-coding `"ctrl"`. This gives each test its own
+  `agent_id` → its own per-agent tmux socket
+  (`caco-agent-{project}-{agent_id}`) and its own tmux session name,
+  eliminating the cross-test collision on the shared
+  `caco-agent-cacophony-localhost-cacophony-ctrl` socket.
 
 ## Operator-takeaway
 
-Pattern recurrence: when an inline broken-on-main fix is applied and
-the same fix later lands via the responsible bead's own reintegrate,
-the next rebase produces a duplicate-field error. Cheap to dedup.
-
-## Coordination
-
-- Will speak completion + reintegrate before picking next bead.
+Per-agent tmux sockets + per-agent tmux session names are derived from
+`{node}-{project}-{agent_name}`. When two parallel tests inject the same
+persistent declaration name into the same `localhost_fixture` config,
+they share a socket and a session — and one test's `tmux new-session`
+sees a session of the same name already alive on the shared server,
+blocking the alive-sentinel write past the 30s handler timeout. This is
+a pattern worth remembering when adding new fixtures: persistent decl
+keys MUST be parameterized (or include `std::process::id()`) the same
+way temp dirs are, otherwise the failure mode is silent flake under
+`cargo test` parallelism rather than a clean error. Two pre-existing
+broken-on-main lib failures remain (bd-578267, bd-b4e52e) for follow-up.
