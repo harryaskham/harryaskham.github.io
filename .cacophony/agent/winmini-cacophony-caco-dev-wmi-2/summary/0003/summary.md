@@ -1,108 +1,88 @@
-# Session summary — discovered-via provenance via structured labels (bd-ffb193)
+# Session summary — `caco service load` for idempotent supervisor reload (bd-4acdd7)
 
 ## Goal
 
-Add a structured `discovered_via` provenance field for beads so that
-the prose-only "filed via caco-ctrl from <observation>" provenance
-pattern in many recently-filed beads becomes queryable, surface-
-renderable, and prioritisation-friendly. The bead asked for
-agent / session_bead / session_event / node fields with use cases like
-"prioritise beads discovered during real-user exercise" and
-"spot daemon-outage symptom clusters".
+Close the operational gap that bit ms-mac at 01:38 BST on 2026-04-22:
+the launchd `com.cacophony.lifecycle` unit was installed but
+unloaded (`active: ? not loaded`), so when caco-daemon got SIGTERM
+nothing respawned it. Recovery required manual `caco up`. The bead
+asked for two things:
+
+1. `caco doctor` flags `active: not loaded` as an error/warning, not
+   silent state.
+2. A first-class `caco service load` / `caco up` path that
+   re-bootstraps the launchd unit if installed-but-unloaded,
+   idempotently.
 
 ## Bead(s)
 
-- `bd-ffb193` — discovered-via provenance field (P3 feature)
-
-## Approach decision
-
-Two candidate designs:
-
-1. **Schema column on `issues` table** (the bead's literal suggestion).
-   Survey: 600+ `Bead { ... }` struct literal sites across the
-   workspace, plus ~25 SQL bind/select sites in `caco-beads/store.rs`.
-   Touches every test fixture in caco-beads/caco-daemon/caco-tui.
-
-2. **Structured labels** mirroring the existing bd-427d4a
-   `STRUCTURED_LABEL_KEYS` mechanism (the same way scheduling
-   constraints `node:`, `type:`, etc. are encoded today).
-
-Picked option 2:
-- Zero schema migration, zero risk to the 600 struct-literal sites.
-- Existing `--labels` and `--label` filter flags work immediately.
-- TUI's `is_structured_label` rendering picks up the new keys for free.
-- Round-trippable through `DiscoveredVia::to_labels` /
-  `parse_discovered_via` so callers that want structured access do
-  not have to pattern-match label strings themselves.
+- `bd-4acdd7` — `ms-mac lifecycle supervisor 'not loaded' — daemon
+  SIGTERM at 01:38 left no respawn, recovered only by manual caco up`.
 
 ## Before state
 
-- Provenance lived only in description prose.
-  `caco bd create` had no provenance flags.
-- `STRUCTURED_LABEL_KEYS` covered only scheduling
-  (`type, node, provider, model, profile`).
-- `cargo test-small`: 4198 tests passing.
+- Doctor section 4b ("Native lifecycle supervisor (bd-4acdd7)") was
+  already wired in `crates/caco-cli/src/lib.rs`: it surfaces `not
+  loaded` as an `error` check with a hint pointing at `caco up`. So
+  acceptance criterion #1 was already satisfied on main.
+- Acceptance criterion #2 was NOT satisfied: `caco service` had
+  start/stop/restart/status/show/logs but no `load`. On launchd,
+  `service start` calls `launchctl kickstart`, which fails when the
+  unit isn't in the domain. So the only recovery was `caco up`,
+  which mixes lifecycle reload with full daemon convergence — not
+  the targeted reload the bead asked for.
 
 ## After state
 
-- Four new structured label keys recognised by
-  `is_structured_label`:
-  - `discovered-via-agent:<agent-id>`
-  - `discovered-via-bead:<bd-id>`
-  - `discovered-via-session:<event-name>` (e.g.
-    `reflect-session`, `manual-triage`, `test-user-exercise`)
-  - `discovered-via-node:<node-name>`
-- New `model::DiscoveredVia` struct + `model::parse_discovered_via`
-  in `crates/caco-beads/src/model.rs`. First-value-wins on duplicate
-  keys (provenance is a single point of origin, unlike scheduling
-  which OR's). Round-trip via `to_labels()`.
-- New CLI flags on `caco bd create`:
-  `--discovered-via-{agent,bead,session,node}`. Each non-empty value
-  folds into the labels array and merges with `--labels` rather than
-  replacing it. Help text wired through `BD_CREATE_ARGS`.
-- Filtering uses the existing
-  `caco bd list --label discovered-via-session:reflect-session` —
-  no new filter flag required.
+New `caco service load` subcommand that idempotently (re)loads the
+native supervisor unit. Backend behaviour:
 
-Drive-by clippy fixes (peer commits broke `-D warnings`):
-- `caco-daemon/store.rs` `note_delivery_tracking` docstring
-  (`doc_lazy_continuation` on a `+` continuation line).
-- `caco-cli/lib.rs` agent-log `--all` docstring overindent
-  (`doc_overindented_list_items`).
-- `caco-cli/lib.rs` manual `taken` counter →
-  `.enumerate()` (`explicit_counter_loop`).
+- **launchd**:
+  1. `launchctl bootstrap gui/<uid> ~/Library/LaunchAgents/<unit>.plist`
+  2. `launchctl kickstart -k gui/<uid>/<unit>`
+  Step 1 is treated as success-equivalent if stderr says "service
+  already loaded" / "Service is already loaded" / "already loaded",
+  so re-running `service load` against an already-loaded unit is a
+  no-op success.
+- **systemd**: `systemctl --user daemon-reload` then
+  `systemctl --user enable --now <unit>`. Both idempotent.
+- **supervisord**: `supervisorctl reread` then
+  `supervisorctl update <unit>`. Both idempotent.
 
-`cargo test-small`: **4207 PASS / 0 FAIL** (+9 from 4198: 6 new
-provenance tests + 3 absorbed from rebased peer work).
-`cargo clippy --workspace --all-targets -- -D warnings`: PASS clean.
+Per-step results (command, exit code, stdout, stderr,
+treated_as_success) surface in both text and `--json` output, so
+operators and tests can see exactly what ran.
 
 ## Diff summary
 
-Commits this session (rebased onto `c70d37f0`):
-- `9ea149c2` — model: DiscoveredVia + parse_discovered_via + 6 tests
-- `fbcfdd1f` — CLI flags + drive-by clippy fixes
+- `crates/caco-cli/src/lib.rs`:
+  - `SERVICE_SUBCOMMANDS`: register `load` leaf with help text.
+  - Dispatch table: route `service load` to `dispatch_service_load`.
+  - New `dispatch_service_load` (~150 LOC) — runs the
+    backend-appropriate ordered command sequence, marks benign
+    "already loaded" stderr as success, returns text or JSON.
+  - Test `service_subcommand_help_includes_service`: assert `load`
+    is in the help subcommands list.
+- Tests: `cargo test -p caco-cli --lib
+  service_subcommand_help_includes_service` passes.
+- `cargo test-small`: 58 passed.
+- `cargo clippy -p caco-cli --tests`: clean.
 
-Files (3 / +268 / -8):
-- `crates/caco-beads/src/model.rs` (+200 / -1):
-  STRUCTURED_LABEL_KEYS expansion, DiscoveredVia struct,
-  parse_discovered_via fn, 6 new unit tests.
-- `crates/caco-cli/src/lib.rs` (+64 / -7):
-  4 new ArgSpec entries, provenance-flag merge into body["labels"],
-  drive-by lint fixes.
-- `crates/caco-daemon/src/store.rs` (+4 / -4):
-  drive-by docstring rewrite.
+Behavioural delta: a new operator-/agent-safe verb that recovers
+the exact failure mode the bead documented, without invoking full
+`caco up` convergence.
 
 ## Operator-takeaway
 
-Structured-label provenance is the cheapest possible delivery path
-that satisfies all use cases in the bead: queryable
-(`--label discovered-via-session:test-user-exercise`), filter-friendly,
-TUI-renderable, and credit-attribution-able. If a future need wants
-indexed JSON columns we still have an upgrade path — the
-`parse_discovered_via` boundary keeps callers shielded from the
-underlying representation.
+When `caco doctor` shows `lifecycle  native supervisor   error
+not loaded  launchd (com.cacophony.lifecycle)`, the right
+single-purpose recovery is now `caco service load` (not `caco up`
+or hand-typed `launchctl bootstrap`). It bootstraps the unit into
+the gui/<uid> domain and kickstarts it in one call, and is safe
+to invoke when already loaded — useful for idempotent recovery
+loops in caco-doctor or convergence scripts.
 
-Pairs with bd-c5c3a0 (labels), bd-9006a6 (richer query), bd-2e2338
-(triage workflow). The sibling beads that wanted to filter by
-"who filed this and why" can now do so against any bead created
-from this commit forward.
+Note: if this scenario keeps recurring (gui/<uid> scope dropping
+on user logout / fast user switch), the longer-term fix is to
+move the unit to `system/` scope in install-service. That's out
+of scope for this bead — flag it in a follow-up if seen twice.
