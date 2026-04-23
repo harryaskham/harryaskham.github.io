@@ -1,46 +1,80 @@
-# Session summary — reflection drafts (post stand-down)
+# Session summary — workspace-view log tail pane (bd-b9e32e)
 
 ## Goal
 
-Land reflection drafts for the three beads closed this session
-(bd-43db78, bd-aac755, bd-83a8ed) onto main per operator stand-down
-instruction. The reflect-session mixin's drafts had not yet been
-filed because earlier reintegrations whitelisted only summary
-artefacts.
+Land a workspace-view-ready log tail pane: source-polymorphic SSE
+streaming endpoint on the daemon, plus a reusable browser-side pane
+module that filters / pauses / follows / copies on the client. Built
+to the contracts published in bd-a78749 (MVP) so the pane can be
+mounted by the workspace shell once MVP lands without a serial rebase.
 
 ## Bead(s)
 
-- None claimed; this is a stand-down reintegration carrying
-  artefacts only.
+- `bd-b9e32e` — [workspace-view] Log tail pane: agent/daemon/session
+  logs with grep filter + follow-mode + pause
+- (parent: `bd-027e9d` — caco-web Workspace View epic)
 
 ## Before state
 
-- Three closed beads from this session (bd-43db78, bd-aac755,
-  bd-83a8ed) had no reflection drafts on disk — earlier reintegrates
-  whitelisted only summary artefacts and the reflect-session mixin
-  drafts had not yet been authored.
+- Daemon had `/api/v1/logs/stream` for the daemon log only — no
+  source-polymorphic surface, no agent/session-scoped tailing.
+- caco-web had no log-pane module; the agent-detail surface read
+  one-shot log dumps via `handle_agent_logs_endpoint`, no streaming.
+- No client-side regex filter, pause, or 10k-line ring buffer in
+  any caco-web surface.
 
 ## After state
 
-- Three reflections under
-  `.cacophony/agent/ms-mac-cacophony-caco-dev-msm-2/reflections/`:
-  - `0000-unknown-caller-fallback.md` — generalises bd-43db78 into
-    an antipattern: sentinel-string defaults for security-relevant
-    identity fields.
-  - `0001-profile-lint-drift.md` — generalises bd-aac755 into the
-    "validation at consumption time needs an authoring-time mirror"
-    rule.
-  - `0002-best-effort-time-filter.md` — documents the precision /
-    invasiveness trade-off taken in bd-83a8ed and why "best-effort"
-    is fine when the slop is bounded and documented.
+- New daemon endpoint `GET /api/v1/logs/tail/{source}[/{id}]` with
+  query params `tail` (1-5000, default 200) and `follow` (default
+  true). Sources: `daemon` | `agent` | `session`.
+- `LogTailStrategy` enum cleanly separates file-tail (daemon log,
+  wrapper log) from tmux-pane capture (agent live output) with a
+  shared snapshot/diff abstraction.
+- `escape_sse_line` collapses CR/LF so a source line is always
+  exactly one SSE `data:` frame.
+- `diff_tmux_new_lines` handles both append-only (prefix strip) and
+  rolled-buffer (set-diff fallback) tmux capture cases.
+- New static module `static/workspace-log-pane.js`:
+  - `window.WorkspaceLogPane.mount(container, config) → handle`
+  - regex filter, pause/resume, follow toggle (auto-unset on
+    scroll-up), copy-visible button, 10k-line client buffer
+  - auto-reconnect with exponential-ish backoff (2s) on EventSource
+    error
+  - `applyFilter(lines, regex)` pure helper exposed for downstream
+    panes that want to validate filter behaviour without spinning up
+    a real EventSource
+- New `static/workspace-log-pane.css` with toolbar/body layout.
+- 7 daemon tests + 3 caco-web tests, all passing:
+  - `workspace_log_tail_daemon_returns_sse_frames`
+  - `workspace_log_tail_unknown_source_returns_400`
+  - `workspace_log_tail_agent_without_id_returns_400`
+  - `workspace_log_tail_agent_unknown_id_returns_404`
+  - `escape_sse_line_collapses_newlines_and_carriage_returns`
+  - `diff_tmux_new_lines_returns_prefix_stripped_tail`
+  - `diff_tmux_new_lines_handles_rolled_buffer`
+  - `workspace_log_pane_js_is_embedded`
+  - `workspace_log_pane_css_is_embedded`
+  - `workspace_log_pane_filter_semantics_mirror_bead_acceptance`
+    (AC #7: 1000 lines, /error/ filter, only error lines visible)
 
 ## Diff summary
 
-- Commits: 1
-- Files touched: 3 reflection drafts + this summary
-- Tests: none (docs only)
+- Files touched:
+  - `crates/caco-daemon/src/lib.rs` — 2 routes + handlers + helpers + 7 tests
+  - `crates/caco-web/static/workspace-log-pane.js` — new
+  - `crates/caco-web/static/workspace-log-pane.css` — new
+  - `crates/caco-web/src/tests.rs` — 3 new tests
+- Tests: +10 / -0 / flipped 0
+- Behavioural delta: workspace shell can now mount a log pane against
+  any agent / the daemon log / a session log via one-line JS, with
+  full-stack live tailing through a documented SSE contract.
 
 ## Operator-takeaway
 
-Per harry's request, reflections are now on the agent branch and
-will land on main via this reintegrate. Stand-down complete.
+The pane is a self-contained module — workspace MVP can drop in a
+`<div id="logpane"></div>` and call
+`WorkspaceLogPane.mount(el, {source:'agent', agent_id:'…'})` to get a
+production-ready filtered live tail. The only daemon contribution is
+the SSE endpoint; everything operator-facing (filter, pause, follow,
+copy) is client-side so it can be improved without daemon redeploy.
