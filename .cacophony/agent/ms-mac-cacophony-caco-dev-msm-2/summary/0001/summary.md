@@ -1,44 +1,83 @@
-# Session summary — Profile frontmatter lint in `caco config validate` (bd-aac755)
+# Session summary — peer-probe false-Unreachable hardening (bd-84d22a)
 
 ## Goal
 
-Close the bd-aac755 acceptance gap: build.rs already lints embedded
-profile frontmatter at compile time, but `caco config validate` did not
-catch the same class of error in project-local override profiles. This
-session adds the CLI-side lint surface so authors of new profiles get a
-fast, actionable error before reintegration.
+Eliminate the false-Unreachable storms operators were seeing on
+ms-mac, where 1-4 peers per probe cycle were getting flagged
+Unreachable while every other indicator (TCP probes, mesh-routed bead
+list, daemon API roundtrips through the mesh router) confirmed they
+were healthy. The rotating-peer pattern across cycles pointed at
+transient prober-side state, not actual peer outages.
 
 ## Bead(s)
 
-- `bd-aac755` — Profile frontmatter lint: validate hook_mixins against registered set, fail at parse not at resolve-time
+- `bd-84d22a` — agent summary peer-probe falsely flags multiple nodes
+  Unreachable while mesh-routed traffic still works (P1, recurring)
 
 ## Before state
 
-- build.rs catalog codegen lints embedded profile hook_mixins, mcp_servers, permission_mode, authorization.scope, reintegration.mode/allowed_modes (already in place from earlier in the bead's lifecycle).
-- `caco config validate` did NOT walk project-local `.cacophony/profiles/*.md` to validate them.
-- Authors of project-local override profiles only learned of bad frontmatter at agent-spawn / hook-resolve time.
+- `replication::peer_probe_loop` used a 5s per-request timeout against
+  a freshly-built `reqwest::Client` per cycle.
+- A single failed `/api/v1/config/hash` probe immediately promoted the
+  peer to `PeerStatus::Unreachable` and surfaced 19 phantom Stranded
+  Agents in the worst-observed sweep (sweep 4, 09:13 BST 2026-04-23).
+- No retry layer; no consecutive-failure tracking; cold TLS handshakes
+  over Tailscale could exceed the 5s budget on the first attempt and
+  flip the operator-visible summary state.
 
 ## After state
 
-- `caco config validate` now scans `.cacophony/profiles/*.md` and `configs/profiles/*.md` in the current working directory, runs `caco_profile::load_profile` on each, and surfaces every parse/validation error as a `profile lint:` warning in the validation output.
-- Two new passing unit tests:
-  - `lint_profiles_in_cwd_for_validate_flags_unknown_hook_mixin`
-  - `lint_profiles_in_cwd_for_validate_passes_clean_profile`
+- New constants in `replication.rs`:
+  - `PEER_PROBE_TIMEOUT_SECS = 10` (was 5) — cold TLS-handshake budget.
+  - `PEER_PROBE_UNREACHABLE_THRESHOLD = 2` — consecutive failed cycles
+    before the peer flips to Unreachable (~30s of confirmed failure).
+  - `PEER_PROBE_RETRY_DELAY_MS = 200` — in-cycle one-shot retry breather.
+- `peer_probe_loop` now:
+  1. Builds the mTLS client with the new 10s timeout.
+  2. On first `probe_peer_config_hash` failure, sleeps 200ms and
+     retries once before booking a cycle-failure.
+  3. Tracks `consecutive_probe_failures` per `PeerReachability`. Below
+     the 2-cycle threshold, the peer's `status` and `api_reachable`
+     fields keep their prior values so the operator-visible summary
+     does NOT flap on a single-cycle TLS jitter; the failure metadata
+     is still recorded for diagnostics.
+  4. A successful probe resets the counter to zero.
+- `PeerReachability` extended with `consecutive_probe_failures: u32`
+  (`#[serde(default)]` so older serialized state migrates cleanly).
+- 4 PeerReachability constructor sites in `beads.rs`, `lib.rs`,
+  `replication.rs` updated to populate the new field.
+- 6 new passing unit tests (in `replication::tests`):
+  - `first_failure_does_not_promote_peer_to_unreachable`
+  - `second_consecutive_failure_promotes_to_unreachable`
+  - `intervening_success_resets_failure_counter`
+  - `unreachable_threshold_constant_is_at_least_two` (regression pin)
+  - `probe_timeout_at_least_doubled_from_original_5s` (regression pin)
+  - `probe_cycle_budget_fits_inside_interval` (sanity check on the
+    interaction between threshold, timeout, retry, and interval)
+- All 148 replication-module tests green; clippy clean.
 
 ## Diff summary
 
-- Commits: 1 (pending)
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: +2 new passing
-- Behavioural delta: `caco config validate` now produces `warning: profile lint: <path>: <error>` lines for each malformed project-local profile, in addition to existing config validation. No breaking changes.
+- Files touched:
+  - `crates/caco-daemon/src/replication.rs` — new constants + struct
+    field + retry logic + 6 new tests
+  - `crates/caco-daemon/src/lib.rs` — 1 PeerReachability constructor
+  - `crates/caco-daemon/src/beads.rs` — 1 PeerReachability constructor
+- Tests: +6 / -0 / flipped 0
+- Behavioural delta: a peer must be unreachable for ≥30s (2 cycles ×
+  15s) before the operator-visible summary surface marks it
+  Unreachable. Probe-side TLS jitter alone can no longer promote a
+  peer to Unreachable.
 
 ## Operator-takeaway
 
-The two-layer lint (build.rs + caco config validate) means an author can
-no longer ship a profile with an invalid hook_mixin, mcp_server, or
-canonical-set value without the system telling them where and what.
-The build-time check fires for the cacophony repo itself; the
-config-validate check fires for any project-local override profile.
-The original outage shape ("expected 51 got 49" from
-all_embedded_profiles_resolve_without_disk) is now caught by build.rs
-before it ever reaches a unit test.
+Watch ms-mac's `agent summary` over the next 3 sweep windows
+(~45 min). The Unreachable column should stay clean unless a peer is
+actually down. If a real outage occurs, the summary will lag the
+true outage by up to ~30s — that's the deliberate price for
+eliminating phantom-unreachability noise. Phantom Stranded Agents
+should drop to zero. If false-Unreachable returns, the next thing to
+investigate is whether the *first* probe attempt itself is being
+blocked at the TLS layer (handshake stall in reqwest's connection
+pool); that would warrant adding a connection-pool warmup or
+switching the prober to share the mesh router's already-warm pool.
