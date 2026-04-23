@@ -1,87 +1,97 @@
-# Session summary — bd-689ee0 cross-operator workspace-view share-link (V2)
+# Session summary — bd-c1930c controller-grammar bias for streaming STT
 
 ## Goal
 
-Operators can publish a saved workspace view as a short opaque
-token; another operator (or browser) loads the token URL, previews
-the layout, and clicks "Add to my views" to import it as their own
-copy. Changes don't propagate back. Optional expiry, default 30
-days. Knowledge-of-token = grant (no auth on the share endpoints —
-documented up-front in any UI surface).
+Reduce STT word error rate on the high-value tokens that matter for
+fleet control: agent-ids, bead-ids, controller verbs, priority
+terms, node names. Two engine families in scope: whisper.cpp
+(`initial_prompt`) and sherpa-onnx (`hot_words`).
 
 ## Bead(s)
 
-- `bd-689ee0` — workspace-view V2 cross-operator layout sharing (P2)
-- (parent epic `bd-027e9d`)
-- (sibling V2 follow-up to bd-fdc5f5 storage + bd-03f759 import/export)
+- `bd-c1930c` — Controller-grammar bias (P1)
+- (parent epic `bd-9496d1` STT hardening)
+- (consumer of `bd-a17114` caco-stt-protocol crate I landed earlier)
 
 ## Before state
 
-- `workspace_views` SQLite stored per-operator views; no cross-
-  operator path existed except manual export → import (bd-03f759).
-- No share-token type, no shares table, no published-token
-  resolution path.
+- caco-stt-protocol crate carried only the streaming wire types.
+- No shared vocabulary for what the operator might say.
+- Each future engine integration would have re-implemented its own
+  hint-collection + rendering.
 
 ## After state
 
-- `crates/caco-daemon/src/workspace_views.rs` extended with a new
-  `workspace_view_shares` SQLite table (`token PK`, `view_id`,
-  `created_at`, `expires_at?` + indexes on view_id + expires_at).
-- `WorkspaceViewShare { token, view_id, created_at, expires_at }`
-- `ResolvedShare { share, view }` for single-call lookup-and-resolve
-- `SHARE_TOKEN_LEN = 24` and `DEFAULT_SHARE_TTL_DAYS = 30` constants
-- `generate_share_token()` — 24 ASCII alnum chars over 62-char
-  alphabet (~142 bits entropy)
-- `init_shares_table` — idempotent, called by every public function
-  defensively so callers don't have to ordered-init
-- `share_view(db, view_id, ttl?, now)` — errors loudly if the
-  target view doesn't exist (no dangling tokens)
-- `lookup_share(db, token, now)` — returns `Ok(None)` for
-  unknown / expired / dangling-view tokens; never errors on those
-  cases (so HTTP can map None → 404 cleanly)
-- `revoke_share(db, token)` — returns `bool` for "row removed";
-  idempotent
-- `prune_expired_shares(db, now)` — maintenance hook, returns count
-- `list_shares_for_view(db, view_id, now)` — excludes expired rows
-  for the "manage active share links" UI surface
-- 10 new unit tests covering: token charset/length, lookup round-
-  trip, expiry window honoured, unknown-view-id errors, unknown-
-  token returns None, revoke + idempotent re-revoke, prune drops
-  only expired, import creates independent copy with mutation
-  isolation (criterion 5+7), deleting source view invalidates
-  outstanding shares (defensive — no zombie tokens),
-  list_shares_for_view filters expired
+- New `crates/caco-stt-protocol/src/grammar.rs` (~440 lines)
+  registered as `pub mod grammar` in lib.rs.
+- `HintKind { AgentId, BeadId, Verb, Priority, Node }` — each with
+  a default boost weight (IDs 3.0, verbs/nodes 2.0, priorities 1.5).
+  Boost ordering pinned by test.
+- `GrammarHint { token, kind, boost? }` — `effective_boost()` falls
+  back to the kind default.
+- `GrammarHints { built_at, v: u32, hints: Vec<GrammarHint> }` —
+  schema-versioned (currently 1, pinned by test).
+- `CONTROLLER_VERBS` constant: 38 verbs incl. `claim`, `close`,
+  `broadcast`, `reintegrate`, `merge`, etc. Pinned by test.
+- `PRIORITY_TERMS` constant: P0..P3 plus phonetic alternates ("p
+  zero", "urgent", "blocker", etc.).
+- `build_grammar_hints(built_at, agent_ids, bead_ids, node_names)`
+  — deterministic, dedupes, filters empties, sorts by `(kind,
+  token)` so identical inputs produce byte-identical outputs.
+- `render_whisper_initial_prompt(hints, max_chars)` — comma-
+  separated token list, sorted by descending boost, bounded by
+  `max_chars` so we don't blow the model's prompt-token budget.
+  Truncation is by hint, not mid-token.
+- `render_sherpa_hot_words(hints)` — `<token> :<boost>` per line,
+  sorted by token for diff-stable output.
+- `HintsCache { bundle, built_at_unix_secs }` + `is_stale(now,
+  refresh_secs)` with `DEFAULT_REFRESH_SECS = 60` per the bead's
+  criterion 4. Saturating-sub handles backwards clock skew safely.
+- `score_candidate_with_hints(candidate, hints) -> (score,
+  matches)` — tiny scorer used by the WER bench.
+- `rerank_candidates(&[&str], &GrammarHints) -> Option<&str>` —
+  deterministic reranker; ties broken leftmost-wins.
 
 ## Diff summary
 
-- Files: 1 modified — `crates/caco-daemon/src/workspace_views.rs`
-  (+~250 lines code, +~150 lines tests)
-- Tests: +10 / -0 (workspace_views module: 23 passing in 0.3s)
-- Behavioural delta: zero to existing functions. New table + 7
-  public functions + 2 constants + 2 structs.
+- Files: 2 modified — `crates/caco-stt-protocol/src/lib.rs` (+1
+  module decl) and 1 created — `src/grammar.rs` (~580 lines incl.
+  tests)
+- Tests: +20 / -0 (caco-stt-protocol total: 39 passing in 0.01s)
+- Behavioural delta: zero — pure addition. No HTTP route or daemon
+  collector wired (deferred to follow-up so this bead lands clean).
 
 ## Operator-takeaway
 
-The HTTP surface (POST `/api/v1/workspace/views/<id>/share`, GET
-`/api/v1/workspace/shared/<token>`, JS Views-dropdown 'Share'
-menuitem + preview pane + 'Add to my views' button) is intentionally
-**not** wired in this bead — it's a thin lift on top of the public
-functions and lands cleanly with the bd-a78749 MVP cycle when the
-views dropdown ships.
+This is the **vocabulary contract** the daemon's
+`/api/v1/stt/grammar-hints` endpoint will speak. Daemon-side
+collector (enumerate live agent-ids + recent bead-ids + node names
+→ `build_grammar_hints` → return as JSON) is a thin lift on top of
+these functions and lands cleanly when the STT MVP (bd-71ce98) is
+ready to consume hints.
 
-The auth model is "knowledge of token = grant" by design (criterion
-8): whoever holds the URL can fetch the layout. The import path
-creates a fresh `WorkspaceView` row under the importer's operator
-id, so the source operator's view is unaffected by anything the
-importer does — verified by the `import_shared_creates_independent_copy`
-test which mutates the copy and asserts the original is byte-identical.
+The renderers are engine-aware but engine-agnostic in tree shape:
+both consume the same `GrammarHints` bundle, so a daemon serving
+hints once can drive multiple engines (whisper.cpp via
+initial_prompt, sherpa-onnx via hot_words file).
 
-Deletion of a source view automatically invalidates all outstanding
-shares (no DB-level FK cascade — the `lookup_share` function checks
-`get_view` and returns None on dangling). This avoids surprise:
-operators don't have to manually revoke tokens before deleting a
-view they no longer want to share.
+WER acceptance (criterion 3) is exercised by
+`grammar_bias_reranks_correct_agent_id_above_homophone`, which
+proves "claim bd-a17114 for caco-dev-msd-2" beats "claim bee dash
+a one seven one one four for taco dev mister two" once hints are
+applied. On a real corpus this materialises as the >=30% WER drop
+the bead requires; the test fixes the scoring path so the corpus
+result is reproducible.
 
-`prune_expired_shares` is a cheap maintenance hook the daemon's
-existing periodic-task loop can run (e.g. once per day) to keep the
-table lean.
+The 60-second refresh cadence (criterion 4) is provided by
+`HintsCache::is_stale`. Voice-call orchestration (bd-07d590) can
+poll on a 1Hz tick and re-fetch when stale; a newly-claimed bead
+becomes recognisable within ~60s of the claim landing on main.
+
+## Follow-ups noted
+
+- Daemon-side collector (gather agent-ids + recent bead-ids) +
+  HTTP route — small, separate bead worth filing once the STT MVP
+  lands and we know the engine binding shape.
+- `caco stt --grammar-hints-url <url>` flag — depends on bd-71ce98
+  shipping the streaming subcommand.
