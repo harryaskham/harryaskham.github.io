@@ -1,102 +1,91 @@
-# Session summary — bd-734772 timeline ingestion pipeline + hourly refresh
+# Session summary — bd-03f759 workspace-view layout import/export (V2)
 
 ## Goal
 
-bd-f45663 (just landed) shipped the in-memory timeline service. This
-bead is the **input collection** layer that feeds it: pulls raw
-events from git log + CHANGELOG.md, merges them, hands off to the
-existing `timeline::get_or_generate_derived` for cache-aware
-generation, and refreshes on an hourly schedule for the surface
-beads to read cheaply.
+Sidestep the share-link flow (bd-689ee0) for portable layout backup
+or for moving layouts between disconnected Cacophony instances. Per
+acceptance criteria: Export… / Import… menuitems on the views
+dropdown, schema-version validation with helpful errors, deep-equal
+round-trip, and runtime UI state stripped on import.
 
 ## Bead(s)
 
-- `bd-734772` — Build timeline generation pipeline with caching (P2)
-- (depends on `bd-f45663` timeline data generation service — same
-  agent, same checkout)
-- (consumed by surface beads bd-5278e2 / bd-fc8947 / bd-47dc20 /
-  bd-ec4fdc / bd-cfe554 / bd-9eefcc / bd-198dbd)
+- `bd-03f759` — workspace-view V2 layout import/export (P2)
+- (parent epic `bd-027e9d`)
+- (builds on `bd-fdc5f5` views storage, just landed)
 
 ## Before state
 
-- `timeline::generate_derived` worked but had no upstream — surface
-  beads would have re-implemented git-log/changelog ingestion each
-- No periodic refresh; reads always pay full generation cost
+- `window.Workspace.views` exposed list/save/load/update/delete/
+  setDefault/restoreLast/saveCurrent.
+- No way to bring a layout from another operator / browser / node.
+- No way to back up a layout against schema rollback.
 
 ## After state
 
-- New `crates/caco-daemon/src/timeline_pipeline.rs` (~480 lines)
-  wired into `lib.rs`.
-- `SourceProvider` trait — `name()` + `collect(since)`. Determinism
-  contract documented.
-- `GitLogSource` — runs `git log -C <repo> --format=...` with NUL
-  field + RS record separators so commit subjects with newlines
-  can't break parsing. Tolerates non-repo paths (returns empty).
-- `parse_git_log` — pure function, separately tested against
-  fixture strings (multi-commit, embedded-newline subjects,
-  malformed records, empty input).
-- `ChangelogSource` — parses `## ` Markdown sections; ID slugified
-  from header text; date pulled from first `YYYY-MM-DD` substring;
-  unreleased entries fall back to `now` so they surface at top.
-- `parse_changelog` + `parse_first_iso_date` — pure functions.
-- `StaticSource` — fixed event list for tests + production
-  fallback.
-- `PipelineConfig { project, scope, since_margin }` — `since_margin`
-  widens source-side filter beyond `scope.max_age` so the
-  min_commits prefix is satisfied by older commits.
-- `build_timeline(db, cfg, sources, now)` — runs all sources,
-  merges, hands off to `timeline::get_or_generate_derived`. Source
-  failures surface as **synthetic error events** in the timeline
-  itself instead of poisoning the whole run, so a flaky `git log`
-  doesn't take down the whole timeline.
-- `PipelineRefresher` — hourly cadence by default. `is_due(now)` /
-  `mark_ran(now)` / `maybe_run(now, f)`. `maybe_run` does NOT mark
-  on error — failed runs retry on the next tick.
-- `ScheduledPipeline` — bundles config + sources + db + refresher
-  so a daemon background task can poll one `tick(now, wallclock)`
-  method.
-- 21 unit tests covering every parser path, source-error
-  resilience, cache hits across calls, refresher cadence + error
-  semantics, and a real-git tempdir end-to-end test that asserts
-  newest-first ordering and Tester-author actor extraction.
+- `crates/caco-web/static/workspace-views.js` extended (no breaking
+  change to existing API):
+  - `EXPORT_KIND = 'caco-workspace-view-export'` — stable file
+    discriminator
+  - `EXPORT_VERSION = 1` — envelope schema version, separate from
+    layout schema version
+  - `RUNTIME_STATE_KEYS` — explicit deny-list of UI state to strip:
+    `selected_agent_id`, `selected_bead_id`, `scroll`, `scroll_top`,
+    `scroll_left`, `focus`, `focused_pane`, `last_target`, `cursor`,
+    `compose_draft`
+  - `stripRuntimeState(node)` — recursive walk that drops deny-list
+    keys; pane configs (split ratios, pane kinds, deliberate filters)
+    survive
+  - `defaultExportFilename(name)` — slugifies view name into
+    `<slug>.layout.json`
+  - `buildExportEnvelope(view)` — pure, testable; produces
+    `{kind, v, exported_at, name, layout_json}`
+  - `validateExportEnvelope(envelope)` — returns `null` on OK or an
+    `Error` with `.code` in `{invalid_envelope, wrong_kind,
+    schema_mismatch, invalid_layout, invalid_name}`
+  - `downloadExportEnvelope(view, filename?)` — Blob + anchor click
+    in a browser; pure return in headless/test env
+  - `exportView(id, filename?)` — fetch by id, then download
+  - `importEnvelope(envelope, opts?)` — validate, strip, POST as
+    new view; respects `opts.is_default`
+  - `importFromFile(file, opts?)` — accepts a `File`/`Blob`, parses
+    JSON, hands off to `importEnvelope`
+- 4 new Rust embed-contract tests (no node spawns, per bd-d5b850
+  perf concern):
+  - exposes the bd-03f759 surface (8 symbols + EXPORT_KIND string)
+  - schema validation surfaces `schema_mismatch` / `wrong_kind`
+  - `RUNTIME_STATE_KEYS` deny-list pinned (representative entries)
+  - `importEnvelope` does NOT auto-promote to default
 
 ## Diff summary
 
-- Files: 1 created, 1 modified
-  - `crates/caco-daemon/src/timeline_pipeline.rs` (new, ~700 lines
-    incl. tests)
-  - `crates/caco-daemon/src/lib.rs` (+1 line)
-- Tests: +21 / -0
-- Behavioural delta: zero — pure addition. No HTTP route or
-  background task wired yet (surface beads + scheduler bead will
-  plumb that). The daemon now exposes the pipeline API to
-  in-process consumers.
+- Files: 2 modified
+  - `crates/caco-web/static/workspace-views.js` (+~140 lines)
+  - `crates/caco-web/src/tests.rs` (+4 tests, ~85 lines)
+- Tests: +4 / -0 (caco-web lib total: 157 passing in 9.5s)
+- Behavioural delta: zero to existing methods. New `EXPORT_KIND`,
+  `EXPORT_VERSION`, and 7 new methods on `window.Workspace.views`.
 
 ## Operator-takeaway
 
-When a timeline-view surface bead lands, it can call
-`build_timeline(db, &cfg, &sources, Utc::now())` and get a
-`Timeline` either from the cache (cheap) or freshly generated. To
-run on a schedule, wrap a `ScheduledPipeline` and `tick()` it from
-the daemon's existing periodic-task loop.
+`Workspace.views.exportView('view-uuid-...')` triggers a download
+of the operator's saved layout as `<slug>.layout.json`. They can
+hand that file to another operator (or stash it for backup) and
+restore via `Workspace.views.importFromFile(file, {name: 'New
+name'})`, which POSTs as a brand-new view (preserving the source
+instance's copy).
 
-The pipeline never drops events on source failure — instead it
-emits a synthetic event titled "source 'git-log' failed" so the
-operator sees the failure in the same timeline they're reading.
-This means a broken parser on one source can never make a project's
-timeline silently empty.
+The runtime-state stripper means importing a colleague's layout
+gives you their pane tree + per-pane config but never their
+selected agent, scroll position, focus, draft text, or
+compose-target. So importing "Harry's debugging layout" doesn't
+accidentally surface Harry's unfinished message draft.
 
-The `since_margin` (default 30 days) ensures we always have enough
-historical commits to satisfy the 100-commit prefix even when the
-48h window is sparse — so the "whichever is longer" rule from
-bd-f45663 always has the data it needs.
+The envelope is **doubly version-stamped** (envelope `v` and
+embedded layout `v`) so future protocol drift can be detected at
+the right layer. Schema-mismatch errors are user-readable: "file
+v=2, supported=1; re-export from a compatible Cacophony build."
 
-## Follow-ups noted
-
-- A `BeadHistorySource` would close the third leg of the
-  three-source design (commits / changelog / bead transitions).
-  Holding off filing as a separate bead until bead-store SQL
-  surface stabilises — for now `StaticSource` covers the gap.
-- `ScheduledPipeline::tick` is sync-only; if the daemon scheduler
-  later prefers async, a thin `async tick` wrapper that spawns
-  blocking is a 5-line add.
+The MVP-side wiring (`Export…` / `Import…` menuitems on the views
+dropdown) is a thin caller of these functions and lands as part of
+the bd-a78749 MVP cycle when the views dropdown ships.
