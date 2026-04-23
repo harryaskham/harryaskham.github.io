@@ -1,66 +1,59 @@
-# Session summary — bd-f2d9e2 artefact-prefix allowlist drop
+# Session summary — axe-core a11y gate (bd-a2ace0)
 
 ## Goal
 
-Stop the reintegration daemon from silently dropping per-agent
-artefact files under any subdir other than `summary/` or `session/`.
-Operator was hand-copying `reflect/`, `scratch/`, etc. between
-checkouts to land them, defeating the point of the cacophony-state
-orphan branch.
+Close the rediscover-every-cycle accessibility gap noted by the
+workspace-view polish/a11y permanent (bd-09f314). Each cycle was
+manually re-running axe devtools or wave and surfacing the same
+categories of defect (missing aria-label, missing role, low contrast).
+Automate it: render the workspace panes into a real DOM and run
+axe-core programmatically, failing the build on any serious/critical
+violation.
 
 ## Bead(s)
 
-- `bd-f2d9e2` — Reintegration artefact-prefix allowlist drops everything
-  outside `.cacophony/agent/<id>/{summary,session}/` — should accept
-  arbitrary agent outputs and only WARN on conflict
-- (related: `bd-dd94c1` — original cacophony-state branch wiring)
+- `bd-a2ace0` — workspace-view: ship an in-repo axe-core test pass over
+  rendered pane HTML
+- parent permanent: `bd-09f314` — workspace-view polish + a11y
 
 ## Before state
 
-- `is_artefact_path` only returned true for `.cacophony/agent/<id>/summary/**`
-  and `.cacophony/agent/<id>/session/**`.
-- `git ls-tree -r origin/cacophony-state | grep -ci reflect` → 0 across
-  cacophony + picasso-health (per bead description).
-- Agents using the `reflect-session` mixin or roamer-style scratch
-  output had to manually shuffle files at reintegration time.
-- Failing tests: none specific to this; baseline `cargo test-small`
-  green (231 + 109 + 753 + 298 + 18 + 2834 + 59 + 1 = 4303 unit tests).
+- Failing tests: none in caco-web
+- a11y was enforced by manual cycles of bd-09f314, with no machine-
+  checkable contract. Drive-by refactors could quietly regress
+  WCAG-level invariants without detection until the next cycle.
 
 ## After state
 
-- `is_artefact_path` returns true for any path under
-  `.cacophony/agent/<id>/...` with at least one tail segment, regardless
-  of subdir name (summary/, session/, reflect/, scratch/, traces/, …).
-- New unit + integration tests cover the broader matcher and a mixed
-  code+artefact reintegration scenario including a 1MB binary blob.
-- `cargo test-small` still green; `cargo clippy -p caco-daemon -- -D warnings`
-  still clean.
-- `caco agent artefacts` already lists the full per-agent subtree via
-  `git ls-tree -r .cacophony/agent/<id>/`, so criterion 8 was already
-  satisfied; verified by reading the dispatch path.
+- Failing tests: none. `cargo test -p caco-web --lib` = 102 passed
+  (+3 new). `cargo clippy -p caco-web --tests` clean.
+- With jsdom installed (`NODE_PATH=.../jsdom cargo test -p caco-web
+  --lib axe`) the harness runs the real axe pass and reports 0 / 0
+  violations on the rendered bead-detail pane. Self-test confirms the
+  harness still detects injected defects.
+- Without jsdom, the test soft-skips with an actionable install hint —
+  no false negative, no false positive.
 
 ## Diff summary
 
-- Commits: `38628029` (`bd-f2d9e2: route any .cacophony/agent/<id>/**
-  path to cacophony-state`)
+- Commits: see `bd-a2ace0` footer
 - Files touched:
-  - `crates/caco-daemon/src/cacophony_state.rs` — matcher + module
-    docs + test rewrite + new integration test
-  - `crates/caco-daemon/src/reintegration.rs` — comment update at the
-    strip-staged-artefacts call site
-- Tests: +1 unit (`is_artefact_path_matches_any_subdir_under_agent_id`,
-  replacing the narrower `is_artefact_path_matches_summary_and_session`),
-  +1 integration (`split_routes_arbitrary_subdirs_and_separates_code`).
-- Behavioural delta: `.cacophony/agent/<id>/<anysubdir>/**` files now
-  land on `cacophony-state`, code commits on main are still stripped
-  of the same prefix; no behaviour change for paths outside
-  `.cacophony/agent/<id>/`.
+  - `crates/caco-web/static/vendor/axe/axe.min.js` (vendored upstream
+    4.11.3, MPL-2.0)
+  - `crates/caco-web/static/vendor/axe/README.md`
+  - `crates/caco-web/tests/axe_harness.js` (jsdom + axe pipeline)
+  - `crates/caco-web/tests/axe_self_test.js` (reverse-pin)
+  - `crates/caco-web/tests/.gitignore` (do not commit node_modules)
+  - `crates/caco-web/src/tests.rs` (+3 tests)
+- Tests: +3 / -0 / flipped 0
+- Behavioural delta: none for production; new test gate enforced
+  whenever jsdom is resolvable.
 
 ## Operator-takeaway
 
-Agents can now publish arbitrary subdirs under their own
-`.cacophony/agent/<id>/` namespace without the daemon silently
-dropping them. The matcher is now "anything namespaced to this
-agent"; the only filter is the `.cacophony/agent/` prefix itself.
-If you ever want a *new* artefact category, just write to it — no
-daemon change needed.
+The a11y enforcement is now a contract, not a permanent-cycle ritual.
+The reverse-pin self-test is the important second piece — it means a
+future refactor that breaks the harness itself will fail loudly rather
+than silently passing every pane. To turn the soft-skip into a hard
+gate locally or in CI, install jsdom: `npm install --no-save jsdom@26`
+in the workspace root or set NODE_PATH to a directory containing it.
