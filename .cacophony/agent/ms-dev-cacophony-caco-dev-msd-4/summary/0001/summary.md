@@ -1,82 +1,53 @@
-# Session summary — bd-8c9869 stale-TTS skip on the ingress paths
+# Session summary — bd-cf99b7 postmortem materialised in repo
 
 ## Goal
 
-Stop the TTS daemon and the TUI from speaking weeks-old messages
-aloud during SSE reconnect, full-state hydration, cross-node sync,
-and feed backfill. Add a configurable age threshold so that on
-operator-visible audio surfaces the past stays in the past.
+Take the bd-cf99b7 incident postmortem (helsinki cacophony beads
+truncation, 2774 → 113, restored to 2824) out of the beads store
+and into the repo as a durable, operator-browsable docs artefact,
+so the narrative survives a future beads-store regression and the
+follow-up bead table is discoverable from a normal docs checkout.
 
 ## Bead(s)
 
-- `bd-8c9869` — TTS speaks stale speak-messages received over the
-  wire — operator heard weeks-old messages on sgu24 during feed
-  replay.
-- `bd-fabf46` (filed) — pre-existing caco-cli `tests::agent_logs_*`
-  failures, unrelated.
+- `bd-cf99b7` — [postmortem RCA] v1.2.491-to-512 reconciler destructive jsonl rewrite truncated cacophony beads 2775 to 113 at 18:39:36 BST 2026-04-22 — restored to 2824 with zero loss
 
 ## Before state
 
-- Failing tests: none caused by this bead.
-- Behaviour: every `message_speak` / `speech_requested` event the
-  TTS daemon SSE loop or the TUI's MessageSpeak / feed-event
-  enqueue paths saw was unconditionally played, regardless of the
-  event's authored timestamp. Operator confirmed that on sgu24 a
-  feed replay produced audible playback of messages from days
-  prior.
-- No config knob existed to bound TTS age.
+- Failing tests: none observed locally; merge-queue mixin in force, no
+  full-suite run from this session.
+- Postmortem narrative existed only in the beads-store description for
+  bd-cf99b7. Recursive failure mode: a future beads-store regression
+  could lose the very record describing the prior beads-store
+  regression.
+- `docs/postmortems/` did not exist; only `docs/audits/` carried the
+  closest equivalent shape.
 
 ## After state
 
-- Failing tests caused by this change: none.
-- New behaviour: both ingress paths consult
-  `tts.max_age_before_skip_secs` (default `300`, set `0` to
-  disable). When the event's authored timestamp is older than the
-  threshold the audible playback is suppressed; the message
-  remains stored, hydrated into chat surfaces, and visible via
-  audio-cache replay. The TTS daemon still sends an ack on the
-  skip path so `caco msg speak --wait` callers never hang.
-- New tests: `cargo test -p caco-cli --lib extract_speakable_authored`
-  4 passed; `cargo test -p caco-tui --lib tts_should_skip_stale`
-  4 passed; `cargo test -p caco-config --lib` 716 passed; full
-  `cargo test -p caco-tui --lib` 2780 passed.
+- Failing tests: unchanged.
+- New tree `docs/postmortems/` with:
+  - `README.md` — index + authoring guidance for future incidents.
+  - `bd-cf99b7-beads-truncation-2026-04-22.md` — full mirror of the
+    bead description plus follow-up bead table and "see also" links.
+- bd-cf99b7 remains canonical; the markdown mirror is annotated as a
+  mirror, not a fork.
 
 ## Diff summary
 
-- Commits: `2135b84b` (8 files changed, 276 insertions).
-- Files touched:
-  - `crates/caco-config/src/model.rs` — `TtsConfig.max_age_before_skip_secs`
-    + serde default (`300`) + overlay propagation.
-  - `crates/caco-cli/src/lib.rs` — TTS daemon SSE loop:
-    `SpeakableEvent.authored_at`, parse the timestamp in
-    `tts_daemon_extract_speakable` preferring the inner
-    feed-event payload `ts` over the envelope `ts`, and skip+ack
-    stale events in `tts_daemon_loop`. Threshold plumbed from
-    config through `dispatch_tts_daemon`.
-  - `crates/caco-tui/src/speech.rs` — `SpeechState`
-    `tts_max_age_before_skip_secs` field, default 300, seeded by
-    `from_speech_config`.
-  - `crates/caco-tui/src/state/mod.rs` — `tts_should_skip_stale`
-    helper; gates both MessageSpeak / SpeechRequested and
-    feed-event `message_sent` / `message_broadcast` /
-    `agent_message` enqueue paths.
-  - `crates/caco-tui/src/state/tests.rs` — 4 new helper tests.
-  - `crates/caco-config/src/validate.rs`,
-    `crates/caco-config/tests/config.rs`,
-    `crates/caco-daemon/src/audio.rs` — fan-out to add the new
-    field on every existing `TtsConfig` literal.
-- Tests: +8 (4 caco-cli, 4 caco-tui), -0 / flipped 0.
-- Behavioural delta: silently suppresses audible TTS for any
-  speak event older than `tts.max_age_before_skip_secs` seconds.
-  Acks still flow. Non-audio surfaces (chat, audio-cache replay,
-  audit feed) are unchanged.
+- Commits: `b5fc2edf docs(postmortems): mirror bd-cf99b7 beads-truncation incident into repo (bd-cf99b7)`
+- Files touched: `docs/postmortems/README.md`, `docs/postmortems/bd-cf99b7-beads-truncation-2026-04-22.md`
+- Tests: +0 / -0 / flipped 0 (docs-only).
+- Behavioural delta: none. New documentation only; no code, schema,
+  CLI, or daemon-behaviour changes.
 
 ## Operator-takeaway
 
-If you ever need to disable the new stale-message guard (for
-example to deliberately replay history out loud during a demo),
-set `speech.tts.max_age_before_skip_secs: 0` in the relevant
-config. The TTS daemon and the TUI both honour the same key, and
-both still emit a `INFO TTS skipped stale speak message …
-age=…s threshold=…s` log line so a missing message is easy to
-diagnose.
+Postmortems live in two places now: the bead (canonical, mutable,
+queryable) and `docs/postmortems/<bead-id>-...md` (durable, repo-
+tracked, recoverable from a normal git checkout even if the beads
+store is wedged). When the v1.2.490–v1.2.515 reconciler-rework root
+cause is properly addressed (bd-53f5a7, bd-6ac6b5, bd-fa0603,
+bd-5b77b9, bd-f86e8a), update the follow-up table at the bottom of
+the markdown mirror in a small follow-up commit so the on-disk record
+keeps tracking truth.
