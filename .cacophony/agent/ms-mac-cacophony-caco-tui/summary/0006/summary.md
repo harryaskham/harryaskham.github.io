@@ -22,7 +22,7 @@ Make the TUI’s top-level merge-queue pane respect the active workspace tab so 
 
 ## Diff summary
 
-- Commits: `6e687f03`
+- Commits: `f156572f`
 - Files touched: `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/event.rs`, `crates/caco-tui/src/state/mod.rs`, `crates/caco-tui/src/views/merge_queue.rs`, `crates/caco-tui/src/views/tab_bar.rs`
 - Tests: added targeted TUI coverage for workspace merge-queue retry, action-result cache separation, workspace breadcrumb wording, and render-path selection; validated with `cargo test -p caco-tui handle_key_r_retries_ --lib`, `cargo test -p caco-tui merge_queue_action_result_stores_workspace_cache_separately --lib`, `cargo test -p caco-tui breadcrumbs_workspace_merge_queue --lib`, `cargo test -p caco-tui render_uses_workspace_cache_when_workspace_project_is_set --lib`, `cargo test -p caco-tui merge_queue --lib`, `cargo test -p caco-tui nav --lib`, `cargo build -p caco-tui`, `cargo test-small`, and `cargo check --workspace --tests`
 - Behavioural delta: the top-level merge queue now follows the active workspace tab, uses its own cache/error lifecycle, and labels itself as `Workspace > Merge Queue` in the header so it is visibly distinct from both the global cluster queue and the per-project queue pane
