@@ -1,40 +1,94 @@
-# Session summary — caco-sidecar test coverage (bd-2f3840)
+# Session summary — Cluster-pulse visual hierarchy (bd-d32405)
 
 ## Goal
 
-Close the genuine remaining test-coverage gaps in `caco-sidecar/src/lib.rs`. The bead's original evidence is stale — lib.rs had 2 tests when filed, it has 15 now and lifecycle.rs has 106 — but `/meta/logs` and the `read_crash_log_for_health` helper still had no coverage.
+Restore visual hierarchy in the homepage hero: the animated
+cluster-pulse graph should be the prominent element; the
+expand button should recede until hovered.
 
 ## Bead(s)
 
-- `bd-2f3840` — Improve caco-sidecar unit test coverage for lifecycle and error paths. Promoted draft → open before claim.
+- `bd-d32405` — Make cluster pulse expand button more subtle
+  and increase graph animation prominence (P2, cluster-pulse,
+  ui, visual-design)
 
 ## Before state
 
-- `lib.rs`: 15 `#[test]`/`#[tokio::test]` items but `/meta/logs` route untested; `read_crash_log_for_health` (called from both `/health` paths) untested across all four early-return branches.
+- `.cluster-pulse-canvas` rendered at `opacity: 0.95` with a
+  `linear-gradient(180deg, transparent 60%, rgba(15,19,24,0.55))`
+  bottom-fade overlay, muting the lower 40% of the graph.
+- `.cluster-pulse-expand-btn` was 28x28 with full color
+  (`rgba(229,233,240,0.72)`) and a `translateY(-1px)` /
+  `box-shadow` lift on hover — visually competitive with the
+  graph it controls.
 
 ## After state
 
-- 3 new tests in `crates/caco-sidecar/src/lib.rs`:
-  - `meta_logs_returns_sidecar_log_tail` — hits `/meta/logs` via the live router, asserts service-field is suffixed with `-sidecar`, tail line count, and last-line content.
-  - `read_crash_log_for_health_returns_tail_when_present` — writes 40 lines, asserts the helper trims to 30 and keeps the most-recent.
-  - `read_crash_log_for_health_returns_none_for_missing_or_empty` — covers all four early-return paths (unconfigured / missing file / empty file / whitespace-only).
+- Canvas at `opacity: 1` and overlay reduced to a single light
+  radial accent (no bottom-darken fade) — the animation now
+  reads cleanly across the full hero area.
+- Button shrunk to 22x22 with base `opacity: 0.55` + softer
+  base color (`rgba(229,233,240,0.42)`); recedes until either:
+  - the hero section is hovered (`opacity: 0.85` via
+    `.status-hero:hover .cluster-pulse-expand-btn`)
+  - the button itself is hovered (`opacity: 1` + accent color
+    + softer background tint, no transform-lift)
+  - the button has focus (`opacity: 1` + accent outline,
+    a11y preserved)
+- SVG icon shrunk 14px → 12px to match the smaller hit target.
 
-- `cargo test -p caco-sidecar --lib` — 124 / 124 passed (3 new + 121 existing).
-- `cargo test-small` — clean.
-- `cargo check --workspace --tests` — clean (after a drive-by fix to a `PeerReachability` test fixture in `beads.rs` that was missing the new `peer_version` field added upstream).
+Affordance preserved across all three interaction paths (hero
+hover, button hover, focus); a11y outline unchanged.
 
 ## Diff summary
 
-- Commit: `262d93d4`
-- Files touched: `crates/caco-sidecar/src/lib.rs` (+~80 lines, 3 tests). `crates/caco-daemon/src/beads.rs` (+1 line, drive-by `peer_version: None`).
-- Tests: +3 unit; 0 removed; 0 flipped.
-- Behavioural delta: tests-only.
-
-## Out of scope
-
-- Lifecycle.rs error-path coverage for `start_sidecars_as_processes` (port conflict / binary missing / PID write failure) — these spawn real child processes and are better suited to integration tests under the multinode harness; deferred.
-- Beads-host integration surface — large; would benefit from its own focused bead.
+- Files touched:
+  - `crates/caco-web/static/style.css` — bd-d32405 edits to
+    `.cluster-pulse-canvas`, `.cluster-pulse-overlay`, and
+    `.cluster-pulse-expand-btn` (+ `:hover` / `:focus-visible`
+    siblings)
+  - `crates/caco-web/src/tests.rs` —
+    - Updated existing `style_css_has_cluster_pulse_styles`
+      to assert the new 22px sizing
+    - Added regression test
+      `cluster_pulse_visual_hierarchy_emphasises_graph_over_control`
+      that block-parses both rules and asserts: canvas
+      opacity 1, button 22x22 + base opacity 0.55, hero-hover
+      ramp selector present
+- Tests: +1 / -0 / flipped 1 (sizing assertion in existing
+  test updated)
+- Test command: `cargo test -p caco-web cluster_pulse`
+  → 5 passed, 0 failed.
 
 ## Operator-takeaway
 
-The crash-log surfacing in `/health` (bd-a95d90) and the sidecar's own `/meta/logs` route are now under regression coverage; future refactors of those code paths will fail loudly on test rather than silently in production.
+Three knobs you can flip if the new visual reads wrong:
+
+1. **Hero section hover ramp opacity** — currently 0.85 in
+   `.status-hero:hover .cluster-pulse-expand-btn`. Lower for
+   more recessive; raise toward 1.0 for snappier reveal.
+2. **Button base opacity** — currently 0.55. Lower (0.4) to
+   make it nearly invisible until hovered; raise (0.7) to
+   keep it more present.
+3. **Overlay darken-fade** — removed in this bead because it
+   muted the canvas. If hero text legibility regresses on
+   light-content snapshots, re-add a milder
+   `linear-gradient(180deg, transparent 70%, rgba(15,19,24,0.25))`
+   to the overlay rule.
+
+The regression test pins the contract (canvas reads at
+opacity 1, button base opacity 0.55, 22x22 with hero-hover
+ramp). Future operators can change the values freely as long
+as the contract holds; flipping the hierarchy will fail the
+test loudly.
+
+Honored constraints:
+- No `cargo test --workspace`; targeted to `cluster_pulse`
+  filter (5 tests).
+- No daemon / sidecar touch (caco-tui agent's compile break
+  on `TopLevelBeadsConfig::peer_consult_timeout_ms` remains
+  their fix, not mine).
+- Operator no-narrator rule honored — claim + close speaks
+  issued by msm-2 directly.
+
+13th bead closed this session (cumulative across both turns).
