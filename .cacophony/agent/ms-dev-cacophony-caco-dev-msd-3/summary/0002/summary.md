@@ -1,81 +1,101 @@
-# Session summary — bd-49724c: stop failing restarts that are merely slow
+# Session summary — bd-f86e8a: relax title-length guard for journal reimport
 
 ## Goal
 
-Operator complaint (bd-49724c): `caco agent restart` almost always shows
-a failure in the TUI/CLI even though the agent itself comes up moments
-later and is fine. Operator's prescription: "agent start.timeout =
-remove, just show starting... and let logs / attach reveal any slow
-start." Make resumes/restarts stop surfacing spurious failures.
+Operator/postmortem context (bd-f86e8a, rooted in bd-cf99b7): the
+defensive `bd-3af67d` guard inside `BeadsStore::index_mutation_in_tx`
+silently dropped any mutation whose bead title was empty or longer
+than 500 characters. The guard ran on every `reimport_journal`
+invocation — meaning every list/show/sync replayed the journal,
+every replay re-applied the drop, and historic state was erased on
+each pass. Helsinki dropped from ~3000 to 35 visible beads, ms-mac
+to 5, ms-dev surfaced 119 of 1147 in db / 1150 in jsonl. The
+guard's intention (don't wedge subsystem on a corrupt journal line)
+was right; the implementation (silently drop) was destructive.
+Operator directive: relax for reimport (truncate-and-keep), keep
+strict on the write path.
 
 ## Bead(s)
 
-- `bd-49724c` — restarts always show as failures but agent comes up anyway
+- `bd-f86e8a` — Beads-store recovery: relax title-length guard,
+  replay last 4h of mutations after d2ee2726 prune
+
+Reflection drafts filed this session (no cap, dedup checked):
+- `bd-4b8265` — fuzz-style test that random journal corruption
+  never wedges reimport
+- `bd-fd300a` — hoist title-length validation into a typed
+  BeadTitle wrapper at the type boundary
+- `bd-18aa72` — operator-visible counter: 'reimport repairs in
+  last 24h' across TUI / web / doctor
 
 ## Before state
 
-- `AgentManager::resume_inner()` in `crates/caco-daemon/src/agent/lifecycle.rs`
-  used `wait_for_non_shell_runtime_on()` with `runtime_launch_timeout_secs()`
-  (2s for claude, 10s for codex/pi) and, on `RuntimeLaunchState::NotConfirmed`,
-  hard-failed: killed the tmux session (`kill_tmux_session_on`), set
-  `state = Failed` + `resume_blocker = RuntimeLaunchFailed`, and returned
-  `DaemonError::Other("resume bootstrap completed, but runtime launch failed:
-  tmux session did not settle ...")`.
-- TUI consumed that as `ActionResult::AgentRestartFailed` and toasted
-  "✗ agent restart failed for ..." even when the user could attach into
-  a live, healthy session a second later.
-- Failing tests (relevant subset): none — touched code path was not
-  asserted by unit tests beyond the generic `ResumeBlocker` enum
-  classification (still passing).
+- `index_mutation_in_tx` had a single bd-3af67d skip path that
+  silently dropped any mutation with `title.chars().count()` not in
+  `1..=500`. Reimport callers (initial open, sync_from_disk,
+  reimport_journal) and the write-path caller (`apply_mutation` from
+  `create_bead`/`update_bead`) all funnelled through the same skip.
+- Existing test `reimport_journal_skips_out_of_range_titles` locked
+  in the destructive behaviour: the empty-title bead must be absent
+  from the post-reimport list.
 
 ## After state
 
-- Same probe still runs and the timeouts are unchanged. But on
-  `NotConfirmed` (after the existing `bd-96af85` / `bd-8bfa4d`
-  normalisation+interpreter acceptance), the path now branches on
-  tmux liveness:
-  - Tmux still alive → log a `bd-49724c` warning and let resume
-    continue (the agent settles into `Running` like normal). Watchdog
-    / heartbeat is the safety net for genuinely-stuck runtimes.
-  - Tmux genuinely dead → keep the hard failure, but with
-    `ResumeBlocker::TmuxSessionExited` (more accurate than
-    `RuntimeLaunchFailed` for that case).
-- Create path (initial spawn) is unchanged: a brand-new agent that
-  never brings its runtime up is still a real failure surfaced
-  immediately.
-- `cargo build -p caco-daemon` clean. `cargo clippy -p caco-daemon`
-  clean. `cargo test-small` clean. Targeted
-  `resume_blocker_*` tests still pass (8/8).
+- Two indexer modes:
+  - `IndexMode::StrictSkip` (write-path) — now errors loudly with a
+    `BeadsError::Db` describing the violation, instead of silently
+    dropping. The subsystem can no longer wedge because the reimport
+    path is lenient.
+  - `IndexMode::ReimportTruncate` (journal replay) — repairs in-
+    memory:
+    - empty title → `EMPTY_TITLE_PLACEHOLDER`
+      (`"(empty title — reimport-repaired bd-f86e8a)"`)
+    - oversized title → first 499 chars + `'…'` (= 500 chars total)
+- Three reimport call sites (initial open at line 654,
+  sync_from_disk at ~2516, reimport_journal at ~2683) switched to
+  `index_mutation_in_tx_lenient`.
+- Renamed and rewritten test `reimport_journal_repairs_out_of_range_titles`:
+  asserts ALL beads (good, empty, huge) survive reimport; asserts
+  the empty bead carries the placeholder; asserts the huge bead is
+  truncated to exactly 500 chars and ends with `'…'`.
+- New test `create_bead_still_rejects_out_of_range_title` locks the
+  write-path strictness so future reimport-path relaxations cannot
+  silently relax surface validation.
 
 ## Diff summary
 
-- Commit: `161d0c1c` on
-  `agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-3`.
-- Files touched:
-  `crates/caco-daemon/src/agent/lifecycle.rs` (resume runtime-launch
-  verification branch, ~+35/-13 lines).
-- Tests: no test changes. The generic `ResumeBlocker` /
-  `is_retryable` / `Display` tests still pass; no test asserted the
-  resume-NotConfirmed-on-alive-tmux failure semantics, so no test
-  needed to flip.
-- Behavioural delta: persistent + manual restarts of `claude` /
-  `codex` / `pi` agents that take longer than the runtime probe
-  timeout to settle no longer flap to `Failed` / kill their tmux
-  sessions. The TUI / CLI will continue to show "starting…" until
-  the agent reports activity, exactly as the operator requested.
-  Real failures (tmux died) still surface, with a more accurate
-  blocker.
+- Commit: `7aec30bd`.
+- Files touched: `crates/caco-beads/src/store.rs` (+207/-37; new
+  `IndexMode` enum, new `EMPTY_TITLE_PLACEHOLDER` const, split
+  indexer into wrappers + `_with_mode` core, three reimport call-
+  site flips, two rewritten tests).
+- Tests: `+2` (`reimport_journal_repairs_out_of_range_titles` rename
+  + rewrite, new `create_bead_still_rejects_out_of_range_title`),
+  221/221 caco-beads unit tests pass; cargo clippy clean;
+  caco-daemon and caco-cli build clean against the new surface.
+- Behavioural delta: future journal replays preserve historic state
+  even when individual beads have invalid titles. Existing
+  daemons that have already silently dropped data will recover the
+  next time they replay an intact journal (the dropped mutations are
+  still on disk in `.beads/issues.jsonl` and will be repaired on
+  reimport). New writes with bad titles are rejected loudly at the
+  surface instead of silently lost.
 
 ## Embedded artefacts
 
-(none — small textual diff)
+(none)
 
 ## Operator-takeaway
 
-The "always-failed restart" was caused by a fixed 2s/10s probe in
-`resume_inner` that killed the tmux session on the first
-NotConfirmed observation. The session was virtually always still
-alive at that point. Now the probe is advisory: if tmux is alive we
-keep the session and let the watchdog do the eventual liveness
-arbitration. Net effect: fewer false-failed restarts, no loss of
-real-failure detection, no change to create-path semantics.
+The d2ee2726 destructive-skip pattern is a textbook case of a
+'fix' that addresses the symptom (subsystem wedge on bad input) by
+silently destroying data instead of validating at the boundary.
+The bd-f86e8a fix splits the two concerns: write-path validates
+loudly so producers learn about their bugs; reimport-path is
+lenient so historic state is never lost to an after-the-fact
+schema tightening. The reflection drafts (bd-4b8265, bd-fd300a,
+bd-18aa72) each address a different layer of the underlying
+fragility — fuzz coverage, type-boundary validation, and
+operator-visible repair telemetry — so future variants of the same
+class of bug are caught either before or as they happen instead of
+hours later by an operator scrolling git log.
