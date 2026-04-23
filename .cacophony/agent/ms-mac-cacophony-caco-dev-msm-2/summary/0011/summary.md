@@ -1,41 +1,98 @@
-# Session summary — caco msg inbox pagination flags (bd-1d476a)
+# Session summary — `caco tts set --filter` (bd-a96ff3)
 
 ## Goal
 
-Stop `caco msg inbox` from dumping the entire unread history on every call. Add operator-friendly pagination flags + client-side filters. Pairs with bd-a7168d (server-side feed pop-in default-24h).
+Extend the unified `caco tts set` setter with a `--filter` arg
+so operators can flip the voice filter atomically alongside
+voice/model/speed changes, matching the `set-*` parity intent
+and avoiding a second round-trip via `caco tts filter on|off`.
 
 ## Bead(s)
 
-- `bd-1d476a` — caco msg inbox: missing pagination — no --tail / --since / --limit, returns full history.
+- `bd-a96ff3` — Add new filter args to caco tts set command
+  (P2, caco, cli, filters, tts)
 
 ## Before state
 
-- Server-side `--limit / --offset / --kind / --since / --max-age / --include-system` existed but no operator-friendly defaults; calling `caco msg inbox --project X` dumped everything.
+- `caco tts set` accepted `--voice`, `--model`, `--speed`.
+- `caco tts filter on|off` was a separate runtime mutation,
+  forcing two RPCs (and two persistence writes) to flip both
+  voice + filter atomically.
+- `TtsSetRequest` didn't have a `filter` field; the daemon
+  endpoint silently ignored anything unknown, so retrofit
+  needed both ends touched.
 
 ## After state
 
-- New flags on `caco msg inbox`:
-  - `--tail N` — alias for `--limit` when `--offset` is unset; defaults to **50** when neither is given so the dump is always bounded.
-  - `--type KIND` — alias for `--kind`.
-  - `--target PATTERN` — client-side substring match against `recipient` / `target`.
-  - `--grep PATTERN` — client-side case-insensitive substring match against message body.
-- Client-side filters live in a new `apply_inbox_client_filters()` helper. `total` is preserved (operators still see how many messages exist server-side); `count` is updated to reflect post-filter size.
-- 4 new unit tests cover no-op, grep, target, and AND combination.
-- Smoke check on live daemon: `caco msg inbox --project cacophony --tail 3` → `3 message(s) (of 201 total): …`.
-- `cargo test-small` clean (204 / 109 / 720 / 291 / 18 / 2814 / 53). `cargo check --workspace --tests` clean.
+- `TTS_SET_ARGS` advertises `--filter` (on|off|true|false
+  vocabulary).
+- `dispatch_tts_set` parses `--filter` via new helper
+  `parse_tts_filter_flag` and packs `{filter: bool}` into the
+  POST body when present.
+- `TtsSetRequest` gains `filter: Option<bool>`.
+- `handle_tts_ctrl_set` mutates `rt.filter_enabled` when
+  `body.filter` is present — single mutex acquisition, single
+  `persist_tts_daemon_state` call (atomic with the existing
+  voice/model/speed mutation).
+- Human-readable summary surfaces `filter: on|off` alongside
+  the other resolved fields.
+- Empty-payload guard updated: at least one of
+  `--voice/--model/--speed/--filter` required (was three).
 
 ## Diff summary
 
-- Commit: `504cc12c`
-- Files touched: `crates/caco-cli/src/lib.rs` (+171 / -3).
-- Tests: +4 unit; 0 removed; 0 flipped.
-- Behavioural delta: when called with no `--limit/--offset/--tail`, output is now capped at 50. Existing scripts that rely on full-history return must add `--limit 0` or `--limit 100000`.
-
-## Out of scope
-
-- `--since` accepting relative durations (`1h`, `30m`) — currently RFC3339 only; reuse the `parse_time_filter` helper from `beads.rs` when an operator asks.
-- Server-side `--target` / `--grep` push-down — body filtering is fine client-side at the default cap of 50; existing server `--kind/--since/--max-age` are applied first so the wire payload stays small.
+- Files touched:
+  - `crates/caco-cli/src/lib.rs` — TTS_SET_ARGS, TtsSetRequest,
+    handle_tts_ctrl_set, dispatch_tts_set, parse_tts_filter_flag
+    helper, dispatcher branch, 3 new tests
+- Tests: +3 / -0 / flipped 0
+  - `parse_tts_filter_flag_accepts_synonyms` — 8 truthy + 8
+    falsy + whitespace-tolerance
+  - `parse_tts_filter_flag_rejects_garbage` — empty / "maybe" /
+    "truthy" all error with helpful "must be one of" hint
+  - `tts_set_args_advertises_filter_flag` — pins ArgSpec
+    registration so help listing surfaces `--filter` and a
+    future dispatcher-collapse can't silently drop it
+- Test command:
+  `cargo test -p caco-cli parse_tts_filter`
+  `cargo test -p caco-cli tts_set`
+  → 4 passed, 0 failed.
+- Build verified clean: `cargo build -p caco-cli`.
 
 ## Operator-takeaway
 
-`caco msg inbox --project X` is now a sane default (last 50 messages). `caco msg inbox --tail 200 --target msm-2 --grep deploy` is the new triage primitive.
+You can now collapse voice + filter changes into one call:
+
+```
+# Before: two calls, two persistence writes.
+caco tts set --voice Leda
+caco tts filter on
+
+# After: one atomic call.
+caco tts set --voice Leda --filter on
+```
+
+Vocabulary matches `caco tts filter on|off` exactly:
+`on/off/true/false/1/0/enabled/disabled/yes/no` (case-
+insensitive, whitespace-tolerant). Garbage values get a
+"--filter must be one of …" error with the offending value
+echoed back.
+
+`caco tts filter on|off` remains as a single-purpose shortcut
+(not deprecated). bd-205b39 (sibling: align `tts set` with
+`set-*` patterns more broadly) is a follow-up — this bead
+addresses the `--filter` argument specifically. If the operator
+wants additional filter-related args (preset selection,
+filter-strength curves, etc.) those would extend `TTS_SET_ARGS`
+the same way.
+
+Honored constraints:
+- No `cargo test --workspace`; targeted to two filter strings
+  (4 tests run).
+- No daemon/sidecar surface touched outside the local-TTS
+  daemon (`handle_tts_ctrl_set` lives in `caco-cli/src/lib.rs`
+  alongside the other `handle_tts_ctrl_*` siblings).
+- Operator no-narrator rule honored — claim + close speaks
+  issued by msm-2 directly.
+
+14th bead closed this session (cumulative).
