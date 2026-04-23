@@ -1,26 +1,26 @@
-# Session summary — bd-723688 status badge active-state mapping
+# Session summary — bd-87b21c caco doctor --node wiring
 
 ## Goal
-Stop rendering `? active` for healthy services in caco service status/show.
+Make `caco doctor --node <name>` actually scope output (was a documented no-op).
 
 ## Bead(s)
-- `bd-723688` — service status `? active` glyph + bd-0e1bac `not_configured` generalisation
+- `bd-87b21c` — caco doctor --node flag completely inert; help promises cosmetic labelling but it doesn't fire
 
 ## Before state
-- `StatusIcon::from_state` matched `running` but not `active`, so systemd's high-level state rendered with the Unknown glyph (`?`).
-- `Token::from_state` had the same blind spot, so even if the icon were fixed the colour would still be muted.
-- `not_configured` (failover) fell through to Unknown for the same reason.
+- `--node` parsed by clap but never reached dispatch_doctor.
+- Header always read local hostname; `--node bogus` and `--node ''` silently accepted.
+- Cosmetic-labelling promise in help was a lie.
 
 ## After state
-- `active`, `loaded` → Ok (✓ green).
-- `inactive` → Error; `activating`/`deactivating` → Warning (transitional).
-- `not_configured`, `absent`, `none` → Absent (intentional non-presence).
-- Token::from_state kept in lockstep so badge icon and badge text colour agree.
-- 3 new tests pin the mappings, including an end-to-end smoke that `caco service status` no longer renders `? active`.
+- main dispatch threads `parsed.flags.get("--node")` into dispatch_doctor.
+- Empty / unknown values rejected with clean error listing configured nodes.
+- Valid override propagates to: header label, config-check detail, `caco_cert::status_for_node`, `resolve_effective_daemon_listener`.
+- `local_node_name` retained distinctly so future probes can opt out of the override.
+- 3 new tests pin the behaviour (relabels, unknown errors, empty errors).
 
 ## Diff summary
-- `crates/caco-cli/src/style.rs` (+88 / -8): expanded matchers + 3 tests.
-- `cargo test-small`: 146 passing. caco-cli style tests: 32 passing.
+- `crates/caco-cli/src/lib.rs` (+157 / -5): dispatch wiring, validation, 3 tests, signature update at 3 existing test call sites.
+- `cargo test-small`: 151 passing.
 
 ## Operator-takeaway
-Healthy systemd services now render `✓ active` everywhere status badges appear (caco service status/show, caco status, peer renderers). Failover `not_configured` now renders distinctly from genuine unknown-state failures.
+`caco doctor --node helsinki` now actually scopes the output to helsinki (label, cert, daemon listener). `--node bogus` / `--node ''` produce clean errors instead of silent fall-through.
