@@ -1,51 +1,72 @@
-# Session summary — bead-management hint pills wrap full token
+# Session summary — bd-07bd29 panic-audit close-out
 
 ## Goal
 
-Fix the visual inconsistency in the bead-management footer where
-graphics-mode pill borders only enclosed the bracketed shortcut
-(`[K]`) instead of the whole action hint (`[K] kill`). Operators
-expect each hint to read as a single button-shaped pill matching the
-`Button` widget aesthetic.
+Close the panic-audit acceptance item on bd-07bd29 (the architectural
+rule that agent-subprocess errors must never propagate to daemon
+death) by removing the last non-test panic-prone sites in the
+agent-launch / maintenance hot path. Earlier sessions (msd-2, msd-3)
+had already landed the per-fingerprint error rate-limiter and the
+per-persistent-id launch governor; the remaining acceptance gap was
+the residual `unreachable!()` and `unwrap()` audit.
 
 ## Bead(s)
 
-- `bd-3e94f8` — bead management buttons need to have the button wrap
-  the whole label not just the keyboard shortcut
+- `bd-07bd29` — Non-fatal agent-subprocess errors must never propagate
+  to daemon death — reconcile/launch/preinstall failures are
+  agent-scoped (P0 bug, kept claimed; resource-accounting and crash-log
+  acceptance items stay under their dedicated follow-ups).
+
+Related, intentionally not closed by this session:
+- `bd-b174bb` — per-agent resource accounting (open follow-up).
+- `bd-65813b` — silent daemon crash log preservation (open follow-up).
 
 ## Before state
 
-- `format_key_hint_spans` in `crates/caco-tui/src/views/common.rs`
-  registered each `hint-key:<K>` span pill sized to `key_width` only
-  (the `[K]` bracketed shortcut, 3 cols).
-- Visual: only the `[K]` of `[K] kill  [P] pause  [O] open  ...`
-  showed a button border in kitty-graphics mode; the label trailed
-  outside the pill.
-- Failing tests: none (visual regression, not test-covered).
+- Two non-test panic-prone sites in `crates/caco-daemon/src/agent/spawn.rs`:
+  - `build_resume_init_script`: `_ => unreachable!()` after a match
+    over the result of `detect_resume_runtime`. Architecturally
+    sound today, but a future runtime added to detection without a
+    matching arm here would panic on the agent-launch hot path.
+  - `clear_pi_session_history`: `session_files.split_first().unwrap()`
+    guarded only by an earlier empty-vec early return. Agent-subprocess
+    maintenance paths must not depend on a programmer invariant for
+    panic-freedom.
+- Failing tests in scope: none.
+- Existing infra: `ErrorRateLimiter` (5-min window per fingerprint) +
+  `LaunchGovernor` (per-persistent-id concurrency + attempts ceiling)
+  already wired into `launch_persistent_agent` and
+  `report_structured_log_error_best_effort`.
 
 ## After state
 
-- `format_key_hint_spans` now sums `key_width + desc_width` and
-  registers a single pill spanning the full `[K] kill` token.
-- New regression test `format_key_hint_spans_pill_wraps_full_token`
-  asserts pill widths of 8 (`[K] kill`) at x=0 and 9 (`[P] pause`) at
-  x=10 (after the 2-col separator).
-- Failing tests: none. `cargo test -p caco-tui --lib views::common::`
-  passes 151 tests; clippy on caco-tui clean.
+- Both sites converted to structured `Err` returns / graceful no-ops.
+- Two new regression tests in `crates/caco-daemon/src/agent/tests.rs`:
+  - `clear_pi_session_history_no_directory_returns_zero_zero`
+  - `clear_pi_session_history_keep_last_does_not_panic_on_single_file`
+- `cargo test -p caco-daemon --lib clear_pi_session_history`: 7 passed.
+- `cargo test -p caco-daemon --lib build_resume_init_script`: 11 passed.
+- `cargo clippy -p caco-daemon --lib --tests`: clean.
 
 ## Diff summary
 
-- Commits: `9df0a489`
-- Files touched: `crates/caco-tui/src/views/common.rs` (+48 / -8)
-- Tests: +1 (`format_key_hint_spans_pill_wraps_full_token`)
-- Behavioural delta: span pill recorded for each hint key now spans
-  the full `[K] kill` token rather than just `[K]`. Affects every
-  caller of `format_key_hint_spans` — global beads, beads view, agent
-  list footer.
+- Commits: `c59d1933`
+- Files touched:
+  - `crates/caco-daemon/src/agent/spawn.rs` (+22 / -2)
+  - `crates/caco-daemon/src/agent/tests.rs` (+38 / -0)
+- Tests: +2 / 0 flipped / 0 removed.
+- Behavioural delta: agent-launch / pi-session-maintenance code paths
+  no longer have any reachable `unwrap` / `unreachable!` on the hot
+  path; an unforeseen new runtime now surfaces as a `DaemonError` the
+  caller already handles, instead of a daemon-thread panic that would
+  rely on `spawn_background_task`'s `catch_unwind` to absorb.
 
 ## Operator-takeaway
 
-Single low-risk visual fix in one place propagates to all bead-list
-and agent-list footers; the helper is the single registration point
-for hint-key pill geometry, so future hint-styling tweaks should land
-there rather than at the call sites.
+bd-07bd29's architectural rule — agent-subprocess failures must not
+take the daemon down — is now defended at three layers: (1) per-
+fingerprint error-emission rate limit, (2) per-persistent-id launch
+governor, and (3) zero panic-prone code on the agent-launch hot path.
+Resource accounting and crash-log preservation remain genuine
+follow-ups (bd-b174bb, bd-65813b) and are the next items to land in
+the supervision-hardening sweep.
