@@ -1,67 +1,67 @@
-# Session summary — bd-efe17d: stop caco doctor false-positive cert errors on secondaries
+# Session summary 0001 — bd-e335a1 slice 1: per-project branch namespace config
 
 ## Goal
 
-Stop `caco doctor` on a non-authority node from emitting `cert missing`
-errors and "run `caco cert issue --node <peer>`" hints for every peer's
-cert/key, since that material only ever lives on the PKI authority.
-Operator-visible: ms-mac, winmini, beelink etc. should report only their
-own cert + the CA, not N−1 phantom errors.
+Make daemon-pushed branch names (`cacophony-state`,
+`agent/{node}/{project}/{id}`) per-project configurable so a
+project sharing a remote with unrelated tooling (operator's
+work-GitHub scenario for picasso-health: all personal-tooling
+pushes must live under `harryaskham/health/`) can scope its
+branch namespace.
 
 ## Bead(s)
 
-- `bd-efe17d` — caco doctor reports false-positive 'cert missing' for
-  peer nodes on non-authority hosts
+- `bd-e335a1` slice 1 — config surface only. Slice 2
+  (migrating daemon callsites that build branch strings) is
+  a follow-on.
 
 ## Before state
 
-- `caco_cert::status(paths, config)` iterates every `config.nodes` entry
-  and checks for `<node>.crt` / `<node>.key` on local disk. Correct on
-  the authority (helsinki); on every other host it produces N−1
-  spurious `missing` `NodeCertStatus` entries per pass.
-- `caco-cli`'s doctor renderer called `caco_cert::status` directly and
-  pushed an `error` `DoctorCheck` plus a `caco cert issue --node <peer>`
-  hint per spurious row.
-- Existing tests covered the all-nodes view but not the local-node view.
+- `CACOPHONY_STATE_BRANCH = "cacophony-state"` hard-coded.
+- Agent branch name hard-coded as
+  `format!("agent/{node}/{project}/{id}")`.
+- No project-level knob.
 
 ## After state
 
-- New `caco_cert::status_for_node(paths, config, current_node)` —
-  authority-aware variant of `status`. On the authority node it behaves
-  identically to `status`. On a secondary it gates the per-node loop to
-  `current_node` only. CA cert + `ca_key_present` continue to be
-  reported.
-- `status` is kept as the all-nodes view so `caco cert status` and any
-  other authority-side caller are untouched.
-- `caco-cli` doctor renderer now calls `status_for_node(&paths, &config,
-  &node_name)`. On a secondary host doctor reports CA + own node cert
-  only. On the authority behaviour is unchanged.
-- Failing tests: none. New tests:
-  - `status_for_node_on_authority_matches_status`
-  - `status_for_node_on_secondary_skips_peer_certs` (reproducer for the
-    false-positive class)
-- `cargo clippy -p caco-cert -p caco-cli --tests` clean.
+- New `ProjectBranchesConfig { prefix, cacophony_state,
+  agent_format, target_branch }` — all `Option<String>`,
+  `skip_serializing_if = "Option::is_none"`.
+- Methods on the new struct:
+  - `resolve_cacophony_state(default)` → explicit override >
+    `prefix+default` > compile-time default.
+  - `resolve_agent_branch(node, project, id)` → explicit
+    `agent_format` template (with `{node}/{project}/{id}`
+    substitution) > `prefix+default-template` > compile-time
+    default.
+- `Project.branches: Option<ProjectBranchesConfig>` plumbed
+  through `ProjectMapEntry` and `ProjectConfigCompat` so it
+  round-trips both serde paths.
+- Schema entry under `project_children()` so `caco config
+  validate --strict` accepts the new keys.
+- `compile_checked_fields!(Project { …, branches })` updated.
+- 6 unit tests in `project_branches_tests` covering all four
+  resolution paths.
 
 ## Diff summary
 
-- Commits: `c2554753`
-- Files touched:
-  - `crates/caco-cert/src/lib.rs` — split `status` into
-    `status` (all-nodes) + `status_for_node` (local-node) wrapping a
-    private `status_inner`. Added 2 unit tests.
-  - `crates/caco-cli/src/lib.rs` — doctor renderer switches to
-    `caco_cert::status_for_node(&paths, &config, &node_name)`.
-- Tests: +2 caco-cert unit tests; 0 removed; 0 flipped.
-- Behavioural delta: `caco doctor` on non-authority hosts no longer
-  surfaces phantom peer cert/key errors.
+- Files (11): caco-config (model, lib, validate, test_utils),
+  caco-cli (lib), caco-profile (lib, compose), caco-daemon
+  (lib, beads, checkout, config_reload, ui_stream + tests).
+- Pure additive — every existing `Project { … }` literal got
+  `branches: None,` added; no behaviour change.
+- `cargo build --workspace` clean.
+- `cargo clippy -p caco-config -p caco-daemon --all-targets
+  -- -D warnings` clean.
+- `cargo test -p caco-config project_branches_tests::` 6/6
+  pass.
 
 ## Operator-takeaway
 
-`caco doctor` on ms-mac/winmini/beelink will now show CA + own node
-cert only — no more N−1 spurious `cert missing` errors instructing the
-operator to run `caco cert issue --node <peer>` from a host that has no
-business holding peer cert material. Authority-side behaviour
-(helsinki) and `caco cert status` are deliberately unchanged. If a
-future renderer wants the all-nodes view it should keep calling
-`status`; doctor-style "what does *this* host look like" callers
-should call `status_for_node`.
+Project owners can now declare `branches: { prefix:
+'harryaskham/health/' }` (or explicit `cacophony_state` /
+`agent_format` overrides) and it round-trips through config.
+Slice 2 will migrate the daemon's branch-construction
+callsites to call the new resolver — until then this is a
+silent surface (config validates, structs serialize, but the
+daemon still uses compile-time defaults).
