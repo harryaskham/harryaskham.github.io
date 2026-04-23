@@ -1,51 +1,69 @@
-# Session 0009 — bd-2977fc
+# Session 0009 — bd-2e2338 triage scoping flags
 
-## Goal
+## Outcome
+Added `--creator` and `--label` scoping flags to `caco bd triage`
+(both `--next` and `--interactive` paths). Closed bd-2e2338. Filed
+bd-c236da as a follow-up draft for the title-similarity dedup
+heuristic.
 
-Restore tip-of-main clippy after broken-on-main from bd-83a84d
-(`caco agent log` dispatcher).
+## Context
+Investigation revealed the interactive triage loop (filed under
+bd-eef036) already implements all 7 user-facing actions from
+bd-2e2338's spec (promote, discard, merge-into, defer, label, skip,
+quit) plus the `--max` session cap. Only two scoping inputs were
+missing:
 
-## Bead(s)
+- `--creator` — useful for draining a specific agent's backlog (e.g.
+  bead-dreamer's drafts).
+- `--label` — useful for processing a label-tagged subset.
 
-- bd-2977fc — created and closed in this session as the broken-on-main
-  marker bead. Parent feature bd-83a84d remains in_progress under msd-4.
+Both leverage existing daemon-side query plumbing (`creator=`,
+`label=`); `--label` further benefits from the bd-9006a6 multi-value
+parser landed in session 0008 (comma-separated values match ANY).
 
-## Before state
+## Commit
+- `d6de3aba` — bd-2e2338: --creator and --label scoping for caco bd
+  triage (crates/caco-cli/src/lib.rs; +38 lines).
 
-`cargo clippy --workspace --all-targets -- -D warnings` failed with two
-errors in `crates/caco-cli/src/lib.rs`:
+## What changed
+- BD_TRIAGE_ARGS gains two ArgSpec entries:
+  - `--creator`: Filter drafts by creator (e.g. an agent ID).
+  - `--label`: Filter drafts by label (comma-separated match ANY).
+- Both flags forwarded onto the draft listing URL in:
+  - `dispatch_bd_triage` (the `--next` path).
+  - `dispatch_bd_triage_interactive` (the loop path).
+- `bd_triage_args_includes_interactive_and_max` test extended to
+  assert the two new flag names are declared.
 
-1. `doc_overindented_list_items` at line 30014: continuation line of the
-   `- --all` bullet was indented to column 21 (under the letter `a` of
-   `--all`) instead of 2 spaces.
-2. `explicit_counter_loop` at line 30119: `Mode::Head` truncator had a
-   manual `taken` counter that should be `lines().take(*k)`.
+## Tests
+- `cargo test -p caco-cli -- bd_triage_args` passes.
+- `cargo test-small` green across the workspace (231+109+753+1+
+  297+18+2830+59).
+- `cargo clippy -p caco-cli -p caco-daemon` clean. (Pre-existing
+  unrelated clippy warning in caco-beads `unnecessary_cast`.)
 
-## After state
+## Friction beads filed this session
+- bd-c236da (draft, feature, p3) — Triage dedup heuristic:
+  title-similarity detection for `caco bd triage --interactive`.
+  The remaining substantial piece of bd-2e2338's spec ("auto-detect
+  dups by title-similarity, suggest merge-into"). Substantial on
+  its own: similarity-index design (Jaro-Winkler vs Levenshtein),
+  threshold tuning (e.g. >0.8), cache strategy across loop
+  iterations to keep latency tolerable for 1000+ beads.
 
-- Continuation re-indented to 2 spaces.
-- `Mode::Head` rewritten with `lines().take(*k)`; behaviour preserved
-  (at most k lines copied, each with trailing `\n`).
-- `cargo test-small`: 52/52 PASS.
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+## Decisions
+- **Scope cut**: deferred title-similarity dedup heuristic to
+  bd-c236da. The bd-2e2338 spec called for it but it's a separate
+  problem (similarity scoring, indexing, perf tuning) from triage
+  workflow ergonomics. The 988-draft pool drain unblocks
+  immediately with `--creator` / `--label` scoping; the dup
+  heuristic is a productivity multiplier on top.
+- **No new daemon code**: leveraged existing `creator=` and
+  `label=` query params + the bd-9006a6 multi-value parser. Pure
+  CLI plumbing change.
 
-## Diff summary
-
-```
-crates/caco-cli/src/lib.rs        | -7 +2
-.cacophony/agent/.../summary/0009 | (new)
-```
-
-## Operator-takeaway
-
-Pattern: bd-83a84d landed without the workspace clippy gate catching
-overindented doc-comments and explicit_counter_loop. Both are
-mechanical fixes I land under a separate bead so msd-4 can keep
-bd-83a84d in_progress; msd-4 should rebase before pushing further
-work on that branch.
-
-## Coordination
-
-- Spoke `[broken-on-main]` ownership before editing.
-- Filed bd-2977fc with `--status closed` so the bead lifecycle marks
-  the fix correctly when this reintegrates.
+## Open / next
+- Continue claiming after reintegration per the ongoing
+  `caco-dev-*` notes. Likely candidates: bd-c236da follow-up,
+  or top of the ready queue (bd-6ff0a0 build.rs auto-include,
+  bd-ce32fa caco bootstrap dev, etc.).
