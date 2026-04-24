@@ -1,44 +1,106 @@
-# broken-on-main wave #15 (post-overlap repair) + dead-code allow
+# Session summary — bd-81c30e: cron show/list drift cleanup
 
 ## Goal
 
-Repair the duplicate-`goal: None` field in 74 `PersistentAgentDecl` test fixtures that resulted from a peer-overlap with wmi-1's hotfix (bd-6b2af8 follow-up), plus the `percent_encode_query` dead-code lint flagged after a separate refactor.
+Burn down the fresh test-user bead on `caco cron list/show`.
+The reported drifts were twofold: (1) `cron show --json`
+emitted `{ok,data}` while its sibling `cron list --json`
+emitted the gold-standard `{ok,data,meta}` envelope; and
+(2) `cron list` had a misleading empty-state story around
+filters / typoed queries. The operator-facing goal was to
+make the cron read surface less surprising without turning
+it into a larger read-vs-write unknown-flag policy change.
 
 ## Bead(s)
 
-- (no claimed bead — pure broken-on-main repair)
+- `bd-81c30e` — `caco cron list/show ... drifts: cron show --json missing meta; cron list flag-consumption data-loss / misleading empty output`
 
 ## Before state
 
-Two issues:
+Live behaviour before the fix:
 
-**Wave #15 (overlap)**: peer wmi-1 saw my early-signal speak about the missing-`goal` wave and landed a hotfix that backfilled all 74 sites with `goal: None,` immediately after `all_projects: false,`. Meanwhile I'd already run my own Python script that inserted `goal: None,` immediately before `depends_on_node: None,`. The reintegrate's auto-rebase merged both, leaving every literal with two `goal: None,` lines (E0062 duplicate field).
+```text
+$ caco cron show --name speaking-clock --json
+{ "ok": true, "data": { ... } }
+# missing meta field
 
-**Wave #16**: `percent_encode_query` in `crates/caco-cli/src/lib.rs:21387` had no callers after a recent refactor (clippy `dead_code` denial).
+$ caco cron list --name definitely-not-a-cron
+no crons configured
+# misleading: there ARE configured crons, the filter just matched none
+```
+
+Investigation note: the bead description also claimed
+`--project/--status/--limit` produced an empty table after
+the bd-b76723 warning. I re-ran those paths against the
+current config and could not reproduce that part — they warn
+and still show the full cron table. So the concrete,
+reproducible UX bug in this area was the misleading empty
+state for `--name` misses, plus the `show --json` envelope
+drift.
 
 ## After state
 
-- Python script with regex `\n(\s+)goal: None,\n\n(\s+)depends_on_node:` → `\n\2depends_on_node:` removed exactly 74 `goal: None` duplicates (the ones I'd added). Verified `goal: None` count dropped from 148 → 74 (one per literal, post-fix).
-- `percent_encode_query` annotated with `#[allow(dead_code)]` + comment justifying preservation as a future query-string utility.
+```text
+$ caco cron show --name speaking-clock --json | jq '{ok, has_meta: has("meta"), data_name: .data.name}'
+{
+  "ok": true,
+  "has_meta": true,
+  "data_name": "speaking-clock"
+}
 
-Verification:
-- `cargo build -p caco-daemon --tests`: clean (the test-small gate doesn't catch this)
-- `cargo test-small`: 57/57 PASS (one flaky tui test panicked on first run, passed on retry — separate issue, will file follow-up)
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+$ caco cron list --name definitely-not-a-cron
+no crons match --name 'definitely-not-a-cron' (3 configured)
+```
+
+Validation:
+
+- `cargo clippy --workspace --all-targets -- -D warnings` — clean
+- `cargo test -p caco-cli --lib cron_show_json_includes_meta_envelope` — pass
+- `cargo test -p caco-cli --lib cron_list_name_miss_reports_filter_not_global_absence` — pass
+- `cargo test-small` — 183 passed, 0 failed
 
 ## Diff summary
 
-2 files changed, +1 / +148 / −0 / −0 (net +149):
+Files touched:
 
-- `crates/caco-daemon/src/persistent.rs`: +148 / −0 (74 `goal: None,` insertions originally; the duplicate-removal in this final pass net-zero relative to the bedrock state but +148 vs the version main shipped before peer's hotfix landed both layers)
-- `crates/caco-cli/src/lib.rs`: +1 / −0 (`#[allow(dead_code)]`)
+- `crates/caco-cli/src/lib.rs`
+- `.cacophony/agent/winmini-cacophony-caco-dev-wmi-2/summary/0021/summary.md`
+
+Behavioural changes:
+
+1. **Envelope convergence**
+   - `dispatch_cron_show(..., json_requested=true, ...)` now emits a
+     `meta` object so `cron show --json` matches the local
+     `{ok,data,meta}` family shape already used by `cron list --json`.
+
+2. **Less misleading empty state for filtered cron lists**
+   - `dispatch_cron_list` now distinguishes:
+     - no crons configured at all
+     - configured crons exist, but `--name` matched none
+   - The second case now reports
+     `no crons match --name '<filter>' (<n> configured)`
+     instead of the inaccurate `no crons configured`.
+
+3. **Regression tests added**
+   - Added a tiny temp-config helper and two caco-cli unit tests:
+     - `cron_show_json_includes_meta_envelope`
+     - `cron_list_name_miss_reports_filter_not_global_absence`
+   - Both run on `with_big_stack(...)` because serializing a full
+     config fixture in debug can otherwise overflow the default test
+     thread stack (same pattern already used elsewhere in caco-cli).
+
+Commits:
+
+- `bd-81c30e: cron show/list drift cleanup`
 
 ## Operator-takeaway
 
-Two reintegrate-cycle lessons:
-
-1. **Peer-overlap when fixing the same broken-on-main wave concurrently produces duplicate-field bugs**, not merge conflicts. Both fixes succeed individually but compose into invalid code. Standard merge-conflict tooling won't catch this — needs post-merge `cargo build` validation. **bd-29bf2b**'s gate would catch this if run on the merged tip, not just the submitting branch.
-
-2. **`cargo test-small` doesn't run daemon `--tests`** — peer wmi-1 confirmed in their speak: "test-small skips daemon tests; for struct-shape changes also run cargo build -p caco-daemon --tests." Worth adding to the standing endless-mode mixin: post-pull, run `cargo build -p caco-daemon --tests` in addition to `cargo test-small + clippy`. Or — better — extend `test-small` itself to include `cargo build --workspace --tests` (no test execution, just compile-check).
-
-Filing follow-up beads for: (a) flaky tui test that panics intermittently in test-small, (b) extend test-small to include workspace --tests build-check.
+This was a small but worthwhile surface-polish bead: the cron
+namespace now has internal JSON-envelope consistency, and the
+most misleading empty-state wording is gone. The scarier part of
+the original report — unknown flags causing silent empty tables —
+did not reproduce on current main, so I did **not** broaden the
+unknown-flag policy for read commands here. If that behaviour is
+seen again, it should get a focused reproduction bead with exact
+argv + stdout/stderr so we can fix the real path rather than
+guessing.
