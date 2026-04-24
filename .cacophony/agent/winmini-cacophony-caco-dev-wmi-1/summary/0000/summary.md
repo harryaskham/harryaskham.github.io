@@ -1,65 +1,64 @@
-# Session summary — bd-f9d56e: webapp beads list Modified column
+# Session summary — bd-5e10e5: summary JSON error envelope + ls JSON wrap
 
 ## Goal
 
-Webapp beads table (`#beads-table`) lacked a 'last modified'
-column, making it hard to spot stale beads vs recently-updated
-ones at a glance. The beads model has had `updated_at` since
-forever — just unsurfaced in the UI.
+Tighten two read-side CLI JSON drifts from the bd-5e10e5 test-user
+pass:
+
+1. `caco summary --json` with missing `--since` leaked a text-mode
+   error (`--since is required for summary`) instead of a structured
+   JSON error envelope.
+2. `caco ls --json` still emitted an OK+flat shape
+   `{ok, entries, count, runtime_root, node}` instead of the
+   canonical `{ok, data, meta}` envelope.
+
+These are small, contained read-side convergence fixes that keep
+programmatic consumers from special-casing these surfaces.
 
 ## Bead(s)
 
-- `bd-f9d56e` — webapp beads need last modified column (P2 task).
-  Original scope also asked for resizable columns persisted in
-  localStorage; that is a meaningfully bigger pattern (drag
-  handles + storage + restore + apply across tables) so it's
-  filed as **bd-463851** (slice 2) for a separate session.
+- `bd-5e10e5` — caco summary + ls + status pass; pinning the two real
+  drifts (`summary --json` text leak, `ls --json` OK+flat).
+- Promote candidates in the bead body remain untouched:
+  `value cannot be empty`, inline format examples, 4-element
+  USAGE-GUIDANCE, `Valid kinds:`, security-WHY, strong status JSON.
 
 ## Before state
 
-```
-| ID | Title | Status | Priority | Type | Assignee | Labels | Project | Created |
-```
-
-No way to see at a glance which beads have been recently touched
-vs sitting stale for days/weeks.
+- `caco summary --json` (no `--since`) returned plain text on stdout:
+  - `error: --since is required for summary`
+- `caco ls --json` returned:
+  - `{ ok, entries, count, runtime_root, node }`
+  - metadata fields were flattened at top level instead of living under
+    `meta`.
 
 ## After state
 
-```
-| ID | Title | Status | Priority | Type | Assignee | Labels | Project | Created | Modified |
-```
-
-Modified column is sortable (clicking the header toggles
-asc/desc on `updated_at`) and renders the same relative-time
-shape ('3h ago', '2d ago') as Created, with full ISO timestamp
-on hover via title attr. Falls back to `created_at` if the
-daemon hasn't supplied `updated_at` (older snapshot rows).
+- `caco summary --json` (no `--since`) now returns structured JSON:
+  - `{ ok:false, error:{ code:"missing_argument", message:"--since is required for summary" }, meta:{ surface:"caco summary", required:["--since"] } }`
+- `caco ls --json` now returns canonical wrapped JSON:
+  - `{ ok:true, data:{ entries:[...] }, meta:{ count, runtime_root, node } }`
 
 ## Diff summary
 
-- 1 file changed, +9 / -2 (`crates/caco-web/static/app.js`):
-  - `renderBeads()`: added 11th column header `Modified`
-    (sortable on `updated_at`); empty-state colspan 10→11;
-    per-row `<td>` rendering `updatedHtml` with relative-time
-    + ISO-on-hover; graceful fallback to created_at when
-    updated_at missing.
+- Files touched:
+  - `crates/caco-cli/src/lib.rs`
+  - `.cacophony/agent/winmini-cacophony-caco-dev-wmi-1/summary/0000/summary.md`
+- Code changes:
+  - top-level `summary` dispatch arm now emits a structured JSON error
+    envelope for missing `--since` when `--json` is requested, while
+    leaving text mode unchanged.
+  - `dispatch_ls()` now wraps JSON output in canonical
+    `{ok,data,meta}` shape, moving `count`, `runtime_root`, and `node`
+    into `meta` and placing `entries` under `data.entries`.
+  - added source-grep tests pinning both contracts.
 
-## Validation
+## Embedded artefacts
 
-- Code review: matches the existing Created column shape,
-  reuses `relativeTime()` + `formatDateTime()` + `escapeAttr()`
-  + `escapeHtml()` helpers + `toggleBeadSort()` dispatcher
-  (which already accepts arbitrary column keys via `sortBy()`).
+- none
 
 ## Operator-takeaway
 
-Operators can now sort by Modified to surface the most-recently-
-touched beads (own work + sibling-agent claims + closures) or
-spot stale beads (e.g. claimed-but-untouched-3-days). Slice 2
-(resizable columns w/ localStorage persistence) follows in
-bd-463851.
-
-Push-discipline (post-clarification): own-branch push allowed;
-default-branch force-push banned; only reintegrate / complete
-land work on main.
+This was a clean read-side polish bead: one text leak removed, one flat
+JSON drift removed. `caco summary` and `caco ls` are now easier to use
+from scripts without ad hoc parsing or per-command envelope shims.
