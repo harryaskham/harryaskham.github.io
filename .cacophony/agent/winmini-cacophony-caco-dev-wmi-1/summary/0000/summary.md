@@ -1,69 +1,65 @@
-# Session summary — bd-87425e: caco image generate --json honors errors
+# Session summary — bd-89df3d: caco scratch show --note-id '' validator
 
 ## Goal
 
-Make `caco image generate --json` emit a structured
-`{ok:false, error:{code,message}}` envelope on stdout for every
-error path, instead of plain text on stderr with empty stdout.
-Matches the gold-standard `caco bd show --json` error contract.
+Pin Issue 4 of bd-89df3d: empty `--note-id` previously bypassed
+validation, hit a 404 with empty body, and surfaced as a
+two-layer-internals leak (HTTP status + serde_json parser error).
+Reject empty input up-front with a useful guidance message.
 
 ## Bead(s)
 
-- `bd-87425e` — caco image generate --json IGNORES the --json flag
-  on ALL error paths (P3 bug). Issue 1 (JSON error envelope) fixed
-  here; Issue 2 (empty `--prompt` validator + HTTP-path leak) left
-  for a follow-up bead if operator wants it pinned separately.
+- `bd-89df3d` — caco scratch sweep (P3 bug, multi-issue). This
+  session pins ONLY Issue 4 (empty-string `--note-id` validator).
+  The other items in the bead are positives (Issues 1-3) or
+  separate features (Issue 5 — list filter flags), and remain in
+  the bead body for future work.
 
 ## Before state
 
 ```
-$ caco image generate --project cacophony --preset bogus --json
-[stdout: empty]
-[stderr: error: unknown image preset 'bogus' — available: …]
-[exit: 2]
+$ caco scratch show --note-id ''
+error: invalid response (HTTP 404 Not Found): EOF while parsing a value at line 1 column 0
 ```
 
-Same pattern for `--project bogus`, empty `--prompt`, transport
-errors. Script consumer doing
-`if ! caco image generate … --json | jq -e .ok` got `null` /
-"parse error" instead of a useful error envelope.
+Two-layer internals leak: HTTP `404` exposed + serde_json parser
+error message surfaced as the user-visible "error".
 
 ## After state
 
 ```
-$ caco image generate --project cacophony --preset bogus --json
+$ caco scratch show --note-id ''
+error: --note-id cannot be empty (note IDs must be non-empty strings; see `caco scratch list` for available notes)
+
+$ caco scratch show --note-id '' --json
 {
   "ok": false,
   "error": {
-    "code": "image_generate_failed",
-    "message": "unknown image preset 'bogus' — available: …"
+    "code": "invalid_argument",
+    "message": "--note-id cannot be empty …"
   }
 }
 [exit: 1]
 ```
 
-Wrapping at the dispatch boundary (rather than rewriting the
-function's many `CliError::new(…)` sites) keeps the diff tight: a
-single `match` around `dispatch_image_generate(...)` catches every
-`Err` and converts it to a structured `Outcome` when `--json` is
-in effect. Text-mode behaviour is unchanged.
+`--json` mode emits the structured envelope on stdout (matching
+the bd-87425e fix pattern). Text mode returns a normal `CliError`
+with the same message.
 
 ## Diff summary
 
-- 1 file changed, +18 / -2 (`crates/caco-cli/src/lib.rs` — dispatch
-  branch only; the `dispatch_image_generate` body is untouched).
+- 1 file changed, +18 / -0 (`crates/caco-cli/src/lib.rs`
+  `dispatch_scratch_show`).
 
 ## Validation
 
-- `cargo check -p caco-cli --tests`: clean.
+- `cargo check -p caco-cli`: clean.
 
 ## Operator-takeaway
 
-`caco image generate … --json` now behaves like every other
-JSON-aware caco surface: errors land as a parseable envelope on
-stdout with exit 1. Existing text-mode invocations continue to
-print the same human-readable `error: …` line on stderr (exit
-unchanged for that path). Issue 2 (empty-prompt validator,
-HTTP-path leak in builder errors) and the gold-standard observation
-about inline allowed-values for `--preset` / `--model` are out of
-scope for this bead.
+This is the 4th surface to gain an empty-string guard on a required
+arg (after bd-3e39a0, bd-b7392e, bd-87425e). A cross-cutting
+validator audit (filing as a follow-up bead if not already
+captured) would be cheaper than fixing each surface individually.
+The bd-89df3d bead remains open with Issue 5 (list filter flags)
+unresolved — that's a feature add, not a bug fix.
