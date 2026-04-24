@@ -1,110 +1,32 @@
-# Session summary — Integration tests for /api/v1/agents cache (bd-63e0c1)
+# Session summary — bd-149a3b empty bead show id guard
 
 ## Goal
 
-bd-7a1ca5 added the `/api/v1/agents` JSON response cache with
-9 unit tests covering the cache primitive in isolation
-(`AgentsListCache::{new, generation, bump, get, store, clear}`).
-It did not have an integration test verifying the
-wired-into-`DaemonState` behaviour. This adds end-to-end tests
-that drive the actual HTTP endpoint via `local_router`.
+Burn down the next contained bead-surface validator leak by making `caco bd show --bead-id ''` fail cleanly at the CLI boundary instead of round-tripping an empty ID to the daemon and surfacing a 404-plus-EOF parser error.
 
 ## Bead(s)
 
-- `bd-63e0c1` — [bd-7a1ca5 follow-up] Integration test for
-  `/api/v1/agents` response cache invalidation across lifecycle
-  events (filed by this agent during this session)
+- `bd-149a3b` — `caco bd show --bead-id ''` leaks HTTP 404 + serde EOF instead of rejecting empty input up front
 
 ## Before state
 
-- 9 cache-primitive unit tests (`agents_list_cache::tests::*`).
-- Zero handler-level tests.
-- The wiring (`set_agents_list_cache`, `bump_agents_list_cache`,
-  `set_state` calling `bump_agents_list_cache`) was untested
-  end-to-end — it relied on grep-level review.
+- Failing tests: none in scope before the fix; this was a bad error-path behaviour on a mature CLI surface.
+- Relevant metrics: `dispatch_bd_show(...)` accepted `--bead-id` as-is, so an empty string produced `/beads/` on the daemon URL and bubbled back `invalid response (HTTP 404 Not Found): EOF while parsing a value at line 1 column 0`.
+- Context: sibling surfaces already used the shared `validate_non_empty_id(...)` helper to stop this exact trailing-slash + empty-body leak pattern before the request was sent.
 
 ## After state
 
-- 12 cache tests total (9 primitive + 3 new integration).
-- The full request → cache hit/miss → state mutation → cache
-  invalidation → rebuilt response loop is now defended.
+- Failing tests: none observed in the focused `caco-cli` coverage.
+- Relevant metrics: `dispatch_bd_show(...)` now applies `validate_non_empty_id("--bead-id", ..., "caco bd show", Some("caco bd list"))` before building the daemon URL.
+- Context: the rebuilt CLI now reports `error: --bead-id must not be empty for caco bd show (list available: caco bd list)` instead of leaking transport and parser internals.
 
 ## Diff summary
 
-- Files touched (+226 / −2):
-  - `crates/caco-daemon/src/lib.rs`: 3 new tests + helper
-    `fetch_agents_list(app)`.
-  - `crates/caco-daemon/src/agent/mod.rs`: new
-    `inner_for_test()` `#[doc(hidden)] pub` accessor returning
-    `&Arc<Mutex<AgentManagerInner>>` so the lib.rs tests can
-    inject synthetic agent rows without paying the cost of a
-    full `create()` pipeline (resolved profiles, checkout
-    dirs, tmux setup).
-  - `crates/caco-daemon/src/ui_stream.rs`: 2 duplicate
-    `tmux_history_*: None` lines stripped (5th wave this week
-    of broken-on-main fixture churn).
-
-### Tests added
-
-1. **`agents_list_cache_serves_identical_body_within_generation`**
-   - Two `GET /api/v1/agents` back-to-back without state
-     mutation. Asserts:
-     - `cache.generation()` does not advance.
-     - `body1["data"] == body2["data"]` (envelope `request_id`
-       and `node` fields are correctly re-stamped per request;
-       only the inner `data` payload is cached).
-
-2. **`agents_list_cache_invalidated_by_explicit_bump`**
-   - GET populates cache at gen N. Direct `cache.bump()`
-     (mirrors what `AgentManager` does internally from
-     `set_state` / `create` / `discard` / `prune`). Asserts:
-     - generation advanced strictly,
-     - `cache.get()` returns `None` immediately post-bump,
-     - subsequent GET rebuilds and `cache.get()` returns
-       `Some` at the new generation.
-
-3. **`agents_list_cache_invalidated_by_real_set_state_call`**
-   - Production-shape test: wires `AgentManager` via
-     `set_agents_list_cache`, injects a synthetic agent into
-     the inner map via the new `inner_for_test()` helper,
-     GETs once to populate cache, calls
-     `set_state("agent-cache-test", AgentState::Running)`.
-     Asserts:
-     - cache generation advanced (proving the wired
-       `bump_agents_list_cache` hook fires from inside
-       `set_state`),
-     - cache is stale immediately after,
-     - subsequent GET rebuilds and the new agent's state in
-       the rebuilt list reflects `"running"`.
-
-## Embedded artefacts
-
-(none — pure test additions + one `#[doc(hidden)]` accessor)
+- Commits: `f11974339`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: `cargo test -p caco-cli dispatch_bd_show_uses_non_empty_bead_id_validator_bd_149a3b -- --nocapture`; `cargo test -p caco-cli validate_non_empty_id_shape -- --nocapture`; `cargo build -p caco`; `./target/debug/caco bd show --bead-id ''`
+- Behavioural delta: empty bead IDs for `caco bd show` are now rejected client-side with the shared non-empty-ID wording and a discovery hint to `caco bd list`.
 
 ## Operator-takeaway
 
-The `bd-7a1ca5` cache wiring is now defended end-to-end:
-
-- A future change that drops the `set_agents_list_cache` call
-  in `pub async fn run()` will fail test #3 (set_state won't
-  bump because the hook is unwired in production).
-- A future change that removes the `bump_agents_list_cache`
-  call from `set_state` will fail test #3 in a different way
-  (generation won't advance).
-- A future change that makes `handle_agents_list` cache the
-  envelope (instead of just the inner data) will fail test #1
-  (request_ids would no longer be unique per request).
-- A future change that breaks the post-bump rebuild path will
-  fail test #2.
-
-The new `inner_for_test()` accessor is `#[doc(hidden)] pub`,
-not `pub(crate)`, because integration tests in
-`crates/caco-daemon/tests/` are external consumers and may
-need it for future test slices (no immediate consumer there).
-
-## Drive-by
-
-Yet another (5th) round of `tmux_history_*` duplicate fixture
-lines this week. Stripped 2 lines in `ui_stream.rs`. Already
-filed as a known pattern under `bd-29bf2b` (merge-queue mixin
-upgrade to add `cargo test --lib --workspace` to the gate).
+This was another clean CLI-boundary hardening slice: one shared validator call closed the error leak without touching daemon behaviour, and the manual rebuilt-binary repro now matches the intended operator-facing contract.
