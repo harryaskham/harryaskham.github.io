@@ -1,70 +1,117 @@
-# bd-09542b + bd-bf1e86 polish #7: doc-list fix + Profile fixture + confirmation-dialog ellipsis
+# Session summary — bd-b9eccd: caco ls + ps --project converge on gold-standard security-WHY validator
 
 ## Goal
 
-(a) Repair broken-on-main wave #11: rustdoc list-without-blank-line in `caco-daemon/src/choices.rs` (autonomy_tier doc) + missing `self_nudge_interval_secs` field on a `Profile{}` fixture site in `caco-cli`.
-(b) Continue bd-bf1e86 polish track #7: confirmation-dialog message rendering previously hard-chopped at dialog width with no indicator. Operators could confirm destructive prompts without seeing the full text. Append `…` so the visual asymmetry warns them.
+Resolve the within-CLI `--project` validator drift identified
+in bd-b9eccd Issue 4, where:
+
+- `caco build list --project bogus` and
+  `caco changelog show --project bogus` use the
+  gold-standard security-WHY wording.
+- `caco fleet snapshot --projects bogus` uses
+  inline-allowed-values wording.
+- `caco ls --project bogus` and `caco ps --project bogus`
+  silently accepted any value (now fixed via bd-2dc0c3 +
+  bd-bc3d7d, but with their own ad-hoc wording).
+
+This bead converges the ls/ps wording onto the gold-standard
+established by bd-6dc352 (security-WHY + Configured: list).
 
 ## Bead(s)
 
-- bd-09542b (P1 broken-on-main, claimed + closed by reintegrate)
-- bd-bf1e86 (P2 permanent, polish #7 — stays open)
+- `bd-b9eccd` — `caco ls + ps SILENT-ACCEPT MASTERCLASS — 7
+  filter flags ALL silently accept any value while sister
+  surfaces gold-standard validate; --project DRIFT
+  (build/changelog gold-standard with security-WHY but
+  ls/ps silently accept) — supposedly-shared validator NOT
+  actually shared`.
 
 ## Before state
 
-**bd-09542b — issue 1**: `crates/caco-daemon/src/choices.rs:42-50`. autonomy_tier doc has a 3-bullet list:
-```rust
-/// Free-form string; conventional values:
-///   - "operator-only" (default; never auto-fired)
-///   - "autonomous-low-risk" ...
-///   - "autonomous-reversible" ...
-/// Slice 1 ships the field only; the supervisor that consults it ...
-```
-rustdoc with `-D warnings` emits "doc list item without indentation" for the continuation paragraph because there's no blank doc-line separating it from the list. Same pattern fixed earlier this session in `caco-daemon/src/store.rs::PruneOutcome::note_delivery_tracking` per bd-274c2d log.
+Issues 1 + 2 (silent-accept on ls/ps filters) were already
+fixed earlier in this drain via bd-2dc0c3 (caco ps) and
+bd-bc3d7d (caco ls), but with bespoke per-surface wording:
 
-**bd-09542b — issue 2**: `crates/caco-cli/src/lib.rs:79595`. Profile fixture missing newly-added `self_nudge_interval_secs: Option<u64>`. E0063.
+- `caco ls --project bogus` →
+  `error: caco ls: project 'bogus' is not configured.
+  Configured projects: ...`
+- `caco ps --project bogus` →
+  `error: caco ps: project 'bogus' is not configured.
+  Configured projects: ...`
 
-**bd-bf1e86 polish #7**: `crates/caco-tui/src/views/button.rs:725` — confirmation dialog rendered the message with `for (i, ch) in message.chars().take(max_msg_w).enumerate()`. A long message like `"This will permanently delete 47 beads including their attached agent checkouts and"` would render up to dialog width with no `…` — operators reading just the visible portion might confirm without realising the action's full scope.
+vs gold-standard (build, changelog, etc.):
 
-This is polish #7 on bd-bf1e86. Polish #6 (inbox preview ellipsis) raised the question "where else does the codebase hard-chop without an indicator?" — `chars().take(N)` audit identified `button.rs` as the riskiest such site (logs.rs is line-wrap, correct as-is).
+- `caco build list --project bogus` →
+  `error: project 'bogus' is not configured; bead
+  operations must target a configured project to prevent
+  routing to an ambient external board. Configured: a, b, c`
+
+Issue 4 of bd-b9eccd correctly called this out as a
+within-CLI cohort split.
 
 ## After state
 
-**bd-09542b**: 
-- `choices.rs`: blank `///` line inserted between list and `"Slice 1 ships..."` paragraph. rustdoc clean.
-- `lib.rs`: Python script (regex-bug fixed: extended search window to `min(i+5, ...)` instead of `i+1`) backfilled the missing field at the Profile fixture site.
+`dispatch_ps` and `dispatch_ls` `--project` validators now
+emit the exact gold-standard wording:
 
-**polish #7**: `button.rs` rendering now:
-```rust
-let render_chars: Vec<char> = if msg_chars.len() > max_msg_w && max_msg_w > 1 {
-    let mut v: Vec<char> = msg_chars.iter().copied().take(max_msg_w - 1).collect();
-    v.push('…');
-    v
-} else {
-    msg_chars.into_iter().take(max_msg_w).collect()
-};
 ```
-For messages that fit, behaviour unchanged. For longer messages, the last visible char is replaced with `…` so the operator sees a clear indicator that the prompt continues beyond the dialog edge.
+project 'bogus' is not configured; bead operations must
+target a configured project to prevent routing to an
+ambient external board. Configured: a, b, c
+```
 
-Verification:
-- `cargo test-small`: 56/56 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+(or `Configured: (none)` when no projects are configured).
+
+This makes the cluster's `--project` not-configured error
+identical across:
+
+- `caco build list / show / cancel`
+- `caco changelog show`
+- `caco bd list / show / claim / ...` (via
+  resolve_project)
+- `caco test list / show / run`
+- `caco release list / show / status`
+- `caco summary` (via resolve_project)
+- `caco ls`            ← landed in this bead
+- `caco ps`            ← landed in this bead
 
 ## Diff summary
 
-3 files changed, +15 / -1:
-
-- `crates/caco-daemon/src/choices.rs`: +1 (blank doc-line)
-- `crates/caco-cli/src/lib.rs`: +1 (Profile fixture field)
-- `crates/caco-tui/src/views/button.rs`: +13 / -1 (ellipsis logic + comment)
+- `crates/caco-cli/src/lib.rs`:
+  - `dispatch_ps`: replaced inline `--project` validator
+    error wording with the gold-standard security-WHY +
+    Configured: variant.
+  - `dispatch_ls`: same.
+  - Updated source-grep tests
+    `dispatch_ps_validates_kind_state_and_project_filters`
+    and `dispatch_ls_validates_kind_project_and_agent_filters`
+    to match the new wording (substring
+    `"project to prevent routing to an ambient external
+    board"`).
+- `cargo test -p caco-cli --lib -- ...`: all 3 affected
+  tests pass (ps + ls validators + the
+  resolve_project_error_lists_configured_projects gate
+  from bd-6dc352).
+- `cargo test-small`: 180 pass.
 
 ## Operator-takeaway
 
-**Wave 11** of broken-on-main this session. New observation: the cargo-error-driven Python script needs to look ahead more than 1 line for the `-->` location in `-D warnings` output (originally hard-coded `err_lines[i+1]`, which silently missed all sites — script reported "0 sites patched" while clippy still failed). Fixed by extending the search window to 5 lines. Worth keeping in mind if anyone else builds similar tooling.
+The `--project` not-configured validator is now genuinely
+shared across the CLI. The remaining inconsistency is
+`caco fleet snapshot --projects bogus` which uses
+inline-allowed-values wording — that's a different
+**flag** (`--projects`, plural) for the multi-project
+fan-out, and a different code path; left alone here
+because converging it would change a long-stable error
+shape that may break existing scripts.
 
-The rustdoc list-paragraph rule keeps biting (twice this session, also fixed in bd-274c2d log earlier). Could be fixed at the codebase level by configuring rustfmt/just hooks to enforce a blank-line-after-list rule, but the rule is unusual enough that operators don't anticipate it. Filing a follow-up isn't worth it; manual fix-on-encounter is fine.
-
-Polish #7 is the seventh cycle on bd-bf1e86 in this session. Pattern: each cycle adds 5-30 lines and closes one specific TUI rough edge. After 7 cycles, bd-bf1e86 has driven: poll-error UI, freshness indicator, 5 empty-state-hint surfaces, inbox preview ellipsis, confirmation-dialog ellipsis. Next polish cycle could:
-- Audit other dialog-rendering sites for the same issue (modals in `views/modals.rs` if any).
-- Pivot to a different theme (color/contrast accessibility, keyboard hint footers, etc.).
-- Or pause polish and pick up a real ticket from `caco bd list`.
+The other issues in bd-b9eccd are positive observations
+(Issues 3, 6, 7 — already-existing gold-standards) or
+already-shipped fixes (Issues 1, 2 — bd-2dc0c3 +
+bd-bc3d7d). Issue 5 (caco ls --json half-flat envelope:
+`{ok, entries, count, runtime_root, node}` no `data`
+wrapper) is a wire-format change that would break
+existing JSON consumers — same risk profile as the
+caco summary `--json` envelope question in bd-7abbba.
+Worth its own coordinated bead for a cluster-wide
+envelope-shape rollout, not a point fix here.
