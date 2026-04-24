@@ -1,88 +1,78 @@
-# Session summary — bd-684112 Issues 4+5+7: caco doctor --top phrasing + schema --json envelope
+# Session summary — bd-851658 Issue 4: caco operator-actions list self-contradicting --limit fix
 
 ## Goal
 
-Pin three real bugs in the bd-684112 doctor sweep:
-- **Issue 4**: `caco doctor --top 0` had different parenthesized
-  hint phrasing from the 7-surface shared validator. Align (with
-  doctor's top-N semantics noted in the hint).
-- **Issue 5**: `caco doctor --top bogus` leaked the raw rust
-  ParseIntError ('invalid digit found in string'). Use the
-  gold-standard 'invalid --X value Y (expected ...)' phrasing.
-- **Issue 7**: `caco doctor schema --json` returned a flat
-  `{databases, summary}` shape with no `ok`. Wrap in standard
-  `{ok, data, meta}` envelope.
+Pin Issue 4 of the bd-851658 release+operator-actions sweep: the
+top-level `caco operator-actions list` was declared as a
+no-args leaf, so the dispatcher fired the bd-b76723 unrecognised-
+flag warning on `--limit`/`--project`/`--max-age`/`--include-
+closed` even though the underlying handler honours all four.
+Operator saw BOTH the warning AND a downstream validator error
+from the same flag (self-contradicting).
 
 ## Bead(s)
 
-- `bd-684112` — caco action + doctor sweep (P3 bug, multi-issue).
-  Pins Issues 4, 5, 7. Issues 1-2 are POSITIVES (action run --json
-  6th JSON-error-envelope exemplar; NEW required-flag-with-usage-
-  example pattern). Issue 3 is the 10th empty-string-bypass — same
-  family as bd-29c7e3 (shared `validate_non_empty_id` helper meta-
-  bead) — leaving for the cross-cutting fix. Issue 6 (--top -1
-  parser ambiguity) is the 10th surface of the parser bug filed
-  this session as bd-02c404 P2. The OPERATIONAL signal (helsinki
-  UNHEALTHY config-hash mismatch all 6 peers + astra unreachable)
-  belongs to cluster-ctrl, not caco-cli.
+- `bd-851658` — caco release + operator-actions sweep (P4 bug,
+  multi-issue). Pins Issue 4. Issues 1-3, 5-6 are POSITIVES /
+  CORRECTIONs / cohort observations. Issue 7 (release status --id ''
+  HTTP 404 EOF leak) is the 11th empty-string-bypass — covered by
+  bd-29c7e3 (cross-cutting `validate_non_empty_id` helper meta-
+  bead). Issue 8 (--limit -1 parser ambiguity) is covered by
+  bd-02c404 (cross-cutting parser meta-bead filed earlier this
+  session).
 
 ## Before state
 
 ```
-$ caco doctor --top 0
-error: --top must be >= 1 (use no --top for full output)
-
-$ caco doctor --top bogus
-error: --top must be a positive integer: invalid digit found in string
-
-$ caco doctor schema --json | jq 'keys'
-["databases", "summary"]
+$ caco operator-actions list --limit 0
+warning: bd-b76723: `caco operator-actions list` received unrecognised flag(s): --limit. These were ignored by the dispatcher.
+error: --limit must be >= 1 (omit --limit for the default of 200)
 ```
+
+The dispatcher claimed `--limit` was "ignored", and then the
+downstream validator fired anyway. Mind-bending mixed signal.
 
 ## After state
 
 ```
-$ caco doctor --top 0
-error: --top must be >= 1 (use --top 1 for the single highest-severity check, or omit --top for the full output)
+$ caco operator-actions list --help
+  --project          Project name (default: first configured or CACOPHONY_PROJECT).
+  --max-age          Hide beads older than this (e.g. 24h, 7d). Default: show all.
+  --limit            Maximum number of beads to return.
+  --include-closed   Also show recently-closed operator-action beads (default: open only).
 
-$ caco doctor --top bogus
-error: invalid --top value 'bogus' (expected a positive integer, e.g. 5)
-
-$ caco doctor schema --json | jq 'keys'
-["data", "meta", "ok"]
-$ caco doctor schema --json | jq -e .ok
-true
+$ caco operator-actions list --limit 0
+error: --limit must be >= 1 (omit --limit for the default of 200)
 ```
+
+bd-b76723 warning is gone. Validator still fires (correct). The
+top-level `operator-actions list` and `caco bd operator-actions`
+now have identical declared flags AND identical runtime behaviour
+(both already routed through `dispatch_bd_operator_actions`).
 
 ## Diff summary
 
-- 1 file changed, +30 / -8 (`crates/caco-cli/src/lib.rs`):
-  - `--top 0` and `--top bogus` error wording in the doctor
-    dispatcher (2 messages).
-  - `dispatch_doctor_schema` JSON branch wraps in standard envelope.
-  - 2 existing tests updated for the new envelope path.
+- 1 file changed, +14 / -2 (`crates/caco-cli/src/lib.rs`):
+  - Top-level `operator-actions list` leaf promoted to explicit
+    CommandSpec, reusing the existing `BD_OPERATOR_ACTIONS_ARGS`.
+  - No handler change (already accepted these flags).
 
 ## Validation
 
 - `cargo check -p caco-cli`: clean.
-- `cargo test -p caco-cli --lib doctor_schema`: 5/5 pass.
 
 ## Operator-takeaway
 
-Doctor `--top` errors now match the rest of the cluster's numeric-
-validator phrasing (gold-standard since bd-c061d4 / bd-7995c8).
-`caco doctor schema --json` joins the standard envelope cohort,
-shrinking the no-ok surface count from 6 → 5 (`cert status`,
-`event log`, `log exceptions`, `mcp`, `caco summary` remain).
+`caco operator-actions list --limit N` Just Works without the
+spurious warn-then-error pairing. The flag was always honoured by
+the handler; only the dispatcher's args spec was missing.
 
-**BREAKING for scripts** reading top-level `.databases` / `.summary`
-from `caco doctor schema --json`:
-- `.databases` → `.data.databases`
-- `.summary.total_drift_columns` → `.meta.total_drift_columns`
-- `.summary.missing_tables` → `.meta.missing_tables`
-- `.ok` is now present (always `true`).
+Same family as bd-c0c8b3 (`caco bd operator-actions
+--include-closed` inverted) — both are dispatcher/handler args-
+spec sync issues. This one was the simpler hoist; the inversion
+case is a separate fix.
 
-Push-discipline (post-clarification): own-branch push is allowed,
-default-branch force-push is banned, only `caco agent reintegrate`
-/ `complete` move work onto main. This session has only ever used
-local refs + daemon-mediated reintegrate.
+Push-discipline (post-clarification): own-branch push allowed;
+default-branch force-push banned; only reintegrate / complete
+land work on main. This session continues to use only local refs
++ daemon-mediated reintegrate.
