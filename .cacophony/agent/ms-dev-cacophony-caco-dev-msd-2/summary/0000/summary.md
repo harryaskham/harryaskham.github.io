@@ -1,90 +1,93 @@
-# Session summary — bd-53a0f3 STT live-transcription visual indicator state machine
+# Session summary — bd-07d590 voice-call orchestration extras
 
 ## Goal
 
-`caco audio transcribe --live` (and TUI/web/macOS) needs to surface
-5 visual states to operators within 100ms of model state changes:
-Idle / Speech / Transcribing / Partial / Final / Error. This bead's
-state machine is the shared contract every renderer reads.
+Operator → controller live voice call: handoff signals (chimes),
+direct-DM (not broadcast), voice-call-mode prompt hint for
+controller-class agents, and savable transcript file. Builds on
+bd-a55d88's CallSession.
 
 ## Bead(s)
 
-- `bd-53a0f3` — Visual indicators for live transcription state +
-  voice-call e2e smoke (P1, operator-asked)
-- (parent epic `bd-9496d1` STT hardening)
-- (depends on bd-71ce98 engine MVP, bd-a55d88 voice-call session,
-  bd-68b76d corpus harness — bd-a55d88 done; e2e smoke deferred)
+- `bd-07d590` — voice-call orchestration (P1, operator-asked)
+- (parent epic `bd-9496d1` STT hardening; combines with bd-a55d88)
 
 ## Before state
 
-- No shared indicator state machine. Every UI surface (TUI, web,
-  macOS) would have invented its own.
+- bd-a55d88 shipped CallSession state machine but no
+  orchestration: no chime markers, no DM envelope helper, no
+  controller-mode hint, no transcript file format.
 
 ## After state
 
-- New `crates/caco-stt-protocol/src/indicator.rs` (~485 lines)
-- `IndicatorState { Idle, Speech, Transcribing, Partial, Final, Error }`
-  with `is_healthy()` + `css_class()` (returns "stt-{state}" stable
-  per state — DOM/TUI/SwiftUI all key off the same string)
-- `Indicator` state machine — pure data, no I/O:
-  - `on_vad_speech(level, now_ms)` — Idle→Speech; clamps level to
-    [0,1]; bumps seq each frame so the level meter animates
-  - `on_vad_silence(now_ms)` — Speech→Transcribing or Final→Idle
-  - `on_event(stream_event, now_ms)` — Partial/Final/Error from engine
-  - `on_classified_error(error, now_ms)` — for already-classified
-    errors that didn't go through `StreamEvent::Error`
-  - `clear_error(now_ms)` — Error→Idle (operator dismissed or
-    engine recovered)
-- `IndicatorSnapshot { state, level, partial_text, last_final,
-  error, seq, last_change_ms }` — denormalised for renderers
-- `within_latency_budget(now, last_change, budget)` helper for
-  tests + UIs to assert criterion 1's 100ms invariant
-- `DEFAULT_LATENCY_BUDGET_MS = 100`
+- New `crates/caco-stt-protocol/src/voice_call_orchestration.rs`
+  (~360 lines)
+- `HandoffChime { Start, End, Error, Mute, Unmute }` with stable
+  `asset_key()` (`call-start`, `call-end`, `call-error`,
+  `mute-on`, `mute-off`)
+- `end_chime_for(reason)` — picks End vs Error based on EndReason
+- `DmEnvelope { to_agent_id, body, session_id, voice_call }` —
+  contract for direct-DM `caco msg send` (criterion 2: NEVER
+  broadcast)
+- `build_dm_envelope(session, session_id, body)` — single source
+  of truth for envelope construction
+- `VOICE_CALL_MODE_HINT` constant — terse-mode profile snippet
+  the daemon prepends to controller prompts (criterion 9)
+- `voice_call_mode_hint(session)` — Option<&str> per session-live
+  state for ergonomic `unwrap_or_default()` in callers
+- `render_transcript_markdown(session, session_id)` — pure-string
+  markdown formatter for criterion-4 file save
 
 ## Diff summary
 
-- Files: 2 modified — `src/lib.rs` (+1 module decl) — and 1
-  created — `src/indicator.rs`
-- Tests: +22 / -0 (caco-stt-protocol total: 108 in 0.02s)
+- Files: 2 modified — `src/lib.rs` (+1 mod) + 1 created
+  (`voice_call_orchestration.rs`)
+- Tests: +12 / -0 (caco-stt-protocol total: 120 in 0.02s)
 - Behavioural delta: zero — pure addition
 
 ## Acceptance status
 
-- [x] Criterion 1: 5 visual states + state-pill model with
-  100ms latency invariant (DEFAULT_LATENCY_BUDGET_MS) and
-  `within_latency_budget` helper renderers can assert against
-- [x] Criterion 2: state-transition tests on synthesized inputs
-  (`full_utterance_lifecycle` covers silence → speech →
-  transcribing → partial → final → idle)
-- [ ] Criterion 3: e2e voice-call smoke in CI — DEFERRED, blocked
-  on bd-71ce98 (engine MVP) + bd-68b76d (corpus harness). State
-  machine is ready to consume real engine events.
-- [x] Criterion 4: every error state has a one-line fix (via
-  `SttError.fix_hint` from bd-4552dc doctor module — wired in
-  `on_event`'s `StreamEvent::Error` handler)
+- [x] Criterion 1: chime-in / chime-out via HandoffChime::{Start,
+  End, Error}
+- [x] Criterion 2: DmEnvelope.to_agent_id is concrete (no
+  wildcard); voice_call=true marker for routing
+- [ ] Criterion 3: TTS playback wiring — daemon-side, requires
+  TTS engine pick (not in protocol crate)
+- [x] Criterion 4: render_transcript_markdown produces
+  saveable markdown
+- [x] Criterion 5: bd-a55d88 already shipped PushToTalk/AlwaysOn
+- [x] Criterion 6: bd-a55d88 already shipped toggle_mute()
+- [x] Criterion 7: bd-a55d88 already shipped end-phrase + hangup
+- [x] Criterion 8: full-orchestration scenario test exercises
+  connect → speak → DM envelope → reply → hangup → end chime →
+  markdown save
+- [x] Criterion 9: VOICE_CALL_MODE_HINT directs terse + no
+  markdown + no goodbye-narration
 
 ## Operator-takeaway
 
-The state machine ships now; the e2e CI smoke waits for the
-engine. Renderers (TUI/web/macOS) can already wire against the
-indicator and ship their visual layer:
+Voice-call orchestration is now end-to-end at the protocol layer.
+The full-scenario test drives every piece:
 
 ```rust
-let mut indicator = Indicator::new();
-// ...wire engine events + VAD frames to the methods...
-let snap = indicator.snapshot();
-// renderer reads snap.state, snap.level, snap.partial_text, etc.
+let mut s = CallSession::new(CallConfig::new("ctrl-1"));
+s.on_agent_connected();                                 // +Start chime
+let body = s.on_stt_event(&final_event("status?"))?;
+let env = build_dm_envelope(&s, "sess-99", body);       // direct DM
+s.on_agent_reply("Fleet healthy");                      // → TTS
+s.hangup();
+let chime = end_chime_for(s.end_reason.as_ref().unwrap()); // End chime
+let md = render_transcript_markdown(&s, "sess-99");     // savable
 ```
 
-The CSS-class function gives every renderer the same stable
-string-keying so the "traffic-light" colour is uniform across
-surfaces. UIs that want to assert criterion 1's 100ms freshness
-call `within_latency_budget(now, snap.last_change_ms, 100)`.
+CLI-side wiring left:
+- play `chimes/<asset_key>.wav` on each HandoffChime (5 keys)
+- POST DmEnvelope as `caco msg send` (criterion 2)
+- prepend VOICE_CALL_MODE_HINT to controller prompt for session
+  duration (criterion 9)
+- write `render_transcript_markdown(...)` to
+  `$XDG_DATA_HOME/caco/voice-calls/<session-id>.md` on hangup
 
-## Why I'm unclaiming, not closing
-
-Acceptance criterion 3 (e2e smoke in CI) is genuinely blocked on
-bd-71ce98 (engine MVP) which doesn't exist yet. Per close-discipline,
-I'm landing the state-machine layer, appending this progress note
-to the bead, and unclaiming so the agent that lands bd-71ce98 can
-wire the e2e smoke without conflict.
+Criterion 3 (TTS playback) is the only piece that needs
+non-protocol work — it depends on a TTS engine pick, which is
+not in this crate's scope.
