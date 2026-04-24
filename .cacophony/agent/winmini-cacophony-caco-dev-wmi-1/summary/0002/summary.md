@@ -1,33 +1,51 @@
-# Session summary — retention sweep correctly skips non-terminal agents
+# Session summary — bd-63203d: outbox list payload projection
 
 ## Goal
 
-Fix the broken-on-main `retention_sweep_skips_non_completed_agents` test (P1, bd-578267). The test asserted that a `Running` agent passed into `plan_completed_checkout_retention_sweep` would be skipped, but the planner only filtered by `.pruned`, trusting a comment that said "caller pre-filters by state" — a contract the production caller never honoured.
+Reduce `/api/v1/outbox` list response size by omitting heavy JSON payloads by
+default while preserving an explicit opt-in path for tooling that genuinely
+needs the full payload body.
 
 ## Bead(s)
 
-- `bd-578267` — [broken-on-main] retention_sweep_skips_non_completed_agents failing
+- `bd-63203d` — Apply bd-eb1b56 projection pattern to `/api/v1/outbox`
 
 ## Before state
 
-- `cargo test -p caco-daemon --lib retention_sweep_skips_non_completed_agents` failed with `assertion failed: plan.targets.is_empty()` at `crates/caco-daemon/src/lib.rs:43346`.
-- `plan_completed_checkout_retention_sweep` only filtered `inventory` by `agent.pruned`. A `Running` (or `Stalled`, `Paused`, `Recovering`, `Retrying`, `Pending`, `Starting`, `Waiting`, `Blocked`) agent with an old `created_at` could be silently scheduled for checkout pruning.
-- Production caller `run_completed_checkout_retention_sweep` feeds `scan_agents_dir_all()` which returns every non-`Discarded` agent regardless of state. So the comment "caller pre-filters by state" was actively false.
+- `GET /api/v1/outbox` returned full `OutboxEntry` objects, including the full
+  JSON `payload` for every entry.
+- Outbox payloads can be multi-KB serialized mutation bodies, so list calls
+  were heavier than necessary.
+- `caco outbox list` had no CLI flag for opting back into payload-inclusive
+  JSON/API output.
 
 ## After state
 
-- 9/9 `retention_sweep_*` tests pass (previously 8/9).
-- `cargo test-small` green (57 passed).
-- The planner enforces its own state contract: a `.filter(|agent| agent.state.is_terminal())` short-circuits any non-`Completed`/`Failed`/`Stopped`/`Discarded` agent before it can ever be scheduled for pruning.
+- `/api/v1/outbox` now returns `OutboxListItem` projections instead of raw
+  `OutboxEntry` values.
+- Default list responses omit `payload` entirely and surface `payload_len`
+  instead.
+- `?include_payload=true` restores the full JSON payload for compatibility.
+- `caco outbox list` now accepts `--include-payload` to wire the opt-in through
+  the CLI surface.
+- Added daemon projection tests and a CLI command-spec test for the new flag.
 
 ## Diff summary
 
-- Commit: 938016960 (rebased onto current main)
-- File: `crates/caco-daemon/src/lib.rs` (+16 / −3)
-- Single change: extend the existing `.filter(|agent| !agent.pruned)` chain in `plan_completed_checkout_retention_sweep` with a second `.filter(|agent| agent.state.is_terminal())` and update the now-stale "caller pre-filters by state" comment.
-- Tests: no new tests needed (the existing broken-on-main test now passes and was already structured to assert exactly this contract).
-- Behavioural delta: callers can no longer accidentally schedule live agents' checkouts for retention pruning. Production behaviour unchanged in practice because no live agent has an old enough `ended_at` to trip the planner — but the defense-in-depth removes the latent bug class.
+- Files touched:
+  - `crates/caco-daemon/src/lib.rs`
+  - `crates/caco-cli/src/lib.rs`
+- Tests:
+  - `cargo test -p caco-daemon outbox_list_item_ -- --nocapture`
+  - `cargo test -p caco-cli outbox_list_accepts_include_payload_flag_bd_63203d -- --nocapture`
+- Behavioural delta:
+  - Default outbox list JSON becomes cheaper and less noisy.
+  - Retry/replay tooling can still recover the full payload explicitly.
+  - Text-mode `caco outbox list` output stays unchanged.
 
 ## Operator-takeaway
 
-When a function comment says "caller pre-filters X" and there is exactly one production caller that does not pre-filter, the comment is a bug — either fix the caller or move the filter into the function. In this case the function name (`plan_completed_checkout_retention_sweep`) makes the contract self-evident, so enforcing it inside the planner is the right shape: the type system already telegraphs that only completed agents should be inputs, and the filter makes the type-implied contract real.
+This is the same projection pattern already used elsewhere in the repo, now
+applied to one of the highest-payload list endpoints. Operators still have an
+escape hatch for full payload inspection, but the default path is lighter and
+better suited to routine listing.
