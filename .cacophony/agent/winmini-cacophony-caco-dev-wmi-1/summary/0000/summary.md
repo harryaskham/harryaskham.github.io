@@ -1,109 +1,81 @@
-# Session summary — bd-d9846e: webapp-css z-index layer tokens
+# Session summary — bd-b335a5: auto-claim skip EPIC beads
 
 ## Goal
 
-Per webapp UX audit (bd-ea10ac, F2): style.css used 22 distinct
-z-index values including the 9000/9999/10000/10001 'scared of
-overlap' cluster at the top of the stack. Introduce CSS custom
-properties for the layer ladder (--z-base, --z-sticky, --z-dropdown,
---z-overlay, --z-modal, --z-toast, --z-tooltip) at decade spacing,
-replace the 22 raw integers with named tokens, and document what
-sits at each layer.
+Workers cannot meaningfully implement an EPIC umbrella bead. The
+observed pattern across po4-5 sessions (bd-1401f4 + bd-ab3050 +
+bd-56ca56) was `caco bd claim --project <P>` (no --bead-id)
+consistently returning bd-9496d1 (the [EPIC] STT hardening
+umbrella) because it was the highest-priority open unassigned
+bead, forcing every worker to unclaim and pick deliberately —
+defeating the auto-claim path. Fix: in the daemon's claim
+resolver, exclude beads where bead_type=Epic OR title starts with
+'[EPIC]' from the no-bead-id auto-claim queue. EPICs remain
+claimable explicitly via --bead-id.
 
 ## Bead(s)
 
-- `bd-d9846e` — webapp-css z-index layer tokens (P3 task).
-  Discovered via reflect-session audit from bd-ea10ac. Sister of
-  bd-7da46e + bd-9d8de1 which both landed this segment from the
-  same audit.
+- `bd-b335a5` — auto-claim should skip type=epic and bd-titles
+  starting with [EPIC] (P3 task). Filed via reflect-session
+  pattern from bd-1401f4 session.
 
 ## Before state
 
 ```
-$ grep -E "^\s+z-index:" style.css | wc -l
-35  (22 distinct integer values)
+$ caco bd claim --project cacophony       # no --bead-id
+claimed: bd-9496d1 — [EPIC] stt-xplat hardening umbrella ...
+                                          # umbrella, can't implement
 
-z-index: 9000;          /* fullscreen terminal */
-z-index: 9999;          /* X */
-z-index: 10000;         /* toast container */
-z-index: 10001;         /* stale-snapshot-badge above toasts */
-z-index: 1000;          /* modal-overlay */
-z-index: 1100;          /* modal-content */
-z-index: 2000;          /* (uncertain layer) */
-z-index: 200;           /* mobile drawer */
-z-index: 100;           /* sticky */
-... etc — 22 distinct
+$ caco bd unclaim --bead-id bd-9496d1
+unclaimed.
 ```
 
-No layer ladder. Future widget authors invented escalating
-integers ('scared of overlap'); the 9000-10001 cluster shows
-this fear pattern explicitly.
+Pattern repeats across every fresh worker spawn that uses the
+no-id auto-claim; the highest-priority open EPIC dominates.
 
 ## After state
 
-```css
-:root {
-    /* ── z-index layer tokens (bd-d9846e) ────────────────
-       --z-base    1     in-flow widgets that establish a
-                         stacking context but stay at the base.
-       --z-sticky  100   sticky/header surfaces.
-       --z-dropdown 200  menu popovers anchored in-page.
-       --z-overlay 1000  full-screen modal-overlay scrim.
-       --z-modal   1100  modal dialog content above its scrim.
-       --z-toast   2000  ephemeral toast/banner notifications.
-       --z-tooltip 3000  cursor-anchored tooltips / focus rings
-                         above modals (contextual help). */
-    --z-base: 1;
-    --z-sticky: 100;
-    --z-dropdown: 200;
-    --z-overlay: 1000;
-    --z-modal: 1100;
-    --z-toast: 2000;
-    --z-tooltip: 3000;
-}
+```
+$ caco bd claim --project cacophony       # no --bead-id
+claimed: bd-X — <next ready non-EPIC bead>
+
+$ caco bd claim --bead-id bd-9496d1       # explicit still works
+claimed: bd-9496d1 — [EPIC] ...           # operator opt-in
 ```
 
-16 of the 35 `z-index:` declarations now use named tokens. The
-remaining 9 are in-flow widget-internal stacks (z-index: 1/2/3/5
-inside a single component for sibling stacking) that don't need
-namespace pollution — they're scoped by the parent stacking
-context the token-using parent establishes.
+The auto-claim path now skips:
+- beads where `bead_type == BeadType::Epic` (canonical type
+  marker)
+- beads whose title starts with `[EPIC]` (legacy convention for
+  beads filed without setting --type epic)
 
-Mapping applied:
-- 1000 → --z-overlay (1)
-- 1100 → --z-modal (1)
-- 2000 → --z-toast (1)
-- 9000, 9999, 10000 → --z-toast (3 — converged the fear cluster)
-- 10001 → --z-tooltip (1, stale-snapshot-badge above toasts)
-- 100 → --z-sticky (3)
-- 200 → --z-dropdown (1)
-- 99, 50 → --z-sticky (3 — pinned near-sticky widgets)
+Both gates apply only to `claim_next_ready` (the no-bead-id auto-
+claim path). Explicit `claim_bead(bead_id, ...)` is unchanged so
+operators can still hand-pick an EPIC.
 
 ## Diff summary
 
-- 1 file changed, +37 / -16 (`crates/caco-web/static/style.css`):
-  - Added `:root` token definitions with documented layer guide.
-  - Replaced 16 raw z-index integers with `var(--z-*)` tokens
-    via mechanical mapping (Python regex). In-flow widget stacks
-    (z-index: 1/2/3/5) deliberately preserved as raw — they're
-    internal to one stacking context.
+- 1 file changed, +56 / -1 (`crates/caco-beads/src/store.rs`):
+  - `BeadsStore::claim_next_ready`: added the type/title skip
+    inside the candidate loop, before `claim_bead`.
+  - New unit test
+    `claim_next_ready_skips_epic_type_and_epic_titled_beads`:
+    inserts a P0 EPIC by type, a P0 EPIC by title prefix, and a
+    P1 ordinary task; asserts the auto-claim returns the P1 task.
 
 ## Validation
 
-- `cargo check -p caco-web`: clean (static asset).
-- `grep -c "var(--z-"`: 16 token uses confirmed.
-- Modal/toast/tooltip ordering preserved (relative ordering
-  10001 > 10000 > 1100 > 1000 maps to tooltip > toast > modal >
-  overlay, matches the documented ladder).
+- `cargo test -p caco-beads --lib claim_next_ready`: all 8
+  pre-existing tests + the new test pass.
+- `cargo check --workspace`: clean.
 
 ## Operator-takeaway
 
-Future widget authors now have a documented 7-tier ladder to
-choose from instead of inventing escalating integers. The
-9000/9999/10000/10001 'fear cluster' has converged to the toast
-+ tooltip layers. Sister beads bd-7da46e (skip-link) and
-bd-9d8de1 (44px touch targets) from the same bd-ea10ac audit
-also landed this segment.
+The 'every fresh worker auto-claims the umbrella' footgun is
+closed. Workers spawning into `caco bd claim --project X` (no
+id) now skip past the EPIC backlog and land on something
+implementable. EPICs remain explicit-claim-only — owners /
+controllers can still target them deliberately.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
