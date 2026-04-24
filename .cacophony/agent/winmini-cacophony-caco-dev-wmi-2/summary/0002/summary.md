@@ -1,66 +1,90 @@
-# Session summary — fix filer.md frontmatter YAML, restoring 4 caco-daemon embedded-profile tests
+# Session summary — bd-2dc0c3: caco ps validator parity across all four filters
 
 ## Goal
 
-Unbreak the four caco-daemon embedded-profile lib tests that began
-failing on main when `.cacophony/profiles/filer.md` was committed
-with a misindented YAML block scalar. The frontmatter parser
-returned a SCANNER error and every test that resolves the embedded
-profile set panicked.
+Make `caco ps` reject bogus values for `--kind`, `--state`, and
+`--project` the same way it already rejects bogus `--node`,
+eliminating the silent-degrade-to-empty-result pattern that hid
+operator typos behind a generic "no matching jobs" message.
 
 ## Bead(s)
 
-- `bd-b4e52e` — `[broken-on-main] caco-daemon embedded-profiles
-  tests failing (filer.md frontmatter parse)`.
+- `bd-2dc0c3` — `caco ps validator INCONSISTENCY within single
+  surface: --node bogus is gold-standard but --kind / --state /
+  --project all silently return 'no matching jobs' (1 of 4
+  filters validates)`.
 
 ## Before state
 
-- Failing tests (`cargo test -p caco-daemon --lib all_embedded_profile`):
-  - `agent::tests::all_embedded_profiles_resolve_without_disk`
-  - `agent::tests::all_embedded_profile_hook_mixins_are_known`
-  - `agent::tests::all_embedded_profile_mcp_servers_are_canonical`
-  - `agent::tests::all_embedded_profile_permission_modes_are_canonical`
-- Error:
-  `embedded profile filer.md failed to parse: failed to parse
-  frontmatter in <embedded>/filer.md: could not find expected ':'
-  at line 39 column 1, while scanning a simple key at line 38
-  column 1`.
-- Root cause: the `initial_prompt: >-` folded-block scalar in
-  `.cacophony/profiles/filer.md` had its body lines flush with
-  column 1 (same indent as the parent key), so the YAML scanner
-  saw them as new top-level mapping keys instead of block-scalar
-  content.
+- `caco ps --node bogus` →
+  `caco ps — no jobs on node 'bogus' (local node is 'helsinki')`
+  (gold-standard).
+- `caco ps --kind bogus` → `caco ps — node: helsinki / no
+  matching jobs` (silent).
+- `caco ps --state bogus` → silent.
+- `caco ps --project nonexistent` → silent.
+
+Worst form of the silent-filter pattern: same surface, same
+function, four filter parameters, one validates and three don't.
+Operator can't tell typo from genuinely-empty result.
 
 ## After state
 
-- Body of `initial_prompt: >-` indented two spaces relative to the
-  parent key (per YAML block-scalar rules). Folded `>-` semantics
-  preserved: lines join with single spaces and trailing newline
-  stripped — verified by parsing through PyYAML and inspecting the
-  resulting `initial_prompt` value.
-- All 4 embedded-profile tests pass:
-  `cargo test -p caco-daemon --lib all_embedded_profile` →
-  `4 passed; 0 failed`.
-- `cargo test-small`: 57 pass.
-- `cargo clippy -p caco-daemon --tests`: clean.
+`dispatch_ps` declares two `const` sets at function entry:
+
+- `KNOWN_KINDS = ["service", "sidecar", "agent", "repair"]`
+- `KNOWN_STATES = ["running", "stopped", "unhealthy", "unknown",
+  "completed", "failed", "degraded", "resolved"]`
+
+Upfront validators check `--kind`, `--state`, and `--project`
+before any daemon calls and return a clear error naming the
+valid set:
+
+- `caco ps: unknown --kind 'bogus'. Valid kinds: service,
+  sidecar, agent, repair`
+- `caco ps: unknown --state 'bogus'. Valid states: running,
+  stopped, …`
+- `caco ps: project 'nonexistent' is not configured. Configured
+  projects: cacophony, picasso-health, …`
+
+`--project` validates against `config.projects` (cacophony has
+no concept of ad-hoc projects today; every project lives in
+config).
 
 ## Diff summary
 
-- Files touched:
-  - `.cacophony/profiles/filer.md` — indent block-scalar body two
-    spaces; no other changes.
-- Tests: 0 added, 0 removed; 4 flipped failing → passing.
-- Behavioural delta: filer profile's `initial_prompt` is now
-  parseable. No semantic change to the prompt text (folded scalar
-  produces the same single-line content as before, just with the
-  YAML scanner happy).
+- `crates/caco-cli/src/lib.rs`:
+  - `dispatch_ps`: added `KNOWN_KINDS` / `KNOWN_STATES` const
+    declarations and three upfront validators
+    (`--kind`, `--state`, `--project`) before the existing
+    `--node` short-circuit.
+  - 1 new test:
+    `dispatch_ps_validates_kind_state_and_project_filters` —
+    source-greps the dispatcher body for the validator error
+    wording and the `KNOWN_*` set declarations so a future
+    refactor can't silently delete the validators and
+    re-introduce the silent-degrade bug.
+- `cargo test -p caco-cli --lib
+   dispatch_ps_validates_kind_state_and_project_filters`: pass.
+- `cargo test-small`: 162 pass.
+- `cargo clippy -p caco-cli --tests`: clean (16 pre-existing
+  warnings unchanged from baseline).
 
 ## Operator-takeaway
 
-YAML block-scalar bodies must be indented strictly deeper than
-their parent key. The filer.md regression is the textbook failure
-mode and the four embedded-profile tests caught it immediately on
-main — keep those tests as the canonical "did anyone commit a
-broken profile" guard. If a similar regression recurs, the test
-panic message names the offending file and line; aim a
-two-space indent fix at the block scalar body and re-run the test.
+The pattern from this bead is a cross-cutting class: any
+list-by-X subcommand should validate every filter parameter
+against either a known enum (kind/state/level/etc.) or an
+existence check (project/agent/node). bd-bc3d7d (caco ls
+--kind/--project/--agent all silent) is the same family on
+the next surface; the same `KNOWN_*` const + early-return
+validator pattern would unblock that bead too.
+
+Longer term, the bead suggests a shared "enum-or-fk filter
+validator" helper for the bd subsystem so each subcommand
+plugs in rather than hand-rolling the check. That's the
+right shape but out of scope here — left as a follow-up
+opportunity for whoever picks up bd-bc3d7d.
+
+Out of scope: the operational signal in the bead description
+(bd-18f43b 118-agent transition) is unrelated to this fix.
