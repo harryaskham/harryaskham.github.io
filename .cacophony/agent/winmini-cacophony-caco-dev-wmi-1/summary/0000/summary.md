@@ -1,51 +1,77 @@
-# Session summary — bd-596416 Issue 3: bd dispatch --bead-id '' upfront guard
+# Session summary — bd-20747b Issues 5+6: config sparse converge to security-WHY + empty-string guard
 
 ## Goal
 
-Pin Issue 3 of the bd-596416 sweep: `caco bd dispatch --bead-id ''`
-streamed through node-selection (wasted work) and emitted TWO log
-lines echoing the empty quoted ID before the daemon's claim path
-finally noticed. 16th empty-string-bypass surface (sub-family
-'echo-empty-multi-line'). Add upfront guard.
+Pin two real bugs in the bd-20747b sweep of the new
+`caco config sparse show / validate` subcommand (bd-5f6b62 LANDED):
+- **Issue 5**: `config sparse show/validate --project bogus` used
+  a NEW 7th convention `unknown project: X` instead of the shared
+  5-surface security-WHY phrasing. Especially ironic since config
+  sparse interacts with the FILESYSTEM CHECKOUT — security framing
+  is more germane here than for query-only surfaces.
+- **Issue 6**: `--project ''` echoed empty into the error output
+  (18th empty-string-bypass surface).
 
 ## Bead(s)
 
-- `bd-596416` — caco bd dispatch + expand + search + info sweep
-  (P3 bug, multi-issue). Pins Issue 3. Issues 1-2, 5-6, 8-9 are
-  POSITIVES (gold-standard PHASE PROGRESS streaming, 5 distinct
-  required-flag pattern variants now catalogued). Issue 4 (bd
-  expand --dry-run destructive bd-b76723, 6th surface) was just
-  fixed by the bd-0f7e74 / bd-44f33a / bd-0c73b7 trio landed in
-  this session — bd expand now refuses --dry-run upfront. Issue 7
-  (required-flag short-circuits other validation) is normal CLI
-  behaviour, not a bug to fix.
+- `bd-20747b` — caco config sparse sweep (P3 bug, multi-issue).
+  Pins Issues 5+6. Issues 1-4 are POSITIVES (required-flag, 
+  --path repeatable, --json includes ok, NEW STRONG-promote `note`
+  field for human-readable summary). Issue 7 (path-traversal
+  silently accepted in --path) is a security AFFORDANCE GAP
+  needing daemon-side spec-validation policy work — defer (the
+  paths are accepted today but never escape because no spec is
+  defined for these projects). Issue 8 (4th flat-envelope variant)
+  is the half-flat envelope cohort — same family as bd-b9eccd that
+  wmi-2 just landed.
 
 ## Before state
 
 ```
-$ caco bd dispatch --bead-id ''
-▸ selecting node (candidates: ms-mac,ms-dev,helsinki,pocket4,winmini,beelink,sgu24,astra)…
-✗ failed at agent.selecting_node: claim failed: claim_bead: bead not found:
-bd dispatch: stream ended at phase 'agent.selecting_node' — claim failed: claim_bead: bead not found: ; falling back to verification
-```
+$ caco config sparse show --project bogus
+error: unknown project: bogus
 
-Three problems: (1) wasted node-selector work; (2) empty quoted
-ID echoed across two log lines (16th empty-string-bypass); (3)
-operator gets a confusing 'bead not found' framing instead of an
-upfront flag-validation error.
+$ caco config sparse show --project ''
+error: unknown project: 
+```
 
 ## After state
 
 ```
-$ caco bd dispatch --bead-id ''
-error: --bead-id value cannot be empty for bd dispatch
+$ caco config sparse show --project bogus
+error: project 'bogus' is not configured; bead operations must target a configured project to prevent routing to an ambient external board
+
+$ caco config sparse show --project ''
+error: --project value cannot be empty for config sparse show
+
+$ caco config sparse validate --project bogus
+error: project 'bogus' is not configured; ...
+
+$ caco config sparse validate --project ''
+error: --project value cannot be empty for config sparse validate
 ```
+
+config sparse joins the security-WHY cohort. Updated --project
+convention map (12 surfaces, NOW 6 conventions — convention (g)
+'unknown project: X' eliminated):
+- (a) Security-WHY: 6 surfaces (build, changelog show, project show,
+  auto-close-landed, project status [bd-f4957c this segment], config
+  sparse show/validate [bd-20747b this segment])
+- (b) Truncated 'is not configured': 1 (project show --name)
+- (c) Inline-allowed-values: 1 (fleet snapshot --projects)
+- (d) Silent-accept: 0 (caco ls/ps fixed by wmi-2 in bd-b9eccd)
+- (e) Path-context filesystem: 2 (reconcile-log, snapshot list)
+- (f) Defined: list: 1 (validate_project_name internal helper)
+
+Convention (a) now dominates. Drift trend reversing.
 
 ## Diff summary
 
-- 1 file changed, +12 / -0 (`crates/caco-cli/src/lib.rs`):
-  - `dispatch_bd_dispatch` checks `--bead-id` for whitespace-only
-    / empty before any project resolution or stream setup.
+- 1 file changed, +33 / -3 (`crates/caco-cli/src/lib.rs`):
+  - dispatcher arms for `config sparse show` + `config sparse validate`
+    add upfront empty-string guards for `--project`.
+  - `dispatch_config_sparse_show` + `dispatch_config_sparse_validate`
+    upgraded the unknown-project error to security-WHY phrasing.
 
 ## Validation
 
@@ -53,10 +79,10 @@ error: --bead-id value cannot be empty for bd dispatch
 
 ## Operator-takeaway
 
-`caco bd dispatch --bead-id ''` now produces the canonical empty-
-string error before any work happens. 16 empty-string-bypass
-surfaces patched individually now; bd-29c7e3 cross-cutting
-validator helper increasingly justified.
+`caco config sparse show/validate` now joins the security-WHY
+cohort (now 6/12 surfaces, dominant convention) and rejects empty
+--project upfront (18 empty-string-bypass surfaces patched). The
+filesystem-touching surface gets the security framing it deserves.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
