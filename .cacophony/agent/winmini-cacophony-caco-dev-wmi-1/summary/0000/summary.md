@@ -1,66 +1,94 @@
-# Session summary — bd-3d6a13: document event-log state-mutating-only policy
+# Session summary — bd-47df20: caco timeline validator hardening + envelope wrap
 
 ## Goal
 
-Per bd-0b47a7 test-user probe discovery: `caco event log` runs
-successfully but does NOT appear in subsequent `caco event log`
-output. The audit log records state-mutating commands (bd close,
-agent stop, etc.) but NOT read-only commands. The bead asked to
-either document explicitly OR fix.
-
-Recommended path was (a) document, NOT (b) expand the audit
-surface (path b would 10x audit log volume — bd-3bbc6f cron list
-COMMAND truncation already shows volume-management is fragile).
+Pin multiple real bugs in the bd-47df20 sweep of the new
+`caco timeline` surface (bd-431d5b v1.2.537):
+- **--scope ''**: HTTP-400-leak with daemon URL + raw JSON.
+- **--scope bogus**: same HTTP-400-leak path.
+- **--limit 0**: silent-clamp-to-1 (drift from USAGE-GUIDANCE).
+- **--limit 501**: silent-clamp-to-500 even though --help says
+  'max 500' (--help-vs-reality drift).
+- **--max-age-hours 0**: silent-accept, returns full timeline.
+- **--min-commits 0**: silent-accept, returns empty timeline
+  (drift vs --limit 0 which clamped).
+- **--json envelope**: top-level `{scope, timelines}` with NO
+  `ok`/`meta`/`data` wrapper (7th NO-OK envelope drift surface).
 
 ## Bead(s)
 
-- `bd-3d6a13` — caco event log doesn't log itself + msg speak /
-  audio capabilities also unlogged — document or fix the 'state-
-  mutating commands only' rule (P3 task, audit-log/cli/docs).
+- `bd-47df20` — caco timeline sweep (P3 bug, multi-issue). Pins
+  the contained validator + envelope work. POSITIVES (Issue 1 NEW
+  required-flag GOLD '--scope=project requires --project=<name>',
+  Issue 2 ASCII tree gold-standard rendering) preserved as
+  promote candidates. --json-on-error 4th JSON-broken is the
+  shared HTTP-wrapper (bd-dda312 5-field rich envelope) — defer
+  to that landing. Parser-ambiguity --max-age-hours -1 24th cohort
+  surface covered by bd-02c404.
 
 ## Before state
 
 ```
-$ caco event log --help
-caco event log
-  Show the command audit event log.
+$ caco timeline --scope ''
+error: daemon returned HTTP 400 for http://127.0.0.1:11100/api/v1/timeline?scope=: {"error":"...","request_id":"..."}
 
-  Args:
-    --type      Event type filter ...
-    ...
+$ caco timeline --scope bogus
+error: daemon returned HTTP 400 for http://127.0.0.1:11100/api/v1/timeline?scope=bogus: {"error":"expected cluster|project","request_id":"..."}
 
-$ caco event log
-... (runs but no entry appears in next call)
+$ caco timeline --limit 0
+Timeline (scope=cluster, ... showing 1)        # silent clamp-to-1
+
+$ caco timeline --limit 501
+Timeline (scope=cluster, ... showing 500)      # silent clamp despite --help cap
+
+$ caco timeline --max-age-hours 0
+Timeline (scope=cluster, ...)                  # silent accept
+
+$ caco timeline --min-commits 0
+Timeline (scope=cluster, no projects)          # silent empty
+
+$ caco timeline --json | jq 'keys'
+[ "scope", "timelines" ]                       # NO ok / data / meta
 ```
-
-Operators expected 'audit log' to mean ALL commands. Doc gap.
 
 ## After state
 
 ```
-$ caco event log --help
-caco event log
-  Show the command audit event log. Records state-mutating commands
-  only (e.g. bd close, agent stop, config write); read-only commands
-  (status, list, query, event log itself) are excluded by design
-  — see bd-3d6a13.
+$ caco timeline --scope ''
+error: --scope value cannot be empty (allowed: cluster, project)
 
-  Args:
-    --type      Event type filter ...
-    ...
+$ caco timeline --scope bogus
+error: unknown --scope value 'bogus' (allowed: cluster, project)
+
+$ caco timeline --limit 0
+error: --limit must be >= 1 (use --limit 1 for the most recent event, or omit for the default of 50)
+
+$ caco timeline --limit 501
+error: --limit must be <= 500 (got 501; --help states the cap is 500)
+
+$ caco timeline --max-age-hours 0
+error: --max-age-hours must be >= 1 (use --max-age-hours 1 for the most recent hour, or omit for no time bound)
+
+$ caco timeline --min-commits 0
+error: --min-commits must be >= 1 (use --min-commits 1 to include single-commit projects, or omit for the default floor)
+
+$ caco timeline --json | jq 'keys'
+[ "data", "meta", "ok" ]
+$ caco timeline --json | jq '.meta'
+{ "surface": "caco timeline", "limit": 50, "scope": "cluster" }
 ```
-
-The summary now ships in `caco --help event log` output and is
-threaded through the MCP / agent-safe registry the same as every
-other CommandSpec summary string.
 
 ## Diff summary
 
-- 1 file changed, +13 / -1 (`crates/caco-cli/src/lib.rs`):
-  - `EVENT_SUBCOMMANDS[0].summary` rewritten to document the
-    state-mutating-only policy explicitly + cross-reference
-    bd-3d6a13 + name canonical examples + name the workaround
-    (`caco event record`) for explicit ledger entries.
+- 1 file changed, +57 / -7 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_timeline`: upfront empty/enum guards on --scope;
+    explicit reject of 0-values for --max-age-hours, --min-commits,
+    --limit; explicit reject of --limit > 500 (matches --help).
+  - --json envelope wrapped in `{ok, data, meta:{surface, limit,
+    scope}}`. Catalogue: NO-OK cohort 3→2 (cert status, mcp; log
+    exceptions still outstanding).
+  - --scope=project + empty/whitespace --project also caught by
+    same upfront guard.
 
 ## Validation
 
@@ -68,12 +96,10 @@ other CommandSpec summary string.
 
 ## Operator-takeaway
 
-The 'why doesn't event log show event log' surprise is closed.
-Operators reading `--help` now see the design choice + know that
-the omission is intentional (volume-management) + know they can
-opt-in via `caco event record` for explicit ledger entries.
-Doc-only fix; no behaviour change. msg speak / audio capabilities
-fall under the same documented exclusion.
+`caco timeline` now rejects bad inputs upfront with USAGE-GUIDANCE
+phrasing instead of silent-clamp drift, and honours its own --help
+cap. --json envelope joins the canonical {ok,data,meta} shape.
+NO-OK envelope cohort shrinks 3→2 this turn.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
