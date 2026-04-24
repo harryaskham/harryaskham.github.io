@@ -1,61 +1,111 @@
-# bd-bf1e86 polish #9: truncate_label ellipsis for caco bd graph text/dot/mermaid labels
+# Session summary — bd-44af89: caco doctor schema --json wraps in {ok, data, meta} envelope
 
 ## Goal
 
-Polish track #9: replace 5 `chars().take(N).collect()` silent-chop sites in `crates/caco-cli/src/lib.rs::render_dot/render_mermaid/render_ascii` (operator-facing graph output for `caco bd graph`) with a shared `truncate_label(s, max)` helper that appends `"..."` when the string actually exceeds `max`. Mirrors `caco-tui::views::common::truncate` (used in inbox preview, polish #6) and the same antipattern fixed in TUI cycles.
+Address bd-44af89: `caco --json` surfaces dropping the
+outer `SuccessEnvelope { ok }` field, leaving programmatic
+consumers (jq scripts, dashboards, downstream automation)
+unable to distinguish success from soft-error responses.
+
+The bead listed three surfaces:
+
+- `caco doctor schema --json`   — `{databases, summary}` (no ok)
+- `caco summary --json`         — pure flat (no ok)
+- `caco event log --json`       — `{count, events}` (no ok)
+
+Investigation revealed that **two of the three were already
+fixed** earlier in the validator-cohort burndown:
+
+- `caco event log --json` — wrapped via bd-75d5a3 (Issue 3)
+  to emit `{ok, data: {events}, meta: {count}}`.
+- `caco summary --json` — wrapped via bd-bbcc36 to emit
+  `{ok, data, meta: {since, since_iso}}`.
+
+Only `caco doctor schema --json` was still emitting the bare
+`{databases, summary}` shape. Fixed in this bead.
 
 ## Bead(s)
 
-- bd-bf1e86 (permanent polish bead — polish #9 of N this session)
+- `bd-44af89` — `caco --json output drops outer
+  SuccessEnvelope ok field — multiple commands surface no-ok
+  flat envelope`.
 
 ## Before state
 
-`render_dot`, `render_mermaid`, and `render_ascii` (3 call sites in `render_ascii` — main title, parent title, dep title) all used the same idiom:
-```rust
-let title_short: String = title_esc.chars().take(60).collect();
 ```
-which silently truncates mid-word. For `caco bd graph --format text` (used in beads-tree printout) this means a long bead title looks identical-but-shorter to a genuinely-short one.
+$ caco doctor schema --json | jq 'keys'
+["databases", "summary"]
+```
 
-No tests for the chop behaviour at all.
+No `ok` field. Operator scripts that do
+`caco doctor schema --json | jq -e .ok` to gate on success
+would always fail-closed regardless of actual drift state.
 
 ## After state
 
-- New `truncate_label(s: &str, max: usize) -> String` helper at module scope (just below `render_mermaid`), with doc-comment cross-referencing the TUI helper. Same shape: char-based count, ellipsis when `max > 3`, hard chop when `max <= 3`.
-- All 5 sites in `render_dot`/`render_mermaid`/`render_ascii` updated:
-  - `render_dot`: title chop 60
-  - `render_mermaid`: title chop 50
-  - `render_ascii`: title chop 60, parent_title chop 40, dep_title chop 40
-- 5 new unit tests in `mod tests`:
-  - `truncate_label_short_string_unchanged`
-  - `truncate_label_at_boundary_unchanged`
-  - `truncate_label_long_string_gets_ellipsis`
-  - `truncate_label_handles_unicode_boundaries` (multi-byte chars)
-  - `truncate_label_tiny_max_no_ellipsis`
+```
+$ caco doctor schema --json | jq 'keys'
+["data", "meta", "ok"]
+$ caco doctor schema --json | jq '.ok, .meta'
+true
+{ "total_drift_columns": 0, "missing_tables": 0 }
+```
 
-Verification:
-- `cargo test -p caco-cli --lib truncate_label`: 5/5 PASS
-- `cargo test-small`: 57/57 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+`ok` flips to `false` when `total_drift_columns > 0` or
+`missing_tables > 0` — semantic ok/not-ok, not just
+"command ran". `meta` surfaces the totals at the top
+level so a quick health probe can `jq .meta.total_drift_columns`
+without descending into `.data.summary.*`. Full schema
+detail remains under `.data` unchanged.
 
-## Side note: cluster bd-subsystem wedge during this cycle
-
-Mid-cycle, `test-user-hel` and peers reported every `caco bd` command failing with `CHECK constraint failed: length(title) >= 1 AND length(title) <= 500` — a single malformed peer mutation wedged the whole bd-sync loop fleet-wide. I drafted a defensive clamp in `index_mutation_in_tx` (and 2 unit tests pinning it) but discovered peer wmi-1 had landed an identical fix during the same cycle (commit f4708ae6+). Discarded my duplicate, kept my polish #9 work. Cluster recovered automatically when daemons restarted.
-
-This is a useful pattern: when an outage report comes in, the right move is to draft a fix locally first (so you have a working diagnosis if peer fixes don't materialize), then defer to peer's landed fix when discovered. Net cost: ~10min of local diagnosis time, no merge-conflict pain since I git-checkout'd the file before pulling.
+This brings the doctor schema surface in line with the
+broader `{ok, data, meta}` cohort that already covers
+event log, summary, bd graph, build show, scratch list,
+test list, and many others.
 
 ## Diff summary
 
-1 file changed, +51 / −10:
-
 - `crates/caco-cli/src/lib.rs`:
-  - +18 / −0 helper `truncate_label`
-  - +5 / −5 call-site replacements (5 `chars().take().collect()` → `truncate_label`)
-  - +28 / −0 unit tests
+  - `dispatch_doctor_schema`: replaced the bare
+    `summary` JSON output with an envelope-wrapped form
+    that flips `ok = !has_drift` and surfaces totals in
+    `meta`. Original `summary` payload is preserved
+    under `data` so existing consumers reading
+    `.data.databases.*` / `.data.summary.*` still work
+    after their `jq` paths get a one-token prefix update.
+  - 1 new test:
+    `dispatch_doctor_schema_wraps_json_in_ok_envelope`
+    — source-greps the function body for the bd-44af89
+    marker, the `"ok": !has_drift` literal, and
+    `total_drift_columns` so the envelope wrap can't
+    silently regress to the bare shape.
+- `cargo test -p caco-cli --lib`: focused test passes;
+  297 total pass.
+- `cargo test-small`: 297 pass; 1 pre-existing failure
+  (caco-profile shipped_profiles_html_lists_every_canonical_profile
+  — `stale-check` profile added without docs/profiles.html
+  update; flagged in bd-b6a0d9 takeaway too).
 
 ## Operator-takeaway
 
-**Polish #9** completes the silent-chop-with-ellipsis pattern fix in caco-cli graph rendering. Operators using `caco bd graph --format text` now see `[bd-12345 open] Some bead title that gets long en...` instead of the old `... gets long e` — small win for diff-readability when piping graph output into PRs/notes.
+The `{ok, data, meta}` envelope cohort grows by one
+surface. The 3-surface anti-pattern catalogue from
+bd-44af89 is now cleared:
 
-Tests pin the contract so future graph-format additions can use the helper safely.
+- doctor schema: shipped here.
+- event log: bd-75d5a3 (already shipped).
+- summary: bd-bbcc36 (already shipped).
 
-**Cluster bd-subsystem wedge** earlier this cycle was resolved by peer wmi-1's defensive clamp landing on main. The class of bug — a single malformed peer mutation wedging the sync loop — is now fixed, with a regression test pinning it. Worth filing follow-ups for: (a) write-time validation in `bd update`/`bd create` (mine + peer's fixes are read-side; the upstream client that produced the bad title can still create new ones), (b) per-mutation error-isolation generally (one bad row shouldn't be able to take down a whole reimport, even outside the title-length case).
+Next likely no-ok-flat-envelope candidates (per the
+bd-5ae1ce envelope catalogue): `caco config schema`
+(bd-36edaa Issue 5), `caco config template-help`
+(bd-36edaa Issue 6), `caco mcp` catalog (bd-a66641
+Issues 2+3 — deliberately deferred because the catalog
+IS the wire format), `caco choices`, `caco notify
+prune`. Any of these would be a natural follow-up bead
+of the same shape.
+
+The pre-existing `caco-profile` test failure
+(`stale-check` not in `docs/profiles.html`) persists
+into this drain. Worth opening a small bead to add
+the missing `<tr>` row.
