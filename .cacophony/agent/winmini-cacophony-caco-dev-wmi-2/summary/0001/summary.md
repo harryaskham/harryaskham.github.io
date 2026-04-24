@@ -1,67 +1,87 @@
-# Session summary — bd-d4d8dd close-out: doc the priority-ordered next_ready_bead contract on SpawnAndClaimParams
+# Session summary — bd-32a91d: caco update status accepts --stable-only
 
 ## Goal
 
-bd-d4d8dd asked for priority-ordered selection in
-`SpawnAndClaim`'s `next_ready_bead` resolver, with tests and docs.
-On audit the implementation, lower-layer tests, and the SPEC §
-"spawn-oriented actions" line had all already landed in earlier
-sessions but the bead was never closed and the user-facing
-`SpawnAndClaimParams.bead` rustdoc still just said "typically
-next_ready_bead" with no mention of the priority-ordering contract.
-This session closes the bead by tightening the rustdoc (the only
-remaining acceptance-criterion #3 gap) and verifying the existing
-tests still pin the contract.
+Add the `--stable-only` flag to `caco update status` so the
+read-only sister surface honours the same release-selection
+filter as the destructive parent `caco update`.
 
 ## Bead(s)
 
-- `bd-d4d8dd` — Priority-ordered bead selection for `spawn_and_claim`
-  (`next_ready_bead` should walk P0 → P3).
+- `bd-32a91d` — `caco update status missing --stable-only flag
+  (works on parent 'caco update' but not on 'caco update status' —
+  only the destructive parent supports the read-only filter)`.
 
 ## Before state
 
-- `BeadsStore::list_ready` already orders `priority ASC, created_at ASC`.
-- `BeadsStore::claim_next_ready` already walks that ladder, retrying
-  on race-loss.
-- Two pinning tests already passing in `caco-beads`:
-  - `claim_next_ready_walks_priority_ladder_p0_to_p3`
-  - `claim_next_ready_ties_break_by_created_at_within_priority`
-- SPEC §"spawn-oriented actions" already names bd-d4d8dd as the
-  source of the contract.
-- Gap: `caco-config::SpawnAndClaimParams.bead` rustdoc only said
-  "Bead reference, typically `next_ready_bead`." — no mention of
-  priority order, tie-break, ready-set definition, or the resolution
-  path. Anyone reading the config schema in isolation could not tell
-  whether selection was FIFO, priority-ordered, or arbitrary.
+- `caco update --stable-only` worked (UPDATE_ARGS declared the
+  flag, parent dispatcher threaded it into
+  `UpdateCheckOptions { stable_only: true }`).
+- `caco update status --stable-only` did NOT work — the `status`
+  subcommand was constructed via `CommandSpec::leaf("status",
+  ...)` with no ArgSpec and `dispatch_update_status` had no
+  `stable_only` parameter, so the per-channel
+  `check_for_update(...)` calls always used
+  `UpdateCheckOptions::default()`.
+- Operational signal in the bead: nightly channel last built
+  3wk ago (2026-04-04), dev+hourly channels report 'no release
+  found' — operators who wanted to filter `update status` to
+  the stable channel had no read-only escape hatch.
 
 ## After state
 
-- `SpawnAndClaimParams.bead` rustdoc spells out the full selector
-  semantics: ready = open + unassigned + unblocked (incl. permanent),
-  ordering is `priority ASC, created_at ASC`, P0→P1→P2→P3 with FIFO
-  tie-break within priority, and names the resolution path
-  (`claim_next_bead_goal → BeadsStore::claim_next_ready →
-  BeadsStore::list_ready`) plus the two pinning tests and SPEC line.
-- `cargo test -p caco-beads --lib claim_next_ready`: 8/8 pass.
-- `cargo test-small`: 57/57 pass.
-- `cargo clippy -p caco-config --tests`: clean.
+- New `UPDATE_STATUS_ARGS` ArgSpec list declares `--stable-only`
+  with the same wording as the parent.
+- `update`'s `subcommands` entry for `status` is now a full
+  `CommandSpec { args: UPDATE_STATUS_ARGS, ... }` rather than
+  `CommandSpec::leaf(...)` so the flag is discoverable via
+  `caco update status --help --json`.
+- Dispatch arm in `run` parses `--stable-only` and forwards it
+  to `dispatch_update_status(json_requested, stable_only, co)`.
+- `dispatch_update_status` takes a new `stable_only: bool` and
+  routes to `check_for_update_with_options(repo, ch, token,
+  UpdateCheckOptions { stable_only })` for every channel thread.
+- New test `update_status_subcommand_advertises_stable_only_flag`
+  drives `caco update status --help --json` end-to-end and
+  asserts `--stable-only` is in the args array — pins the help
+  surface against future ArgSpec drift.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-config/src/model.rs` — extended rustdoc on
-    `SpawnAndClaimParams.bead` (no behavioural change).
-- Tests: 0 added, 0 removed, 0 flipped — relying on the two existing
-  bd-d4d8dd-tagged tests in `caco-beads` to pin the contract.
-- Behavioural delta: none. Doc-only.
+- `crates/caco-cli/src/lib.rs`:
+  - Added `UPDATE_STATUS_ARGS` ArgSpec list.
+  - Replaced `CommandSpec::leaf("status", ...)` with full
+    `CommandSpec { ..., args: UPDATE_STATUS_ARGS, ... }`.
+  - Dispatch arm threads `stable_only` into
+    `dispatch_update_status`.
+  - `dispatch_update_status` signature gains `stable_only: bool`;
+    per-channel thread uses
+    `check_for_update_with_options` instead of `check_for_update`.
+  - 1 new test:
+    `update_status_subcommand_advertises_stable_only_flag`.
+- `cargo test -p caco-cli --lib
+   update_status_subcommand_advertises_stable_only_flag`: pass.
+- `cargo test-small`: 162 pass.
+- `cargo clippy -p caco-cli --tests`: clean (16 pre-existing
+  warnings unchanged from baseline).
 
 ## Operator-takeaway
 
-bd-d4d8dd's behavioural goal landed silently in a prior session
-(daemon, beads-store, SPEC, tests all already in place) but the bead
-was never closed. The only remaining gap was a thin schema-doc on
-`SpawnAndClaimParams.bead`, now fixed. If you ever audit closed
-beads against open ones again, treat in-progress beads with no
-session diffs and matching `cargo test -p <crate> --lib <test>` greens
-as candidates for "implementation already landed; close after a
-documentation/audit pass" rather than re-implementing from scratch.
+The pattern from this bead is wider than `update status`: any
+read-only `<verb> status` sister surface should mirror the
+filters its destructive parent advertises. When you find a
+`CommandSpec::leaf(...)` for a `status` subcommand, audit it
+against the parent's ArgSpec for read-only-friendly flags
+that should also apply to the read-only path.
+
+The operational signal in the bead description (nightly +
+dev/hourly channel CI gaps) is unrelated to this fix — it's a
+separate CI-pipeline issue. The `--stable-only` filter on
+`update status` lets operators sidestep noisy stale channels
+while diagnosing whether stable has anything pending.
+
+Out of scope here: the bd-b76723 unknown-flag warning class
+(any documented affordance not declared in ArgSpec). That's
+the same family as bd-53e157 (just-shipped --name on node
+show); each command should fix its own ArgSpec rather than
+suppress the warning globally.
