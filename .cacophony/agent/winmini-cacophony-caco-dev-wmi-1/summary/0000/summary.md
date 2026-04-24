@@ -1,80 +1,69 @@
-# Session summary — bd-925e1b: caco project namespace envelope unification
+# Session summary — bd-87425e: caco image generate --json honors errors
 
 ## Goal
 
-Unify the three divergent JSON envelope shapes inside the `caco project`
-namespace (`list`, `status`, `show`) onto the standard `{ok, data,
-meta}` envelope catalogued under bd-5ae1ce. Worst intra-namespace
-divergence yet — three sister surfaces, three different shapes.
+Make `caco image generate --json` emit a structured
+`{ok:false, error:{code,message}}` envelope on stdout for every
+error path, instead of plain text on stderr with empty stdout.
+Matches the gold-standard `caco bd show --json` error contract.
 
 ## Bead(s)
 
-- `bd-925e1b` — caco project namespace has THREE distinct JSON envelope
-  shapes across sister surfaces (P3 bug). Issue 1 fixed; Issue 2
-  (--name vs --project) and the FAILED-counter rollup gap left for a
-  follow-up.
+- `bd-87425e` — caco image generate --json IGNORES the --json flag
+  on ALL error paths (P3 bug). Issue 1 (JSON error envelope) fixed
+  here; Issue 2 (empty `--prompt` validator + HTTP-path leak) left
+  for a follow-up bead if operator wants it pinned separately.
 
 ## Before state
 
 ```
-$ caco project list   --json | jq 'keys'   # shape A
-["count", "ok", "projects"]
-$ caco project status --json | jq 'keys'   # shape B
-["count", "daemon_reachable", "ok", "projects"]
-$ caco project show   --json | jq 'keys'   # shape C
-["ok", "project"]
+$ caco image generate --project cacophony --preset bogus --json
+[stdout: empty]
+[stderr: error: unknown image preset 'bogus' — available: …]
+[exit: 2]
 ```
 
-Three shapes; none used the cluster-standard `{ok, data, meta}`
-envelope. `count` and `daemon_reachable` were hoisted to top-level
-on list/status; show used a singular `project` key with no envelope
-at all.
+Same pattern for `--project bogus`, empty `--prompt`, transport
+errors. Script consumer doing
+`if ! caco image generate … --json | jq -e .ok` got `null` /
+"parse error" instead of a useful error envelope.
 
 ## After state
 
-All three return the same shape:
-
 ```
-$ caco project list   --json | jq 'keys'
-["data", "meta", "ok"]
-
-$ caco project status --json | jq 'keys'
-["data", "meta", "ok"]    # data.projects, meta.{count, daemon_reachable}
-
-$ caco project show   --json | jq 'keys'
-["data", "meta", "ok"]    # data.project, meta.source = "daemon"|"config"
+$ caco image generate --project cacophony --preset bogus --json
+{
+  "ok": false,
+  "error": {
+    "code": "image_generate_failed",
+    "message": "unknown image preset 'bogus' — available: …"
+  }
+}
+[exit: 1]
 ```
 
-- `list`: payload moves to `data.projects`; `count` moves under `meta`.
-- `status`: payload moves to `data.projects`; both `count` and
-  `daemon_reachable` move under `meta`.
-- `show`: both daemon-backed and config-fallback paths wrap their
-  payload under `data.project` and add `meta.source` =
-  `"daemon"|"config"` so consumers can tell which read model
-  produced the result.
+Wrapping at the dispatch boundary (rather than rewriting the
+function's many `CliError::new(…)` sites) keeps the diff tight: a
+single `match` around `dispatch_image_generate(...)` catches every
+`Err` and converts it to a structured `Outcome` when `--json` is
+in effect. Text-mode behaviour is unchanged.
 
 ## Diff summary
 
-- 1 file changed, +30 / -10 (`crates/caco-cli/src/lib.rs`).
+- 1 file changed, +18 / -2 (`crates/caco-cli/src/lib.rs` — dispatch
+  branch only; the `dispatch_image_generate` body is untouched).
 
 ## Validation
 
 - `cargo check -p caco-cli --tests`: clean.
-- No existing tests assert on the old shapes (grep'd
-  `crates/caco-cli/tests/` and root `tests/`).
 
 ## Operator-takeaway
 
-- Cross-surface envelope catalogue: three project-namespace variants
-  collapse into one shape. Estimated catalogue count drops by 2.
-- **BREAKING for any script reading**:
-  - `caco project list   --json | jq .count`        → `.meta.count`
-  - `caco project list   --json | jq .projects`     → `.data.projects`
-  - `caco project status --json | jq .daemon_reachable` →
-    `.meta.daemon_reachable`
-  - `caco project status --json | jq .projects`     → `.data.projects`
-  - `caco project show   --json | jq .project`      → `.data.project`
-- `meta.source` on `project show` is new (no previous field).
-- Issue 2 (`--name` typo silently empty) and the FAILED-counter
-  rollup gap remain open — if they prove worth a separate bead, can
-  be filed as `bd-925e1b` children.
+`caco image generate … --json` now behaves like every other
+JSON-aware caco surface: errors land as a parseable envelope on
+stdout with exit 1. Existing text-mode invocations continue to
+print the same human-readable `error: …` line on stderr (exit
+unchanged for that path). Issue 2 (empty-prompt validator,
+HTTP-path leak in builder errors) and the gold-standard observation
+about inline allowed-values for `--preset` / `--model` are out of
+scope for this bead.
