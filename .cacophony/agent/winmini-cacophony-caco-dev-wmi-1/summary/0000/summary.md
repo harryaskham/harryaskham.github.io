@@ -1,77 +1,66 @@
-# Session summary — bd-3c9e8f: bd expand --parent-epic + brief lift
+# Session summary — bd-3d6a13: document event-log state-mutating-only policy
 
 ## Goal
 
-Per bd-8ea2d2 audit (29 'vague' beads attributed to ms-mac:_:node-
-token were actually operator-driven LLM epic decompositions via
-`caco bd expand --text "<freeform>"`). The vagueness is intrinsic
-— the LLM takes a one-line brief and fans out 5-8 generic child
-beads with boilerplate acceptance criteria. Two improvements:
+Per bd-0b47a7 test-user probe discovery: `caco event log` runs
+successfully but does NOT appear in subsequent `caco event log`
+output. The audit log records state-mutating commands (bd close,
+agent stop, etc.) but NOT read-only commands. The bead asked to
+either document explicitly OR fix.
 
-(1) Add `--parent-epic <bd-id>` flag to `caco bd expand`. When
-    set: each child bead gets a `parent_bead_id` link to the epic
-    (so children render under the parent in graph/webapp tree
-    views) + the operator's `--text` brief is lifted into each
-    child's description as a 'Parent epic context' block listing
-    sibling bead ids.
-
-(2) Workers claiming a child bead can now SEE the broader
-    decomposition without leaving the bead surface.
+Recommended path was (a) document, NOT (b) expand the audit
+surface (path b would 10x audit log volume — bd-3bbc6f cron list
+COMMAND truncation already shows volume-management is fragile).
 
 ## Bead(s)
 
-- `bd-3c9e8f` — bd expand --parent-epic + brief lift (P3 feature).
-  Filed via bd-8ea2d2 audit.
+- `bd-3d6a13` — caco event log doesn't log itself + msg speak /
+  audio capabilities also unlogged — document or fix the 'state-
+  mutating commands only' rule (P3 task, audit-log/cli/docs).
 
 ## Before state
 
 ```
-$ caco bd expand --text "macOS app with liquid glass"
-expanded: 8 bead(s) created
-  bd-aa8a1a P2 [task] Configure Nix builds for entire macOS app stack
-  bd-bb1234 P2 [task] Implement liquid glass shader pipeline
-  ... (no parent linkage, no operator brief context)
+$ caco event log --help
+caco event log
+  Show the command audit event log.
 
-$ caco bd show --bead-id bd-aa8a1a
-  description: Configure Nix builds...
-  parent: -                                  # invisible context
+  Args:
+    --type      Event type filter ...
+    ...
+
+$ caco event log
+... (runs but no entry appears in next call)
 ```
 
-Worker claiming bd-aa8a1a has no idea this came from a broader 8-
-bead decomposition or what the operator originally asked for.
+Operators expected 'audit log' to mean ALL commands. Doc gap.
 
 ## After state
 
 ```
-$ caco bd expand --parent-epic bd-EPIC --text "macOS app with liquid glass"
-expanded: 8 bead(s) created
-  bd-aa8a1a P2 [task] Configure Nix builds for entire macOS app stack
-  bd-bb1234 P2 [task] Implement liquid glass shader pipeline
-  ...
+$ caco event log --help
+caco event log
+  Show the command audit event log. Records state-mutating commands
+  only (e.g. bd close, agent stop, config write); read-only commands
+  (status, list, query, event log itself) are excluded by design
+  — see bd-3d6a13.
 
-$ caco bd show --bead-id bd-aa8a1a
-  description:
-    ## Parent epic context
-    Parent epic: bd-EPIC
-    Operator brief: "macOS app with liquid glass"
-    Filed via 'caco bd expand' on 2026-04-24T...; sibling beads: bd-bb1234 bd-cc5678 ...
-    ---
-    Configure Nix builds...
-  parent: bd-EPIC
+  Args:
+    --type      Event type filter ...
+    ...
 ```
+
+The summary now ships in `caco --help event log` output and is
+threaded through the MCP / agent-safe registry the same as every
+other CommandSpec summary string.
 
 ## Diff summary
 
-- 1 file changed, +73 / -0 (`crates/caco-cli/src/lib.rs`):
-  - `BD_EXPAND_ARGS`: added `--parent-epic` ArgSpec.
-  - `dispatch_bd_expand`: forwards `parent_bead_id` +
-    `lift_brief_into_children: true` to the daemon (graceful
-    server-side opt-in for when the matching daemon-side support
-    lands), AND a client-side post-create patch loop that PATCHes
-    each child with the parent_bead_id link + lifted brief block
-    if the daemon ignored the new fields. Skip-if-already-set
-    detection means the loop is a no-op once the daemon honours
-    the request.
+- 1 file changed, +13 / -1 (`crates/caco-cli/src/lib.rs`):
+  - `EVENT_SUBCOMMANDS[0].summary` rewritten to document the
+    state-mutating-only policy explicitly + cross-reference
+    bd-3d6a13 + name canonical examples + name the workaround
+    (`caco event record`) for explicit ledger entries.
 
 ## Validation
 
@@ -79,14 +68,12 @@ $ caco bd show --bead-id bd-aa8a1a
 
 ## Operator-takeaway
 
-`caco bd expand --parent-epic <bd-id> --text "..."` now wires
-every generated child under the named epic and lifts the
-operator's brief + sibling-id list into each child's description.
-Workers claiming an LLM-decomposed child bead can SEE the broader
-context without spelunking. Pre-pays for the bd-2a3aeb daemon-
-native parent dependency model (the client-side patch loop
-becomes a no-op once the daemon honours `parent_bead_id` +
-`lift_brief_into_children` request fields).
+The 'why doesn't event log show event log' surprise is closed.
+Operators reading `--help` now see the design choice + know that
+the omission is intentional (volume-management) + know they can
+opt-in via `caco event record` for explicit ledger entries.
+Doc-only fix; no behaviour change. msg speak / audio capabilities
+fall under the same documented exclusion.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
