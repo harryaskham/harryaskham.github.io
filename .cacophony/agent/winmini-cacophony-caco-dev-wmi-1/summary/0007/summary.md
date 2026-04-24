@@ -1,78 +1,53 @@
-# Session summary — Expand test_bridge unit coverage (bd-1cb0c2)
+# Session summary — bd-47dc20: add Android timeline view
 
 ## Goal
 
-bd-1cb0c2: caco-daemon's test bridge module
-(`crates/caco-daemon/src/test_bridge.rs`) had 615 lines of
-deterministic-test-bridge code (SPEC §24.4 item 9) but only 3
-broad-stroke integration tests. Add focused unit tests covering each
-lifecycle piece independently.
+Expose the daemon's aggregated timeline in the Android companion as a real
+mobile surface, with cluster/project scope via the existing project selector,
+touch-friendly scrolling, and simple date/range filtering.
 
 ## Bead(s)
 
-- `bd-1cb0c2` — Expand test bridge coverage (615 lines, only 3 tests)
+- `bd-47dc20` — Create timeline view for Android app
 
 ## Before state
 
-- Failing tests: caco-daemon --lib failed to compile due to a
-  pre-existing `peer_version` field omission in
-  `crates/caco-daemon/src/beads.rs:12992` PeerReachability fixture
-  (a peer_version field was added on main but a test fixture wasn't
-  updated).
-- 3 tokio integration tests in test_bridge::tests covering the full
-  end-to-end lifecycle.
+- The Android companion had no timeline tab or timeline screen.
+- The daemon already exposed `/api/v1/timeline`, but the Android app did not
+  fetch or render it.
+- Operators could browse Feed on mobile, but not the aggregated timeline view
+  that now exists in TUI/daemon surfaces.
 
 ## After state
 
-- Failing tests: none. caco-daemon test_bridge:: 12 passing (was 3).
-- +9 focused unit tests + 1 helper extraction.
+- Added a new `Timeline` bottom-nav tab to the Android companion.
+- Added `ConnectionManager.fetchTimeline(...)` plus JSON models for the daemon
+  timeline envelope.
+- Added `ui/timeline/TimelineScreen.kt`, which:
+  - loads cluster timeline by default
+  - switches to project scope automatically when the app's project picker is
+    set
+  - offers mobile range chips (`24h`, `48h`, `7d`)
+  - renders timeline cards with project, actor, relative time, and event kind
+  - supports pull-to-refresh and a floating refresh action
+- Verified the phone app still compiles with the new screen wired into the main
+  tab flow.
 
 ## Diff summary
 
 - Files touched:
-  - `crates/caco-daemon/src/test_bridge.rs` (+~290): 9 new tests +
-    `minimal_create_request()` DRY helper
-  - `crates/caco-daemon/src/beads.rs` (+1): drive-by fix for
-    pre-existing test-fixture compile break (peer_version: None)
-- Tests: +9 / -0 / flipped 0
-
-### New tests by area
-
-**`run_git` helper:**
-- `run_git_succeeds_on_valid_repo`
-- `run_git_propagates_failure_with_stderr`
-- `run_git_errors_when_cwd_is_missing`
-
-**Canned constants invariants:**
-- `canned_constants_are_stable_and_nonempty` (pins SPEC §24.4
-  contract: file name, newline termination, empty stderr)
-- `test_bridge_writes_canned_file_byte_for_byte`
-
-**Error surfaces:**
-- `test_bridge_errors_when_agent_unknown`
-
-**Event semantics:**
-- `test_bridge_events_have_consistent_sender_format`
-- `test_bridge_emits_events_in_lifecycle_order`
-
-**On-disk artefacts:**
-- `test_bridge_status_json_reflects_reintegration_outcome`
-
-## Embedded artefacts
-
-(none — pure test additions to the deterministic bridge)
+  - `companion/android/app/src/main/java/com/cacophony/companion/MainActivity.kt`
+  - `companion/android/app/src/main/java/com/cacophony/companion/connection/ConnectionManager.kt`
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/timeline/TimelineScreen.kt`
+- Validation:
+  - `cd companion/android && nix develop . -c gradle :app:compileDebugKotlin --console=plain`
+- Behavioural delta:
+  - Android now has a first-class timeline surface instead of relying only on
+    Feed for mobile historical context.
 
 ## Operator-takeaway
 
-The test_bridge module is now defended at 12 tests instead of 3,
-covering the canned-constant contract (which downstream
-replication-fixture and CI golden tests key on byte-for-byte), the
-git helper's error paths, and the event/status-json semantics. A
-future refactor that drops or reorders any lifecycle phase, changes
-the canned file content, or breaks the sender format will light up
-in the focused tests instead of slipping through the broad
-integration suite.
-
-Drive-by fix to `beads.rs:12992` un-broke `cargo test -p caco-daemon
---lib` on the current branch (pre-existing main breakage, not from
-my changes — but blocked the test suite from compiling).
+This lands the Android timeline MVP cleanly on top of the already-shipped
+backend: the app now exposes the timeline as a native mobile tab, scoped by the
+existing project picker and backed by the same daemon endpoint as other
+surfaces. It is a practical mobile view now, not just a future design note.
