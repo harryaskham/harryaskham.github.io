@@ -1,105 +1,98 @@
-# Session summary — bd-47df20: caco timeline validator hardening + envelope wrap
+# Session summary — bd-d97b37: caco release namespace minor-drift fixes
 
 ## Goal
 
-Pin multiple real bugs in the bd-47df20 sweep of the new
-`caco timeline` surface (bd-431d5b v1.2.537):
-- **--scope ''**: HTTP-400-leak with daemon URL + raw JSON.
-- **--scope bogus**: same HTTP-400-leak path.
-- **--limit 0**: silent-clamp-to-1 (drift from USAGE-GUIDANCE).
-- **--limit 501**: silent-clamp-to-500 even though --help says
-  'max 500' (--help-vs-reality drift).
-- **--max-age-hours 0**: silent-accept, returns full timeline.
-- **--min-commits 0**: silent-accept, returns empty timeline
-  (drift vs --limit 0 which clamped).
-- **--json envelope**: top-level `{scope, timelines}` with NO
-  `ok`/`meta`/`data` wrapper (7th NO-OK envelope drift surface).
+Pin the 3 minor drifts from the bd-d97b37 STRONG-POSITIVE sweep
+of the caco release namespace (the 7 PROMOTE candidates remain
+in body for the gold-standard-promote workstream):
+
+- **Drift A**: `--limit ''` formatting double-space ('invalid
+  --limit value:  (expected a positive integer)') — should
+  short-circuit at empty check (bd-c3c0a0 canonical).
+- **Drift B**: `release status --id ''` WITHIN-SURFACE
+  inconsistency: HTTP-404-leak 'EOF while parsing a value at
+  line 1 column 0' vs `--id bogus` which is clean structured.
+- **Drift C** (related): `release logs --id ''` same HTTP-404-
+  leak pattern; `release logs --id bogus` lacks the
+  discoverability hint that `release status` already has.
+
+Drift D (release list --foo bogus) is bd-b76723 cohort, not
+unique. Not pinned.
 
 ## Bead(s)
 
-- `bd-47df20` — caco timeline sweep (P3 bug, multi-issue). Pins
-  the contained validator + envelope work. POSITIVES (Issue 1 NEW
-  required-flag GOLD '--scope=project requires --project=<name>',
-  Issue 2 ASCII tree gold-standard rendering) preserved as
-  promote candidates. --json-on-error 4th JSON-broken is the
-  shared HTTP-wrapper (bd-dda312 5-field rich envelope) — defer
-  to that landing. Parser-ambiguity --max-age-hours -1 24th cohort
-  surface covered by bd-02c404.
+- `bd-d97b37` — caco release namespace (P3, test-user). 7
+  PROMOTE candidates preserved in body for the gold-standard
+  retrofit workstream.
 
 ## Before state
 
 ```
-$ caco timeline --scope ''
-error: daemon returned HTTP 400 for http://127.0.0.1:11100/api/v1/timeline?scope=: {"error":"...","request_id":"..."}
+$ caco release list --limit ''
+error: invalid --limit value:  (expected a positive integer)
+                              ^^ DOUBLE SPACE drift
 
-$ caco timeline --scope bogus
-error: daemon returned HTTP 400 for http://127.0.0.1:11100/api/v1/timeline?scope=bogus: {"error":"expected cluster|project","request_id":"..."}
+$ caco release status --id ''
+error: ... EOF while parsing a value at line 1 column 0
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ raw HTTP-404 leak
 
-$ caco timeline --limit 0
-Timeline (scope=cluster, ... showing 1)        # silent clamp-to-1
-
-$ caco timeline --limit 501
-Timeline (scope=cluster, ... showing 500)      # silent clamp despite --help cap
-
-$ caco timeline --max-age-hours 0
-Timeline (scope=cluster, ...)                  # silent accept
-
-$ caco timeline --min-commits 0
-Timeline (scope=cluster, no projects)          # silent empty
-
-$ caco timeline --json | jq 'keys'
-[ "scope", "timelines" ]                       # NO ok / data / meta
+$ caco release logs --id ''
+error: ... EOF while parsing a value at line 1 column 0
+                                                  ^^^ same leak
 ```
 
 ## After state
 
 ```
-$ caco timeline --scope ''
-error: --scope value cannot be empty (allowed: cluster, project)
+$ caco release list --limit ''
+error: --limit value cannot be empty (expected a positive integer; omit --limit for the default)
 
-$ caco timeline --scope bogus
-error: unknown --scope value 'bogus' (allowed: cluster, project)
+$ caco release status --id ''
+error: --id value cannot be empty for release status. Run `caco release list` to see queued/active jobs.
 
-$ caco timeline --limit 0
-error: --limit must be >= 1 (use --limit 1 for the most recent event, or omit for the default of 50)
-
-$ caco timeline --limit 501
-error: --limit must be <= 500 (got 501; --help states the cap is 500)
-
-$ caco timeline --max-age-hours 0
-error: --max-age-hours must be >= 1 (use --max-age-hours 1 for the most recent hour, or omit for no time bound)
-
-$ caco timeline --min-commits 0
-error: --min-commits must be >= 1 (use --min-commits 1 to include single-commit projects, or omit for the default floor)
-
-$ caco timeline --json | jq 'keys'
-[ "data", "meta", "ok" ]
-$ caco timeline --json | jq '.meta'
-{ "surface": "caco timeline", "limit": 50, "scope": "cluster" }
+$ caco release logs --id ''
+error: --id value cannot be empty for release logs. Run `caco release list` to see queued/active jobs.
 ```
 
 ## Diff summary
 
-- 1 file changed, +57 / -7 (`crates/caco-cli/src/lib.rs`):
-  - `dispatch_timeline`: upfront empty/enum guards on --scope;
-    explicit reject of 0-values for --max-age-hours, --min-commits,
-    --limit; explicit reject of --limit > 500 (matches --help).
-  - --json envelope wrapped in `{ok, data, meta:{surface, limit,
-    scope}}`. Catalogue: NO-OK cohort 3→2 (cert status, mcp; log
-    exceptions still outstanding).
-  - --scope=project + empty/whitespace --project also caught by
-    same upfront guard.
+- 1 file changed, +25 / -1 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_release_status`: `--id ''` upfront guard + carry
+    discoverability hint forward.
+  - `dispatch_release_logs`: `--id ''` upfront guard + add the
+    discoverability hint missing from this surface.
+  - `validate_positive_limit` helper: short-circuit
+    empty/whitespace at the front to fix the double-space drift
+    fleet-wide. **25+ call sites benefit from this single fix**
+    (release list, build list, test list, msg list, scratch
+    list, and all other validate_positive_limit consumers).
 
 ## Validation
 
 - `cargo check -p caco-cli`: clean.
+- Existing `validate_positive_limit_rejects_zero_for_lines` +
+  `validate_positive_limit_accepts_positive_lines` tests
+  unaffected (they use '0' and '1'/'50', not empty string).
 
 ## Operator-takeaway
 
-`caco timeline` now rejects bad inputs upfront with USAGE-GUIDANCE
-phrasing instead of silent-clamp drift, and honours its own --help
-cap. --json envelope joins the canonical {ok,data,meta} shape.
-NO-OK envelope cohort shrinks 3→2 this turn.
+Within-surface inconsistency in caco release namespace fixed:
+empty-string --id no longer leaks raw HTTP-404 + serde_json EOF.
+Both release status + release logs now get the discoverability
+hint pointing to `caco release list`. Bonus: the
+validate_positive_limit helper update fixes the `--limit ''`
+double-space drift across 25+ call sites in one shot.
+
+7 PROMOTE candidates from bd-d97b37 remain in the body for
+gold-standard-promote workstream:
+- NOVEL required-flag with embedded discoverability pointer
+  (8th variant).
+- NOVEL inline-allowed-values 'Configured:' phrasing.
+- GOLD-STANDARD security-WHY --project bogus.
+- NOVEL --limit -1 clean (25th surface).
+- Canonical structured-error envelope.
+- DISCOVERABILITY HINT in error path.
+- bd-1c1d0f USAGE-GUIDANCE adopted as-is.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
