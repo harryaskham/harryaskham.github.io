@@ -1,101 +1,33 @@
-# Session summary — Persistent idle auto-restart observability (bd-d3e2c5)
+# Session summary — bd-fdfcd2 codespace lifecycle in CLI status
 
 ## Goal
 
-Log-monitor sweeps 25/28 flagged caco-ctrl persistent
-hitting `idle-auto-restart-fail` 3+ times in ~1h. The
-auto-restart loop in `auto_restart_idle_persistent_agents`
-already logged a warn on attempt and routed Err(e) to the
-structured-log error channel, but:
-
-- No stderr line on failure → invisible in `journalctl`
-  / console output without a feed reader.
-- No success-side eprintln → operators couldn't see the
-  full attempt → outcome cycle when sweeping.
-- The structured-log `detail` was just `e.to_string()` →
-  no idle/threshold/project context for diagnosis.
-
-bd-d3e2c5 asked for "structured logging to auto-restart
-loop so retries are visible rather than just supervisor-
-respawn-after-fail."
+Burn down the next concrete child bead from the Codespaces health/status breakdown by surfacing live GitHub Codespaces lifecycle state in a first-party CLI status surface, so suspended codespaces stop reading as plain generic unreachable peers.
 
 ## Bead(s)
 
-- `bd-d3e2c5` — [bd-08e44d family] caco-ctrl persistent
-  hits idle-auto-restart-fail repeatedly (P2 bug)
+- `bd-fdfcd2` — Surface Codespaces lifecycle state in CLI status views
+- (parent: `bd-7cd98d` — Integrate Codespaces lifecycle state into health/status surfaces)
 
 ## Before state
 
-- Auto-restart loop's failure handler routed `Err(e)` only
-  to the structured-log channel with `detail = e.to_string()`
-  — no idle/threshold/project context, no stderr line.
-- Success path published a feed event but no stderr line.
-- Result: log-monitor sweeps 25/28 detected
-  `idle-auto-restart-fail` from feed events but couldn't
-  see the full cycle without a feed reader; operators
-  triaging from journalctl saw nothing.
+- Failing tests: the broad caco-cli test crate still had unrelated broken-on-main compile debt owned by wmi-2 (`bd-01238e`), so this bead stayed on the contained build-and-binary validation path.
+- Relevant metrics: `caco codespace ls` existed and could query live GitHub status, but `caco node status` only showed daemon liveness/agent counts. A suspended codespace still looked like an ordinary unreachable node unless the operator separately remembered to run `caco codespace ls`.
+- Context: after breaking down the broader codespaces health/status umbrella, this CLI slice was the first honest implementation target because it could reuse the existing GitHub-backed codespace listing without dragging TUI/web along with it.
 
 ## After state
 
-- Failure path emits stderr eprintln with agent_id,
-  persistent_id, project, idle_secs, threshold_secs, error.
-- Success path emits stderr eprintln with agent_id,
-  persistent_id, project, resume_method.
-- Structured-log `detail` enriched with the same context
-  fields (not just `e.to_string()`).
-- `bd-d3e2c5` label added to the structured-log record so
-  log-monitor sweeps can filter cleanly.
+- Failing tests: none observed in the focused build-and-runtime validation path.
+- Relevant metrics: `dispatch_node_status(...)` now opportunistically enriches node rows with live GitHub codespace state, `node_cmd::build_node_statuses(...)` carries `codespace_state` / `codespace_display_name`, and the human-readable `caco node status` output prints a `codespace:` lifecycle line when a matching `cs-<hash>` node is known.
+- Context: operators can now distinguish a suspended codespace from a generic unreachable peer directly in CLI node status, while JSON callers also receive the new `codespace_state` and `codespace_display_name` fields.
 
 ## Diff summary
 
-- Files touched (+45 / −5):
-  - `crates/caco-daemon/src/lib.rs` (~13770 area):
-    - Failure path: stderr eprintln with full context
-      (agent, persistent_id, project, idle_secs,
-      threshold_secs, error). Structured-log detail
-      enriched to mirror the same fields. `bd-d3e2c5`
-      label added so log-monitor sweeps can filter.
-    - Success path: stderr eprintln mirroring the
-      failure shape so the full cycle (warn → ok | fail)
-      is observable in plain-text logs.
-
-## Verification
-
-- `cargo build -p caco-daemon`: clean.
-- `cargo test-small`: 56 pass.
-- `cargo clippy -p caco-daemon --lib -- -D warnings`:
-  clean.
+- Commits: `7de071910`
+- Files touched: `crates/caco-cli/src/lib.rs`, `crates/caco-cli/src/node_cmd.rs`, `docs/codespaces.md`
+- Tests: `cargo build -p caco`; `./target/debug/caco node status --node $CACO_NODE`; `./target/debug/caco node status --node $CACO_NODE --json`
+- Behavioural delta: CLI node status rows can now show a distinct codespace lifecycle annotation sourced from live GitHub state instead of leaving suspended codespaces to look like ordinary unreachable nodes.
 
 ## Operator-takeaway
 
-When persistent idle auto-restart fires, daemon stderr now
-shows:
-
-```
-warn agent: persistent agent <id> idle for Ns (threshold Ns) — auto-restarting
-bd-d3e2c5: persistent idle auto-restart OK for agent=<id> persistent_id=<pid> project=<proj> resume_method=<m>
-```
-
-or on failure:
-
-```
-bd-d3e2c5: persistent idle auto-restart FAILED for agent=<id> persistent_id=<pid> project=<proj> idle_secs=N threshold_secs=N error=<e>
-```
-
-Log-monitor sweeps can grep `bd-d3e2c5: ... FAILED` for
-direct counting, and the structured-log detail / labels
-enable richer dashboards.
-
-## Scope kept narrow
-
-This is observability only — no retry counter, no per-agent
-backoff, no circuit breaker. The bead's diagnostic-next-steps
-list (capture which exact API call fails, cross-reference
-with sync-500 timing, etc.) is now actionable because the
-logs surface enough to identify the failing call. Follow-up
-slices can decide whether (a) backoff, (b) retries, or
-(c) bd-08e44d-family root-cause-fix is the next move.
-
-## Drive-by
-
-(none — single-file focused change)
+This lands the smallest honest status integration slice: the CLI now has enough context to tell you when a codespace is merely suspended/expected-offline, while the broader TUI/web status work remains visible as a separate child bead instead of hidden in one umbrella.
