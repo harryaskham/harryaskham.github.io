@@ -1,59 +1,67 @@
-# Session summary — bd-827c5e Issue 2: caco choices reissue --mode alias + docstring fix
+# Session summary — bd-dfa77a Issue 1: caco launcher list --full flag
 
 ## Goal
 
-Pin Issue 2 of the bd-827c5e choices sweep: the `caco choices
-reissue` help docstring used the bare word "mode" which led
-operators to reach for `--mode` by muscle memory and hit the
-bd-b76723 unrecognised-flag warning. Fix BOTH the alias gap (accept
-`--mode` as an alias for `--notify-mode`) AND the docstring (name
-the actual flag literally).
+Pin Issue 1 of the bd-dfa77a launcher sweep: text-mode output
+truncates fingerprints to 12 chars + ellipsis (`4482d118a3ce…`)
+which blocks `grep`-for-fingerprint workflows. Add `--full` flag
+to unlock the complete 64-char fingerprint in text mode (json mode
+already returns full fingerprints).
 
 ## Bead(s)
 
-- `bd-827c5e` — caco choices sweep (P3 bug, multi-issue). This
-  session pins Issue 2 (operator-affordance fix). Issue 1 is an
-  operational/observability ask (`--max-age` / `--stale-after`
-  filter on `choices current`, plus `caco doctor` surfacing stale
-  choices, plus auto-resolution policy when `--notify-mode
-  timeout-fallback` was supplied) — that's a multi-surface feature
-  add belonging to choices subsystem ownership, not a quick fix.
-  Bonus observation about msm-5's healthy use of choices for fake-
-  bead handling is positive context, not actionable.
+- `bd-dfa77a` — caco launcher list (P3 task, multi-issue). This
+  session pins Issue 1 (`--full` flag, same truncation family as
+  bd-0e1bac / bd-ad57d6 / bd-3bbc6f). The headline operational
+  signal (v1.2.515-518 SKIPPED locally, single-binary-swap jump)
+  is observation, not actionable in caco-cli — that's a deployment-
+  process concern for the operator/cluster-ctrl. Issue 2 (`caco
+  launcher` no-subcommand exits 0 with help instead of defaulting
+  to `list`) is convention drift with mixed-fleet behaviour and
+  not clearly the right fix without a dispatcher-wide convention
+  decision. Issue 3 (envelope shape catalogue note) is a cross-
+  cutting concern handled elsewhere (bd-5ae1ce family).
 
 ## Before state
 
 ```
-$ caco choices reissue --help
-Reissue an active choice with a new notify mode (escalate, broadcast).
-...
-$ caco choices reissue --choice-id zzz --mode escalate
-warning: bd-b76723: caco choices reissue received unrecognised flag(s): --mode. ...
-error: reissue failed: choice not found or already resolved (bd-14e75e)
+$ caco launcher list
+  archive: /home/harry/.cacophony/launcher/archive
+  active:  4482d118a3ce…
+  archived: 5 binaries
+
+    1: v1.2.519 (4482d118a3ce…) archived 2026-04-23T09:23:07 (newest)
+    ...
+$ caco launcher list | grep 4482d118a3ce0b233cdd
+[no match — full fingerprint unreachable from text mode]
 ```
 
 ## After state
 
 ```
-$ caco choices reissue --help
-Reissue an active choice with a new --notify-mode (escalate, broadcast). bd-827c5e: --mode accepted as alias.
-...
-$ caco choices reissue --choice-id <id> --mode escalate
-[no warning; --mode resolved to --notify-mode; reissue proceeds]
+$ caco launcher list --help
+  --full   Show full 64-char fingerprints in text mode (default truncates to 12 chars + ellipsis).
+
+$ caco launcher list --full
+  archive: /home/harry/.cacophony/launcher/archive
+  active:  4482d118a3ce0b233cdd925cf1c03ac4a8bc1cd6ef4c5283b73ced859046397b
+  archived: 5 binaries
+
+    1: v1.2.519 (4482d118a3ce0b233cdd925cf1c03ac4a8bc1cd6ef4c5283b73ced859046397b) archived 2026-04-23T09:23:07 (newest)
+    ...
 ```
 
-`--notify-mode` still wins when both are supplied. Same family as
-bd-3a6078 (`--id` accepted as alias for `--agent-id`).
+Default behaviour unchanged (still truncates to 12-char + ellipsis).
+JSON mode unchanged (always returned full fingerprint).
 
 ## Diff summary
 
-- 1 file changed, +18 / -3 (`crates/caco-cli/src/lib.rs`):
-  - `CHOICES_REISSUE_ARGS` gains `--mode` ArgSpec (suppresses
-    bd-b76723 unrecognised-flag warning).
-  - `CHOICES_SUBCOMMANDS` reissue summary names `--notify-mode`
-    literally and notes the alias.
-  - Dispatcher resolves `--notify-mode` first, falls back to
-    `--mode`.
+- 1 file changed, +30 / -8 (`crates/caco-cli/src/lib.rs`):
+  - new `LAUNCHER_LIST_ARGS` declaring `--full`.
+  - `LAUNCHER_SUBCOMMANDS.list` references it (was `args: &[]`).
+  - `dispatch_launcher_list` gains `full: bool` parameter.
+  - active fingerprint + per-archive fingerprint formatting
+    branches on `full`.
 
 ## Validation
 
@@ -61,8 +69,16 @@ bd-3a6078 (`--id` accepted as alias for `--agent-id`).
 
 ## Operator-takeaway
 
-`caco choices reissue --mode escalate` Just Works now (matches the
-docstring's bare "mode" wording AND matches operator muscle memory
-from `caco msg ... --mode`). Issue 1 (stale-choice filter +
-auto-resolution + doctor surfacing) is a separate multi-surface
-feature ask that remains in the bead body for the choices owner.
+`caco launcher list --full` unblocks fingerprint grep workflows
+without changing the compact default. Same affordance pattern
+that bd-0e1bac / bd-ad57d6 / bd-3bbc6f could adopt across the
+truncation family (status launcher block, update status Nightly
+column, cron list COMMAND column).
+
+Push-discipline directive (helsinki ctrl + harry clarification):
+- PROHIBITED: force push to main / beads / shared default branches.
+- ALLOWED: force push to own agent branch (recovery path).
+- REQUIRED: only `caco agent reintegrate` / `caco agent complete`
+  move work onto main.
+This session has only ever used local refs + daemon-mediated
+reintegrate, so no audit needed.
