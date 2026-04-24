@@ -1,60 +1,32 @@
-# Session summary — public_cluster_port peer resolution + multinode coverage (bd-1d6517)
+# Session summary — bd-276553 empty bead type validator
 
 ## Goal
 
-Commit 7ae34d9 (bd-d1e7e0) added `public_cluster_port` across 21
-files (115 occurrences) so nodes can bind locally on one cluster
-port while advertising a different externally-reachable port
-(NAT / ACA / containers). `multinode.rs` had zero tests touching
-this field, and a latent bug in `resolve_peers()` was silently
-dropping `public_cluster_port` in the no-per-node-services
-config branch.
+Burn down the next honest contained ready bead by fixing a small validator-consistency gap in `caco bd list`: `--type ''` should reject up front instead of silently returning the full unfiltered bead list.
 
 ## Bead(s)
 
-- `bd-1d6517` — Add multinode test coverage for
-  public_cluster_port peer resolution and replication (P2)
+- `bd-276553` — `caco bd list --type ''` silently accepted instead of rejecting like sibling filters
 
 ## Before state
 
-- `multinode.rs`: 0 mentions of `public_cluster_port`.
-- Production NAT-aware deployments with `public_cluster_port`
-  set never had peers resolve to the advertised port — they
-  always fell back to the bind port.
+- Failing tests: none in scope before the change; the bug was a behavioural gap in CLI validation.
+- Relevant metrics: `dispatch_bd_list(...)` validated comma-separated `--type` tokens with `filter(|s| !s.is_empty())`, so an empty whole value produced zero validated tokens and still emitted `type=` to the daemon.
+- Context: this made `caco bd list --type ''` behave unlike sibling bead-list filters such as `--status ''` and `--priority ''`, which already reject with explicit operator-facing errors.
 
 ## After state
 
-- 5 new integration tests in `multinode.rs` covering all 3
-  acceptance criteria.
-- 1 helper (`two_node_config_with_public_cluster_port`).
-- Production fix in `resolve_peers()`: both no-per-node-daemon
-  branches now call `effective_public_cluster_port()`.
+- Failing tests: none observed in the focused `caco-cli` helper coverage.
+- Relevant metrics: `dispatch_bd_list(...)` now routes `--type` through a dedicated CSV enum validator that rejects empty whole-value input with the canonical allowed-list wording while preserving trimmed comma-separated multi-value support.
+- Context: the bead-list `--type` filter now matches the rest of the CLI’s enum-validator family instead of silently broadening the query.
 
 ## Diff summary
 
-- Files touched (+261 / −2):
-  - `crates/caco-daemon/src/replication.rs`: 2-line bug fix
-  - `crates/caco-daemon/tests/multinode.rs`: 5 tests + helper
-
-### Tests added
-
-1. `peer_resolution_uses_public_cluster_port_when_set` — Acceptance #1.
-2. `peer_resolution_falls_back_to_cluster_port_when_public_unset` — negation.
-3. `dynamic_node_registry_round_trip_uses_public_cluster_port` — Acceptance #2.
-4. `dynamic_node_falls_back_to_daemon_cluster_port_when_public_unset` — negation.
-5. `full_state_sync_resolution_advertises_public_port` — Acceptance #3.
+- Commits: `4368f9ee8`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: `cargo test -p caco-cli validate_csv_enum_flag_rejects_empty_whole_value_bd_276553 -- --nocapture`; `cargo test -p caco-cli validate_csv_enum_flag_accepts_trimmed_multi_value_bd_276553 -- --nocapture`
+- Behavioural delta: `caco bd list --type ''` now rejects with `unknown --type value ''. Allowed: task, bug, feature, epic` instead of silently returning an unfiltered bead list; trimmed comma-separated valid filters still pass.
 
 ## Operator-takeaway
 
-NAT / container deployments that set `public_cluster_port`
-distinct from `cluster_port` on a daemon node now actually have
-peers resolve to the advertised port. Previously the field was
-decorative on the production config path.
-
-## Process note
-
-This slice rebased through 4 waves of broken-on-main churn from
-peers' fixture backfills. Final apply isolated only the 2 real
-file changes; my earlier drive-by parent_bead_id and
-tmux_history_* dedupes were redundant with peer wmi-2's
-bd-ab1c38 / bd-29bf2b waves and were dropped on rebase.
+This was a clean validator-family burndown slice: the fix stayed entirely at the CLI dispatch boundary, preserved existing multi-value semantics, and closed a small but user-visible inconsistency without touching daemon behaviour.
