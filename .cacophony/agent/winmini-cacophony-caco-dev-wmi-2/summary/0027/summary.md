@@ -1,40 +1,119 @@
-# bd-bf1e86 polish #14: fuzzy picker differentiates empty-query vs no-match + adds Esc hint
+# Session summary — bd-a1049b: voice-attach suppression is now visible in the TUI
 
 ## Goal
 
-Improve the fuzzy picker's empty state from a single "No matches." line to a context-aware message + dismissal hint, fixing the confusion of "is this picker even working?" when the operator opens it on an empty workspace.
+Fix the operator-facing bug split out of bd-e251c6: when the TUI is
+voice-attached to one agent, speech from every other agent was filtered as
+working-as-designed — but the operator had almost no visible clue why the
+fleet had suddenly gone quiet. The goal was to preserve the focus-mode filter
+while making suppression impossible to miss.
 
 ## Bead(s)
 
-- bd-bf1e86 (permanent polish track) — cycle #14
+- `bd-a1049b` — `[tts/tui] Voice-attach to an agent SILENTLY drops all other agents' speeches with no operator-visible affordance`
 
 ## Before state
 
-`crates/caco-tui/src/views/fuzzy_picker.rs::render` showed exactly one DIM line "  No matches." for both empty-query (the picker just opened, nothing to match against) AND non-empty-query-no-results states. No keystroke hint for `Esc` to dismiss.
+Before this fix:
+
+- `caco-tui` intentionally filtered speech playback to the attached agent when
+  `voice_attached_agent` was set.
+- The suppression happened at two enqueue points in `state/mod.rs`:
+  - `UiEventType::SpeechRequested`
+  - feed-event path for `message_speak`
+- The filter was silent:
+  - no suppression counter
+  - no suppression toast
+  - no visible clue that non-attached agents were being dropped right now
+- There was already a small attach indicator (`🎤↔agent`) in the speech
+  indicator, and attach/detach toasts existed, but they were too easy to miss
+  and did not explain why later speech vanished.
+
+Observed operator symptom:
+
+- “I can hear the winmini agents but nobody else”
+
+That matched an active voice-attach to a winmini agent, with every other sender
+being filtered from local TTS playback.
 
 ## After state
 
-Branch on `query.is_empty()`:
-- empty: "No items available." + "Press Esc to dismiss."
-- non-empty: "No matches." + "Backspace to refine, Esc to dismiss."
+The filter still exists — focus mode remains by design — but it is no longer
+silent.
 
-Hint line styled in plain nord::NORD3 (not DIM) so it's readable while remaining subdued.
+What changed:
 
-Verification:
-- `cargo test -p caco-tui --lib views::fuzzy_picker`: 2/2 PASS
-- `cargo test-small`: 57/57 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+1. **Suppression counter in `SpeechState`**
+   - added `voice_attach_suppressed_count`
+   - added `voice_attach_last_suppressed_sender`
+   - attach/detach now resets this state so the count is scoped to the current
+     attach session
+
+2. **Visible warning toast on first/new suppressed sender**
+   - when speech from a non-attached sender is filtered, the TUI now emits a
+     warning toast like:
+     - `🎤 Voice attached to <agent>; suppressed speech from <sender>. Open that agent and press Ctrl+V to detach.`
+   - this avoids silent loss while also avoiding toast spam on every repeated
+     drop from the same sender
+
+3. **Persistent indicator count**
+   - the speech indicator now shows a visible red suppression count while voice
+     attach is active and drops have occurred:
+     - `🎤↔agent ⛔3`
+   - this makes the condition persist in the chrome instead of existing only as
+     a transient toast
+
+4. **Clearer attach affordance**
+   - the attach toast now explicitly says `Ctrl+V to detach`
+   - this makes the escape hatch discoverable at the moment attach mode begins
 
 ## Diff summary
 
-1 file changed, +18 / −4:
+Files touched:
 
-- `crates/caco-tui/src/views/fuzzy_picker.rs::render`: replaced single-line empty branch with branched message + hint pair
+- `crates/caco-tui/src/speech.rs`
+- `crates/caco-tui/src/state/mod.rs`
+- `crates/caco-tui/src/state/tests.rs`
+- `crates/caco-tui/src/views/speech_indicator.rs`
+- `crates/caco-tui/src/app.rs`
+- `.cacophony/agent/winmini-cacophony-caco-dev-wmi-2/summary/0027/summary.md`
+
+Behavioural delta:
+
+- Non-attached agent speech is still not played during voice-attach focus mode
+- But the operator now gets:
+  - a toast the first time (or on sender change)
+  - a persistent suppression count in the speech indicator
+  - a clearer detach hint
+
+## Verification
+
+Targeted tests added/passing:
+
+- `voice_attach_suppressed_speech_increments_count_and_toasts`
+- `voice_attach_toggle_resets_suppression_counter`
+- `shows_voice_attach_indicator_with_suppressed_count`
+
+Validation run:
+
+- `cargo test -p caco-tui --lib voice_attach_suppressed_speech_increments_count_and_toasts` — pass
+- `cargo test -p caco-tui --lib voice_attach_toggle_resets_suppression_counter` — pass
+- `cargo test -p caco-tui --lib shows_voice_attach_indicator_with_suppressed_count` — pass
+- `cargo build -p caco-tui` — clean
+- `cargo test-small` — pass (`187 passed`)
+
+Clippy note:
+
+- `cargo clippy -p caco-tui --all-targets -- -D warnings` was blocked by a
+  pre-existing unrelated `caco-daemon` lint (`dispatch_ambient_notification`
+  too_many_arguments). No new clippy issue from the TUI changes themselves was
+  observed in the targeted test/build slice.
 
 ## Operator-takeaway
 
-Fuzzy picker is one of the highest-traffic interaction surfaces (entry point for every cross-pane navigation) and was missing the Esc hint that exists in modal overlays elsewhere. The empty-query case is also more useful than "No matches." (which implies user-error when in fact there's just nothing to search yet).
-
-Polish #11-#14 form a cluster of "first-render-gives-orientation" fixes: crons, hooks, profiles empty states all now include `r`/`?` hints; fuzzy picker now includes Esc + Backspace hints. The remaining audit candidate (chat empty state) was already polished by peer in a recent commit.
-
-bd-bf1e86 cycle counter: 14/session.
+The root cause was not broken cluster-wide TTS — it was a TUI focus-mode UX
+trap. With this change, voice-attach can still intentionally focus on one
+agent, but it can no longer make the rest of the fleet go mysteriously silent.
+If speech is being suppressed because voice-attach is active, the operator now
+gets both an immediate warning and a persistent visible count, plus an explicit
+detach hint.
