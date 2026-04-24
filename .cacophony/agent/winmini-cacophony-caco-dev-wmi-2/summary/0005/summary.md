@@ -1,85 +1,99 @@
-# Session summary — TUI inbox poll-error surfacing (bd-bf1e86)
+# Session summary — bd-bba6b0: caco test/build list accept --status as alias for --state
 
 ## Goal
 
-bd-bf1e86 is the permanent caco-tui polish bead — small, taste-driven
-papercut hunting. This cycle: surface inbox poll errors instead of
-silently swallowing them.
+Eliminate the cross-cutting flag-name inconsistency where the
+`list-by-X` family splits between `--status` (caco bd, choices,
+release, outbox) and `--state` (caco ps, test, build). Operators
+who type `caco test list --status queued` (natural transfer
+from sister surfaces) hit the bd-b76723 unrecognised-flag
+warning and silent unfiltered output.
 
 ## Bead(s)
 
-- `bd-bf1e86` (permanent, P2)
+- `bd-bba6b0` — `caco test/build use --state filter while
+  bd/choices/release use --status — cross-cutting flag-name
+  inconsistency in list-by-X family; --status on test/build
+  silently fires bd-b76723 instead of suggesting --state`.
 
 ## Before state
 
-`crates/caco-tui/src/views/inbox.rs` rendered a clean
-`InboxLoadState::Error` branch (`"Failed to load inbox"`)... but the
-load function `App::request_inbox_poll` collapsed every failure into
-an empty list:
-
-```rust
-let items = client.fetch_operator_inbox().await.unwrap_or_default();
-```
-
-Result: the Error UI was unreachable dead code, and the operator saw
-a blank inbox during a daemon hiccup with no signal that anything
-went wrong. Especially disorienting because "no messages" and "lost
-connection" rendered identically.
+- `caco test list --status queued` →
+  `warning: bd-b76723: caco test list received unrecognised
+  flag(s): --status. ...` then unfiltered output.
+- `caco build list --status queued` → same.
+- Operator can't tell whether the queue is empty or their flag
+  was wrong.
 
 ## After state
 
-Errors are threaded end-to-end:
+`TEST_LIST_ARGS` and `BUILD_LIST_ARGS` declare a `--status`
+ArgSpec with the summary `Alias for --state (accepted for
+parity with caco release/bd/choices list).` so:
 
-1. `ActionResult::InboxPollFailed { error }` event variant added
-   (`crates/caco-tui/src/event.rs`) + Debug impl entry.
-2. `TuiState::inbox_last_error: Option<String>` field added,
-   defaulting to `None`.
-3. `request_inbox_poll` now matches on `Result` and emits
-   `InboxPolled` or `InboxPollFailed` with the `to_string()` error.
-4. App handler:
-   - On `InboxPolled` success: clear `inbox_last_error`, merge items.
-   - On `InboxPollFailed`: store error; flip into `Error` state
-     **only if no prior snapshot exists** (graceful degradation —
-     a good cached inbox stays visible across a transient blip).
-5. View `InboxLoadState::Error` branch renders the captured error
-   message and a `Press 'r' to retry` hint instead of the vague
-   `"Failed to load inbox"`.
+1. `caco {test,build} list --help` documents the alias.
+2. `validate_flags` / bd-b76723 unrecognised-flag detection
+   accepts it without a warning.
 
-Net effect: the previously-dead Error UI fires for the first time,
-and transient daemon hiccups no longer blank a previously-good inbox.
+`dispatch_test_list` and `dispatch_build_list` lift the alias:
 
-## Tests
+- `flags.get("--state").or_else(|| flags.get("--status"))` →
+  the existing enum-validator and query-string code is
+  unchanged downstream.
+- Mutual-exclusion guard:
+  `error: test list: --status and --state are aliases; pass
+  only one` (consistent with bd-b76723 mutex style).
 
-Two new in `caco-tui state::tests`:
-- `inbox_last_error_starts_none`
-- `inbox_last_error_round_trips_through_state`
-
-`cargo test-small`: **4214 PASS / 0 FAIL** (+4 from baseline).
-`cargo clippy --workspace --all-targets -- -D warnings`: PASS clean.
+The alias is the bead's option (a) — the dispatcher-level
+flag-aliases approach. Option (b) (pick canonical and migrate)
+was rejected because changing established `--status` on
+release breaks scripts; option (c) (just better hint text) was
+weaker. Aliases let us fix the operator experience without
+breaking either side.
 
 ## Diff summary
 
-Commit (this session, post-rebase): `1d9aa394`
-Files (5 / +71 / -6):
-- `crates/caco-tui/src/event.rs` — `InboxPollFailed` variant + Debug.
-- `crates/caco-tui/src/state/mod.rs` — `inbox_last_error` field +
-  `Default` init.
-- `crates/caco-tui/src/state/tests.rs` — 2 new tests.
-- `crates/caco-tui/src/app.rs` — `request_inbox_poll` error wiring;
-  handler for both `InboxPolled` (clear) and `InboxPollFailed` (store
-  + conditional Error transition).
-- `crates/caco-tui/src/views/inbox.rs` — Error branch shows real
-  error + retry hint.
+- `crates/caco-cli/src/lib.rs`:
+  - `TEST_LIST_ARGS`: added `--status` ArgSpec with
+    "Alias for --state (...)" summary.
+  - `BUILD_LIST_ARGS`: same.
+  - `dispatch_test_list`: added mutex guard + `or_else` lift
+    of `--status` into the `--state` code path.
+  - `dispatch_build_list`: same.
+  - 2 new tests:
+    - `test_list_and_build_list_advertise_status_alias_for_state`
+      — runs `--help --json` for both subcommands and asserts
+      the `--status` arg appears with summary containing
+      "Alias for --state".
+    - `dispatch_test_and_build_list_lift_status_alias_to_state`
+      — source-greps both dispatch bodies for the `or_else`
+      lift and the mutex error wording so a future refactor
+      can't silently delete the alias and re-introduce the bug.
+- `cargo test -p caco-cli --lib -- ...`: both new tests pass.
+- `cargo test-small`: 162 pass.
 
 ## Operator-takeaway
 
-A two-part papercut closure: the silent-empty-on-failure
-disorientation goes away, and the previously-dead
-`InboxLoadState::Error` UI now actually fires. Graceful-degradation
-choice (keep last-good inbox if you ever loaded one) means a 200ms
-daemon hiccup doesn't blank your inbox screen; it only triggers the
-banner if you never had data to begin with. That feels right for
-"subtle enhancements" — the loud failure mode appears only when it
-matters.
+This is the first dispatcher-level flag-alias landing in the
+bd-2a4552 / bd-b7392e / bd-fca3e1 family. The pattern
+generalises: a documented `Alias for --X` ArgSpec entry +
+`or_else` lift in the dispatcher + mutex guard is enough to
+cover any sister-surface flag-name divergence without
+breaking either spelling.
 
-Permanent bead remains open for the next polish cycle.
+The bead lists three other issues (Issues 2–5) deliberately
+not addressed here:
+
+1. **--job-id / --release-id / --entry-id / --id alias gap
+   on test show, build show** (Issue 2) — same pattern
+   could land in TEST_SHOW_ARGS / BUILD_SHOW_ARGS but is
+   distinct work belonging with the bd-3a6078 family.
+2. **Issue 3** is positive feedback (test/build are
+   high-quality), no action needed.
+3. **Issue 4** (test/build queues empty operationally) is an
+   ops/UX question, not a bug.
+4. **Issue 5** (test list --status silent degrade) is the
+   exact bug this fix addresses — no longer applies.
+
+Issue 2 would be a natural follow-up bead; everything else
+is fully covered or out of scope.
