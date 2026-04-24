@@ -1,84 +1,88 @@
-# Session summary — bd-dfa77a Issue 1: caco launcher list --full flag
+# Session summary — bd-684112 Issues 4+5+7: caco doctor --top phrasing + schema --json envelope
 
 ## Goal
 
-Pin Issue 1 of the bd-dfa77a launcher sweep: text-mode output
-truncates fingerprints to 12 chars + ellipsis (`4482d118a3ce…`)
-which blocks `grep`-for-fingerprint workflows. Add `--full` flag
-to unlock the complete 64-char fingerprint in text mode (json mode
-already returns full fingerprints).
+Pin three real bugs in the bd-684112 doctor sweep:
+- **Issue 4**: `caco doctor --top 0` had different parenthesized
+  hint phrasing from the 7-surface shared validator. Align (with
+  doctor's top-N semantics noted in the hint).
+- **Issue 5**: `caco doctor --top bogus` leaked the raw rust
+  ParseIntError ('invalid digit found in string'). Use the
+  gold-standard 'invalid --X value Y (expected ...)' phrasing.
+- **Issue 7**: `caco doctor schema --json` returned a flat
+  `{databases, summary}` shape with no `ok`. Wrap in standard
+  `{ok, data, meta}` envelope.
 
 ## Bead(s)
 
-- `bd-dfa77a` — caco launcher list (P3 task, multi-issue). This
-  session pins Issue 1 (`--full` flag, same truncation family as
-  bd-0e1bac / bd-ad57d6 / bd-3bbc6f). The headline operational
-  signal (v1.2.515-518 SKIPPED locally, single-binary-swap jump)
-  is observation, not actionable in caco-cli — that's a deployment-
-  process concern for the operator/cluster-ctrl. Issue 2 (`caco
-  launcher` no-subcommand exits 0 with help instead of defaulting
-  to `list`) is convention drift with mixed-fleet behaviour and
-  not clearly the right fix without a dispatcher-wide convention
-  decision. Issue 3 (envelope shape catalogue note) is a cross-
-  cutting concern handled elsewhere (bd-5ae1ce family).
+- `bd-684112` — caco action + doctor sweep (P3 bug, multi-issue).
+  Pins Issues 4, 5, 7. Issues 1-2 are POSITIVES (action run --json
+  6th JSON-error-envelope exemplar; NEW required-flag-with-usage-
+  example pattern). Issue 3 is the 10th empty-string-bypass — same
+  family as bd-29c7e3 (shared `validate_non_empty_id` helper meta-
+  bead) — leaving for the cross-cutting fix. Issue 6 (--top -1
+  parser ambiguity) is the 10th surface of the parser bug filed
+  this session as bd-02c404 P2. The OPERATIONAL signal (helsinki
+  UNHEALTHY config-hash mismatch all 6 peers + astra unreachable)
+  belongs to cluster-ctrl, not caco-cli.
 
 ## Before state
 
 ```
-$ caco launcher list
-  archive: /home/harry/.cacophony/launcher/archive
-  active:  4482d118a3ce…
-  archived: 5 binaries
+$ caco doctor --top 0
+error: --top must be >= 1 (use no --top for full output)
 
-    1: v1.2.519 (4482d118a3ce…) archived 2026-04-23T09:23:07 (newest)
-    ...
-$ caco launcher list | grep 4482d118a3ce0b233cdd
-[no match — full fingerprint unreachable from text mode]
+$ caco doctor --top bogus
+error: --top must be a positive integer: invalid digit found in string
+
+$ caco doctor schema --json | jq 'keys'
+["databases", "summary"]
 ```
 
 ## After state
 
 ```
-$ caco launcher list --help
-  --full   Show full 64-char fingerprints in text mode (default truncates to 12 chars + ellipsis).
+$ caco doctor --top 0
+error: --top must be >= 1 (use --top 1 for the single highest-severity check, or omit --top for the full output)
 
-$ caco launcher list --full
-  archive: /home/harry/.cacophony/launcher/archive
-  active:  4482d118a3ce0b233cdd925cf1c03ac4a8bc1cd6ef4c5283b73ced859046397b
-  archived: 5 binaries
+$ caco doctor --top bogus
+error: invalid --top value 'bogus' (expected a positive integer, e.g. 5)
 
-    1: v1.2.519 (4482d118a3ce0b233cdd925cf1c03ac4a8bc1cd6ef4c5283b73ced859046397b) archived 2026-04-23T09:23:07 (newest)
-    ...
+$ caco doctor schema --json | jq 'keys'
+["data", "meta", "ok"]
+$ caco doctor schema --json | jq -e .ok
+true
 ```
-
-Default behaviour unchanged (still truncates to 12-char + ellipsis).
-JSON mode unchanged (always returned full fingerprint).
 
 ## Diff summary
 
 - 1 file changed, +30 / -8 (`crates/caco-cli/src/lib.rs`):
-  - new `LAUNCHER_LIST_ARGS` declaring `--full`.
-  - `LAUNCHER_SUBCOMMANDS.list` references it (was `args: &[]`).
-  - `dispatch_launcher_list` gains `full: bool` parameter.
-  - active fingerprint + per-archive fingerprint formatting
-    branches on `full`.
+  - `--top 0` and `--top bogus` error wording in the doctor
+    dispatcher (2 messages).
+  - `dispatch_doctor_schema` JSON branch wraps in standard envelope.
+  - 2 existing tests updated for the new envelope path.
 
 ## Validation
 
 - `cargo check -p caco-cli`: clean.
+- `cargo test -p caco-cli --lib doctor_schema`: 5/5 pass.
 
 ## Operator-takeaway
 
-`caco launcher list --full` unblocks fingerprint grep workflows
-without changing the compact default. Same affordance pattern
-that bd-0e1bac / bd-ad57d6 / bd-3bbc6f could adopt across the
-truncation family (status launcher block, update status Nightly
-column, cron list COMMAND column).
+Doctor `--top` errors now match the rest of the cluster's numeric-
+validator phrasing (gold-standard since bd-c061d4 / bd-7995c8).
+`caco doctor schema --json` joins the standard envelope cohort,
+shrinking the no-ok surface count from 6 → 5 (`cert status`,
+`event log`, `log exceptions`, `mcp`, `caco summary` remain).
 
-Push-discipline directive (helsinki ctrl + harry clarification):
-- PROHIBITED: force push to main / beads / shared default branches.
-- ALLOWED: force push to own agent branch (recovery path).
-- REQUIRED: only `caco agent reintegrate` / `caco agent complete`
-  move work onto main.
-This session has only ever used local refs + daemon-mediated
-reintegrate, so no audit needed.
+**BREAKING for scripts** reading top-level `.databases` / `.summary`
+from `caco doctor schema --json`:
+- `.databases` → `.data.databases`
+- `.summary.total_drift_columns` → `.meta.total_drift_columns`
+- `.summary.missing_tables` → `.meta.missing_tables`
+- `.ok` is now present (always `true`).
+
+Push-discipline (post-clarification): own-branch push is allowed,
+default-branch force-push is banned, only `caco agent reintegrate`
+/ `complete` move work onto main. This session has only ever used
+local refs + daemon-mediated reintegrate.
