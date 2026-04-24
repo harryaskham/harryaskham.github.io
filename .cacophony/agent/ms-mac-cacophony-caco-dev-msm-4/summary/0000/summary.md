@@ -1,30 +1,27 @@
-# Session summary — bd-5bfb2c (slices 5+6)
+# Session summary — bd-5bfb2c (slice 7)
 
 ## Goal
-Make panes interactive — chat composer, log filtering, action buttons.
+Real source browser inside workspace — file tree + syntax-highlighted viewer.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Chat pane was read-only
-- Logs had no filtering
-- Detail panes only had Open + Copy
+- Source pane was placeholder text
 
 ## After state
-- Chat pane: full composer with channel dropdown
-- Logs: severity filter, text filter, follow toggle, color-coded
-- Bead detail: Claim + Dispatch buttons
-- Agent detail: Open Terminal + Stop (with confirm)
-- Beads pane: + New button, status filter, richer columns
-- Agents pane: state filter, runtime column
-- 220/220 tests green (7 new)
+- Two-column source pane: tree | viewer
+- Agent picker + path breadcrumb
+- Navigates /files/tree, reads /files/read
+- Prism lazy-loaded with autoloader, 12+ languages
+- 200KB truncation banner for huge files
+- 223/223 tests green (3 new)
 
 ## Diff summary
-- workspace-integrated.js: chat composer, log filter, beads/agents toolbars
-- workspace-panes.js: action buttons in detail panes
-- style.css: chat/log styling
-- tests.rs: 7 new tests
+- workspace-panes.js: +200 lines for source pane + Prism
+- workspace-integrated.js: source pane wires renderPaneSource
+- style.css: +90 lines for tree/viewer
+- tests.rs: 3 new tests
 
 ## Operator-takeaway
-Workspace drives everything: chat, filter logs, claim/dispatch beads, stop agents, create beads — all without leaving the workspace.
+The Source pane now browses any running agent's checkout with syntax highlighting. Adds bd-b61382 capability that was previously stuck on the agent branch.
