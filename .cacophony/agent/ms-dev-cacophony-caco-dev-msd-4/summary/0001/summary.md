@@ -1,25 +1,24 @@
-# Session summary — bd-2a4552 caco choices UX (alias + hint + default)
+# Session summary — bd-c9e843 caco bd graph --depth 0 root-only
 
 ## Goal
-Match bd-3a6078 pattern on choices: --id alias, not-found hint, sensible default --status.
+Make --depth 0 mean root-only instead of error.
 
 ## Bead(s)
-- `bd-2a4552` — choices show --id rejected; not-found lacks hint; list default surfaces stale entries
+- `bd-c9e843` — bd graph --depth 0 errors despite help promising default unbounded
 
 ## Before state
-- `--id` rejected with bd-b76723 warning; only --choice-id worked.
-- `choice bogus not found` with no discovery hint.
-- `caco choices list` default --status=all returned 100 mostly-resolved choices.
+- `caco bd graph --depth 0` returned error 'must be >= 1' contradicting help.
+- bd graph cross-project default vs bd list/stats project default still inconsistent (out of scope).
 
 ## After state
-- CHOICES_SHOW_ARGS registers --id alias; dispatch falls back from --choice-id to --id.
-- Both text + JSON not-found responses include `(use 'caco choices list' to see available choices)`.
-- `caco choices list` default --status=active; pass --status all to restore previous behaviour.
-- Existing 4 tests updated to pin hint suffix.
+- --depth 0 passes through; bfs_reachable already returns {root} for Some(0).
+- Arg spec doc updated: `--depth 0 = root-only (bd-c9e843)`.
+- Test rename: graph_validate_depth_zero_rejects → validate_positive_limit_depth_zero_still_rejected_for_generic_callers (helper still rejects 0; bd graph just no longer routes through it).
+- New test: bfs_reachable_depth_zero_returns_root_only.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+47 / -17): arg spec, dispatch alias, render hint, list default, test updates.
+- `crates/caco-cli/src/lib.rs` (+37 / -14): dispatch fix, doc, 2 test changes.
 - cargo test-small: 162 pass.
 
 ## Operator-takeaway
-`caco choices show --id ch-123` now works. `caco choices list` returns the actionable subset by default. Pattern available for cross-cutting alias registry follow-up.
+`caco bd graph --root bd-XXX --depth 0` now returns just the root node, useful for confirming a bead exists in the graph corpus before walking outward.
