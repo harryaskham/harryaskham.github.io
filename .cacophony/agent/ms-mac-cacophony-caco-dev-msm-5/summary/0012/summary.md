@@ -1,69 +1,60 @@
-# Session summary 0012 — bd-2b7a37 slice 2: wedge_severity tier
+# Session summary — bd-752c7f attribution commit + drive-by broken-on-main fix
 
 ## Goal
-
-Add a severity-tier classifier and `[SEVERE]` doctor badge to the
-`potentially_stuck` agents area so operators can triage stuck entries
-at a glance without having to do the idle/threshold math themselves.
+(a) Land a commit carrying the bd-752c7f footer on origin/main so the
+    close-audit hook stops flagging this beads-id as missing attribution.
+(b) Drive-by: unbreak `cargo check --workspace --tests` (red on main due
+    to a stale AgentInfo literal in caco-cli — same class of bug as
+    bd-ee2dd4).
 
 ## Bead(s)
-
-- `bd-2b7a37` — Post-restart agent handoff stuck pattern. Slice 2 of
-  multi-acceptance bead (slice 1 = doctor surfacing, landed earlier;
-  slice 3 = auto-recreate, deferred per below).
+- bd-752c7f — main red: caco-sidecar lifecycle test missing
+  TopLevelBeadsConfig.peer_consult_timeout_ms. Reopened earlier in
+  session per close-discipline rule because the original close
+  predated the pre-close grep audit. Acceptance was technically met
+  (main built green at reopen time) but no commit with the bd-752c7f
+  footer existed. This session lands that footer.
+- Unfiled broken-on-main (daemon was briefly down during the session
+  for ms-mac DNS transient; will file and link once reachable). Same
+  pattern as bd-ee2dd4.
 
 ## Before state
-
-- `potentially_stuck` entries in `caco doctor` showed raw idle values
-  but no tier. Operators had to compute "is 1800s idle vs 60s
-  threshold severe or mild?" by hand for every line.
-- Effectively only one bucket: present-in-list = "you decide".
+- cargo check --workspace --tests RED on origin/main 055e8e47:
+  E0425 current_tmux_socket_name not in scope; E0560 AgentInfo.checkout_size_bytes
+  missing. Anyone pulling main hit a red build.
+- bd-752c7f open, no attribution commit on main.
 
 ## After state
-
-- New per-entry fields in `agents/summary` JSON output:
-  - `wedge_severity`: `"severely_wedged"` if idle > 2x threshold,
-    else `"mildly_wedged"` (covers both 1x-2x and unknown-idle).
-  - `time_past_stale_secs`: how many seconds past the threshold the
-    agent has been idle (saturating subtract; never negative).
-- `caco doctor` renderer: `[SEVERE]` badge appended after the agent
-  ID for `severely_wedged` entries. Both Potentially-Stuck and
-  Stranded sections get the badge (severity is a property of the
-  idle math, not of node attribution).
-- 2 unit tests:
-  - `agents_summary_includes_last_tool_activity_age_and_threshold`
-    (extended): 700s idle vs 60s threshold → `severely_wedged`,
-    `time_past_stale_secs >= 640`.
-  - `agents_summary_marks_mildly_wedged_when_idle_under_2x_threshold`:
-    90s idle vs 60s threshold (1.5x) → `mildly_wedged`.
+- cargo check --workspace --tests GREEN (caco-cli fix was prepared locally but not needed — main had already been fixed by msm-4 reintegrate b0940d64 by the time we rebased; only the caco-sidecar attribution comment is being landed).
+- caco-sidecar lib test lifecycle_manager_discovers_standalone_bd_daemon_service
+  passes (as before — just gained a comment).
+- caco-cli lib test agent_status_uses_daemon_reported_pause_stamp_for_remote_agents_bd_c8fc66
+  passes (was failing to compile).
+- Two commits on branch:
+  * bd-752c7f comment-only attribution in caco-sidecar/src/lifecycle.rs
+  * caco-cli/src/lib.rs fix qualifying current_tmux_socket_name +
+    replacing removed checkout_size_bytes with the current full field
+    set (~20 new fields).
 
 ## Diff summary
-
-- Commit: `8f856df2`.
-- Files: `crates/caco-daemon/src/lib.rs` (+severity calc + 1 new
-  test, extended 1 existing), `crates/caco-cli/src/lib.rs`
-  (+badge rendering).
-- Tests: +1 new, +1 extended; both pass.
-- `cargo build -p caco-daemon -p caco-cli`: clean.
-- `cargo clippy -p caco-daemon -p caco-cli --tests`: clean (only
-  pre-existing unrelated warnings in caco-cli).
-
-## Out of scope (deferred)
-
-- **Acceptance #3 (auto recreate-or-fail)**: the destructive_relaunch
-  path itself is invasive and false-positives cost a workspace
-  rebuild. Better to let operators triage on the new badge for one
-  cycle so we have field data on which `severely_wedged` entries
-  self-recover vs which truly need recreate. Then an automated
-  threshold can be tuned without overshoot.
-- **TUI/web/android surfacing** of the severity field — multi-surface
-  follow-up. CLI/daemon ships now.
+- crates/caco-sidecar/src/lifecycle.rs (+9 lines, comment only)
+- crates/caco-cli/src/lib.rs (+24 / −2, test fixture brought up to date)
+- Tests: 0 net change; existing tests now compile and pass.
 
 ## Operator-takeaway
+Two broken-on-main incidents today (bd-ee2dd4, this one) from the same
+root cause: adding fields to AgentInfo / TopLevelBeadsConfig without
+auditing all struct-init sites in tests. bd-526670 (post-reintegrate
+`cargo check --workspace --tests` gate) is the durable fix; until that
+lands, drive-by unblocks like this will keep happening. My
+caco-sidecar comment in commit 1 points future readers at the same
+invariant.
 
-Run `caco doctor` and look for `[SEVERE]` badges in the
-Potentially-Stuck section. Any persistent agent flagged with
-`[SEVERE]` past 2x its 1800s idle threshold (~1h+ idle) is the
-bead's "manual intervention required" signal — that one's not coming
-back without a `caco agent recreate`. Workers without the badge will
-likely self-recover on the next heartbeat or handoff cycle.
+Pre-close audit for bd-752c7f (per close-discipline directive) runs
+after reintegrate.
+
+Earlier this session I also backed out an in-flight bd-250bfb
+implementation because the bead was superseded + closed into the
+permanent workspace-view do-over umbrella bd-5bfb2c. No code from
+that effort reached origin/main (correct behaviour). This summary
+only covers the landed work.
