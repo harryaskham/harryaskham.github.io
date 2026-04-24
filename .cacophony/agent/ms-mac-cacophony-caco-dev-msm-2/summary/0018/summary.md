@@ -1,78 +1,107 @@
-# Session summary — caco bd update shell-quoting-safe description sources (bd-8c89a8)
+# Session summary — SuccessEnvelope-aware fetch unwrap audit (bd-76db0a)
 
 ## Goal
 
-Make `caco bd update` description bodies safe to pass without shell-quoting hazards (backticks, `$VAR`, sed metacharacters), so operators don't silently blank a bead's description while trying to append to it.
+Audit `crates/caco-web/static/*.js` for `fetch()` call sites that
+read response fields directly off the JSON body (silently
+returning `undefined` because the daemon wraps `/api/v1/*`
+responses in `SuccessEnvelope { ok, data: <T>, request_id, meta }`).
+Land a shared `apiUnwrap()` helper and convert the broken /
+fragile sites to use it.
 
 ## Bead(s)
 
-- `bd-8c89a8` — caco bd update --description sed-piped: shell-quoting hazard with backticks/dollar-signs in description bodies. Filed by caco-doctor after corrupting bd-180c6d's description tonight; claimed and fixed.
+- `bd-76db0a` — Audit caco-web JS modules for SuccessEnvelope-aware
+  fetch unwrap (P3, audit/refactor; filed via reflect-session
+  from bd-451cfe)
 
 ## Before state
 
-- Only `--description "$(cmd)"` was available. The literal `$` in `sed -n '/description:/,$p'` got mangled by outer shell quoting → daemon PATCH succeeded with a corrupt body → bd-180c6d description blanked. Real data-loss-shape risk.
+- bd-451cfe surfaced the bug class: `timeline.js` read `json.events`
+  instead of `json.data.events` and the timeline rendered empty.
+- ~80+ `/api/v1/*` fetch sites across `app.js`, `terminal.js`,
+  `timeline.js`, `workspace-*.js` — most defensive, some not.
+- Only two places had factored helpers: `workspace-views.js::jfetch`
+  (returns `json.data` directly — best pattern) and
+  `workspace-chat-pane.js::fetchJSON` (returns full body, callers
+  apply ad-hoc `(env && env.data) || env || {}`).
+
+## Audit findings
+
+Scripted scan of all `await fetch('/api/v1/...').json()` sites
+classified each by what it reads off the parsed body:
+
+| Site | File:line | State | Action |
+|---|---|---|---|
+| `/api/v1/nodes/{node}` | app.js:4406 | **BROKEN** — reads `data.load_summary` directly; daemon wraps in SuccessEnvelope so this was always `undefined`, falling to `data.telemetry` (also undefined) → `null`. Silent. | Fixed via `apiUnwrap` |
+| `/api/v1/agents/{id}/logs` (TTY poll) | app.js:5417 | Fragile but working: `data.tmux_capture \|\| data.data?.tmux_capture` | Routed via `apiUnwrap` |
+| `/api/v1/agents/{id}/artefacts` | app.js:5886 | Defensive: inline `(body && body.data) \|\| body \|\| {}` | Routed via `apiUnwrap` |
+| `/api/v1/agents/{id}/artefacts/summary/{i}?file=` | app.js:5942 | Same defensive inline | Routed via `apiUnwrap` |
+| `/api/v1/agents/{id}/logs` (tab) | app.js:5975 | Fragile but working: `data.logs \|\| data.data?.logs` | Routed via `apiUnwrap` |
+| `/api/v1/agents/{id}/diff` | app.js:5998 | Fragile but working: `data.diff \|\| data.data?.diff` | Routed via `apiUnwrap` |
+| All other `/api/v1/*` sites in app.js | various | Either ignore body (POSTs that just check `resp.ok`) or already use envelope-aware extraction | No change |
+| `workspace-views.js::jfetch` returns `json.data` directly | n/a | Best pattern | Kept |
+| `workspace-chat-pane.js::fetchJSON` + ad-hoc unwrap | n/a | Working | Kept (file owns its own helper) |
+| `terminal.js`, `timeline.js`, other workspace-*.js | n/a | Already envelope-aware (bd-451cfe + earlier sweeps) | No change |
 
 ## After state
 
-Three new flags (`crates/caco-cli/src/lib.rs`):
+New shared helper added in app.js near `el()`:
 
-- `--description-file PATH` — reads body from file verbatim (use `-` for stdin)
-- `--description-stdin` — alias for `--description-file -`
-- `--append-description` — appends instead of replaces; works with any of `--description` / `--description-file` / `--description-stdin`
+```js
+function apiUnwrap(body) {
+    if (body == null || typeof body !== 'object') return {};
+    if (body.data && typeof body.data === 'object') return body.data;
+    return body;
+}
+```
 
-Helpers added:
-- `read_description_source(path)` — verbatim read from file or stdin
-- `format_appended_description(existing, appended)` — markdown-clean concat with exactly one blank-line separator (handles empty sides, trailing/leading newline trim)
-- `fetch_bead_description(...)` — GET current body for append mode
-
-Validation rules (rejected at CLI before any PATCH):
-- At most one of `--description` / `--description-file` / `--description-stdin`
-- `--append-description` requires one of the three above (no-op guard)
-- `--duplicate-of` cross-check now lists the new flags as conflicting
-- The "no field flags" error message lists `--description-file` / `--description-stdin` so operators discover them
-
-## Tests
-
-7 new (caco-cli):
-- `format_appended_description_inserts_blank_line_separator`
-- `format_appended_description_handles_existing_trailing_newlines`
-- `format_appended_description_handles_empty_existing`
-- `format_appended_description_handles_empty_appended`
-- `format_appended_description_strips_leading_newline_on_appended`
-- `read_description_source_reads_file_verbatim` — round-trips a body full of backticks, `$VAR`, and sed metacharacters
-- `read_description_source_returns_error_for_missing_file`
-
-## Drive-by upstream-merge salvage
-
-- bd-d8fc57 added `parent_bead_id: Option<String>` to `Bead` and `CreateBeadParams`. Inserted `parent_bead_id: None,` (or `params.parent_bead_id`) at ~270 literal-construction sites across `caco-beads`, `caco-daemon`, `caco-tui`. Did NOT add it to `SnapshotBead` / `BeadDisplayState` / `ui_stream::BeadSnapshot` / `AuditBeadRequest` / `BeadUpdate` / `event::ActionResult` variants which don't carry the field.
-- bd-1d302a added `disable_hooks: Option<...>` to `Profile`. De-duplicated my prior fix once upstream landed its own.
-- `dispatch_agent_logs` gained a `since: Option<&str>` parameter; updated three test call sites.
-- `crates/caco-daemon/src/ui_stream.rs`: removed two more pairs of duplicate `tmux_history_limit/size` in test fixtures (companion's bd-ae6b7b sweep keeps re-adding them).
-
-## Verification
-
-- `cargo test -p caco-cli --lib format_appended_description read_description_source` — 7 / 0
-- `cargo test-small` — all green (209 / 109 / 739 / 295 / 18 / 2817 / 56)
-- `cargo check --workspace --tests` — clean (1 unrelated `too_many_arguments` clippy warn pre-dates this change)
+Six call sites converted: nodes/{node} (real bug fix) +
+agents-logs ×2 + agents-artefacts + agents-artefacts-summary +
+agents-diff (all fragile-defensive → uniform).
 
 ## Diff summary
 
-- Commit: `39c5e98d`
-- 10 files changed, 378 insertions(+), 21 deletions(-)
-- Most lines are the workspace-wide `parent_bead_id` salvage; the focused fix is ~120 lines in `crates/caco-cli/src/lib.rs`
-
-## Out of scope
-
-- `caco bd update --description-from-bead bd-XXX` (copy from another bead) — listed in the bead's "fix paths" but lower priority once stdin/file land
-- Server-side echo of the resulting description so operators can confirm body content from the response (the existing `format_bead_detail` already shows it)
+- Files touched:
+  - `crates/caco-web/static/app.js`:
+    - Added `apiUnwrap` helper (~22 LOC)
+    - Converted 6 fetch call sites
+    - Real bug fix at /api/v1/nodes/{node} (was silently reading undefined)
+  - `crates/caco-web/src/tests.rs`:
+    - New `app_js_uses_api_unwrap_helper_for_success_envelope_sites`
+- Tests: +1 / -0
+  - Pins: helper exists; helper handles SuccessEnvelope branch;
+    nodes/{node} call site routes through apiUnwrap (regression-pin
+    via window-scan around the URL literal); ≥6 apiUnwrap sites
+    overall (smoke check that the migration stuck).
+- Test command: `cargo test -p caco-web app_js_uses_api_unwrap` → 1 passed.
 
 ## Operator-takeaway
 
-Pipe untrusted text safely:
-```
-echo "$(weird body with \`backticks\` and \$vars and sed -n '/x/,$p')" | caco bd update --bead-id bd-XXX --description-stdin
-```
-or
-```
-caco bd update --bead-id bd-XXX --description-file ./body.md --append-description
-```
+- **Real bug fixed**: webapp Nodes view's per-node telemetry/scheduling
+  panel was silently empty for any non-local node where the daemon
+  wraps the response (which is all of them, as of current daemon).
+  Now populates correctly.
+- **Helper in place**: future fetch sites can use `apiUnwrap(await
+  resp.json())` instead of repeating defensive ad-hoc unwraps.
+- **Out-of-scope follow-ups (NOT closed by this bead)**:
+  - Standalone helper files (`workspace-chat-pane.js::fetchJSON`,
+    `workspace-views.js::jfetch`) intentionally retained — each
+    encapsulates its own error-handling. Unifying these into
+    `apiUnwrap` would be a larger refactor; not the scope of this
+    audit. (If pursued, file separately as a refactor bead.)
+  - The ~70 remaining `/api/v1/*` POST sites that only check `resp.ok`
+    don't need apiUnwrap — they discard the body. Audit confirms
+    this is intentional.
+
+Honored constraints:
+- `cargo test -p caco-web app_js_uses_api_unwrap` only — no workspace test.
+- Pre-close audit will run before close.
+- Operator close-discipline: real bug fixed + 5 fragile sites
+  hardened in a single landed change; no out-of-scope work
+  silently buried.
+- Operator `bd update --status=closed` bypass directive: ACK,
+  using only `caco bd close` (with `--admin-override --reason`
+  for any non-landed legitimate close).
+
+21st bead closed this session (cumulative). 14th in this turn.
