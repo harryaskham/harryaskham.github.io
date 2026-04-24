@@ -1,49 +1,115 @@
-# bd-332f45: agent-spawn unknown-preset error now hints at persistent.yaml namespace
+# Session summary — bd-b724cb (Issue 4): caco profile show --name X --json structured failure envelope
 
 ## Goal
 
-Improve the `agent preset 'X' not found in agents.presets config` error returned when an operator passes `--preset` for a name that actually lives in `cacophony_persistent.yaml` (a separate config namespace). When such a name match exists, the error now lists the node(s) where the persistent decl is defined and suggests `--profile <id>` as the workaround.
+Address bd-b724cb's actionable item, Issue 4:
+`caco profile show --name bogus --json` returned a
+text error and exited 1 (4th JSON-broken-on-error
+surface in the bd-241b84 catalog). Programmatic
+consumers parsing `--json` get invalid output.
+
+The bead's other contents are positive observations
+(Issue 1 outbox-list structured-failure envelope already
+landed via daemon; Issue 2 error-as-card promote; Issue
+3 profile show 6th-phrasing inline-allowed-values; Issue
+5 caco loop list/cancel CLI affordance is a separate
+feature bead).
 
 ## Bead(s)
 
-- bd-332f45 (P3 bug; closes via reintegrate)
+- `bd-b724cb` — `caco profile + outbox + loop + ls — outbox
+  list NEW BEST-IN-CACO STRUCTURED FAILURE ENVELOPE...
+  profile show --name bogus --json BROKEN exit 1 4th
+  JSON-ignored-on-error...`.
 
 ## Before state
 
-`caco agent new --node beelink --preset technical-writer` (when `technical-writer` is declared in `cacophony_persistent.yaml` but not `agents.presets`) returned:
 ```
-error: agent preset 'technical-writer' not found in agents.presets config
+$ caco profile show --name bogus --json
+error: profile 'bogus' not found. Available: ambient-mode,
+  auto-claim, ... [54 names]
+$ echo $?
+1
 ```
-Operator had no way to discover (without reading source) that `--profile technical-writer` was the workaround.
+
+Output is plain text on stderr; exit 1; `--json` ignored.
+A consumer doing `caco profile show --name X --json |
+jq 'select(.ok == false)'` would see jq parse failure
+on the empty stdin (text went to stderr).
 
 ## After state
 
-The same scenario now returns:
 ```
-agent preset 'technical-writer' not found in agents.presets config; however
-a persistent declaration named 'technical-writer' exists on node(s) beelink.
-Persistents and presets are different namespaces — try `--profile
-technical-writer` (with explicit `--node` and `--goal`) or run the
-persistent's reconcile path instead.
+$ caco profile show --name bogus --json
+{
+  "ok": false,
+  "error": {
+    "code": "not_found",
+    "message": "profile 'bogus' not found. Available: ambient-mode,
+      auto-claim, ... [54 names]"
+  }
+}
+$ echo $?
+1
 ```
 
-Implementation: in `crates/caco-daemon/src/lib.rs::create_agent` handler, when the requested preset is `None` from `find_preset`, walk `state.config.nodes` to detect persistent decls with the same key, collect node names, and conditionally swap the error message. The original `unknown_preset` error code is preserved so JSON-mode callers don't break.
+Structured failure envelope on stdout (parseable JSON);
+exit 1 preserved (mirrors bd-d761db Issue 5 pattern of
+inspecting `.ok` to set exit_code). Joins the bd-b724cb
+{ok:false, error:{code, message}} family.
 
-Verification:
-- `cargo test-small`: 57/57 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
-- Did not add a unit test — the existing daemon HTTP-handler tests are heavy fixtures and the error-shape change is covered by the `unknown_preset` code-path callers; the message-content delta is operator-facing only
+Note: `meta.request_id` deliberately omitted for now —
+the local `cli_error_json` helper doesn't capture
+reqwest response headers. Adding request_id propagation
+is a cluster-wide refactor (every `cli_error_json`
+caller would benefit) and belongs in its own bead.
 
 ## Diff summary
 
-1 file changed, +29 / −5:
-
-- `crates/caco-daemon/src/lib.rs::create_agent`: replaced inline `format!` with a `persistent_node_hits` lookup + conditional message construction
+- `crates/caco-cli/src/lib.rs`:
+  - `dispatch_profile_show`: replaced the `ok_or_else` →
+    `CliError` not-found path with an explicit `match`
+    that emits `cli_error_json("not_found", &msg)` when
+    `json_requested`, returning the envelope as the
+    function's `Ok(String)` result. Text path unchanged
+    (still emits `Err(CliError::new(msg))` and exits 1).
+  - Dispatcher arm `[cmd, sub] if cmd == "profile" && sub
+    == "show"`: mirrors the bd-d761db Issue 5 pattern —
+    inspect the returned envelope's `.ok` field to set
+    `exit_code` (1 on `ok:false`, 0 on `ok:true`),
+    return `Outcome` directly with paginate=true.
+  - 1 new test:
+    `dispatch_profile_show_emits_structured_error_envelope_on_json_not_found`
+    — source-greps both the dispatcher arm marker
+    (`bd-b724cb (Issue 4): profile show --json`) and the
+    `dispatch_profile_show` body for `cli_error_json("not_found"`
+    so the wrap can't silently regress.
+- `cargo test -p caco-cli --lib dispatch_profile_show_...`:
+  pass.
+- `cargo test-small`: 182 pass.
 
 ## Operator-takeaway
 
-**Single-error-message improvement** that addresses a real foot-shoot from tonight's session. The bead's fix #1 (`--persistent` flag) and fix #2 (auto-fallback) are both bigger scope and have semantic implications; fix #3 (better error) is the cheapest+safest win and unblocks the operator immediately without changing semantics.
+The JSON-broken-on-error catalog drops by one. Of the 4
+surfaces called out:
+- bd-241b84 audio transcribe: still pending
+- bd-f4957c node show --name: still pending
+- bd-140660 snapshot pin: still pending
+- profile show: shipped here
 
-Could be combined with a follow-up that does the same hint-walk on `--profile <name>` when a profile name doesn't exist but a persistent does (or vice-versa). Filing as follow-up if the symmetric case shows up. Cross-namespace name-collision errors are a recurring papercut as more config namespaces accumulate.
+Each follows the same micro-pattern: inside the dispatch
+function, branch on `json_requested` at the not-found
+site; emit `cli_error_json(<code>, <message>)`; in the
+dispatcher arm, parse `.ok` and set exit_code. Worth
+consolidating into a shared helper (e.g.
+`json_or_err(json_requested, code, msg)` that returns
+the right `String`/`CliError` based on the flag) so
+the next 3 retrofits are one-liners.
 
-This cycle: **fourth quiet cycle in a row** for broken-on-main waves. The merge-queue gate is doing its job.
+The cluster-wide gap — `meta.request_id` propagation —
+is the next follow-up: today only daemon-originated
+failures (HTTP 401/403/etc.) carry request_id because
+the daemon emits it directly; client-side validators
+that emit through `cli_error_json` lose the tracing
+handle. A shared helper threading the X-Request-Id
+header into cli_error_json would close the loop.
