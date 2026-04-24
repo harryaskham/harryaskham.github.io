@@ -1,55 +1,69 @@
-# Session summary — bd-89df3d: caco scratch show --note-id '' validator
+# Session summary — bd-02c5f7: caco branch-parent --json no-subcommand envelope
 
 ## Goal
 
-Pin Issue 4 of bd-89df3d: empty `--note-id` previously bypassed
-validation, hit a 404 with empty body, and surfaced as a
-two-layer-internals leak (HTTP status + serde_json parser error).
-Reject empty input up-front with a useful guidance message.
+Stop the help-dispatcher from leaking through as a fake `{command,
+summary, args, subcommands}` data response when a branch parent
+(e.g. `caco config sparse`) is invoked bare with `--json`. Replace
+with the standard `{ok:false, error:{...}}` envelope.
 
 ## Bead(s)
 
-- `bd-89df3d` — caco scratch sweep (P3 bug, multi-issue). This
-  session pins ONLY Issue 4 (empty-string `--note-id` validator).
-  The other items in the bead are positives (Issues 1-3) or
-  separate features (Issue 5 — list filter flags), and remain in
-  the bead body for future work.
+- `bd-02c5f7` — caco config sparse --json (parent without
+  subcommand) emits COMMAND-HELP JSON as fake response — novel
+  envelope = help-dispatcher leak (P3 bug, multi-issue).
+  This session pins ONLY Issue 1. Issues 2-3 (sparse show/validate
+  ignore --json on errors; sparse show --project bogus missing
+  inlined available projects) are siblings of bd-87425e / bd-89df3d
+  and remain in the bead body for follow-up.
 
 ## Before state
 
 ```
-$ caco scratch show --note-id ''
-error: invalid response (HTTP 404 Not Found): EOF while parsing a value at line 1 column 0
+$ caco config sparse --project bogus --json
+{
+  "command": "caco config sparse",
+  "summary": "Inspect project-level sparse-checkout spec (bd-5f6b62).",
+  "args": [],
+  "subcommands": [
+    {"name": "show", ...},
+    {"name": "validate", ...}
+  ]
+}
+[exit: 0]
 ```
 
-Two-layer internals leak: HTTP `404` exposed + serde_json parser
-error message surfaced as the user-visible "error".
+A NOVEL envelope shape (no `ok`, no `error`, no `data`) returned
+with exit 0. Scripts piping to `jq` got fields they didn't expect
+and no signal that no work happened.
 
 ## After state
 
 ```
-$ caco scratch show --note-id ''
-error: --note-id cannot be empty (note IDs must be non-empty strings; see `caco scratch list` for available notes)
-
-$ caco scratch show --note-id '' --json
+$ caco config sparse --json
 {
   "ok": false,
   "error": {
-    "code": "invalid_argument",
-    "message": "--note-id cannot be empty …"
+    "code": "no_subcommand",
+    "message": "`caco config sparse` requires a subcommand: show, validate",
+    "available": ["show", "validate"]
   }
 }
-[exit: 1]
+[exit: 2]
 ```
 
-`--json` mode emits the structured envelope on stdout (matching
-the bd-87425e fix pattern). Text mode returns a normal `CliError`
-with the same message.
+Standard error envelope on stdout, with `available` carrying the
+subcommand list (preserving the discoverability that the help-leak
+shape provided). Exit 2 (matches the unknown-subcommand path
+right above it).
+
+Text mode is unchanged: bare `caco config sparse` still renders
+the human-readable help page.
 
 ## Diff summary
 
-- 1 file changed, +18 / -0 (`crates/caco-cli/src/lib.rs`
-  `dispatch_scratch_show`).
+- 1 file changed, +30 / -0 (`crates/caco-cli/src/lib.rs` catch-all
+  branch in the dispatcher's `_ =>` arm).
 
 ## Validation
 
@@ -57,9 +71,18 @@ with the same message.
 
 ## Operator-takeaway
 
-This is the 4th surface to gain an empty-string guard on a required
-arg (after bd-3e39a0, bd-b7392e, bd-87425e). A cross-cutting
-validator audit (filing as a follow-up bead if not already
-captured) would be cheaper than fixing each surface individually.
-The bd-89df3d bead remains open with Issue 5 (list filter flags)
-unresolved — that's a feature add, not a bug fix.
+This is a **cluster-wide** fix, not just for `caco config sparse`.
+Every branch parent that lacks an explicit dispatch case (the vast
+majority — `caco bd`, `caco scratch`, `caco config`, etc.) now
+returns the standard error envelope on bare `--json` invocation
+instead of leaking the help structure.
+
+Three branch-roots (`caco tui --json`, `caco daemon --json`,
+`caco tts daemon --json`) still emit help-as-JSON because SPEC 8.2
+explicitly mandates that — those have an interactive default action
+and `--json` returns help to prevent accidental TTY-grab. Out of
+scope for this bead.
+
+The `available` field is new — consumers that previously relied on
+the `subcommands` field of the help-leak shape can now read
+`error.available` for the same data in a normalized format.
