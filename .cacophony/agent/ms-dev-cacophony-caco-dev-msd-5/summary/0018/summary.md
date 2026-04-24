@@ -1,79 +1,51 @@
-# Session summary — bd-b655b6: ChoiceOption.recommended
+# Session summary — bd-4c1ac4 SPEC cacophony-state artefact contract
 
 ## Goal
 
-When an agent presents a multiple-choice question to the operator,
-let it also flag which option IT recommends if forced to act. Add
-the data carrier, surface it in `caco choices show`, and let
-`caco choices resolve --use-recommended` accept the agent's
-suggestion in one keystroke.
+Close the SPEC documentation gap left by bd-f2d9e2: codify the
+`.cacophony/agent/<agent-id>/**` artefact prefix contract in SPEC.md
+so profile authors stop inventing parallel filesystem conventions.
 
 ## Bead(s)
 
-- `bd-b655b6` — `Caco choices: include 'recommended' field on choice
-  array so operator sees suggested default`
+- `bd-4c1ac4` — SPEC.md should describe the cacophony-state artefact
+  contract (any `.cacophony/agent/<id>/**` subdir)
 
 ## Before state
 
-- `ChoiceOption { label, summary }` had no way to mark a preferred
-  option. Operators had to read all summaries to figure out which
-  the agent thought was best.
-- `caco choices resolve` required `--selected-index <N>` (or
-  `--freeform-text`); no shorthand for "do what you suggested."
+- The artefact-path contract (post-bd-f2d9e2 broadening) was only
+  documented in the `crates/caco-daemon/src/cacophony_state.rs`
+  module preamble.
+- SPEC.md §17 (Reintegration Policy) had no description of the
+  cacophony-state artefact prefix — profile authors had no
+  authoritative reference and could invent parallel filesystem
+  conventions outside `.cacophony/agent/<id>/` and have artefacts
+  silently dropped during reintegrate.
 
 ## After state
 
-- `ChoiceOption` gains `pub recommended: bool` with
-  `#[serde(default, skip_serializing_if = ...not::not)]`. Old
-  payloads without the field deserialize to `false`; payloads with
-  `recommended:false` omit the field on serialize so cross-version
-  wire traffic stays clean.
-- `caco choices show` prefixes recommended option(s) with `*` and
-  non-recommended with a leading space, so columns align and the
-  operator scans 5 choices in O(1) for the agent's pick.
-- `caco choices resolve --use-recommended` GETs the choice, finds
-  the first option with `recommended: true`, and submits a resolve
-  with that `selected_index`. Errors loudly if no option is flagged
-  rather than silently picking index 0. Mutually exclusive with
-  `--selected-index` and `--freeform-text` — combining would hide
-  ambiguity.
+- SPEC.md gains §17.3.1 "cacophony-state Artefact Contract" with:
+  - Explicit prefix contract (`.cacophony/agent/<agent-id>/`)
+  - Subdir naming is open (`summary/`, `session/`, `reflect/`,
+    `scratch/`, `traces/`, `bench/`, `coverage/`, …)
+  - Per-agent isolation rule
+  - `caco agent artefacts` discovery surface
+  - Recorded reintegration mode interplay (bd-d48494, bd-ae8de9)
+  - Implementation reference back to `cacophony_state.rs`
+- Three concrete recommendations for profile authors close out the
+  section.
 
 ## Diff summary
 
-- Commit: `c2dfb9ad`
-- Files (4):
-  - `crates/caco-daemon/src/choices.rs` — schema + 1 round-trip test
-  - `crates/caco-daemon/src/operator_inbox.rs` — test fixtures
-    backfilled
-  - `crates/caco-daemon/src/lib.rs` — 2 production `ChoiceOption{}`
-    sites (Approve/Reject for persistent-spawn-confirmation choice)
-  - `crates/caco-cli/src/lib.rs` — show-star + `--use-recommended`
-    resolve mode + dispatch wiring
-- 1 new lib test (`choice_option_recommended_is_optional_and_defaults_to_false`)
-  passes; `cargo test -p caco-daemon --lib choices` still green
-  (16 tests); `cargo clippy -p caco-daemon -p caco-cli --no-deps`
-  clean.
-
-## Out of scope (informal follow-ups)
-
-- TUI star rendering in `ChoicesTuiState` — schema change flows
-  through cleanly; visual is a separate polish bead.
-- Web UI badge — same shape, separate bead.
-- Validation that at most one option carries `recommended:true` —
-  current schema is permissive; `--use-recommended` documents the
-  first-wins semantics.
+- 1 file modified, 49 insertions:
+  - `SPEC.md` — new §17.3.1.
+- Tests: cargo test-small green (docs-only change; verified the
+  workspace still builds + invariant tests pass).
 
 ## Operator-takeaway
 
-When cluster-ctrl or any other agent presents 5 options and one is
-flagged recommended, operators see `*` in `caco choices show` and
-can accept with `caco choices resolve --use-recommended` instead of
-reading every summary and remembering an index. Audit trail still
-records which option was chosen.
-
-## Cross-bead note
-
-The workspace currently has an unrelated `bd-1ac1b7` broken-on-main
-in `caco-cli` lib tests (missing `on_revival` profile field on a
-test fixture) — fix-forward owned by another agent. Did not block
-my own crate-scoped tests / clippy.
+Closes the documentation gap that bd-f2d9e2 opened up — the matcher
+broadening now has an authoritative SPEC reference. Future profile
+authors writing reflect-session / bench / trace mixins will know to
+write under `.cacophony/agent/<agent-id>/<their-subdir>/` instead of
+discovering the silent-drop the hard way.
