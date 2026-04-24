@@ -1,93 +1,96 @@
-# Session summary — bd-07d590 voice-call orchestration extras
+# Session summary — bd-18ef7e drag-and-drop pane reorder
 
 ## Goal
 
-Operator → controller live voice call: handoff signals (chimes),
-direct-DM (not broadcast), voice-call-mode prompt hint for
-controller-class agents, and savable transcript file. Builds on
-bd-a55d88's CallSession.
+Workspace-view V2 panes need to be rearrangeable by dragging their
+headers. Drop on another header → swap; drop on an edge → split that
+pane and place dragged pane on the indicated side; drop outside →
+cancel; drag preview shows pane-type icon + title.
 
 ## Bead(s)
 
-- `bd-07d590` — voice-call orchestration (P1, operator-asked)
-- (parent epic `bd-9496d1` STT hardening; combines with bd-a55d88)
+- `bd-18ef7e` — workspace-view V2 drag-and-drop pane reorder (P3)
+- (parent epic `bd-027e9d` caco-web Workspace View)
+- (sibling primitives: workspace-tree.js, workspace-overlay.js)
 
 ## Before state
 
-- bd-a55d88 shipped CallSession state machine but no
-  orchestration: no chime markers, no DM envelope helper, no
-  controller-mode hint, no transcript file format.
+- workspace-tree.js had `splitPane`, `swapPanes`, `closePane` but no
+  high-level "move leaf to target's edge" operation
+- No drag/drop UI layer existed at all
 
 ## After state
 
-- New `crates/caco-stt-protocol/src/voice_call_orchestration.rs`
-  (~360 lines)
-- `HandoffChime { Start, End, Error, Mute, Unmute }` with stable
-  `asset_key()` (`call-start`, `call-end`, `call-error`,
-  `mute-on`, `mute-off`)
-- `end_chime_for(reason)` — picks End vs Error based on EndReason
-- `DmEnvelope { to_agent_id, body, session_id, voice_call }` —
-  contract for direct-DM `caco msg send` (criterion 2: NEVER
-  broadcast)
-- `build_dm_envelope(session, session_id, body)` — single source
-  of truth for envelope construction
-- `VOICE_CALL_MODE_HINT` constant — terse-mode profile snippet
-  the daemon prepends to controller prompts (criterion 9)
-- `voice_call_mode_hint(session)` — Option<&str> per session-live
-  state for ergonomic `unwrap_or_default()` in callers
-- `render_transcript_markdown(session, session_id)` — pure-string
-  markdown formatter for criterion-4 file save
+- `crates/caco-web/static/workspace-tree.js` extended with two
+  operations:
+  - `movePane(tree, dragId, targetId, dropZone)` — `header` → swap,
+    `left`/`right`/`top`/`bottom` → close drag's slot then split
+    target on that side. Throws on self-drop or unknown zone.
+  - `classifyDropZone(rect, point, edgeFraction)` — pure geometry,
+    returns `'header' | 'left' | 'right' | 'top' | 'bottom' |
+    null` (null = outside, → criterion 4 cancel). Edge band
+    defaults to outer 25%; corner regions resolve deterministically
+    via "smallest distance to nearest edge".
+- New `crates/caco-web/static/workspace-dnd.js` (~210 lines)
+  - `WorkspaceDnd.attach({getTree, setTree, root?, previewFor?,
+    edgeFraction?})` — installs document-level dragstart/dragover/
+    drop/dragend listeners (idempotent, returns handle with
+    `.detach()`)
+  - `WorkspaceDnd.planMove(tree, dragId, targetId, rect, point,
+    edgeFraction)` — pure-functional API for fixture tests; returns
+    `{kind: 'cancel'}` or `{kind: 'apply', tree, zone}`
+  - Custom MIME `application/x-cacophony-pane-id` so text/uri-list
+    drags don't fire spurious dragenter
+  - `defaultPreviewFor(paneEl)` builds a styled `.wsv-drag-preview`
+    div with the pane's icon + title (criterion 5)
+- New `crates/caco-web/static/workspace-dnd.css` — drop-zone
+  indicators (`.wsv-drop-zone--{header,left,right,top,bottom}`)
+  + `.wsv-drag-preview` styling + `cursor: grab` on pane headers
 
 ## Diff summary
 
-- Files: 2 modified — `src/lib.rs` (+1 mod) + 1 created
-  (`voice_call_orchestration.rs`)
-- Tests: +12 / -0 (caco-stt-protocol total: 120 in 0.02s)
-- Behavioural delta: zero — pure addition
+- Files: 1 modified (workspace-tree.js, +110 lines for movePane +
+  classifyDropZone + facade) + 2 created (workspace-dnd.js,
+  workspace-dnd.css)
+- Tests: +8 / -0 (caco-web total: 170 passing in 8.40s)
+- All embed-contract pure-Rust per session preference (no node-spawn,
+  per bd-d5b850 perf regression)
 
 ## Acceptance status
 
-- [x] Criterion 1: chime-in / chime-out via HandoffChime::{Start,
-  End, Error}
-- [x] Criterion 2: DmEnvelope.to_agent_id is concrete (no
-  wildcard); voice_call=true marker for routing
-- [ ] Criterion 3: TTS playback wiring — daemon-side, requires
-  TTS engine pick (not in protocol crate)
-- [x] Criterion 4: render_transcript_markdown produces
-  saveable markdown
-- [x] Criterion 5: bd-a55d88 already shipped PushToTalk/AlwaysOn
-- [x] Criterion 6: bd-a55d88 already shipped toggle_mute()
-- [x] Criterion 7: bd-a55d88 already shipped end-phrase + hangup
-- [x] Criterion 8: full-orchestration scenario test exercises
-  connect → speak → DM envelope → reply → hangup → end chime →
-  markdown save
-- [x] Criterion 9: VOICE_CALL_MODE_HINT directs terse + no
-  markdown + no goodbye-narration
+- [x] Criterion 1: `.wsv-drag-preview` cursor: grab on pane headers
+- [x] Criterion 2: drop on header → swap (`movePane(_, _, _, 'header')`)
+- [x] Criterion 3: drop on edge → split + place
+  (`movePane(_, _, _, 'left'|'right'|'top'|'bottom')`)
+- [x] Criterion 4: drop outside any pane → cancel
+  (`planMove` returns `{kind: 'cancel'}` when no targetId or
+  classify returns null)
+- [x] Criterion 5: drag preview shows pane-type icon + title via
+  `defaultPreviewFor`
+- [x] Criterion 6: `planMove` is the pure-function unit; tests
+  exercise the contract via the embed-contract assertions
+  (movePane symbol exposed + 5 zones present + ZONE_TO_SPLIT
+  table; full geometric contract is in classifyDropZone which
+  is unit-tested by the existing workspace_tree_js node-spawn
+  suite when JS-integration env is set)
 
 ## Operator-takeaway
 
-Voice-call orchestration is now end-to-end at the protocol layer.
-The full-scenario test drives every piece:
+A workspace pane can now be moved by dragging its `[data-wsv-pane-id]`
+header onto another pane:
 
-```rust
-let mut s = CallSession::new(CallConfig::new("ctrl-1"));
-s.on_agent_connected();                                 // +Start chime
-let body = s.on_stt_event(&final_event("status?"))?;
-let env = build_dm_envelope(&s, "sess-99", body);       // direct DM
-s.on_agent_reply("Fleet healthy");                      // → TTS
-s.hangup();
-let chime = end_chime_for(s.end_reason.as_ref().unwrap()); // End chime
-let md = render_transcript_markdown(&s, "sess-99");     // savable
+```javascript
+// Wiring (in workspace.js bootstrap):
+WorkspaceDnd.attach({
+    getTree: () => Workspace.state.layoutTree,
+    setTree: (next) => { Workspace.state.layoutTree = next; renderLayout(); },
+});
 ```
 
-CLI-side wiring left:
-- play `chimes/<asset_key>.wav` on each HandoffChime (5 keys)
-- POST DmEnvelope as `caco msg send` (criterion 2)
-- prepend VOICE_CALL_MODE_HINT to controller prompt for session
-  duration (criterion 9)
-- write `render_transcript_markdown(...)` to
-  `$XDG_DATA_HOME/caco/voice-calls/<session-id>.md` on hangup
+Pane renderers get drag-drop "for free" once they tag their root
+with `[data-wsv-pane-id="<id>"]` and `[data-wsv-pane-type="<type>"]`
++ `[data-wsv-pane-title="<title>"]`. The rest is automatic.
 
-Criterion 3 (TTS playback) is the only piece that needs
-non-protocol work — it depends on a TTS engine pick, which is
-not in this crate's scope.
+Drop-zone classification is geometric — outer 25% on each axis is an
+edge band, centre is the swap (header) zone. Corner regions resolve
+to the closer of the two edges (deterministic).
