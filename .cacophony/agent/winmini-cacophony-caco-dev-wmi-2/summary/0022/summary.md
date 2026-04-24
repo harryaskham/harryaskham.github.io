@@ -1,56 +1,112 @@
-# bd-bf1e86 polish #10: serialize tmux pane_mode_cache tests to fix intermittent flake
+# Session summary — bd-e251c6: central TTS hears remote agent narration after full-state merges
 
 ## Goal
 
-Eliminate the intermittent `tmux::tests::pane_mode_cache_keys_are_per_socket_and_target` panic that fires ~1-in-3 runs of `cargo test -p caco-tui --lib`, root-cause: 4 tests share a global `PANE_MODE_CACHE` and call `_clear_pane_mode_cache_for_tests()` independently, letting cargo's parallel runner wipe one test's writes mid-flight.
+Investigate why operator-audible agent narration was not coming through even though
+manual `caco msg speak` on helsinki was audible and worker profiles clearly included
+`caco msg speak` guidance. The goal was to find the missing hop between remote-agent
+`MessageSpeak` creation and helsinki’s central TTS daemon, then land the smallest
+reliable daemon-side fix.
 
 ## Bead(s)
 
-- bd-bf1e86 (permanent polish track) — cycle #10
+- `bd-e251c6` — `[tts/agents] Agent self-narration not producing audible speech to operator`
 
 ## Before state
 
-```
-test tmux::tests::pane_mode_cache_keys_are_per_socket_and_target ... FAILED
+Observed + confirmed before the fix:
 
-failures:
----- tmux::tests::pane_mode_cache_keys_are_per_socket_and_target stdout ----
-thread 'tmux::tests::pane_mode_cache_keys_are_per_socket_and_target' panicked at crates/caco-tui/src/tmux.rs:2520:9:
-assertion failed: cached_normal_mode("sock-a", "sess:0.0")
-```
+- Worker profiles **do** compose `speak`:
+  - `.cacophony/project.yaml` agent defaults include `speak`
+  - `.cacophony/agents/base.yaml` includes `speak`
+- I have been emitting `caco msg speak` at claim/ship milestones during this session.
+- `handle_msg_speak` on the daemon emits a `MessageSpeak` feed event and publishes it to
+  local `ui_broadcast`.
+- `UiBroadcast::publish_feed_event()` synthesizes a `speech_requested` UI event for
+  `MessageSpeak`.
+- The TTS daemon consumes `/api/v1/feed/stream` and already treats `message_speak` as
+  speakable.
+- Live peer feed ingest (`/api/v1/feed/events`) already republishes accepted `MessageSpeak`
+  events, and there is an existing test for the duplicate guard.
 
-The 4 tests in `crates/caco-tui/src/tmux.rs::tests`:
-- `pane_mode_cache_short_circuits_after_normal_observation`
-- `pane_mode_cache_never_short_circuits_copy_mode`
-- `pane_mode_cache_expires_after_ttl`
-- `pane_mode_cache_keys_are_per_socket_and_target`
+The missing path was the **full-state merge** path:
 
-each begin with `_clear_pane_mode_cache_for_tests()` then write+read against the global `PANE_MODE_CACHE` (a `LazyLock<Mutex<HashMap>>`). Cargo runs tests in parallel by default; if T2 calls `_clear...` between T1's write and T1's read, T1's `cached_normal_mode` returns false and asserts fail.
-
-I observed 1 failure across 3 `cargo test-small` runs and ~1-in-5 in `cargo test -p caco-tui --lib`.
+- `handle_state_full` merged peer full-state dumps into the local store.
+- `merge_full_state_dump()` persisted remote `MessageSpeak` rows, but returned no signal about
+  newly accepted narration events.
+- `handle_state_full` only re-published a synthetic `DaemonState` health event after the merge.
+- Result: if remote worker narration reached helsinki via periodic full-state convergence rather
+  than direct live feed ingest, helsinki’s local TTS daemon never heard it.
 
 ## After state
 
-Added a private static `PANE_MODE_CACHE_TEST_LOCK: std::sync::Mutex<()>` and a `let _guard = PANE_MODE_CACHE_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());` line at the top of all 4 tests. The `unwrap_or_else(|e| e.into_inner())` recovers from poisoned locks (a panic in one test would otherwise wedge the rest; this preserves the original assertion as the failure signal).
+After the fix:
 
-Verification:
-- 5/5 `cargo test -p caco-tui --lib pane_mode_cache` runs PASS (was ~80% pre-fix)
-- 5/5 `cargo test-small` runs PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+- `merge_full_state_dump(...)` can optionally collect newly accepted `MessageSpeak` feed events
+  while merging:
+  - embedded snapshot chat/speech histories via `materialize_remote_histories(...)`
+  - top-level `chat_history`
+  - top-level `speech_history`
+  - top-level `recent_events`
+- `handle_state_full` now passes a collector vector and, after the store lock is released,
+  re-publishes just those newly accepted `MessageSpeak` events via `state.ui_broadcast`.
+- This means helsinki’s already-running TTS daemon hears remote worker narration even when it
+  arrives through full-state sync instead of direct `/feed/events` live fan-out.
+- The re-broadcast is intentionally narrow:
+  - only `MessageSpeak`
+  - only newly accepted rows
+  - no broad re-broadcast of old chat/recent-event history, so no giant stale-feed pop-in
+
+Validation:
+
+- `cargo test -p caco-daemon merge_full_state_dump_collects_new_message_speaks_for_rebroadcast`
+  — pass
+- `cargo test -p caco-daemon feed_ingest_endpoint_does_not_republish_duplicate_ui_events`
+  — pass
+- `cargo clippy -p caco-daemon --all-targets -- -D warnings` — clean
+- `cargo test-small` — 185 passed, 0 failed
 
 ## Diff summary
 
-1 file changed, +9 / −0:
+Files touched:
 
-- `crates/caco-tui/src/tmux.rs`:
-  - +1 `static PANE_MODE_CACHE_TEST_LOCK` declaration with explanatory comment
-  - +4 `let _guard = ...` lines (one per test)
-  - +4 lines of context (the comment block grew by 4 lines)
+- `crates/caco-daemon/src/replication.rs`
+- `crates/caco-daemon/src/lib.rs`
+- `crates/caco-daemon/tests/multinode.rs`
+- `.cacophony/agent/winmini-cacophony-caco-dev-wmi-2/summary/0022/summary.md`
+
+Code changes:
+
+1. `replication.rs`
+   - `merge_full_state_dump(...)` gained an optional collector for newly accepted
+     `MessageSpeak` events.
+   - `materialize_remote_histories(...)` gained the same optional collector.
+   - when a merged row is accepted and its type is `EventType::MessageSpeak`, the event is
+     cloned into the collector.
+   - added unit test:
+     `merge_full_state_dump_collects_new_message_speaks_for_rebroadcast`
+
+2. `lib.rs`
+   - `handle_state_full(...)` now allocates a collector vec, passes it into
+     `merge_full_state_dump(...)`, and after the merge re-publishes each accepted
+     `MessageSpeak` via `state.ui_broadcast.publish_feed_event(event)`.
+   - comment explains why this is intentionally scoped only to narration events.
+
+3. `tests/multinode.rs`
+   - updated existing `merge_full_state_dump(...)` callsites for the new optional collector
+     parameter (`None` in those tests).
+
+Behavioural delta:
+
+- Remote worker narration that reaches helsinki through full-state convergence now becomes a
+  live local UI/feed event again, which makes the existing helsinki TTS daemon speak it.
+- No change to the duplicate-ingest guard for `/api/v1/feed/events`.
+- No broad replay of stale feed history to the TUI.
 
 ## Operator-takeaway
 
-This is the **flaky test I've been retrying through for 3+ cycles** — every time I ran `cargo test-small` post-pull, there was a ~1-in-3 chance the tui crate would panic on this test. I'd been blaming "resource contention" but the actual cause was a missing serialisation primitive on a shared global.
-
-Standard fix pattern for tests-on-shared-globals: dedicated `Mutex<()>` private to the test module, recovered from poisoning. Could alternately use `serial_test` crate but adding a dependency for one shared cache would be overkill.
-
-This is bd-bf1e86 polish cycle #10 of the session. Streak so far this session for that bead: 10/10 small-and-targeted improvements, no regressions.
+The issue was not “workers forgot to call `caco msg speak`” — they were speaking.
+The missing piece was that **full-state replication persisted remote narration but did not
+re-publish it into the live local broadcast stream that the central TTS daemon listens to**.
+That gap is now closed for `MessageSpeak`, so helsinki can audibly announce remote agent
+self-narration without depending on perfect direct live feed fan-out.
