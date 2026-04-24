@@ -1,66 +1,61 @@
-# Session summary — bd-f4957c Issue 5: caco project status --project converge to security-WHY
+# Session summary — bd-241b84 Issue 3: caco audio transcribe --model upfront validator
 
 ## Goal
 
-Pin Issue 5 of the bd-f4957c node+project sweep: `caco project
-status --project bogus` returned a TRUNCATED `is not configured`
-error — drifting from its sister `caco project show --project bogus`
-(which uses the gold-standard security-WHY phrasing) WITHIN THE SAME
-NAMESPACE. Converge to the canonical security-WHY phrasing now
-shared by build list / changelog show / project show --project.
+Pin Issue 3 of the bd-241b84 caco audio sweep: `caco audio
+transcribe --model bogus` silently accepted any value (and then
+errored on the file-read path or on daemon dispatch), drifting
+within the same namespace from `caco audio prewarm --model bogus`
+which validates upfront against the SUPPORTED_STT_MODELS set.
+Match the prewarm validator on transcribe so both audio surfaces
+reject unsupported models cleanly.
 
 ## Bead(s)
 
-- `bd-f4957c` — caco node + project sweep (P3 bug, multi-issue).
-  Pins Issue 5. Issues 1-2 are POSITIVES (BEST-IN-CACO error
-  message + NEW multi-flag usage gold-standard). Issue 3 (project
-  show --name vs --project drift) is a 3-line dispatcher fix but
-  the operator likely wants `--name` removed entirely as a
-  duplicate of `--project`; needs design call. Issue 4 is positive.
-  Issue 6 (node show --json broken exit 2) is the same anti-
-  pattern as bd-87425e — needs same wrapper-at-dispatch-boundary
-  treatment as that surface; bigger fix. Issue 7 is the same
-  warn-then-process family fixed for operator-actions in
-  bd-851658 — node show --name + project show --name need ArgSpec
-  hoists (defer for design call). Issue 8 is positive. Issue 9 is
-  cohort observation (half-flat envelopes — same family as
-  bd-b9eccd which wmi-2 just landed).
+- `bd-241b84` — caco audio sweep (P4 bug, multi-issue). Pins
+  Issue 3. Issues 1-2 are POSITIVES (NEW gold-standard EITHER-OR
+  required-flag pattern; 6th inline-allowed-values phrasing
+  variant — converge candidates for the pattern catalogue). Issue
+  4 (transcribe --json BROKEN exit 2, 3rd surface in --json-
+  ignored-on-error family) is the same anti-pattern as bd-87425e
+  image generate / bd-f4957c node show — needs same wrapper-at-
+  dispatch-boundary treatment as bd-87425e. Issue 5 (12th empty-
+  string-bypass) covered by bd-29c7e3 cross-cutting helper meta-
+  bead. Issue 6 (default-aware prewarm self-documenting message)
+  is positive observation.
 
 ## Before state
 
 ```
-$ caco project show --project bogus
-error: project 'bogus' is not configured; bead operations must target a configured project to prevent routing to an ambient external board
+$ caco audio prewarm --model bogus
+error: Failed to prewarm model 'bogus': Unsupported STT model 'bogus'. Supported: gpt-4o-mini-transcribe, whisper, scribble
 
-$ caco project status --project bogus
-error: project 'bogus' is not configured           # TRUNCATED — sister drift
+$ caco audio transcribe --file /tmp/bogus.wav --model bogus
+error: failed to read audio file '/tmp/bogus.wav': No such file or directory
+                                                # --model never validated
 ```
+
+If a real file existed, the bogus model would silently reach the
+daemon, where it might be silently degraded to a default (or
+return an opaque server-side error).
 
 ## After state
 
 ```
-$ caco project status --project bogus
-error: project 'bogus' is not configured; bead operations must target a configured project to prevent routing to an ambient external board. Configured: a.skh.am, cacophony, collective, gfx-replacer, life, midi2hid, mono, picasso-health, tendril
+$ caco audio transcribe --file /tmp/bogus.wav --model bogus
+error: unsupported STT model 'bogus'. Supported: gpt-4o-mini-transcribe, whisper, scribble
+                                                # validates BEFORE file read
 ```
 
-Now matches `project show --project` + adds `Configured:` listing
-(slight improvement over the existing security-WHY surfaces, which
-do not list configured names — a pattern bd-7abbba Issue 4 also
-flagged as a future improvement).
-
-`--project` convention map after this fix:
-- Security-WHY (gold-standard): build list, changelog show, project
-  show --project, **project status** (4 surfaces).
-- Truncated (degraded): project show --name (1, needs Issue 3 fix).
-- Inline-allowed-values: fleet snapshot --projects (1).
-- Silent-accept (worst): caco ls --project, caco ps --project
-  (already fixed by wmi-2 in bd-b9eccd).
+Sister-symmetric with `caco audio prewarm --model bogus`. The
+transcribe validator fires upfront so it doesn't matter whether
+the file exists or whether the daemon is up.
 
 ## Diff summary
 
-- 1 file changed, +21 / -1 (`crates/caco-cli/src/lib.rs`):
-  - `dispatch_project_status` empty-match branch upgraded to the
-    security-WHY phrasing + Configured listing.
+- 1 file changed, +14 / -1 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_audio_transcribe` now validates `model` against
+    `SUPPORTED_STT_MODELS` before reading the audio file.
 
 ## Validation
 
@@ -68,9 +63,15 @@ flagged as a future improvement).
 
 ## Operator-takeaway
 
-`caco project status` now matches its sister `caco project show`
-on the unknown-project error path — same security-WHY phrasing,
-plus the configured-project listing as a bonus typo affordance.
+`caco audio transcribe --model X` now rejects unsupported model
+values upfront with the same `Supported:` listing used by
+prewarm. Operator scripting hazard removed; sister-surface drift
+fixed within the audio namespace.
+
+The shared SUPPORTED_STT_MODELS list now appears in two places
+(prewarm via daemon-side check + transcribe via this client-side
+upfront check). Future drift-prevention move: hoist into a single
+`stt_models()` helper in caco-config — left for a follow-up.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
