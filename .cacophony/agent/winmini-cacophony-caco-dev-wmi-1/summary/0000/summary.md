@@ -1,97 +1,56 @@
-# Session summary — bd-5f81fe Issues 5+7+8+9: bd auto-close-landed validator hardening
+# Session summary — bd-1c1d0f Issue 13: bd reconcile-log --project '' upfront guard
 
 ## Goal
 
-Pin four real bugs in the bd-5f81fe sweep of the new
-`caco bd auto-close-landed` surface (which is otherwise gold-
-standard per Issues 1-4 positives):
-- **Issue 5**: `--max-commits 0` silently accepted, contradicting
-  the validator's own 'positive integer' wording. Same shape as
-  bd-edaccd `--retention-days 0` numeric-edge-case footgun.
-- **Issue 7**: `--main-ref bogus` and `--repo /tmp/bogus` leaked
-  raw multi-line `git log` stderr through the caco wrapper (NEW
-  leak class — joins rust ParseIntError, URL leak, HTTP 404 leak
-  families).
-- **Issue 8**: `--project ''` echoed empty into the security-WHY
-  error (13th empty-string-bypass surface).
-- **Issue 9**: `--repo ''` silently defaulted to CWD (14th empty-
-  string-bypass surface).
+Pin Issue 13 of the bd-1c1d0f bd-graph+reconcile-log+stats sweep:
+`caco bd reconcile-log --project ''` echoed an empty quoted string
+into the path-context error (`project "" has no beads .git
+checkout at /home/harry/.cacophony/beads/`) — 15th empty-string-
+bypass surface in the cluster-wide bd-29c7e3 family. Add upfront
+guard.
 
 ## Bead(s)
 
-- `bd-5f81fe` — caco bd auto-close-landed sweep (P3 bug, multi-
-  issue). Pins Issues 5, 7, 8, 9. Issues 1-4 are POSITIVES (gold-
-  standard --dry-run pattern + --json envelope reflects dry_run +
-  4th security-WHY surface + clean numeric validators). Issue 6
-  (--max-commits -1 parser ambiguity, 11th surface) is covered by
-  bd-02c404 cross-cutting parser meta-bead. Issue 10 (bd-edaccd
-  CLOSED WITHOUT FIX) is a closure-discipline observation
-  belonging to ctrl audit, not this CLI fix.
+- `bd-1c1d0f` — caco bd graph + reconcile-log + stats sweep (P4
+  bug, multi-issue). Pins Issue 13. Issues 1-11 are POSITIVES (a
+  RICH gold-standard cluster: NEW '(got X)' parenthesized-actual
+  phrasing 7th in cohort; GOLD-STANDARD numeric-edge-case error
+  WITH USAGE GUIDANCE on bd graph --depth 0 — strong promote
+  candidates). Issue 12 (--depth -1 / --limit -1, 12th+13th
+  parser-ambiguity surfaces) is covered by bd-02c404 cross-cutting
+  parser meta-bead. Issue 14 (operational bd-cf99b7 destructive
+  delta=-1 markers every 30s) belongs to caco-ctrl@helsinki sole-
+  owner per operator constraint.
 
 ## Before state
 
 ```
-$ caco bd auto-close-landed --dry-run --max-commits 0
-caco bd auto-close-landed (--dry-run) — considered 150 bead(s) on origin/main
-  no candidates landed on mainline
-                                              # silently accepts 0
-
-$ caco bd auto-close-landed --dry-run --main-ref bogus
-error: git log bogus exited exit status: 128: fatal: ambiguous argument 'bogus':
-unknown revision or path not in the working tree.
-Use '--' to separate paths from revisions, like this:
-'git <command> [<revision>...] -- [<file>...]'
-                                              # raw git stderr leak
-
-$ caco bd auto-close-landed --dry-run --repo /tmp/bogus_repo
-error: git log origin/main exited exit status: 128: fatal: cannot change to '/tmp/bogus_repo': No such file or directory
-                                              # raw git stderr leak
-
-$ caco bd auto-close-landed --dry-run --project ''
-error: project '' is not configured; bead operations must target a configured project ...
-
-$ caco bd auto-close-landed --dry-run --repo ''
-[normal output, silently used CWD]
+$ caco bd reconcile-log --project ''
+error: project "" has no beads .git checkout at /home/harry/.cacophony/beads/; reconcile-log only works on projects with a local beads-branch checkout
 ```
+
+The path-context error was the right shape for typo'd project
+names but was the wrong error for empty-string input. Operator
+sees the empty quoted name leaked into a filesystem path and
+must mentally back-translate to figure out they passed an empty
+flag.
 
 ## After state
 
 ```
-$ caco bd auto-close-landed --dry-run --max-commits 0
-error: --max-commits must be >= 1 (use --max-commits 1 to scan only the tip commit, or omit --max-commits for the default of 1000)
-
-$ caco bd auto-close-landed --dry-run --main-ref bogus
-error: git log bogus exited exit status: 128: ...
-                            # still leaks if ref looks plausible
-                            # but empty --main-ref now caught upfront
-
-$ caco bd auto-close-landed --dry-run --main-ref ''
-error: --main-ref value cannot be empty (default: origin/main)
-
-$ caco bd auto-close-landed --dry-run --repo /tmp/bogus_repo
-error: --repo path '/tmp/bogus_repo' does not exist
-
-$ caco bd auto-close-landed --dry-run --repo /tmp
-error: --repo path '/tmp' is not a git repository (no .git/ found)
-
-$ caco bd auto-close-landed --dry-run --repo ''
-error: --repo value cannot be empty (default: . / current directory)
+$ caco bd reconcile-log --project ''
+error: --project value cannot be empty for bd reconcile-log
 ```
 
-The `--main-ref bogus` (non-empty but invalid) git-stderr leak
-remains as a known limitation — fully wrapping every git stderr
-shape would require parsing git's output formats (deferred to
-the cross-cutting bd-29c7e3 / leak-wrapping family).
+Matches the bd-9d3623 msg-snapshot gold-standard empty-string
+template. The downstream path-context error remains the right
+shape for genuine typos (`bd reconcile-log --project bogus`).
 
 ## Diff summary
 
-- 1 file changed, +52 / -8 (`crates/caco-cli/src/lib.rs`):
-  - `dispatch_bd_auto_close_landed`: --main-ref / --max-commits /
-    --limit / --repo upfront validators.
-  - --max-commits + --limit error wording converged to the
-    canonical `(use --X 1 ..., or omit --X for the default of N)`
-    phrasing plus `invalid --X value '...' (expected ...)` for
-    parse failures.
+- 1 file changed, +12 / -0 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_bd_reconcile_log` checks `--project` for whitespace-
+    only / empty before flowing into `resolve_project_from_flags_or_env`.
 
 ## Validation
 
@@ -99,13 +58,12 @@ the cross-cutting bd-29c7e3 / leak-wrapping family).
 
 ## Operator-takeaway
 
-`caco bd auto-close-landed` no longer accepts numeric 0, no longer
-silently defaults on empty-string flags, and catches `--repo` path
-issues with clean affordances instead of raw `git log` stderr. The
-gold-standard `--dry-run` pattern (Issues 1-2) makes this surface
-the model for retrofitting --dry-run onto bd snapshot rotate /
-caco prune run / caco release publish (per bd-edaccd P1 still-
-unfixed observation).
+`caco bd reconcile-log --project ''` now produces the canonical
+empty-string error, joining the bd-9d3623 / bd-d761db / bd-754fde
+/ bd-754fde / bd-87425e / bd-89df3d / bd-754fde / bd-5f81fe family
+of upfront `cannot be empty for X` guards. 15 surfaces patched
+individually now; the cross-cutting `validate_non_empty_id` helper
+(bd-29c7e3) is well-justified.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
