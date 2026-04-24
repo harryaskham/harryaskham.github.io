@@ -1,24 +1,23 @@
-# Session summary — bd-c9e843 caco bd graph --depth 0 root-only
+# Session summary — bd-548e77 caco profile show JSON envelope
 
 ## Goal
-Make --depth 0 mean root-only instead of error.
+Wrap `caco profile show --json` in the standard {ok, data, meta} envelope.
 
 ## Bead(s)
-- `bd-c9e843` — bd graph --depth 0 errors despite help promising default unbounded
+- `bd-548e77` — profile show JSON emits bare object; 9th distinct envelope shape
 
 ## Before state
-- `caco bd graph --depth 0` returned error 'must be >= 1' contradicting help.
-- bd graph cross-project default vs bd list/stats project default still inconsistent (out of scope).
+- `caco profile show --json` returned bare profile object.
+- Inconsistent with profile list, fleet snapshot, agent get, etc.
 
 ## After state
-- --depth 0 passes through; bfs_reachable already returns {root} for Some(0).
-- Arg spec doc updated: `--depth 0 = root-only (bd-c9e843)`.
-- Test rename: graph_validate_depth_zero_rejects → validate_positive_limit_depth_zero_still_rejected_for_generic_callers (helper still rejects 0; bd graph just no longer routes through it).
-- New test: bfs_reachable_depth_zero_returns_root_only.
+- New `wrap_profile_show_envelope` pure helper.
+- `dispatch_profile_show` JSON branch wraps via helper; upstream meta propagates; missing meta becomes empty object.
+- 2 new tests pin envelope shape + meta propagation.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+37 / -14): dispatch fix, doc, 2 test changes.
-- cargo test-small: 162 pass.
+- `crates/caco-cli/src/lib.rs` (+60 / -1)
+- cargo test-small: 204 pass.
 
 ## Operator-takeaway
-`caco bd graph --root bd-XXX --depth 0` now returns just the root node, useful for confirming a bead exists in the graph corpus before walking outward.
+JSON consumers can now uniformly read `payload.data` across the profile namespace (and sister surfaces). Existing tooling reading the bare object will need to update to `payload.data`.
