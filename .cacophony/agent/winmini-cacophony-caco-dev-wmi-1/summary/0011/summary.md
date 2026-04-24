@@ -1,94 +1,32 @@
-# Session summary — Cache /api/v1/agents response with event-driven invalidation (bd-7a1ca5)
+# Session summary — bd-bf19ae timeline CLI validation cleanup
 
 ## Goal
 
-bd-9d5be2 deferred per-agent `dir_size` walks off the request
-path. Next latency win on the hot polling loop (TUI agent list,
-caco-web, `caco status`) is to cache the rendered JSON envelope
-itself in `DaemonState` and invalidate it on observable
-agent-lifecycle state changes — so steady-state polls return
-without re-walking the in-memory agent map, re-merging peer
-snapshots, re-hashing persistent agent inventory, or re-serialising.
+Burn down the next contained ready bead by tightening the freshly-landed `caco timeline` CLI surface so bad flags stop leaking parser internals and ignored inputs become explicit operator-facing guidance.
 
 ## Bead(s)
 
-- `bd-7a1ca5` — [bd-9d5be2 follow-up] /api/v1/agents response
-  cache invalidated on state-change events
+- `bd-bf19ae` — caco timeline: bad `--limit` parsing, unsupported `--since`, and silently ignored `--project` in cluster scope
 
 ## Before state
 
-- Every GET `/api/v1/agents` rebuilt the whole envelope: walked
-  `list_all_with_disk_refresh()`, merged remote peer snapshots,
-  walked persistent agent inventory, serialised to JSON.
-- Polling clients (TUI list view, caco-web, `caco agent list`)
-  paid that cost on every tick.
+- Failing tests: none in scope before this change, but the new `caco timeline` CLI still had inconsistent boundary behaviour.
+- Relevant metrics: `dispatch_timeline(...)` parsed `--limit` straight through `usize::parse`, so `--limit -1` and `--limit ''` leaked raw Rust parse text; `--since` was not a declared timeline arg and therefore degraded into a warn-and-ignore path; `--project` was appended to the daemon URL even when `--scope=cluster`, with no disclosure in text or JSON output.
+- Context: the timeline surface had already landed and the cluster/per-project TUI views now depended on it, so this was a narrow polish pass to make the CLI contract match the stronger validator patterns used elsewhere in the repo.
 
 ## After state
 
-- New `AgentsListCache` module with monotonic generation counter
-  + `RwLock<Option<CachedEntry>>`.
-- `DaemonState` owns `Arc<AgentsListCache>`.
-- `AgentManager` gains an optional cache hook, wired once during
-  `pub async fn run()`.
-- Hot path in `handle_agents_list`: `cache.get()` → return; only
-  on miss/stale do we run the existing rebuild.
-- 4 lifecycle bump points (`set_state`, `create`, `prune`,
-  `discard`) — every other state mutation goes through one of
-  these.
-- 9 new unit tests, all passing.
+- Failing tests: none observed in the targeted CLI validation.
+- Relevant metrics: `caco timeline --limit -1` now returns `invalid --limit value: -1 (expected a positive integer)`, `--limit ''` now returns an explicit empty-value error, `--since 3h` now fails fast with a redirect to `--max-age-hours` / `caco event log --since`, and `--project` in cluster scope now emits an explicit ignored-project note instead of silently disappearing.
+- Context: the timeline command now advertises `--since` in help specifically as unsupported/redirected, so the operator sees the correct affordance in both help and runtime behaviour instead of a generic unknown-flag warning.
 
 ## Diff summary
 
-- Files touched (5 files; +372 / −12):
-  - `crates/caco-daemon/src/agents_list_cache.rs` (new, 233L)
-  - `crates/caco-daemon/src/lib.rs`: module decl, DaemonState
-    field, 14 construction sites, `run()` cache wire-up, handler
-    integration.
-  - `crates/caco-daemon/src/agent/mod.rs`: AgentManagerInner
-    field, setter, internal bump helper.
-  - `crates/caco-daemon/src/agent/lifecycle.rs`: bump in
-    `set_state`, `create`, `prune`, `discard`.
-  - `crates/caco-daemon/src/ui_stream.rs`: drive-by — strip 6
-    duplicate `tmux_history_limit/size` lines (3 pairs) caused
-    by main's bd-bce6ea backfill landing alongside my own.
-
-### Unit tests added (9 in `agents_list_cache::tests`)
-
-- `new_cache_starts_empty_at_generation_zero`
-- `store_then_get_returns_value_when_generation_matches`
-- `bump_invalidates_cached_entry`
-- `store_with_old_generation_is_immediately_stale` (race-safety)
-- `store_with_post_bump_generation_is_valid`
-- `clear_drops_entry_without_bumping_generation`
-- `multiple_bumps_are_monotonic`
-- `rebuild_replaces_previous_entry`
-- `concurrent_bumps_are_observed_by_subsequent_get`
-  (Acquire/Release ordering smoke under 4×50 thread bumps)
-
-## Embedded artefacts
-
-(none — pure perf slice; no schema/CLI changes)
+- Commits: `805805961`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: `cargo test -p caco-cli caco_timeline_is_registered_and_render_handles_empty_and_populated -- --nocapture`; `cargo test -p caco-cli timeline_cli_validates_limit_since_and_cluster_project_note_bd_bf19ae -- --nocapture`; manual sanity checks via `cargo run -q -p caco -- timeline --limit -1` and `cargo run -q -p caco -- timeline --since 3h`
+- Behavioural delta: the `caco timeline` CLI now uses explicit validation/redirect copy at the dispatch boundary, and the cluster-scope `--project` conditional is disclosed rather than silently ignored.
 
 ## Operator-takeaway
 
-Steady-state polling on the agent inventory is now O(1) cache
-read for the inner data payload. The first request after any
-lifecycle change (or daemon start) pays the rebuild cost
-exactly once; subsequent requests at the same generation reuse
-the cached body. The `request_id` / `node` envelope fields are
-still re-stamped per request, so observability headers remain
-caller-specific.
-
-The race semantics are explicit: a concurrent `bump()` between
-generation snapshot and `store()` causes the stored entry to be
-immediately stale — refused by the next `get()` — rather than
-served. Coalescing was deliberately not added; only one writer
-"wins" the store under contention but both writers stamp the
-same generation so freshness is unaffected.
-
-Future follow-ups (mentioned in module doc):
-- `?summary=true` mode caching as a separate slot.
-- Pagination via `?limit` / `?offset` (skip cache or key by
-  page descriptor).
-- Same shape can be lifted to `/api/v1/agents/summary` once
-  that handler's rebuild cost is measured.
+This was the right burndown slice: a small boundary-only hardening pass on a brand-new timeline surface, with no daemon contract churn and no broad refactor risk.
