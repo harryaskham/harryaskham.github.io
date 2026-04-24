@@ -1,82 +1,85 @@
-# Session summary — bd-7da46e: webapp-a11y skip-to-main-content link
+# Session summary — bd-9d8de1: webapp-mobile enforce 44x44px touch targets
 
 ## Goal
 
-Per webapp UX audit (bd-ea10ac, F1): index.html jumped from <body>
-straight into the 10-item sidebar nav before <main id="content">.
-Screen-reader and keyboard-only users had no WCAG 2.4.1 'Bypass
-Blocks' affordance. Add a visually-hidden-until-focused skip link
-as the first body child + the standard `.skip-link:focus` reveal
-CSS.
+Per webapp UX audit (bd-ea10ac, F4): style.css declared 11 widget
+blocks with min-width/min-height under 28px (sidebar close
+button, badges, refresh icons, kbd-sized chips). WCAG 2.5.5
+Target Size (AAA) and Apple HIG recommend ≥44x44 px on touch.
+Within the existing `@media (max-width: 480px)` block, enforce
+44x44px on every <button>, .nav-item, .tab, and kbd-sized
+actionable target.
 
 ## Bead(s)
 
-- `bd-7da46e` — webapp-a11y skip-to-main-content link (P2 task,
-  ~10 lines per the description). Discovered via reflect-session
-  audit from bd-ea10ac.
-
-## Diff summary
-
-- 2 files changed, +27 / -1:
-  - `crates/caco-web/static/index.html`: added
-    `<a class="skip-link" href="#content">Skip to main content</a>`
-    as the first <body> child (before <div id="app">), with a
-    bd-7da46e comment explaining the WCAG 2.4.1 rationale.
-  - `crates/caco-web/static/style.css`: added the canonical
-    `.skip-link` rules — `position: absolute; transform:
-    translateY(-100%)` to hide visually but stay focusable, with
-    `:focus` revealing at top-left with high-contrast accent
-    colors, 4px border-radius, focus outline.
+- `bd-9d8de1` — webapp-mobile enforce 44x44px touch targets at
+  mobile breakpoints (P3 task, ~30 lines per the description).
+  Discovered via reflect-session audit from bd-ea10ac (sister of
+  bd-7da46e skip-link landing this segment).
 
 ## Before state
 
-```html
-<body>
-    <div id="app">
-        <nav id="sidebar" role="navigation" aria-label="Main navigation">
-            <ul class="nav-list" data-accents="on">
-                <li class="nav-item active" ...>Status</li>
-                <li class="nav-item" ...>Agents</li>
-                ... (10 items)
-            </ul>
-        </nav>
-        <main id="content" role="main">...</main>
+```css
+@media (max-width: 480px) {
+    .status-grid { grid-template-columns: 1fr; gap: 8px; }
+    .stat-card { padding: 14px; }
+}
 ```
 
-Keyboard tab from URL bar lands inside the sidebar; user must
-tab through 10+ nav items before reaching content. Screen
-readers announce nav before main on every page load — no
-WCAG 2.4.1 Bypass Blocks affordance.
+11 interactive widgets (sidebar-close-btn, badges, refresh icons,
+kbd nav-keys, .nav-item, .tab, etc.) sized via desktop rules in
+the 16-28px range. Touch users on mobile breakpoints (≤480px) hit
+fat-finger errors on close buttons; nav-items collapse to text-
+only height; the entire mobile UX fails WCAG 2.5.5.
 
 ## After state
 
-```html
-<body>
-    <a class="skip-link" href="#content">Skip to main content</a>
-    <div id="app">
-        <nav id="sidebar" ...>...</nav>
-        <main id="content" role="main">...</main>
+```css
+@media (max-width: 480px) {
+    /* ...existing layout rules... */
+
+    /* bd-9d8de1: WCAG 2.5.5 + Apple HIG — 44x44px floor */
+    button, .button, [role="button"],
+    .nav-item, .tab,
+    .sidebar-close-btn, .refresh-btn, .icon-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    .nav-item {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        align-items: center;
+    }
+}
 ```
 
-First Tab focuses the skip link (visually revealed at top-left
-with accent colour). Pressing Enter jumps focus to <main
-id="content">, bypassing the sidebar nav entirely. Visually
-hidden by default via `transform: translateY(-100%)` so sighted
-mouse users see no change.
+Every interactive widget on mobile now has a ≥44x44px touch
+surface. Internal padding on .nav-item bumped so labels stay
+centred when the inflated min-height kicks in. Badges (read-only
+annotations) deliberately left compact; any actionable badge
+wrapped in a button/role=button picks up the floor rule
+automatically.
+
+## Diff summary
+
+- 1 file changed, +35 / -0 (`crates/caco-web/static/style.css`):
+  - Inside the existing `@media (max-width: 480px)` block, added
+    a 44x44 floor rule for buttons / role=button / nav-item /
+    tab / icon-btn surfaces, plus internal padding bumps for
+    .nav-item.
 
 ## Validation
 
-- `#content` target verified present at line 166 of index.html.
-- `cargo check -p caco-web`: clean (no Rust changes; static
-  assets are served verbatim).
+- `cargo check -p caco-web`: clean (static asset; no Rust changes).
+- All targeted selectors verified existing in the codebase
+  (`.sidebar-close-btn` line 79 of index.html; `.nav-item` and
+  `.refresh-btn` widely used elsewhere).
 
 ## Operator-takeaway
 
-Keyboard users tabbing into the page now get an immediate "Skip
-to main content" affordance that bypasses the 10-item sidebar
-nav. WCAG 2.4.1 Bypass Blocks satisfied. CSS uses transform-based
-hiding (vs `display:none`) so the link remains in the focus order
-and screen-readers announce it correctly.
+Mobile (≤480px) touch surfaces now meet WCAG 2.5.5 Target Size
+(AAA) and Apple HIG. Sister of bd-7da46e (skip-link, also from
+the bd-ea10ac audit) landed in this same session.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
