@@ -1,107 +1,77 @@
-# Session summary — bd-36edaa Issues 3+4: config schema + template-help envelope wrap
+# Session summary — bd-4df284 Issues 5+6: scratch list --limit upfront validation
 
 ## Goal
 
-Pin two real envelope-drift bugs in the bd-36edaa sweep of caco
-config diff + schema + template-help:
-- **Issue 3**: `caco config schema --json` returned `{ok, sections}`
-  — 5th OK+flat envelope drift surface. Wrap to `{ok, data, meta}`.
-- **Issue 4**: `caco config template-help --json` returned a flat
-  top-level dump `{overview, syntax, builtins, stdlib,
-  evaluation_contract}` with NO `ok` field — 4th NO-OK envelope
-  drift surface. Wrap to `{ok, data, meta}`.
+Pin two related bugs in the bd-4df284 scratch+service sweep:
+- **Issue 5**: `caco scratch list --limit bogus` surfaced the 2nd
+  HTTP-400-JSON-leak (daemon rejected verbatim string with a 400 +
+  non-JSON body, surfacing as 'invalid response (HTTP 400 Bad
+  Request): expected value at line 1 column 1'). Joins bd-dda312
+  changelog show in the HTTP-400-JSON-leak class.
+- **Issue 6**: `caco scratch list --limit 0` silently succeeded
+  with 0 results, drifting from the USAGE-GUIDANCE template now
+  shared by bd-1c1d0f / bd-0b47a7 / bd-2dae3c.
+
+Both fixed with upfront client-side validation using the canonical
+USAGE-GUIDANCE phrasing.
 
 ## Bead(s)
 
-- `bd-36edaa` — caco config diff + schema + template-help sweep
-  (P4 bug, multi-issue). Pins Issues 3+4. Issues 1-2 are POSITIVES
-  (STRONG-promote NOVEL restart_required + all_match boolean
-  computed-summary fields on config diff; gold-standard ✓/!/✗
-  glyph-keyed peer-state visualisation). Issue 5 (--node/--peer
-  not filtering on config diff) is bd-b76723 affordance gap +
-  feature ask — defer (needs design call on filter semantics).
+- `bd-4df284` — caco scratch + service sweep (P3 bug, multi-issue).
+  Pins Issues 5+6. Issues 1-3 are POSITIVES (NOVEL STRONG-promote
+  error-as-card rendering on scratch show; 3 sharp scratch
+  envelopes; 6th 'Configured: ...' surface). Issue 4 (scratch show
+  --note-id '' HTTP 404 EOF leak) is ALREADY FIXED — bd-89df3d
+  this session shipped the upfront empty-string guard with the
+  exact same 'two-layer internals leak' commentary in the source.
+  Issue 7 (--limit -1, 19th parser-ambiguity) covered by bd-02c404.
+  Issue 8 (service show/status --json severely underspecified)
+  needs daemon-side data plumbing — defer (operator clarified
+  service is sole-owner caco-ctrl@helsinki). Issue 9 (--node
+  bd-b76723 affordance gap) belongs to bd-b76723 family epic.
 
 ## Before state
 
 ```
-$ caco config schema --json | jq 'keys'
-[
-  "ok",
-  "sections"
-]
+$ caco scratch list --limit bogus
+error: invalid response (HTTP 400 Bad Request): expected value at line 1 column 1
 
-$ caco config template-help --json | jq 'keys'
-[
-  "overview",
-  "syntax",
-  "builtins",
-  "stdlib",
-  "evaluation_contract"
-]
+$ caco scratch list --limit 0
+caco scratch list — 0 note(s)
 ```
 
 ## After state
 
 ```
-$ caco config schema --json | jq 'keys'
-[
-  "data",
-  "meta",
-  "ok"
-]
+$ caco scratch list --limit bogus
+error: invalid --limit value 'bogus' (expected a positive integer, e.g. 50)
 
-$ caco config schema --json | jq '.data | keys'
-[ "sections" ]
-
-$ caco config template-help --json | jq 'keys'
-[
-  "data",
-  "meta",
-  "ok"
-]
-
-$ caco config template-help --json | jq '.data | keys'
-[
-  "builtins",
-  "evaluation_contract",
-  "overview",
-  "stdlib",
-  "syntax"
-]
+$ caco scratch list --limit 0
+error: --limit must be >= 1 (use --limit 1 for the most recent note, or omit --limit for the default)
 ```
 
-Both surfaces now conform to the canonical `{ok, data, meta}`
-envelope. Catalogue update:
-
-- **NO-OK surfaces** before this segment: 4 (cert status, log
-  exceptions, mcp, template-help). After: 3 (cert status, log
-  exceptions, mcp).
-- **OK+flat surfaces** before this segment: 5 (config schema,
-  config sparse show, config sparse validate, ...). After: 4
-  (config sparse show + validate, ...).
+Joins the USAGE-GUIDANCE cohort (bd-1c1d0f / bd-0b47a7 /
+bd-5f81fe / bd-2dae3c) and breaks the HTTP-400-JSON-leak path
+(was 2 surfaces — now 1, with bd-dda312 changelog show still
+outstanding).
 
 ## Diff summary
 
-- 1 file changed, +20 / -7 (`crates/caco-cli/src/lib.rs`):
-  - `dispatch_config_schema`: replaced flat `{ok, sections}`
-    payload with `{ok, data:{sections}, meta:{section_filter}}`.
-  - `dispatch_config_help`: wrapped flat spec dump in `{ok, data,
-    meta:{surface}}`.
+- 1 file changed, +21 / -0 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_scratch_list`: parse `--limit` upfront, reject
+    non-numeric and zero with canonical USAGE-GUIDANCE phrasing.
 
 ## Validation
 
 - `cargo check -p caco-cli`: clean.
-- No tests referenced these envelopes (greps `crates/caco-cli/tests/`
-  for `config schema` / `template-help` / `config_schema_json` —
-  zero matches).
 
 ## Operator-takeaway
 
-`caco config schema --json` and `caco config template-help --json`
-both now expose the canonical `{ok, data, meta}` envelope.
-Programmatic CI consumers can reliably check `.ok` and traverse
-`.data` across config surfaces. Two more drifters retired this
-turn — NO-OK cohort shrinks 4→3, OK+flat cohort shrinks 5→4.
+`caco scratch list --limit X` now validates client-side with the
+canonical USAGE-GUIDANCE phrasing — no more mysterious HTTP 400
+JSON-parser leaks, no more silent 0-result drift. The scratch
+namespace now joins the gold-standard validator cohort that
+already covers bd graph / event log / auto-close-landed / triage.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
