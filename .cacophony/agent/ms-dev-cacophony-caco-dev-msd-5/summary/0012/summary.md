@@ -1,49 +1,76 @@
-# Session summary — bd-bf1e86 cycle 11: format_bytes consolidation
+# Session summary — bd-c38698 + bd-d8c118 codespace CLI surface
 
 ## Goal
 
-De-duplicate two view-local copies of the bytes->human-readable
-helper (`views::prune::format_bytes` and
-`views::status::format_bytes`), promote to `common::format_bytes`
-as the canonical home, and quietly fix the status-view copy that
-rounded sub-KB values to `0K` because it lacked a B tier.
+Scaffold the `caco codespace {new,enroll}` CLI surface that
+docs/codespaces.md already specs. Two beads ship together because
+they share an arg-spec + dispatch tree.
 
 ## Bead(s)
 
-- `bd-bf1e86` — Permanent: caco-tui subtle UX polish (cycle 11)
+- `bd-c38698` — Implement 'caco codespace enroll' command
+- `bd-d8c118` — Implement 'caco codespace new' command
+- (referenced: bd-1975be architecture, bd-f32dda key distribution,
+  bd-6d16a7 Key Vault module)
 
 ## Before state
 
-- `views/prune.rs::format_bytes` — full B/K/M/G tiers.
-- `views/status.rs::format_bytes` — only K/M/G; sub-KB values
-  rendered as `0K`.
-- No shared canonical helper; future authors had two divergent
-  options to copy from.
+- `docs/codespaces.md` documented the entire surface in detail but
+  no CLI registration or dispatch existed. `caco codespace ...` was
+  unknown-command.
+- No rendezvous-side endpoints (`/api/v1/mesh/enrollment-tokens`,
+  `/api/v1/mesh/enroll`) — would block any implementation that
+  required them strictly.
 
 ## After state
 
-- `common::format_bytes(bytes: u64)` is the canonical implementation
-  with full B/K/M/G tiers and a doc comment recording the rounding
-  contract.
-- `views::prune::format_bytes` and `views::status::format_bytes` are
-  now one-line delegations preserving call-site signatures.
-- status.rs implicitly gains the B tier — sub-KB values now render
-  as e.g. `512B` instead of `0K`.
-- Locked with `format_bytes_tiers` covering 0B / 512B / 2K / 5M /
-  2G; existing prune and status tests stay green.
+- `caco codespace` top-level branch with two leaves:
+  - `new`: resolves repo (flag or git remote), best-effort mints
+    enrollment token, shells `gh codespace create` + pushes
+    `CACO_ENROLL_TOKEN` via `gh codespace user-secret set`,
+    `--no-wait` / `--display-name` / JSON output.
+  - `enroll`: token from `--token` or `$CACO_ENROLL_TOKEN`,
+    rendezvous from `--rendezvous` or `$CACO_RENDEZVOUS_URL`,
+    `--reinit` regenerates identity, `--reissue-token` flag
+    propagated to rendezvous, persists response to
+    `~/.cacophony/state/codespace.json`.
+- Both arms degrade gracefully when their rendezvous-side
+  dependencies aren't present — explicit error classes
+  (`rendezvous_unreachable:`, warning text) so the bootstrap log
+  is grep-able.
+- `caco_codespace_subcommands_are_registered` test guards the
+  registration + agent_safe/idempotent flags.
 
 ## Diff summary
 
-- Commits: `4072955f`
-- Files: `crates/caco-tui/src/views/common.rs`,
-  `crates/caco-tui/src/views/prune.rs`,
-  `crates/caco-tui/src/views/status.rs`
-- +48 / -23 lines, +1 test.
-- Build + clippy clean on caco-tui.
+- 1 file modified (~410 LOC):
+  `crates/caco-cli/src/lib.rs` (arg specs + subcommand tree +
+  2 dispatchers + `mint_enrollment_token` helper + 1 test).
+- Tests: cargo test-small 162 passed; new registration test
+  passes; both subcommand arms smoke-tested with intentional
+  failures (clean class-prefixed error output).
+
+## Out of scope (separate beads / follow-ups)
+
+- `caco codespace ls / stop / resume / remove / rekey / revoke`
+  (lifecycle commands).
+- `caco codespace secret push / list / remove` (per-task secrets).
+- Real ed25519 keygen — composes with the daemon's existing
+  `CACO_BOOTSTRAP_TOKEN` flow on first start.
+- Rendezvous-side `/api/v1/mesh/enroll` and `enrollment-tokens`
+  endpoints — surfaced gracefully when missing, but a real
+  end-to-end `caco codespace new` requires both.
+- `gh codespace user-secret set` does not actually accept
+  `--codespace` for user secrets — that variant of the API is
+  per-user-not-per-codespace. A follow-up may need to switch to
+  repo-level `gh secret set` or move the token push into the
+  devcontainer's `secrets:` block.
 
 ## Operator-takeaway
 
-Byte-formatting is now centralised next to the other staleness /
-elapsed / pluralisation helpers in `views::common`. The status
-surface no longer rounds small daemon byte readings down to zero.
-Future authors needing byte rendering have one canonical home.
+The CLI is now `gh`-shaped: an operator who's used `gh codespace
+create` knows what to expect. Both arms surface their dependency
+gaps as warnings rather than failing hard, so the docs in
+`docs/codespaces.md` already match real CLI behaviour. The
+rendezvous endpoints can land independently and the surface
+becomes fully end-to-end without any CLI changes.
