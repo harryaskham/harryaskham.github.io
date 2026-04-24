@@ -1,75 +1,32 @@
-# Session summary — caco-tui broken-on-main fixture backfill (bd-bce6ea)
+# Session summary — bd-53a0f3 voice-call smoke coverage
 
 ## Goal
 
-P1 broken-on-main: `cargo test -p caco-tui --lib` failed to
-compile after bd-87f5bf+follow-ups added `tmux_history_limit` and
-`tmux_history_size` fields to `state::AgentDisplayState` and
-`ui_stream::AgentSnapshot`. ~95 E0063 missing-field sites across
-the caco-tui crate plus 20 E0560 misplaced-field sites left by a
-peer's partial fix.
+Finish the remaining in-repo slice of the operator-asked STT UX bead by adding the missing scripted voice-call smoke coverage now that the voice-call and corpus dependency beads have landed.
 
 ## Bead(s)
 
-- `bd-bce6ea` — [broken-on-main] caco-tui lib tests: 95 sites
-  missing tmux_history_limit + tmux_history_size
+- `bd-53a0f3` — [stt-xplat][ux] Visual indicators for live transcription state + voice-call e2e smoke (operator-asked)
 
 ## Before state
 
-- `cargo test -p caco-tui --lib` failed to compile.
-- 75 E0063 errors (missing fields in valid literal sites).
-- 20 E0560 errors (peer wmi-2's bd-bf1e86 cycle wrongly inserted
-  the new fields into 10 *nested* AttachMetadata / SessionKicked
-  Modal literal positions where the fields don't belong).
-- 2818 caco-tui lib tests untouchable.
+- Failing tests: none newly failing in scope, but this bead's own note still said AC1/2/4 were landed while AC3 remained blocked.
+- Relevant metrics: `crates/caco-stt-protocol/src/voice_call_orchestration.rs` already had a single full-orchestration scripted test, while `tests/stt-corpus/manifest.json` already carried the synthesized corpus clips and transcripts from `bd-68b76d`.
+- Context: `bd-a55d88` and `bd-68b76d` are now closed, so the remaining honest work was to join the existing voice-call state machine and the shipped synthetic corpus into explicit smoke coverage instead of leaving the bead parked on an outdated block note.
 
 ## After state
 
-- `cargo test -p caco-tui --lib`: 2818 passed; 0 failed.
-- Every AgentDisplayState / AgentSnapshot literal now carries
-  `tmux_history_limit: None, tmux_history_size: None` matching
-  the bd-87f5bf default-None semantics for non-tmux paths.
+- Failing tests: none observed; `cargo test -p caco-stt-protocol -- --nocapture` is green.
+- Relevant metrics: the protocol crate now has an exact synthetic `claim bead bd-cf99b7` round-trip test plus a five-utterance corpus-driven voice-call smoke test, both asserting the controller-directed DM envelope and a sub-2s mock round-trip budget.
+- Context: the remaining acceptance slice for this bead is now covered in-repo without external services by reusing the existing synthetic corpus transcripts and the closed-form voice-call protocol state machine.
 
 ## Diff summary
 
-- Files touched (75 inserts + 20 deletes, net +130):
-  - `crates/caco-tui/src/state/tests.rs` (66 fixture sites)
-  - `crates/caco-tui/src/shell_cwd.rs` (2)
-  - `crates/caco-tui/src/shell_tile_lane.rs` (2)
-  - `crates/caco-tui/src/views/agent_detail.rs` (1)
-  - `crates/caco-tui/src/views/chat.rs` (1)
-  - `crates/caco-tui/src/views/fuzzy_picker.rs` (1)
-  - `crates/caco-tui/src/views/project_tree.rs` (2)
-  - `crates/caco-tui/src/app.rs` (10 misplaced-field deletes)
-
-## Approach
-
-Mechanical, three passes over compiler output:
-
-1. Parse `cargo test -p caco-tui --lib --no-run` stderr to extract
-   `(file, line, struct_name)` from every E0063 site.
-2. Filter to struct_name ∈ {AgentDisplayState, AgentSnapshot} so
-   we don't poison nested struct literals (the trap wmi-2 hit).
-3. For each filtered site, walk forward from the opening line
-   tracking `{` / `}` depth, find the matching outer closing
-   brace, insert the two field-None lines immediately before it
-   using the previous field's indent. Apply edits in reverse line
-   order so earlier sites don't shift.
-4. Then parse E0560 output; delete the 10 misplaced lines that
-   wmi-2's earlier partial fix left in AttachMetadata /
-   SessionKickedModal literals.
-
-## Embedded artefacts
-
-(none — pure fixture backfill; no behaviour change)
+- Commits: `e6402a527`
+- Files touched: `crates/caco-stt-protocol/src/voice_call_orchestration.rs`
+- Tests: `cargo test -p caco-stt-protocol -- --nocapture`
+- Behavioural delta: the voice-call orchestration contract now has explicit smoke tests for the operator-requested synthetic claim-bead phrase and for five representative corpus utterances round-tripping through the controller DM envelope path.
 
 ## Operator-takeaway
 
-`cargo test -p caco-tui --lib` is unwedged for everyone. Future
-follow-ups that add fields to widely-instantiated types should
-either (a) add `Default` and use `..Default::default()` at the
-literal sites, or (b) bulk-update fixtures in the same commit
-that adds the field. The trap that bit wmi-2 — using a regex to
-match `AgentDisplayState {` literally and then inserting before
-the *first* `}` — is the same one this fix avoided by tracking
-brace depth properly.
+This bead no longer needs to stay open on a stale "blocked" note: the visual-indicator state machine was already landed, and the missing in-repo voice-call smoke coverage is now wired against the shipped synthetic corpus and protocol tests.
