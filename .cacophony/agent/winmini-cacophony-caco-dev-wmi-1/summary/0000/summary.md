@@ -1,58 +1,59 @@
-# Session summary — bd-7995c8 Issues 4+5: caco fleet --projects empty + --feed-tail leak
+# Session summary — bd-827c5e Issue 2: caco choices reissue --mode alias + docstring fix
 
 ## Goal
 
-Pin the two real bugs in the bd-7995c8 fleet sweep:
-- **Issue 4**: `caco fleet snapshot --projects ''` silently returned
-  an empty snapshot (the 3rd, worst empty-string convention in the
-  catalogue). Treat empty as "no filter" matching the most-common
-  convention.
-- **Issue 5**: `caco fleet snapshot --feed-tail bogus` leaked the
-  raw rust `ParseIntError` text (`invalid digit found in string`).
-  Replace with the gold-standard `(expected ...)` phrasing.
+Pin Issue 2 of the bd-827c5e choices sweep: the `caco choices
+reissue` help docstring used the bare word "mode" which led
+operators to reach for `--mode` by muscle memory and hit the
+bd-b76723 unrecognised-flag warning. Fix BOTH the alias gap (accept
+`--mode` as an alias for `--notify-mode`) AND the docstring (name
+the actual flag literally).
 
 ## Bead(s)
 
-- `bd-7995c8` — caco fleet sweep (P3 bug, multi-issue). This session
-  pins Issues 4 and 5. Issues 1-3 are POSITIVES (cohort observations:
-  5th cross-namespace shared `--limit/--top` validator, NEW numeric-
-  validator gold-standard, NOVEL `value(s):` plural-aware phrasing).
-  Issue 6 (`--feed-tail -1` / `--top -1` parser ambiguity, 6th+7th
-  surfaces) is the cross-cutting parser concern — **filed as
-  bd-02c404 P2 this session** so it has its own pickup signal at 7
-  confirmed instances. Issue 7 (silent --feed-tail clamp) is mild.
+- `bd-827c5e` — caco choices sweep (P3 bug, multi-issue). This
+  session pins Issue 2 (operator-affordance fix). Issue 1 is an
+  operational/observability ask (`--max-age` / `--stale-after`
+  filter on `choices current`, plus `caco doctor` surfacing stale
+  choices, plus auto-resolution policy when `--notify-mode
+  timeout-fallback` was supplied) — that's a multi-surface feature
+  add belonging to choices subsystem ownership, not a quick fix.
+  Bonus observation about msm-5's healthy use of choices for fake-
+  bead handling is positive context, not actionable.
 
 ## Before state
 
 ```
-$ caco fleet snapshot --projects '' --feed-tail 0
-{"agents": {}, "beads": {}, ...}                # SILENT empty result
-
-$ caco fleet snapshot --feed-tail bogus --projects cacophony
-error: --feed-tail must be a non-negative integer: invalid digit found in string
-                                                # rust internals leak
+$ caco choices reissue --help
+Reissue an active choice with a new notify mode (escalate, broadcast).
+...
+$ caco choices reissue --choice-id zzz --mode escalate
+warning: bd-b76723: caco choices reissue received unrecognised flag(s): --mode. ...
+error: reissue failed: choice not found or already resolved (bd-14e75e)
 ```
 
 ## After state
 
 ```
-$ caco fleet snapshot --projects '' --feed-tail 0
-{... full snapshot of all configured projects ...}
-                                                # empty = no filter
-
-$ caco fleet snapshot --feed-tail bogus
-error: invalid --feed-tail value 'bogus' (expected a non-negative integer 0..=2000, e.g. 200)
-                                                # gold-standard phrasing
+$ caco choices reissue --help
+Reissue an active choice with a new --notify-mode (escalate, broadcast). bd-827c5e: --mode accepted as alias.
+...
+$ caco choices reissue --choice-id <id> --mode escalate
+[no warning; --mode resolved to --notify-mode; reissue proceeds]
 ```
 
-`--projects` whitespace-only input is also normalised. The
-"no filter" semantic matches `caco msg inbox --grep ''` and
-`caco event log --command ''`.
+`--notify-mode` still wins when both are supplied. Same family as
+bd-3a6078 (`--id` accepted as alias for `--agent-id`).
 
 ## Diff summary
 
-- 1 file changed, +21 / -7 (`crates/caco-cli/src/lib.rs`
-  `dispatch_fleet_snapshot`).
+- 1 file changed, +18 / -3 (`crates/caco-cli/src/lib.rs`):
+  - `CHOICES_REISSUE_ARGS` gains `--mode` ArgSpec (suppresses
+    bd-b76723 unrecognised-flag warning).
+  - `CHOICES_SUBCOMMANDS` reissue summary names `--notify-mode`
+    literally and notes the alias.
+  - Dispatcher resolves `--notify-mode` first, falls back to
+    `--mode`.
 
 ## Validation
 
@@ -60,10 +61,8 @@ error: invalid --feed-tail value 'bogus' (expected a non-negative integer 0..=20
 
 ## Operator-takeaway
 
-`caco fleet snapshot --projects ''` no longer silently filters to
-zero projects — it now defaults to all configured projects.
-`--feed-tail bogus` produces a useful actionable error citing the
-allowed range and an example, instead of leaking the rust parser's
-internal error message. Issue 6 (the `-1` parser ambiguity) is now
-its own claimable bead at bd-02c404 P2 — the highest-priority
-cross-cutting concern surfaced by this session's CLI sweeps.
+`caco choices reissue --mode escalate` Just Works now (matches the
+docstring's bare "mode" wording AND matches operator muscle memory
+from `caco msg ... --mode`). Issue 1 (stale-choice filter +
+auto-resolution + doctor surfacing) is a separate multi-surface
+feature ask that remains in the bead body for the choices owner.
