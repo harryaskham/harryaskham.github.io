@@ -1,81 +1,43 @@
-# Session summary — bd-09f314 cycle 4: migrate keyboard overlays onto WorkspaceOverlay
+# Session summary — bd-0502bc
 
 ## Goal
-
-Dogfood the cycle 3 `WorkspaceOverlay` helper inside the workspace-view
-namespace itself, by migrating the two in-tree overlays
-(`workspace-keyboard.js` command palette + help overlay) to register
-through it. Each had a subset of the four canonical teardown paths;
-both now inherit the full contract for free.
+Land bd-0502bc (P3, caco-cli): fix the misnamed `caco fleet disk` subcommand. The surface only ever read local-node telemetry despite the cluster-wide "fleet" prefix, misleading operators. Solution: (1) promote `caco node disk` as the canonical surface, (2) keep `caco fleet disk` working as a deprecated alias with a one-line hint, (3) add `--node` support (previously warned-and-ignored per bd-b76723) with validation for local-node-only.
 
 ## Bead(s)
-
-- `bd-09f314` — `[PERMANENT] [workspace-view]` Ongoing polish + a11y
-  (parent `bd-027e9d`; cycle 4 of N).
+- **bd-0502bc** (P3, caco-cli): rename `caco fleet disk` to canonical `caco node disk`. Primary bead.
 
 ## Before state
-
-- `workspace-keyboard.js` openPalette/openHelpOverlay each implemented
-  their own ad-hoc Escape + backdrop click handling.
-- Both were missing hashchange/popstate teardown (the bd-41a92d
-  freeze-on-navigation footgun); neither had a focus trap; neither
-  restored focus to the previously-focused element on close.
-- `WorkspaceOverlay.register()` only recognised the canonical
-  `.wsv-overlay__backdrop` selector — non-canonical markup could not
-  opt into the helper without renaming CSS classes.
+- `caco fleet disk` help text admitted it was "for the local node" yet lived under the cluster-wide "fleet" prefix.
+- `--node` was bd-b76723-warned-and-ignored: any `--node <name>` produced a warning but was silently ignored, always reading local-node telemetry.
+- No `node disk` subcommand existed.
+- No deprecation surface for `fleet disk`.
 
 ## After state
+- NEW: `caco node disk` registered in `NODE_SUBCOMMANDS` with full arg spec (`--top`, `--node`). No deprecation banner.
+- DEPRECATED: `caco fleet disk` retained in `FLEET_SUBCOMMANDS`. Summary text advertises DEPRECATED status and points to `caco node disk`. Text mode emits a one-line note before the table.
+- `--node` validation:
+  - Empty value rejected: "--node must not be empty (bd-0502bc)".
+  - Non-local node name rejected with clear error naming the local node and deferring cluster-aggregation to a follow-on bead.
+- JSON mode adds: `node: <local_node_name>`, `deprecated_surface: <bool>`, `canonical_surface: "caco node disk"`.
+- `dispatch_fleet_disk` signature extended to `(top, node_filter, legacy_alias, json_requested, config_override)`, routing both surfaces through shared implementation.
 
-- `WorkspaceOverlay.register()` accepts a per-instance
-  `backdropSelector` option (default still
-  `.wsv-overlay__backdrop`). Both `open()` and `close()` consult
-  `this._backdropSelector` so the listener cleanup matches the
-  attachment.
-- Command palette registers with
-  `backdropSelector: '.wsv-palette__backdrop'` and an explicit
-  `initialFocus` pointing at its search input.
-- Help overlay registers with `backdropSelector:
-  '.wsv-help__backdrop'`. Its local close-button click handler now
-  explicitly skips backdrop clicks (which the helper handles),
-  avoiding double-fire.
-- Bespoke Escape handlers and ad-hoc backdrop click handlers
-  removed from both overlays. The fallback display-toggle path is
-  preserved (degraded but functional) for the case where the
-  helper is unavailable.
-- 2 new tests:
-  * `workspace_keyboard_overlays_use_workspace_overlay_helper_bd09f314`
-    pins the migration shape and absence of the bespoke help-Escape
-    handler.
-  * `workspace_overlay_supports_custom_backdrop_selector_bd09f314`
-    pins that BOTH `open()` and `close()` reference
-    `this._backdropSelector` (so the listener gets cleaned up
-    against the same selector it was attached against).
-- 142/142 caco-web lib tests green; no clippy regressions in new code.
+## Tests
+- New test `bd0502bc_node_disk_subcommand_is_registered`: pins node disk registration + MCP/agent-safe/idempotent flags + --top/--node presence.
+- New test `bd0502bc_fleet_disk_alias_accepts_node_flag`: pins --node presence on legacy alias + DEPRECATED/canonical_surface strings in summary.
+- New test `bd0502bc_node_disk_rejects_empty_node_value`: pins empty --node rejection in both text and JSON modes.
+- New test `bd0502bc_node_disk_rejects_non_local_node`: pins end-to-end rejection of a non-local --node value via real dispatch path.
+- Existing `fleet_disk_subcommand_is_registered` still passes (alias unchanged).
+- Build: `cargo build -p caco-cli --tests` clean (post bd-ee2dd4 fix).
 
 ## Diff summary
-
-- Commit `970bdbfa`: bd-09f314 cycle 4: migrate command-palette + help
-  overlays onto WorkspaceOverlay.
-- Files touched:
-  - `crates/caco-web/static/workspace-overlay.js` (+5 — `backdropSelector`
-    option threaded through `register()` / `open()` / `close()`).
-  - `crates/caco-web/static/workspace-keyboard.js` (~+50/-15 — palette
-    + help open/close paths route through the helper).
-  - `crates/caco-web/src/tests.rs` (+60 — 2 new tests).
-- Behavioural delta: both overlays now get hashchange/popstate
-  teardown + focus-trap + focus-restore for free; close-on-Escape
-  still works (now via the helper); body.overflow is locked while
-  open. Backwards compatible with WorkspaceOverlay being absent.
+- `crates/caco-cli/src/lib.rs`: +324/-20 lines across:
+  - New `NODE_DISK_ARGS` const (bd-0502bc marker).
+  - Updated `NODE_SUBCOMMANDS` with new "disk" entry.
+  - Updated `FLEET_SUBCOMMANDS` disk entry with DEPRECATED summary.
+  - Extended `FLEET_DISK_ARGS` with --node (deprecation pointer version).
+  - Extended `dispatch_fleet_disk` signature and body for node_filter, legacy_alias handling, deprecation note, JSON envelope changes, --node validation.
+  - Dispatcher routing for both `fleet disk` and `node disk` with shared logic.
+  - 4 new bd0502bc_* tests.
 
 ## Operator-takeaway
-
-Cycle 4 closes the loop on the bd-41a92d→bd-3fe180→cycle 3 arc
-inside the workspace-view scope: cycle 3 built the helper, cycle
-4 migrates the two overlays it could reach. The cross-app
-modal migration (command-palette-modal, quick-bead-modal,
-bead-detail-modal, create-bead-modal, agent-detail-modal in
-app.js) is still tracked separately as bd-c32bf0 — that one
-requires either renaming `.modal-overlay` → `.wsv-overlay`
-markup or extending the helper with a more flexible attachment
-pattern, which is a bigger surface than a single permanent
-cycle should swallow.
+Every operator who typed `caco fleet disk --node helsinki` and got warned-then-ignored now gets a clear "not the local node" error with guidance. Every operator discovering the surface via `caco fleet` help now sees "DEPRECATED — use `caco node disk` instead". The cluster-aggregation surface (actual per-peer telemetry via daemon RPC) remains deferred to a follow-on bead, but the naming and operator affordances are now honest.
