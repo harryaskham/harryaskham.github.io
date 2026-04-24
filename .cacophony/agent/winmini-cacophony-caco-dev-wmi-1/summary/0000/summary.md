@@ -1,61 +1,66 @@
-# Session summary — bd-851658 Issue 4: caco operator-actions list self-contradicting --limit fix
+# Session summary — bd-f4957c Issue 5: caco project status --project converge to security-WHY
 
 ## Goal
 
-Pin Issue 4 of the bd-851658 release+operator-actions sweep: the
-top-level `caco operator-actions list` was declared as a
-no-args leaf, so the dispatcher fired the bd-b76723 unrecognised-
-flag warning on `--limit`/`--project`/`--max-age`/`--include-
-closed` even though the underlying handler honours all four.
-Operator saw BOTH the warning AND a downstream validator error
-from the same flag (self-contradicting).
+Pin Issue 5 of the bd-f4957c node+project sweep: `caco project
+status --project bogus` returned a TRUNCATED `is not configured`
+error — drifting from its sister `caco project show --project bogus`
+(which uses the gold-standard security-WHY phrasing) WITHIN THE SAME
+NAMESPACE. Converge to the canonical security-WHY phrasing now
+shared by build list / changelog show / project show --project.
 
 ## Bead(s)
 
-- `bd-851658` — caco release + operator-actions sweep (P4 bug,
-  multi-issue). Pins Issue 4. Issues 1-3, 5-6 are POSITIVES /
-  CORRECTIONs / cohort observations. Issue 7 (release status --id ''
-  HTTP 404 EOF leak) is the 11th empty-string-bypass — covered by
-  bd-29c7e3 (cross-cutting `validate_non_empty_id` helper meta-
-  bead). Issue 8 (--limit -1 parser ambiguity) is covered by
-  bd-02c404 (cross-cutting parser meta-bead filed earlier this
-  session).
+- `bd-f4957c` — caco node + project sweep (P3 bug, multi-issue).
+  Pins Issue 5. Issues 1-2 are POSITIVES (BEST-IN-CACO error
+  message + NEW multi-flag usage gold-standard). Issue 3 (project
+  show --name vs --project drift) is a 3-line dispatcher fix but
+  the operator likely wants `--name` removed entirely as a
+  duplicate of `--project`; needs design call. Issue 4 is positive.
+  Issue 6 (node show --json broken exit 2) is the same anti-
+  pattern as bd-87425e — needs same wrapper-at-dispatch-boundary
+  treatment as that surface; bigger fix. Issue 7 is the same
+  warn-then-process family fixed for operator-actions in
+  bd-851658 — node show --name + project show --name need ArgSpec
+  hoists (defer for design call). Issue 8 is positive. Issue 9 is
+  cohort observation (half-flat envelopes — same family as
+  bd-b9eccd which wmi-2 just landed).
 
 ## Before state
 
 ```
-$ caco operator-actions list --limit 0
-warning: bd-b76723: `caco operator-actions list` received unrecognised flag(s): --limit. These were ignored by the dispatcher.
-error: --limit must be >= 1 (omit --limit for the default of 200)
-```
+$ caco project show --project bogus
+error: project 'bogus' is not configured; bead operations must target a configured project to prevent routing to an ambient external board
 
-The dispatcher claimed `--limit` was "ignored", and then the
-downstream validator fired anyway. Mind-bending mixed signal.
+$ caco project status --project bogus
+error: project 'bogus' is not configured           # TRUNCATED — sister drift
+```
 
 ## After state
 
 ```
-$ caco operator-actions list --help
-  --project          Project name (default: first configured or CACOPHONY_PROJECT).
-  --max-age          Hide beads older than this (e.g. 24h, 7d). Default: show all.
-  --limit            Maximum number of beads to return.
-  --include-closed   Also show recently-closed operator-action beads (default: open only).
-
-$ caco operator-actions list --limit 0
-error: --limit must be >= 1 (omit --limit for the default of 200)
+$ caco project status --project bogus
+error: project 'bogus' is not configured; bead operations must target a configured project to prevent routing to an ambient external board. Configured: a.skh.am, cacophony, collective, gfx-replacer, life, midi2hid, mono, picasso-health, tendril
 ```
 
-bd-b76723 warning is gone. Validator still fires (correct). The
-top-level `operator-actions list` and `caco bd operator-actions`
-now have identical declared flags AND identical runtime behaviour
-(both already routed through `dispatch_bd_operator_actions`).
+Now matches `project show --project` + adds `Configured:` listing
+(slight improvement over the existing security-WHY surfaces, which
+do not list configured names — a pattern bd-7abbba Issue 4 also
+flagged as a future improvement).
+
+`--project` convention map after this fix:
+- Security-WHY (gold-standard): build list, changelog show, project
+  show --project, **project status** (4 surfaces).
+- Truncated (degraded): project show --name (1, needs Issue 3 fix).
+- Inline-allowed-values: fleet snapshot --projects (1).
+- Silent-accept (worst): caco ls --project, caco ps --project
+  (already fixed by wmi-2 in bd-b9eccd).
 
 ## Diff summary
 
-- 1 file changed, +14 / -2 (`crates/caco-cli/src/lib.rs`):
-  - Top-level `operator-actions list` leaf promoted to explicit
-    CommandSpec, reusing the existing `BD_OPERATOR_ACTIONS_ARGS`.
-  - No handler change (already accepted these flags).
+- 1 file changed, +21 / -1 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_project_status` empty-match branch upgraded to the
+    security-WHY phrasing + Configured listing.
 
 ## Validation
 
@@ -63,14 +68,9 @@ now have identical declared flags AND identical runtime behaviour
 
 ## Operator-takeaway
 
-`caco operator-actions list --limit N` Just Works without the
-spurious warn-then-error pairing. The flag was always honoured by
-the handler; only the dispatcher's args spec was missing.
-
-Same family as bd-c0c8b3 (`caco bd operator-actions
---include-closed` inverted) — both are dispatcher/handler args-
-spec sync issues. This one was the simpler hoist; the inversion
-case is a separate fix.
+`caco project status` now matches its sister `caco project show`
+on the unknown-project error path — same security-WHY phrasing,
+plus the configured-project listing as a bonus typo affordance.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
