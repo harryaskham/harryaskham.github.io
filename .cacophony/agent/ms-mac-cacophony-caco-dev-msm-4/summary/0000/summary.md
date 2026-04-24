@@ -1,31 +1,36 @@
-# Session summary — bd-5bfb2c (slice 1)
+# Session summary — bd-5bfb2c (slice 4: TUI parity + brilliance)
 
 ## Goal
-Integrate the workspace view into the main caco-web app shell as a first-class view, replacing the separate /workspace page that operator rejected as "VERY BAD, completely wrong UX, like a completely different app."
+Make workspace as usable as the TUI for full fleet/project driving. Beauty + UX + feature parity.
 
 ## Bead(s)
-- **bd-5bfb2c** (P0 PERMANENT, caco-web): workspace-view DO-OVER
+- **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Workspace was a separate HTML page (/workspace) with its own header, CSS, JS — sharing nothing with the main app
-- Different visual language, navigation, typography from the rest of caco-web
-- Each pane reimplemented components from scratch instead of reusing canonical components
+- 7 pane types (terminal/agents/beads/chat/logs/feed/source)
+- No layout presets
+- Basic empty states
+- Click → only opened modal, no companion-pane updating
+- Limited keyboard shortcuts (just 'w' to enter)
 
 ## After state
-- Workspace is now `<div class="view" id="view-workspace">` inside index.html
-- Same sidebar nav (keyboard shortcut 'w'), same header, same SSE state
-- Splittable pane layout with H/V splits, drag-resize handles, ratio persistence
-- 7 pane types (terminal, agents, beads, chat, logs, feed, source) all rendering from window.state
-- CSS uses existing design tokens (--bg-primary, --accent-primary, --border-subtle)
-- Layout persisted to localStorage (caco.workspace.layout)
-- Pane contents auto-refresh on SSE snapshot via Workspace.refresh() hook
+- 19 pane types covering every TUI view (status/services/nodes/projects/notifications/actions/timeline/choices/mergeQueue/speech/beadDetail/agentDetail added)
+- 5 named layout presets (Mission Control, Bead Triage, Agent Driver, Operator Cockpit, Fleet Ops)
+- Beautiful empty states (icon + title + subtitle)
+- Stat cards with hover lift
+- Speech as chat-bubble timeline
+- Detail panes with priority/status/id headers + actions
+- Double-click maximize/restore
+- Selection broadcast: click bead/agent → companion panes auto-load
+- Keyboard: Cmd/Ctrl+\, +Shift+\, Alt+Arrows, Cmd+Shift+W
+- 213/213 tests green (9 new)
 
 ## Diff summary
-- index.html: +nav item, +view-workspace container with split controls
-- workspace-integrated.js: new 500-line file with pane tree model + renderers
-- style.css: +workspace CSS using existing tokens
-- app.js: +Workspace.refresh() hook in snapshot handler
-- tests.rs: +4 new tests, +view-workspace to existing view list test
+- workspace-integrated.js: +250 lines (registry, presets, shortcuts, maximize, broadcast)
+- workspace-panes.js: +505 new file (12 renderers + helpers)
+- style.css: +200 lines polish
+- index.html: +14 options, preset selector
+- tests.rs: +9 tests
 
 ## Operator-takeaway
-Press 'w' to switch to Workspace. Split panes with the toolbar buttons, change pane types via dropdown, drag handles to resize. Each pane shows the same data as the canonical views. This is slice 1 — terminal xterm.js mounting and further polish are next.
+Workspace now drives the full fleet. Press 'w', pick a layout preset like "Mission Control" or "Bead Triage" from the toolbar, or DIY split with Cmd+\\. Click any bead/agent and it loads into companion detail panes automatically. Double-click a tab to maximize. Same data, same actions, same design language as the canonical views — just composable.
