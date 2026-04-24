@@ -1,70 +1,40 @@
-# Session summary — bd-c8e045 macOS development guide
+# bd-a1049b: voice-attach drop affordance
 
 ## Goal
-
-Stand up a comprehensive, developer-facing macOS build & run guide so
-contributors picking up the in-progress native-macOS-app workstream
-(epic bd-6d67e0 and sub-beads) inherit a coherent baseline of build
-prerequisites, Nix vs Cargo paths, launchd lifecycle integration,
-audio/STT/TTS specifics, and known macOS-only pitfalls — instead of
-reverse-engineering platform behaviour from scattered SPEC and
-flake.nix references.
+Make the bd-2cfe3e voice-attached-agent TTS filter operator-visible so the operator can tell at a glance when their voice-attach is silencing other senders, instead of perceiving it as a fleet-wide TTS outage (the bd-e251c6 reopen evidence).
 
 ## Bead(s)
-
-- `bd-c8e045` — Update build instructions for macOS development
-- (sibling: `bd-6d67e0` — [EPIC] native macOS app with liquid glass
-  design; this guide reserves a stub section for that workstream)
+- bd-a1049b — [tts/tui] Voice-attach to an agent SILENTLY drops all other agents' speeches with no operator-visible affordance (P0)
+- Background: bd-e251c6 (closed works-as-designed), bd-2cfe3e (the filter introduction), bd-9e7929 (voice-attach feature)
 
 ## Before state
-
-- Failing tests: none triggered by this bead (docs-only).
-- Relevant metrics: zero macOS-specific developer doc in `docs/`;
-  README mentioned macOS only obliquely (one-line install reference,
-  one-line launchd/Darwin reference inside a 200+ word architecture
-  paragraph). No `companion/macos/` exists yet; native app is
-  pre-implementation.
-- Context: developers landing on a Mac had to grep SPEC.md (>11k
-  lines), flake.nix, and READMEs for `darwin`/`macos`/`launchd` to
-  piece together the build path, audio permissions, and lifecycle
-  shape.
+- `caco-tui/src/state/mod.rs:7629` and `:8996` filter SpeechRequested events: when `voice_attached_agent.is_some()`, only senders containing that agent's ID get enqueued. Everything else dropped silently — no toast, no log entry, no counter, no UI affordance beyond the tiny `🎤↔short` chip in `views/speech_indicator.rs`.
+- Operator workaround was "detach from voice-call" but operator had no way to discover that voice-attach was even active.
 
 ## After state
-
-- Failing tests: none.
-- Relevant metrics: new `docs/macos-development.md` (~290 lines, 10
-  sections) covering supported hosts, prerequisites, clone, Nix +
-  Cargo build paths, common build issues, daemon/TUI run + launchd
-  integration, audio/STT/TTS specifics, iOS companion pointer,
-  native-app stub, troubleshooting checklist, related-doc index.
-  README's `Documentation` section now links to it.
-- Context: `bd-c8e045` AC ("comprehensive build and development
-  instructions … prerequisites, build steps, running locally,
-  debugging, troubleshooting … clear for new developers") satisfied
-  via a single canonical doc with explicit pointers from README.
+- `SpeechState` gains `voice_attach_dropped_count: u64` and `voice_attach_drop_toasted: bool`. Both reset on every `toggle_voice_attach` call (attach, detach, switch) so accounting is per-attach-window.
+- `SpeechState::note_voice_attach_drop()` increments the counter and returns `true` exactly once per window so callers can fire a one-shot toast.
+- Both filter sites in `state/mod.rs` now extract the voice-attach check into an explicit `match` that calls `note_voice_attach_drop` on the drop branch and pushes a toast on first drop:
+  `"🎤 Voice attached to {agent} — muting other agents' speech. Ctrl+V on that agent's detail pane to detach."`
+- `views/speech_indicator.rs` shows ` muted:N` in NORD11 red next to the existing `🎤↔short` glyph whenever drops have occurred during the current attach.
 
 ## Diff summary
-
-- Files touched:
-  - `docs/macos-development.md` (new)
-  - `README.md` (one-line addition under `## Documentation`)
-- Tests: +0 / -0 / flipped 0 (docs-only change; no compile or test
-  surface impacted).
-- Behavioural delta: no runtime change. Documentation surface adds
-  one new file and one README link.
-
-## Embedded artefacts
-
-(None — docs-only bead, no runs to record.)
+- `crates/caco-tui/src/speech.rs` — added 2 fields, reset hook in `toggle_voice_attach`, new `note_voice_attach_drop` method.
+- `crates/caco-tui/src/state/mod.rs` — restructured both filter sites (lines ~7627 and ~9009) from boolean-chain to explicit match with drop accounting.
+- `crates/caco-tui/src/views/speech_indicator.rs` — appended muted-count chip when `voice_attach_dropped_count > 0`.
+- `crates/caco-tui/src/state/tests.rs` — 5 new unit tests: counter init zero, no-pending-toast, increment + one-shot semantics, multi-drop counting, reset on attach/detach/switch.
+- 4 source files + 1 test file = 5 files; +129/-11 LOC excluding the summary.
 
 ## Operator-takeaway
+When voice-attached to an agent (Ctrl+V on agent detail pane), the TUI now (a) fires a one-shot toast naming the attach and the detach keybind on the first muted speech from another sender, and (b) shows a persistent red `muted:N` counter in the speech indicator for the duration of the attach. Both reset on every attach/detach/switch. If you ever again think "TTS is broken", look at the speech indicator: a red `muted:N` chip means voice-attach is silencing other senders — Ctrl+V on the attached agent's detail pane to detach.
 
-The native macOS app workstream (bd-6d67e0 cluster) now has a
-landing page that already documents the *non-app-specific* macOS
-build, lifecycle, and permission story (Xcode CLT, Nix flakes,
-launchd `gui/$UID/com.cacophony.lifecycle`, microphone +
-Accessibility prompts, Tendril macOS blocker bd-5c3937). When the
-first sub-bead lands a buildable `companion/macos/` surface, the
-contributor only needs to fill in the §8 "Native macOS app
-(in progress)" stub — the surrounding scaffolding is already in
-place.
+## Tests
+- `cargo test -p caco-tui --lib voice_attach`: 5 new tests pass (`voice_attach_drop_counter_starts_zero_and_no_toast_pending`, `voice_attach_note_drop_increments_counter_and_returns_true_only_first_time`, `voice_attach_toggle_resets_drop_accounting`, plus the 2 pre-existing).
+- `cargo test -p caco-tui --lib`: 2918 passed.
+- `cargo test-small`: 187 passed.
+
+## AC mapping
+1. ✅ Persistent visible indicator naming the attached agent — existing `🎤↔short` glyph + new `muted:N` counter when drops occur.
+2. ✅ Drop count visible — `muted:N` chip in NORD11 red.
+3. ✅ Detach affordance — toast text names the keybind explicitly.
+4. ⏭ Deferred: `caco tts status` CLI surface — out of scope for this fix; the filter is purely client-side TUI state, no daemon-side state to expose.
