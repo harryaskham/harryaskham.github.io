@@ -1,25 +1,24 @@
-# Session summary — bd-6c1c5d caco hello-world local/cluster swap
+# Session summary — bd-3a6078 caco agent emotion/annotate/get UX
 
 ## Goal
-Fix `caco hello-world --json` labelling Tailscale IP as 'local' and loopback as 'cluster'.
+Surface agent ID + field name in text mode; accept --agent-id alias.
 
 ## Bead(s)
-- `bd-6c1c5d` — daemon listener local/cluster swap in hello-world JSON
+- `bd-3a6078` — caco agent emotion/annotate/get text loses metadata; --agent-id rejected
 
 ## Before state
-- runtime.listeners.daemon.local = `<bind_host>:<cluster_port>` (peer-reachable)
-- runtime.listeners.daemon.cluster = `127.0.0.1:<cluster_port>` (loopback)
-- Bootstrap consumers routed traffic exactly inverted.
+- Text rendered raw value (`<unset>`); no agent-ID context.
+- `--agent-id` warned + ignored; muscle-memory spelling rejected.
 
 ## After state
-- daemon.local = `127.0.0.1:<api_port>` (loopback, co-located only).
-- daemon.cluster = `<bind_host>:<public_cluster_port>` (mesh-reachable).
-- New `resolve_static_local_api_port` helper sources the API port; existing `resolve_static_cluster_contract` preserved (daemon-serve binder still needs cluster bind port).
-- 2 new tests pin both helpers.
+- Text mode prints `agent: <id>\n<field>: <value>` from JSON envelope.
+- `--agent-id` accepted as alias by resolve_agent_id; --id wins when both supplied; error message names both forms.
+- AGENT_GET_ARGS, AGENT_EMOTION_*, AGENT_ANNOTATE_* register --agent-id so bd-b76723 warning doesn't fire.
+- 3 new tests pin alias / precedence / error message.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+86 / -5): new helper, dispatcher fix, contract doc comment, 2 tests.
-- `cargo test-small`: 153 passing.
+- `crates/caco-cli/src/lib.rs` (+100 / -13)
+- `cargo test-small`: 162 passing.
 
 ## Operator-takeaway
-`caco hello-world --json` now reports local/cluster correctly. Bootstrap tooling that consumed the JSON to choose dial addresses is unblocked.
+`caco agent annotate` now shows which agent resolved; `--agent-id` works alongside `--id`. Pattern reusable for sister surfaces in bd-2a4552 / bd-53e157.
