@@ -1,41 +1,50 @@
-# bd-bf1e86 polish #16: global_beads empty state gets keystroke hint parity
+# Session summary — bd-7de521 operator-actions empty --limit guard
 
 ## Goal
 
-Bring the global "Beads — All Projects" view's empty state to keystroke-hint parity with the per-project beads view (polish #8 from earlier this session).
+Close a small validator gap on `caco operator-actions list` so `--limit ''` no longer silently falls back to the default and returns a full list. The intent was to make the empty-string path match the already-good `0` and `-1` behaviour on the same surface, while preserving the stronger default-value disclosure that this surface already uses in its `--limit 0` error.
 
 ## Bead(s)
 
-- bd-bf1e86 (permanent polish track) — cycle #16
+- `bd-7de521` — `caco operator-actions list --limit ''` silently accepted
 
 ## Before state
 
-`crates/caco-tui/src/views/global_beads.rs::render_empty` (the "no beads anywhere" branch, distinct from the stale/syncing branch which is intentionally instructional in a different way) showed:
-```
-                  No beads
-
-  No open or recent beads across any project.
-```
-
-The per-project beads view (polish #8 / cycle #8 of this session) had `Press \`b\` or \`N\` to create a bead, \`r\` to refresh.` — global beads was missing that parity.
+- `parse_operator_actions_limit(...)` treated both `None` and `Some("")` as the same case and returned the default limit `200`.
+- That meant `caco operator-actions list --limit ''` silently behaved like no flag at all and returned the full default window.
+- The same surface already rejected:
+  - `--limit 0` with `--limit must be >= 1 (omit --limit for the default of 200)`
+  - `--limit -1` / other non-numeric input with a clean positive-integer error
+- So the only broken branch was the empty-string bypass.
 
 ## After state
 
-Appended one styled hint line, same text and style as the per-project beads empty state, only on the non-stale branch. The stale/syncing branch is unchanged because it has its own "waiting for beads data" guidance that better fits that state.
-
-Verification:
-- `cargo build -p caco-tui`: clean
-- `cargo test-small`: 57/57 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+- `parse_operator_actions_limit(...)` now distinguishes:
+  - `None` → default `200`
+  - `Some("")` → `--limit value cannot be empty (expected a positive integer; omit --limit for the default of 200)`
+  - `Some("0")` → existing `>= 1` guidance
+  - other non-numeric values → existing positive-integer guidance
+- The live CLI surface now emits the intended validator error for `caco operator-actions list --limit ''` instead of silently defaulting.
+- The surface keeps its stronger UX phrasing with explicit default disclosure (`default of 200`).
 
 ## Diff summary
 
-1 file changed, +6 / −0:
-
-- `crates/caco-tui/src/views/global_beads.rs::render_empty`: 6 lines (blank line + styled hint Span + bd-bf1e86 polish #16 comment) on the non-stale branch only
+- Commit: `5110b9d51` — `bd-7de521: reject empty operator-actions limit`
+- Files touched:
+  - `crates/caco-cli/src/lib.rs`
+- Diff vs current `origin/main`:
+  - `crates/caco-cli/src/lib.rs` — +18 / -8
+- Behavioural delta:
+  - empty-string `--limit` is now a hard CLI-side validation error on `operator-actions list`
+  - omitted `--limit` still defaults to `200`
+  - existing `0` and garbage handling remains intact
+- Validation:
+  - `cargo test -p caco-cli tests::parse_operator_actions_limit_handles_default_empty_zero_and_garbage -- --exact --nocapture`
+  - `cargo build -p caco-cli`
+  - `cargo clippy -p caco-cli --all-targets --no-deps -- -D warnings`
+  - live CLI repro: `cargo run -q -p caco -- operator-actions list --limit ''`
+    - output: `error: --limit value cannot be empty (expected a positive integer; omit --limit for the default of 200)`
 
 ## Operator-takeaway
 
-Last per-project-vs-global parity gap I could find in the empty-state audit. The global beads view is a high-traffic landing surface (hit by `B` global hotkey from anywhere), and the missing keystroke hint left operators without an obvious next-action when projects were brand-new or all beads closed.
-
-This brings the bd-bf1e86 polish track to 16 cycles this session. Next polish-hunting candidates: tab_bar status indicators, console feedback affordances, performance view scroll hints.
+This is another small validator-family cleanup bead: the operator-actions surface no longer has an empty-string bypass that undermines an otherwise strong `--limit` contract. The interesting part is not just the rejection, but that the surface keeps the clearer “default of 200” disclosure while aligning the empty-string path with the rest of the validated `--limit` family.
