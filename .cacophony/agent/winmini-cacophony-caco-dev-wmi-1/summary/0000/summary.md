@@ -1,89 +1,51 @@
-# Session summary — bd-0c73b7 + bd-44f33a + bd-0f7e74: bd create / expand --dry-run / --preview implemented
+# Session summary — bd-596416 Issue 3: bd dispatch --bead-id '' upfront guard
 
 ## Goal
 
-Three sibling noise beads filed when an operator typed
-`caco bd create --preview "preview-test"`,
-`caco bd create --dry-run "dry-run-test"`, and
-`caco bd expand --dry-run "Test seed implementation"` — expecting
-preview semantics — and discovered that ALL THREE flags were
-silently dropped (warned via bd-b76723 unrecognised-flag noise)
-and the destructive operation proceeded:
-- bd create created stub beads with the literal title text.
-- bd expand invoked the LLM expansion and created 1+ beads.
-
-The accidental-test-user noise on the journal was the *symptom*;
-the real bug is that the surface VIOLATES OPERATOR INTUITION on
-a flag name that universally means 'do not commit'.
+Pin Issue 3 of the bd-596416 sweep: `caco bd dispatch --bead-id ''`
+streamed through node-selection (wasted work) and emitted TWO log
+lines echoing the empty quoted ID before the daemon's claim path
+finally noticed. 16th empty-string-bypass surface (sub-family
+'echo-empty-multi-line'). Add upfront guard.
 
 ## Bead(s)
 
-- `bd-0c73b7` — bd create --preview (P2 noise, but with bug
-  underneath).
-- `bd-44f33a` — bd create --dry-run (P2 noise, sibling).
-- `bd-0f7e74` — bd expand --dry-run (P2 noise, sibling, LLM
-  pathway).
-
-All three are pinned and resolved by this commit. Closed not as
-duplicate-of (each has its own bead create record + accidental
-content) but with the proper fix landed against all three flag
-surfaces.
+- `bd-596416` — caco bd dispatch + expand + search + info sweep
+  (P3 bug, multi-issue). Pins Issue 3. Issues 1-2, 5-6, 8-9 are
+  POSITIVES (gold-standard PHASE PROGRESS streaming, 5 distinct
+  required-flag pattern variants now catalogued). Issue 4 (bd
+  expand --dry-run destructive bd-b76723, 6th surface) was just
+  fixed by the bd-0f7e74 / bd-44f33a / bd-0c73b7 trio landed in
+  this session — bd expand now refuses --dry-run upfront. Issue 7
+  (required-flag short-circuits other validation) is normal CLI
+  behaviour, not a bug to fix.
 
 ## Before state
 
 ```
-$ caco bd create --preview "preview-test"
-warning: bd-b76723: `caco bd create` received unrecognised flag(s): --preview. These were ignored by the dispatcher.
-created: bd-0c73b7 — preview-test                # surprise!
-
-$ caco bd create --dry-run "dry-run-test"
-warning: bd-b76723: ... --dry-run ignored ...
-created: bd-44f33a — dry-run-test                # surprise!
-
-$ caco bd expand --dry-run --text "Test seed implementation"
-warning: bd-b76723: ... --dry-run ignored ...
-expanded: 1 bead(s) created                      # surprise! (LLM pathway)
-  bd-0f7e74 P3 [task] Test seed implementation
+$ caco bd dispatch --bead-id ''
+▸ selecting node (candidates: ms-mac,ms-dev,helsinki,pocket4,winmini,beelink,sgu24,astra)…
+✗ failed at agent.selecting_node: claim failed: claim_bead: bead not found:
+bd dispatch: stream ended at phase 'agent.selecting_node' — claim failed: claim_bead: bead not found: ; falling back to verification
 ```
+
+Three problems: (1) wasted node-selector work; (2) empty quoted
+ID echoed across two log lines (16th empty-string-bypass); (3)
+operator gets a confusing 'bead not found' framing instead of an
+upfront flag-validation error.
 
 ## After state
 
 ```
-$ caco bd create --preview "preview-test"
-would create (--dry-run) in project cacophony:
-{
-  "title": "preview-test"
-}
-
-$ caco bd create --dry-run "dry-run-test" --priority 1 --type bug --json
-{"data":{"dry_run":true,"project":"cacophony","url":"...","would_create":{"priority":1,"title":"dry-run-test","type":"bug"}},"meta":{"action":"bd create (dry-run)"},"ok":true}
-
-$ caco bd expand --dry-run --text "Test seed implementation"
-error: bd expand --dry-run / --preview is not yet supported (the LLM expansion path always creates beads atomically); use 'bd create --dry-run' for individual bead previews, or run bd expand without the flag and inspect/close the created beads after
+$ caco bd dispatch --bead-id ''
+error: --bead-id value cannot be empty for bd dispatch
 ```
-
-`bd create --dry-run` joins the bd-5f81fe `auto-close-landed`
-gold-standard --dry-run cohort:
-- Header explicitly names the operation + project
-- `--json` envelope reflects `dry_run: true` in the payload
-- Includes the planned URL + project as provenance fields
-- Nothing reaches the daemon
-
-`bd expand --dry-run` refuses with a clean affordance + suggested
-workaround (use `bd create --dry-run` per-bead, or accept the
-post-hoc cleanup). True preview support requires daemon-side
-plumbing (the LLM call + bead create are atomic in one daemon
-endpoint) — tracked separately as a follow-up.
 
 ## Diff summary
 
-- 1 file changed, +85 / -3 (`crates/caco-cli/src/lib.rs`):
-  - `BD_CREATE_ARGS`: added `--dry-run` + `--preview` ArgSpecs.
-  - `dispatch_bd_create`: short-circuits POST when dry-run, emits
-    text or JSON envelope.
-  - `BD_EXPAND_ARGS`: added `--dry-run` + `--preview` ArgSpecs
-    with 'not yet supported' summary.
-  - `dispatch_bd_expand`: refuses upfront with affordance.
+- 1 file changed, +12 / -0 (`crates/caco-cli/src/lib.rs`):
+  - `dispatch_bd_dispatch` checks `--bead-id` for whitespace-only
+    / empty before any project resolution or stream setup.
 
 ## Validation
 
@@ -91,16 +53,10 @@ endpoint) — tracked separately as a follow-up.
 
 ## Operator-takeaway
 
-The operator-intuition footgun (`--dry-run` / `--preview` SILENTLY
-CREATING a bead) is closed across both surfaces. `bd create`
-gains a real dry-run; `bd expand` returns a clean refusal with a
-workaround. The three accidental noise beads (bd-0c73b7,
-bd-44f33a, bd-0f7e74) are now closed cleanly.
-
-This is also the canonical test-user-noise→shipping-fix pattern:
-operator probes a flag, finds it's unsafe, files a 'noise' bead
-documenting the accident — and the fix lands so the next operator
-gets correct behavior.
+`caco bd dispatch --bead-id ''` now produces the canonical empty-
+string error before any work happens. 16 empty-string-bypass
+surfaces patched individually now; bd-29c7e3 cross-cutting
+validator helper increasingly justified.
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
