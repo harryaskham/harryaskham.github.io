@@ -1,81 +1,92 @@
-# Session summary — bd-b335a5: auto-claim skip EPIC beads
+# Session summary — bd-3c9e8f: bd expand --parent-epic + brief lift
 
 ## Goal
 
-Workers cannot meaningfully implement an EPIC umbrella bead. The
-observed pattern across po4-5 sessions (bd-1401f4 + bd-ab3050 +
-bd-56ca56) was `caco bd claim --project <P>` (no --bead-id)
-consistently returning bd-9496d1 (the [EPIC] STT hardening
-umbrella) because it was the highest-priority open unassigned
-bead, forcing every worker to unclaim and pick deliberately —
-defeating the auto-claim path. Fix: in the daemon's claim
-resolver, exclude beads where bead_type=Epic OR title starts with
-'[EPIC]' from the no-bead-id auto-claim queue. EPICs remain
-claimable explicitly via --bead-id.
+Per bd-8ea2d2 audit (29 'vague' beads attributed to ms-mac:_:node-
+token were actually operator-driven LLM epic decompositions via
+`caco bd expand --text "<freeform>"`). The vagueness is intrinsic
+— the LLM takes a one-line brief and fans out 5-8 generic child
+beads with boilerplate acceptance criteria. Two improvements:
+
+(1) Add `--parent-epic <bd-id>` flag to `caco bd expand`. When
+    set: each child bead gets a `parent_bead_id` link to the epic
+    (so children render under the parent in graph/webapp tree
+    views) + the operator's `--text` brief is lifted into each
+    child's description as a 'Parent epic context' block listing
+    sibling bead ids.
+
+(2) Workers claiming a child bead can now SEE the broader
+    decomposition without leaving the bead surface.
 
 ## Bead(s)
 
-- `bd-b335a5` — auto-claim should skip type=epic and bd-titles
-  starting with [EPIC] (P3 task). Filed via reflect-session
-  pattern from bd-1401f4 session.
+- `bd-3c9e8f` — bd expand --parent-epic + brief lift (P3 feature).
+  Filed via bd-8ea2d2 audit.
 
 ## Before state
 
 ```
-$ caco bd claim --project cacophony       # no --bead-id
-claimed: bd-9496d1 — [EPIC] stt-xplat hardening umbrella ...
-                                          # umbrella, can't implement
+$ caco bd expand --text "macOS app with liquid glass"
+expanded: 8 bead(s) created
+  bd-aa8a1a P2 [task] Configure Nix builds for entire macOS app stack
+  bd-bb1234 P2 [task] Implement liquid glass shader pipeline
+  ... (no parent linkage, no operator brief context)
 
-$ caco bd unclaim --bead-id bd-9496d1
-unclaimed.
+$ caco bd show --bead-id bd-aa8a1a
+  description: Configure Nix builds...
+  parent: -                                  # invisible context
 ```
 
-Pattern repeats across every fresh worker spawn that uses the
-no-id auto-claim; the highest-priority open EPIC dominates.
+Worker claiming bd-aa8a1a has no idea this came from a broader 8-
+bead decomposition or what the operator originally asked for.
 
 ## After state
 
 ```
-$ caco bd claim --project cacophony       # no --bead-id
-claimed: bd-X — <next ready non-EPIC bead>
+$ caco bd expand --parent-epic bd-EPIC --text "macOS app with liquid glass"
+expanded: 8 bead(s) created
+  bd-aa8a1a P2 [task] Configure Nix builds for entire macOS app stack
+  bd-bb1234 P2 [task] Implement liquid glass shader pipeline
+  ...
 
-$ caco bd claim --bead-id bd-9496d1       # explicit still works
-claimed: bd-9496d1 — [EPIC] ...           # operator opt-in
+$ caco bd show --bead-id bd-aa8a1a
+  description:
+    ## Parent epic context
+    Parent epic: bd-EPIC
+    Operator brief: "macOS app with liquid glass"
+    Filed via 'caco bd expand' on 2026-04-24T...; sibling beads: bd-bb1234 bd-cc5678 ...
+    ---
+    Configure Nix builds...
+  parent: bd-EPIC
 ```
-
-The auto-claim path now skips:
-- beads where `bead_type == BeadType::Epic` (canonical type
-  marker)
-- beads whose title starts with `[EPIC]` (legacy convention for
-  beads filed without setting --type epic)
-
-Both gates apply only to `claim_next_ready` (the no-bead-id auto-
-claim path). Explicit `claim_bead(bead_id, ...)` is unchanged so
-operators can still hand-pick an EPIC.
 
 ## Diff summary
 
-- 1 file changed, +56 / -1 (`crates/caco-beads/src/store.rs`):
-  - `BeadsStore::claim_next_ready`: added the type/title skip
-    inside the candidate loop, before `claim_bead`.
-  - New unit test
-    `claim_next_ready_skips_epic_type_and_epic_titled_beads`:
-    inserts a P0 EPIC by type, a P0 EPIC by title prefix, and a
-    P1 ordinary task; asserts the auto-claim returns the P1 task.
+- 1 file changed, +73 / -0 (`crates/caco-cli/src/lib.rs`):
+  - `BD_EXPAND_ARGS`: added `--parent-epic` ArgSpec.
+  - `dispatch_bd_expand`: forwards `parent_bead_id` +
+    `lift_brief_into_children: true` to the daemon (graceful
+    server-side opt-in for when the matching daemon-side support
+    lands), AND a client-side post-create patch loop that PATCHes
+    each child with the parent_bead_id link + lifted brief block
+    if the daemon ignored the new fields. Skip-if-already-set
+    detection means the loop is a no-op once the daemon honours
+    the request.
 
 ## Validation
 
-- `cargo test -p caco-beads --lib claim_next_ready`: all 8
-  pre-existing tests + the new test pass.
-- `cargo check --workspace`: clean.
+- `cargo check -p caco-cli`: clean.
 
 ## Operator-takeaway
 
-The 'every fresh worker auto-claims the umbrella' footgun is
-closed. Workers spawning into `caco bd claim --project X` (no
-id) now skip past the EPIC backlog and land on something
-implementable. EPICs remain explicit-claim-only — owners /
-controllers can still target them deliberately.
+`caco bd expand --parent-epic <bd-id> --text "..."` now wires
+every generated child under the named epic and lifts the
+operator's brief + sibling-id list into each child's description.
+Workers claiming an LLM-decomposed child bead can SEE the broader
+context without spelunking. Pre-pays for the bd-2a3aeb daemon-
+native parent dependency model (the client-side patch loop
+becomes a no-op once the daemon honours `parent_bead_id` +
+`lift_brief_into_children` request fields).
 
 Push-discipline (post-clarification): own-branch push allowed;
 default-branch force-push banned; only reintegrate / complete
