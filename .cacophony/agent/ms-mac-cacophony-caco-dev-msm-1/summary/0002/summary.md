@@ -1,62 +1,65 @@
-# Session summary — reject --lines 0 across log surfaces
+# Session summary — CI for the macOS app (bd-ff6982)
 
 ## Goal
 
-Close the sibling miss bd-551b43 noted by the test-user pass: `caco service
-logs --lines 0` silently returned `-- No entries --` with exit 0 instead of
-erroring like its peers. Also extend the sweep proactively to other
-`--lines` sites that share the same shape (`log tail`, `log stream`,
-`tts daemon logs`).
+Wire the new `cacophony-macos-app` Nix package into the CI workflow
+so every push to main and every PR exercises the macOS app build
+on a self-hosted macOS runner.
 
 ## Bead(s)
 
-- `bd-551b43` — caco service logs --lines 0 silently returns '-- No
-  entries --' (exit 0); sibling miss of bd-a08f85 sweep
+- `bd-ff6982` — Integrate macOS build into CI/CD pipeline.
+- (parent: `bd-6d67e0`.)
+- (depends on landed `bd-aa8a1a` Nix package, `bd-35352b` scaffold.)
 
 ## Before state
 
-- `caco service logs --lines 0` → `-- No entries --`, exit 0
-- `caco log tail --lines 0` → empty tail, exit 0
-- `caco log stream --lines 0` → empty stream, exit 0
-- `caco tts daemon logs --lines 0` → empty, exit 0
-- `caco event log --limit 0` correctly errored (bd-a08f85)
+- `.github/workflows/ci.yml` had three jobs (`check`, `test-fast`,
+  `test-full`), all on `[self-hosted, linux]`. No macOS coverage.
+- `dev.yml`, `release.yml`, and `hourly.yml` already use
+  `[self-hosted, macos]` for the existing `aarch64-apple-darwin`
+  binary build, so a macOS runner pool exists.
 
 ## After state
 
-All four sites now produce:
-
-```
-error: --lines must be >= 1 (use --lines 1 for a single result, or omit --lines for the default)
-```
-
-with exit code 1 — the same wording bd-a08f85 standardised on for
-`--limit 0` across `caco event log` / `log exceptions` / `msg inbox` /
-`bd list`.
-
-`cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
-clean. Two new unit tests:
-`validate_positive_limit_rejects_zero_for_lines`,
-`validate_positive_limit_accepts_positive_lines`.
+- `ci.yml` gains a `build-macos-app` job:
+  - `runs-on: [self-hosted, macos]`, 30-minute timeout.
+  - Builds via `nix build .#cacophony-macos-app
+    --print-build-logs`. The package's `checkPhase` runs the
+    `CacophonyKitSmoke` executable, so a successful build implies
+    a passing smoke test.
+  - Verifies output structure: `result/bin/Cacophony`,
+    `result/bin/CacophonyKitSmoke`,
+    `result/Applications/Cacophony.app/Contents/Info.plist`,
+    `result/Applications/Cacophony.app/Contents/MacOS/Cacophony`.
+  - Re-runs `result/bin/CacophonyKitSmoke` outside the sandbox as
+    an extra sanity check.
+- Linux jobs unchanged; the macOS job is independent and can fail
+  without affecting Linux gating decisions.
 
 ## Diff summary
 
-- Commit: 45e6fcdc
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: +2 / -0 / flipped 0
-- Behavioural delta: four CLI subcommands now error on `--lines 0`
-  instead of silently returning empty.
+- Files touched:
+  - `.github/workflows/ci.yml` — new `build-macos-app` job.
+  - `companion/macos/README.md` — bd-ff6982 marked landed.
+- Tests: no Rust changes; YAML validated via `python3 -c
+  "import yaml; yaml.safe_load(...)"`. Smoke binary executed
+  locally (5 checks green).
+- Behavioural delta: every push/PR now exercises the macOS app
+  build on the macOS runner pool; failures surface in the standard
+  CI required-checks UI.
 
 ## Operator-takeaway
 
-The `--lines`/`--limit`/`--tail`/`--count` `0` family is a recurring
-class of footguns because each subsystem ships its own validator
-wrapper. The minimal fix swaps `validate_non_negative_int` for
-`validate_positive_limit` at four dispatch sites. A more durable fix
-would be a centralised "list-pagination flag" specifier that all
-`*-list / log / inbox / tail` commands declare via, but that's a wider
-refactor — file as a follow-up bead if a third sibling-miss surfaces.
+This job uses the **same self-hosted macOS runner pool** as
+`dev.yml`/`release.yml`/`hourly.yml`, so it inherits whatever
+capacity those have. If the macOS pool is single-runner and
+saturated, this CI job will queue. If queue depth becomes a
+concern, the trivial mitigation is to gate the new job on a
+`paths:` filter that only fires when `companion/macos/**` or
+`flake.nix` changes — but I deliberately did not add that gate up
+front, so the first few PRs flush out any runner-pool issues.
 
-Out of scope but visible during the work: `caco service logs --lines 1`
-shows systemd-coredump entries for git crashes on the test-user host;
-that's a host-side journalctl content question, not a caco bug, and
-caco-doctor already owns daemon-crash detection.
+## Embedded artefacts
+
+- (none.)
