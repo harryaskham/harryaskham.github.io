@@ -1,70 +1,33 @@
-# Session summary — Per-site daemon migration logging (bd-bd2545)
+# Session summary — bd-9eb9f8 codespace ls status listing
 
 ## Goal
 
-bd-2a2f96 audit recommended every schema migration site emit
-a one-line `eprintln` on the path that actually adds a column,
-so post-startup logs make schema state visible (not just
-silently transitioning).
+Burn down the next concrete child bead from the Codespaces lifecycle breakdown by implementing `caco codespace ls`, so operators can list live GitHub Codespaces and see their derived Cacophony node ids without dropping straight to raw `gh` commands.
 
 ## Bead(s)
 
-- `bd-bd2545` — [bd-2a2f96 follow-up] Per-site daemon
-  migration logging (P3 task)
+- `bd-9eb9f8` — Implement `caco codespace ls` status listing
+- (parent: `bd-869dca` — Add Codespaces node lifecycle management)
 
 ## Before state
 
-- 13 ALTER TABLE ADD COLUMN sites across messaging.rs (5),
-  dynamic_registry.rs (3), caco-beads/store.rs (5).
-- All silently transition the schema; operator has no
-  startup-log signal that a migration ran.
+- Failing tests: none in scope before this change.
+- Relevant metrics: the repo already had `caco codespace new` and `caco codespace enroll`, and `docs/codespaces.md` already documented a `caco codespace ls` surface, but the CLI family only registered the two creation/enrollment commands.
+- Context: operators had docs and examples for `caco codespace ls --json`, including jq snippets that expected a codespace hash, but there was no implemented list/status command behind that contract.
 
 ## After state
 
-- Each pragma-gated ADD COLUMN path emits
-  `eprintln!("bd-XXXXXX: migrating <table>.<column>")` *only*
-  on the path that actually adds (the no-op already-present
-  path stays silent — no log spam on warm starts).
-- 13 log sites added; bd identifier on each line points at
-  the originating bead so operators can grep history.
+- Failing tests: none observed in the focused `caco-cli` and docs/bootstrap validation set.
+- Relevant metrics: `caco codespace ls` now exists, supports `--limit`, `--repo`, and `--refresh`, shells out to `gh codespace list --json ...`, derives stable `cs-<hash>` node ids from codespace names, and emits a canonical `{ok,data,meta}` JSON envelope with `data.codespaces[]`.
+- Context: the docs/examples now match the implemented command surface, and a live dry run under my current GitHub auth fails cleanly with a user-facing `gh codespace list failed: ...` error rather than panicking.
 
 ## Diff summary
 
-- Files touched (+15 / −0):
-  - `crates/caco-daemon/src/messaging.rs`: 5 logs.
-  - `crates/caco-daemon/src/dynamic_registry.rs`: 1 log
-    (single loop covering 3 columns; bd-8f0b5b).
-  - `crates/caco-beads/src/store.rs`: 7 logs (spoken_name,
-    dispatch_target_node, dispatch_queued_at, dispatch_payload,
-    parent_bead_id, occurrence_count, last_seen_at).
-
-### Drive-by
-
-- `crates/caco-daemon/src/beads.rs:3238`: clippy
-  `useless_format` lint upstream of my change; replaced
-  `format!("...")` with `"...".to_string()` so my own clippy
-  gate passes.
-
-## Verification
-
-- `cargo build -p caco-daemon -p caco-beads --tests`: clean.
-- `cargo test-small`: 56 pass.
-- `cargo test -p caco-daemon --lib messaging::tests::init_table`:
-  2 pass.
-- `cargo test -p caco-beads`: 2 pass + 1 ignored.
-- `cargo clippy -p caco-daemon -p caco-beads --lib --tests
-  -- -D warnings`: clean.
+- Commits: `c7a9143e2`
+- Files touched: `crates/caco-cli/src/lib.rs`, `docs/codespaces.md`, `README.md`, `AGENTS.md`
+- Tests: `cargo test -p caco-cli caco_codespace_subcommands_are_registered -- --nocapture`; `cargo test -p caco-cli parse_codespace_list_entries_derives_node_ids_bd_9eb9f8 -- --nocapture`; `cargo test -p caco-cli format_codespace_list_json_envelope_bd_9eb9f8 -- --nocapture`; `cargo test -p caco-cli dispatch_codespace_new_pushes_rendezvous_bootstrap_secret_bd_0bed93 -- --nocapture`; `cargo run -q -p caco -- codespace ls --help`; `./target/debug/caco codespace ls`; `python -m json.tool .devcontainer/devcontainer.json`; `bash -n .devcontainer/cacophony-bootstrap.sh`
+- Behavioural delta: operators now have a first-party `caco codespace ls` status command with live GitHub-backed state, derived node ids/hashes, human-readable output, and a stable machine-readable JSON contract.
 
 ## Operator-takeaway
 
-Pure observability. Logs only emit on the migration-actually-
-runs path, which is rare (a new column being added to an
-existing DB). Steady-state startups are unchanged.
-
-When operators see `bd-XXXXXX: migrating issues.parent_bead_id`
-in the daemon stderr, they now know: (a) the schema was
-upgraded; (b) the bead that introduced the change so they can
-read the rationale.
-
-This closes follow-up #2 of 3 from bd-2a2f96. Remaining:
-`caco doctor schema` probe (would compose with bd-262bd5).
+This closes the most obvious gap in the new Codespaces lifecycle breakdown: the docs no longer promise a status-listing surface that doesn’t exist, and future lifecycle slices can now build on a real first-party `ls` command instead of ad hoc `gh` usage.
