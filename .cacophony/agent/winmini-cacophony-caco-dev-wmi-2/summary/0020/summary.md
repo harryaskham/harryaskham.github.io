@@ -1,53 +1,175 @@
-# broken-on-main waves #15 + #16 repair (PersistentAgentDecl.goal field + percent_encode_query dead code)
+# Session summary — bd-0e8160: caco-cli + caco-web clippy clean (whole workspace now -D warnings green)
 
 ## Goal
 
-Repair two broken-on-main waves observed in the same repair cycle:
-- **Wave #15**: peer wmi-1's bd-6b2af8 added `pub goal: Option<String>` to `PersistentAgentDecl`. 74 test-fixture sites in `crates/caco-daemon/src/persistent.rs` construct that struct without the new field (E0063 missing field).
-- **Wave #16**: a `percent_encode_query` helper in `crates/caco-cli/src/lib.rs` became dead code after a recent refactor moved its only call site away (clippy `dead_code` denial).
-
-## Bead(s)
-
-- (no claimed bead — pure broken-on-main repair, bundled to keep the tree green)
+Follow-up to bd-ff8249. Once that bead unblocked clippy
+fail-fast, ~6 errors became visible in caco-cli and 1 in
+caco-web. Fix them so `cargo clippy --workspace
+--all-targets -- -D warnings` is fully green —
+unblocking the bd-526670 post-reintegrate gate and
+restoring the property to true on main.
 
 ## Before state
 
 ```
-$ cargo build -p caco-daemon --tests
-error[E0063]: missing field `goal` in initializer of `PersistentAgentDecl`
-... (74×)
-
 $ cargo clippy --workspace --all-targets -- -D warnings
-error: function `percent_encode_query` is never used
-     --> crates/caco-cli/src/lib.rs:21387:4
+caco-cli (lib): 6 errors
+  - empty line after doc comment (lib.rs:22286)
+  - duplicated attribute (lib.rs:73908, 76722)
+  - useless conversion to the same type: CliError (10636)
+  - enclosing Ok and ? unneeded (20558)
+  - manual_contains (59336)
+  - suspicious_double_ref_op on .clone() (25823)
+caco-cli (lib test): + 5 errors
+  - dead function warn_or_error_unknown_flags (9350)
+  - dead function project_show_args_include_name_alias (76836)
+  - 3x bool_assert_comparison
+caco-web (lib test): 1 error
+  - regex_creation_in_loops in a11y_lint.rs:315
+... could not compile (caco-cli, caco-cli test, caco-web test)
+
+$ cargo test-small
+182 pass, plus 1 dead test (project_show_args_include_name_alias
+was silently disarmed by stray duplicated #[test] above it).
 ```
 
 ## After state
 
-- Python script (window-scan with `min(i+5, len)` lookahead for `-->` line, per the standard pattern that's avoided silent misses) inserted `goal: None,` immediately before `depends_on_node: None,` at all 74 sites in `crates/caco-daemon/src/persistent.rs::tests`.
-- `percent_encode_query` annotated with `#[allow(dead_code)]` + comment that it's a utility for future query-string-building call sites (the function is well-tested and worth keeping).
-- All 74 fixtures + 1 dead-code site fixed; `cargo build -p caco-daemon --tests` clean; `cargo clippy --workspace --all-targets -- -D warnings` clean.
+```
+$ cargo clippy --workspace --all-targets -- -D warnings
+... Finished. (clean — whole workspace)
 
-Verification:
-- `cargo test-small`: 57/57 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+$ cargo test-small
+test result: FAILED. 182 passed; 1 failed
+  caco-web::confirm_overlay_layers_above_modal_overlay
+  (separate broken-on-main being filed by po4-5; NOT mine)
+
+$ cargo test -p caco-cli --lib project_show_args_include_name_alias
+test result: ok. 1 passed
+  (the bd-2c88ed regression guard now actually runs again)
+```
+
+## Bead(s)
+
+- `bd-0e8160` — `caco-cli clippy --workspace -D
+  warnings RED — 6 pre-existing errors revealed after
+  bd-ff8249 cleared the fail-fast`
+
+## Findings during fix
+
+The pair of `error: duplicated attribute` warnings on
+`#[test]` lines 73908 + 76722 turned out to be *real
+test loss bugs*, not just stylistic noise:
+
+The original source had two test functions stacked, each
+with its own doc comment + `#[test]` attribute, in the
+order:
+
+```rust
+#[test]                     // stray (never had a body)
+/// bd-2c88ed: --name alias doc...
+#[test]                     // legitimate, on bootstrap_dev test
+fn bootstrap_dev_rejects_multiple_modes_per_invocation() { ... }
+
+...
+
+fn project_show_args_include_name_alias() { ... }   // ORPHANED!
+```
+
+The first `#[test]` had no body; the parser
+re-associated it with the next `#[test]` it found
+(`bootstrap_dev_*`), giving us the duplicated-attribute
+warning *and* leaving `project_show_args_include_name_alias`
+without an attribute, so it has been silently dead in
+the test binary since whenever the two were merged.
+
+**This is exactly the regression bd-2c88ed
+(`PROJECT_SHOW_ARGS must include --name`) was meant to
+guard against** — the test was written, committed, and
+then immediately disarmed by an attribute mis-stack.
+Restoring the `#[test]` attribute makes it execute
+again. It passes — current `PROJECT_SHOW_ARGS` does
+declare `--name` — so the bead's invariant is held *now*,
+but for ~weeks it has been held by accident, not by
+test enforcement.
 
 ## Diff summary
 
-2 files changed, +149 / −0:
+**caco-cli (lib.rs, ~9 fixes):**
+- `lib.rs:22288` — empty line after doc comment between
+  `MIN_TTS_SPEED` doc paragraphs → use `//` separator.
+- `lib.rs:73908` — removed stray `#[test]` above doc
+  comment (was duplicated-attribute on next test).
+- `lib.rs:76722` — removed stray `#[test]` above doc
+  comment for `bootstrap_dev_rejects_multiple_modes_*`.
+- `lib.rs:76834` — RESTORED missing `#[test]` on
+  `project_show_args_include_name_alias` — test had been
+  silently inert since the stray attributes mis-stacked.
+  bd-2c88ed's regression guard now actually guards.
+- `lib.rs:9350` — `warn_or_error_unknown_flags` is a
+  test-only convenience wrapper around
+  `warn_or_error_unknown_flags_with_strictness`; gated
+  with `#[cfg(test)]` rather than deleted (preserves
+  test ergonomics; matches actual call-graph shape).
+- `lib.rs:10636` — useless `.into()` on
+  `Err(CliError::new(...))` (return type already
+  `CliError`).
+- `lib.rs:20558` — `return Ok(...?.map_err(...))` →
+  `return ...map_err(...)` (Ok+? compose to identity).
+- `lib.rs:25823` — `oid.clone()` on a `&&String`
+  returned `&String` (no clone happened); fixed to
+  `(*oid).clone()`.
+- `lib.rs:59336` — `target_nodes.iter().any(|n| *n ==
+  want)` → `target_nodes.contains(&want)` on `Vec<&str>`.
+- `lib.rs:73911..73928` — three `assert_eq!(b, true|false,
+  msg)` on `parse_tts_filter_flag` → `assert!(b, msg)` /
+  `assert!(!b, msg)`.
 
-- `crates/caco-daemon/src/persistent.rs`: +148 / −0 (74 `goal: None,` insertions)
-- `crates/caco-cli/src/lib.rs`: +1 / −0 (`#[allow(dead_code)]` annotation)
+**caco-web (a11y_lint.rs, 1 fix):**
+- `no_native_title_attribute_in_dashboard_html` test
+  compiled the regex inside the per-asset loop. Hoisted
+  to before the loop (single regex, reused per asset).
+
+## Verification
+
+- `cargo clippy --workspace --all-targets -- -D
+  warnings`: clean (whole workspace).
+- `cargo test-small`: 182 pass, 1 fail —
+  `caco-web::confirm_overlay_layers_above_modal_overlay`.
+  This failure is a separate broken-on-main being
+  filed by po4-5 (they messaged at 12:48Z: "modal-
+  overlay z-index rule missing from CSS"). NOT mine.
+- `cargo test -p caco-cli --lib
+  project_show_args_include_name_alias`: 1 pass — the
+  silently-dead test now actually runs and confirms
+  `--name` is in `PROJECT_SHOW_ARGS`.
+- `cargo test -p caco-cli --lib parse_tts_filter`: 2
+  pass.
+- `cargo test -p caco-cli --lib
+  bootstrap_dev_rejects_multiple`: 1 pass.
 
 ## Operator-takeaway
 
-**This is the largest single broken-on-main wave I've repaired this session** (74 sites, 5× the previous record). It would have been caught by the merge-queue gate upgrade (bd-29bf2b) — but bd-29bf2b's gate runs on the **submitting** branch, not on main after-the-fact. Peer wmi-1's bd-6b2af8 must have:
-1. passed locally (the field-add itself is non-breaking for its own fixtures)
-2. passed the merge-queue gate (its own local fixtures had `goal: None` everywhere)
-3. landed on main, breaking everyone else's fixtures that were authored before the field-add
+bd-526670 post-reintegrate gate ('cargo check
+--workspace --tests -D warnings') is now achievable
+end-to-end on main:
+  - caco-stt-bench, caco-tui, caco-stt-protocol,
+    caco-config: green (bd-ff8249)
+  - caco-cli, caco-web: green (this bead)
 
-This is exactly the case **bd-2c399b (queue daemon)** is designed to fix: serialized reintegration where each submission is **rebased + re-tested against current main** before push. bd-29bf2b's local-gate is necessary but not sufficient; bd-e5eec5's stale-base re-check is necessary but only catches the staleness window (it didn't catch this wave — the agent that submitted bd-6b2af8 wasn't stale, the agents that fetched main later were).
+Health-log finding for next bd-8cf853 cycle: clippy
+--workspace -D warnings GREEN at HEAD. The test-only
+failure caco-web::confirm_overlay_* is being addressed
+by po4-5.
 
-Filing as P2 follow-up: **bd-29bf2b's merge-queue gate should run on main, not just on the submitting branch** — i.e. after every successful merge, the gate should re-run on main as a post-condition check, and if it fails, file a high-priority broken-on-main bead automatically. Cost: ~2-3min per merge. Benefit: catches struct-field-add-without-fanout-fixture-update at source.
-
-This cycle: **broken-on-main streak ended at 5** with two waves bundled in this repair. Reintegrate now to land before the next field-add lands.
+Operator takeaway #2 (test loss): a `bd-2c88ed`-class
+regression test sat silently dead for ~weeks because of
+a stray duplicated `#[test]` attribute. The
+`-D duplicate-macro-attributes` clippy lint flagged it;
+this is a strong argument for keeping that lint
+enabled in CI, not just allowing the easy fix to
+suppress it. Already filed thought: a future test-
+hygiene bead could add a static check that every
+`fn name(...)` immediately preceded by a doc comment
+inside `mod tests` carries an attribute (proc-macro or
+clippy custom).
