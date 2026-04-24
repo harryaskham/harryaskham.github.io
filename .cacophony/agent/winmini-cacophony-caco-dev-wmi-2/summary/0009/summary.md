@@ -1,73 +1,87 @@
-# bd-f4f4cd + bd-bf1e86 polish #4: dedup-flags fn stub + useless_format + empty-state hints
+# Session summary — bd-a66641: caco mcp rejects unknown positional subcommand
 
 ## Goal
 
-(a) Repair broken-on-main wave #7 of this session: missing `validate_dedup_apply_flags` function in `caco-cli` (tests landed without the impl) + a `useless_format` clippy violation in `caco-daemon`.
-(b) Continue bd-bf1e86 polish track: propagate the empty-state keystroke/context hints from polish #3 (inbox) to the events timeline and notifications panel. Both previously rendered as a single dim line with no context.
+Eliminate the WITHIN-NAMESPACE drift where top-level `caco
+mcp` silently swallowed any positional arg and returned the
+full 170-tool catalog while sister surfaces (`caco bd mcp
+bogus`, `caco fleet mcp bogus`, etc.) were already
+gold-standard with `unknown subcommand 'bogus' for 'caco bd
+mcp'`.
 
 ## Bead(s)
 
-- bd-f4f4cd (P1 broken-on-main, claimed + closed by reintegrate)
-- bd-bf1e86 (P2 permanent, polish #4 — stays open)
+- `bd-a66641` — `caco mcp top-level vs sub-namespace
+  WITHIN-NAMESPACE DRIFT — caco mcp silently swallows
+  positional args ... while caco bd mcp bogus errors
+  gold-standard ... ; caco mcp parent emits CATALOG content
+  while caco bd mcp parent emits HELP-as-JSON ... ; 170-tool
+  catalog envelope {version,tools} 4th no-ok surface`.
 
 ## Before state
 
-**bd-f4f4cd:**
-1. `crates/caco-cli/src/lib.rs:57441-57480` had 5 unit tests calling `validate_dedup_apply_flags(apply, interactive, json) -> Result<(), String>` plus 8 E0425 errors at compile time — the function was never landed in src. Peer's bd-fa4eb9 reintegrate dropped only the test scaffolding.
-2. `crates/caco-daemon/src/beads.rs:3238`: `format!("duplicate_of and admin_override are mutually exclusive (bd-0c9836); pick one path")` flagged by `clippy::useless_format` (no formatting args).
-
-**bd-bf1e86:**
-- `crates/caco-tui/src/views/events.rs:307`: empty timeline rendered only `"  No events yet..."` — no indication of what feeds the timeline.
-- `crates/caco-tui/src/views/notifications.rs:27`: empty notifications panel rendered only `"  No notifications"` — no indication of what populates it. Operators routinely asked "is this broken or just quiet?"
-
-This is polish #4 on bd-bf1e86, building on:
-- Polish #1 (already landed): inbox poll-error UI surfacing.
-- Polish #2 (already landed): merge-queue panel "updated Ns ago" freshness suffix.
-- Polish #3 (already landed): inbox empty-section keystroke hints.
+- `caco mcp bogus` → exit 0, full 170-tool catalog (silent).
+- `caco mcp bogus extra1 extra2` → same.
+- `caco mcp install` (operator thinks they're installing) →
+  catalog instead of error.
 
 ## After state
 
-**bd-f4f4cd:**
-1. Defined `validate_dedup_apply_flags` with the exact contract the tests pin:
-   - `interactive && !apply` → `Err("--interactive requires --apply")`.
-   - `interactive && json` → `Err("--interactive cannot be combined with --json")`.
-   - All other combinations → `Ok(())`.
-   Marked `#[allow(dead_code)]` with a comment pointing at bd-fa4eb9 — the dispatcher that will eventually call this function — so the lint doesn't trip while the dispatcher catches up. 5 tests pass.
-2. Replaced `format!()` call with bare string literal in `caco-daemon/src/beads.rs:3238`.
+The `[command] if command == "mcp"` dispatch arm now checks
+`parsed.positionals.first()` before calling
+`generate_mcp_metadata`:
 
-**bd-bf1e86 polish #4:**
-- `events.rs`: empty timeline now renders three lines:
-  ```
-    No events yet
+- `caco mcp bogus` →
+  `error: unknown subcommand 'bogus' for 'caco mcp'.
+  Allowed: stdio` (exit 1).
+- `caco mcp` (no positional) → catalog as before, behaviour
+  unchanged.
+- `caco mcp stdio` → unchanged (separate dispatch arm).
 
-    This timeline fills as beads are claimed/closed, agents start/stop, or config/daemon state changes.
-  ```
-- `notifications.rs`: empty notifications panel now renders three lines:
-  ```
-    No notifications
-
-    Daemon-side alerts (failed agents, capacity warnings, config drift) appear here.
-  ```
-- Existing notifications smoke test (`render_shows_empty_state`) still asserts on row 1 (`"No notifications"`) and continues to pass since the headline didn't move.
-
-Verification:
-- `cargo test-small`: 56/56 PASS
-- `cargo test -p caco-cli --lib validate_dedup_apply_flags`: 5/5 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+The wording mirrors the sister-surface `caco bd mcp bogus`
+gold-standard exactly, plus the `Allowed: ...` inline
+allowed-values clause from bd-d492dd / bd-548e77 cohort.
 
 ## Diff summary
 
-4 files changed, +38 / -11:
-
-- `crates/caco-cli/src/lib.rs`: +17 (new fn + #[allow] + doc comment)
-- `crates/caco-daemon/src/beads.rs`: +1 / -3 (format! collapse)
-- `crates/caco-tui/src/views/events.rs`: +9 / -4 (timeline empty-state)
-- `crates/caco-tui/src/views/notifications.rs`: +11 / -4 (notifications empty-state)
+- `crates/caco-cli/src/lib.rs`:
+  - `[command] if command == "mcp"` dispatch arm: replaced
+    bare `generate_mcp_metadata()?` with a two-line block
+    that returns the unknown-subcommand error when a
+    positional is present, otherwise calls
+    `generate_mcp_metadata()` as before.
+  - 1 new test:
+    `caco_mcp_rejects_unknown_subcommand` — runs
+    `caco mcp bogus` and asserts both substrings
+    (`"unknown subcommand 'bogus' for 'caco mcp'"` and
+    `"Allowed: stdio"`).
+- `cargo test -p caco-cli --lib
+   caco_mcp_rejects_unknown_subcommand`: pass.
+- `cargo test-small`: 175 pass.
 
 ## Operator-takeaway
 
-**Wave 7** of broken-on-main this session. New variant of the recurring antipattern: peer landed test-only changes for a function that didn't exist yet (vs. previous waves where peers landed src-side struct/fn changes without backfilling fixtures). Same underlying gap — `cargo test-small + clippy` doesn't run `--lib` workspace-wide as part of the merge gate. Mitigation already in flight at bd-29bf2b.
+Issues 2 and 3 of the bead were considered and **deliberately
+deferred**:
 
-The empty-state hint pattern from polish #3 generalizes well — same template applies anywhere the TUI says "(no data)", "is empty", "No X". Polish #5 candidates: feed view (`"  Waiting for events..."` — no follow-up context), merge-queue `(no data)` arm (already has freshness suffix from polish #2 but no explanatory hint).
+- **Issue 2** (parent emits catalog rather than help-as-JSON)
+  — the catalog IS the documented purpose of top-level
+  `caco mcp` per the spec docstring ("Inspect generated MCP
+  metadata"). Changing it to help-as-JSON would break the
+  primary purpose of the surface. The bd-02c5f7 family
+  applies to subcommand-tree branches, not to surfaces
+  whose entire reason for existing is to emit a catalog.
+- **Issue 3** (catalog envelope `{version, tools}` lacks `ok`)
+  — this envelope is a wire format consumed by external MCP
+  clients. Adding an `ok` field is a breaking change for
+  every downstream MCP integration. If a uniform
+  cross-surface `ok` policy is desired, it needs a
+  coordinated rollout / version-negotiation, not a
+  point-fix here. Worth its own bead with operator/MCP-client
+  consultation.
 
-bd-f4f4cd closes at reintegrate. bd-bf1e86 stays open for polish #5.
+This shipped fix addresses only the actionable bug (Issue 1)
+without disturbing the catalog wire format. The
+gold-standard validator wording is now consistent across
+top-level `caco mcp` and every sub-namespace `caco X mcp`
+surface — operator muscle-memory transfers cleanly.
