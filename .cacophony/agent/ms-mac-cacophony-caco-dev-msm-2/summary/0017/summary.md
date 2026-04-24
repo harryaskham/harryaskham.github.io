@@ -1,54 +1,99 @@
-# Session summary — audit-watcher fingerprint-direct dedup (bd-089f1d)
+# Session summary — Parser bare-negative-number values (bd-8b4559)
 
 ## Goal
 
-Fix the audit-watcher dedup window silently degrading once the audit-bead pool grows past 200, so that 29 ECHILD-style duplicates (observed in bd-05b1f8 / bd-180c6d) cannot recur.
+Stop the parser from rejecting bare negative-number flag values
+(e.g. `caco tts set --speed -1`) as `error: unsupported flag: -1`.
+General parser fix affecting any flag that takes a negative number
+(`--speed`, `--offset`, `--depth`, `--limit`, `--priority`, etc).
+Filed earlier this session as a follow-up from bd-56198d's
+out-of-scope notes.
 
 ## Bead(s)
 
-- `bd-089f1d` — audit-watcher: dedup query is bounded by limit=200 — fingerprint-specific lookup avoids N-bead-scan ceiling. Filed and self-claimed during this session.
+- `bd-8b4559` — caco CLI parser bare negative-number flag values
+  rejected as 'unsupported flag' (e.g. --speed -1)
+  (P2, bug, cli/parser/UX)
 
 ## Before state
 
-- `process_findings_routed` and `process_findings_with_debounce` did:
-  ```
-  list_beads(BeadFilter { label: Some("audit"), limit: Some(200), ... })
-  ```
-  then scanned the returned `Vec<Bead>.labels` for the finding's fingerprint. Once the cluster's audit pool grew past 200, older fingerprints fell outside the window and recurrences re-fired — observed in production as 29 separate ECHILD beads-sync drafts (bd-05b1f8, with bd-180c6d as the canonical instance).
+```
+$ caco tts set --speed -1
+error: unsupported flag: -1
+```
+
+`parse_command_path`'s `next_is_value` predicate rejected any
+token starting with `-` from being consumed as the preceding
+flag's value. So `-1` fell through to the unsupported-flag
+branch and the validator never saw the number.
+
+Workaround that worked: `--speed=-1` (inline equals form).
+Fixed by bd-205b39 + bd-56198d for that path.
 
 ## After state
 
-- Per-finding fingerprint lookup:
-  ```
-  list_beads(BeadFilter { label: Some(finding.fingerprint), limit: Some(8), ... })
-  ```
-  Constant-time when the labels index is hit; zero false-negatives regardless of pool size.
-- `open_bead_index` built lazily from the per-finding results; `dedup_seen` HashSet avoids redundant queries when the same finding repeats within a single batch.
-- Removed the legacy `open_labels: Vec<Vec<String>>` shim (the public `is_duplicate_finding` helper is preserved for external callers but no longer used internally).
-- New regression test `process_findings_deduplicates_past_legacy_200_audit_pool` files a canonical finding, then 250 distinct noise findings, then re-files canonical and asserts dedup still works (`new_beads_filed=0, deduplicated=1, appended=1`, canonical bead carries 'Seen again' note).
+```
+$ ./target/debug/caco tts set --speed -1
+error: --speed -1 is out of range; allowed: 0.25..=4
+$ ./target/debug/caco tts set --speed -1.5
+error: --speed -1.5 is out of range; allowed: 0.25..=4
+$ ./target/debug/caco tts set --speed -bogus
+error: unsupported flag: -bogus
+$ ./target/debug/caco tts set --speed 1.25
+TTS updated: speed: 1.25
+```
 
-## Drive-bys
-
-- `crates/caco-daemon/src/ui_stream.rs` — removed companion's re-introduced duplicate `tmux_history_limit/size` at one AgentSnapshot test fixture; added the missing pair at another that lacked them after companion's sweep.
-- `crates/caco-cli/src/lib.rs:76796` — added `disable_hooks: None` to `Profile` literal after upstream bd-1d302a added the field.
-
-## Verification
-
-- `cargo test -p caco-daemon --lib audit::` — 74 / 0.
-- `cargo test-small` — 209 / 109 / 739 / 295 / 18 / 2817 / 56 — all green.
-- `cargo check --workspace --tests` — clean.
+The parser now routes numeric-looking tokens (`-?\d+(\.\d+)?`)
+to the preceding flag's value. Validation of the parsed value
+(range checks, etc.) remains the dispatch site's responsibility
+— the parser only stops the unsupported-flag false-positive.
+Non-numeric `-`-prefixed tokens (`-bogus`, `-r`, `-Lhost:port`)
+still hit the unsupported-flag / passthrough branches as
+before — the helper is intentionally narrow.
 
 ## Diff summary
 
-- Commit: `151ec19b`
-- Files: `crates/caco-daemon/src/audit.rs` (+92 / -90), `crates/caco-daemon/src/ui_stream.rs`, `crates/caco-cli/src/lib.rs`.
-- Tests: +1 unit; 0 removed; 0 flipped.
-
-## Out of scope
-
-- A schema-level `auto_filer_signature` column / occurrence_count field (the broader bd-05b1f8 ask) — current label-based dedup is sufficient now that the lookup is fingerprint-direct.
-- Threshold-based "re-create after N quiet days" for closed signatures.
+- Files touched:
+  - `crates/caco-cli/src/lib.rs`:
+    - New free function `is_numeric_value_token(token)` —
+      classifies token as integer or decimal, optionally
+      signed. Accepts `-1`, `-1.5`, `-.5`, `+3`, `100`, etc.
+      Rejects `-`, `+`, `--foo`, `-r`, `-Lhost:port`,
+      `-1abc`, `1.2.3`, empty.
+    - In `parse_command_path`'s `flag if flag.starts_with("--")`
+      arm, widened `next_is_value` predicate from
+      `!next.starts_with('-')` to
+      `!next.starts_with('-') || is_numeric_value_token(next)`.
+- Tests: +2 / -0
+  - `bd_8b4559_is_numeric_value_token_classification` — pins
+    10 accept cases + 10 reject cases for the helper.
+  - `bd_8b4559_parser_routes_bare_negative_number_to_preceding_flag`
+    — end-to-end parser behaviour: `--speed -1`, `--speed -1.5`
+    capture the negative as value; `--speed -bogus` still errors;
+    `--speed 1.25` no regression.
+- Test command:
+  `cargo test -p caco-cli bd_8b4559` → 2 passed.
 
 ## Operator-takeaway
 
-The auto-filer cannot regress past 200 audit beads anymore; per-finding lookup is fingerprint-direct and pool-size-independent.
+`--flag -N` now works for any declared flag, just like
+`--flag=-N` does. No special-casing per command — single
+helper at the parser layer fixes the entire CLI surface.
+
+Two surfaces verified at the CLI:
+- `caco tts set --speed -1` → out-of-range (validator fires)
+- `caco tts set --speed -1.5` → out-of-range (validator fires)
+
+Validation behaviour is unchanged — only the parser's pre-flight
+filter loosened. So if you want to check whether your specific
+flag has range validation, that's a separate concern (and
+already covered for `--speed` by bd-205b39 / bd-56198d).
+
+Honored constraints:
+- No `cargo test --workspace`; targeted single-test run.
+- No daemon changes — pure parser fix in caco-cli.
+- Operator close-discipline rule: pre-close audit
+  `git log origin/main --oneline --grep bd-8b4559` will be
+  run before `caco bd close` so we don't false-close.
+
+20th bead closed this session (cumulative). 13th in this turn.
