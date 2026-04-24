@@ -1,88 +1,32 @@
-# Session summary — Expand bootstrap unit coverage (bd-040846)
+# Session summary — bd-8d51f9 Android quick-file widget
 
 ## Goal
 
-bd-040846: caco-daemon bootstrap module (974 lines, SPEC §23
-cluster init: PKI authority, cert issue/pull, join, funnel loop)
-had only 9 unit tests, all narrowly pinning URL/port parsing.
-Critical helpers — relay-peer selection, funnel backend
-formatting, host/port extraction, BootstrapAuthorityState
-serialisation — had ZERO direct coverage. Add focused unit tests.
+Land the next contained oldest-ready bead by giving the Android companion a home-screen widget that opens quick-file bead creation without making the operator navigate through the full app first.
 
 ## Bead(s)
 
-- `bd-040846` — Expand bootstrap module test coverage (966 lines, 9 tests)
+- `bd-8d51f9` — Create Android home screen widget for quick-file bead
 
 ## Before state
 
-- Failing tests: none. caco-daemon bootstrap:: 9 passing.
-- 9 of 10 public functions had no direct unit tests; only the URL
-  parsing trio (parse_port_from_url, bootstrap_public_port_from_url,
-  bootstrap_bind_port) was exercised.
+- Failing tests: none in scope before this change; the Android companion compiled, but had no app-widget provider, no widget config flow, and no widget entry activity.
+- Relevant metrics: `companion/android/app/src/main/AndroidManifest.xml` only declared `MainActivity` plus the notification receiver; `src/main/res/` had no `layout/`, `xml/`, or widget-specific drawable resources.
+- Context: the companion already had a quick-file dialog inside `MainActivity`, but there was no installable home-screen affordance and no way to pre-scope quick filing to a configured project from the launcher.
 
 ## After state
 
-- Failing tests: none. bootstrap:: 21 passing (+12).
-- All four major branches of `select_initial_relay_peer` covered.
-- Funnel backend round-trip (`expected_funnel_backend` ⇄
-  `proxy_matches_expected_backend`) pinned.
-- BootstrapAuthorityState JSON shape pinned (operators on the
-  bd-ecc616 admin dashboard key on these field names).
+- Failing tests: none observed in the targeted Android validation.
+- Relevant metrics: the companion now ships a widget provider, a widget configuration activity, a lightweight widget launch activity, compact and expanded RemoteViews layouts, provider metadata XML, and a Robolectric prefs round-trip test.
+- Context: installing the widget now prompts for a project + label, compact 2×1 placement is supported, and tapping the widget opens the Android quick-file composer directly with the configured project preselected.
 
 ## Diff summary
 
-- Files touched: `crates/caco-daemon/src/bootstrap.rs` (+275)
-- Tests: +12 / -0 / flipped 0
-
-### New tests by area
-
-**`select_initial_relay_peer` (4 tests):**
-- `picks_first_known_peer` — explicit peers[] list honoured in
-  order, filtered by static cluster nodes
-- `returns_none_when_peers_unknown` — peers[] is authoritative
-  when set; unknown entries do NOT fall through
-- `returns_none_for_direct_mesh` — direct_mesh nodes get no relay
-- `excludes_self_in_fallback_branch` — joining node excluded from
-  candidate selection in the transport-relay fallback path
-
-**`expected_funnel_backend` (1 test):**
-- `uses_loopback_https_insecure` — pins exact
-  `https+insecure://127.0.0.1:<port>` shape AND round-trip
-  agreement with `proxy_matches_expected_backend`
-
-**`bootstrap_public_host_and_port` (3 tests):**
-- `parses_explicit_port`
-- `falls_back_to_https_default`
-- `rejects_garbage` (not-a-url / file:// / empty)
-
-**URL helpers contrast (2 tests):**
-- `port_helpers_have_distinct_default_semantics` — pins
-  intentional asymmetry between parse_port_from_url (None on
-  missing) and bootstrap_public_port_from_url (defaults 443)
-- `bootstrap_public_port_from_url_defaults_443_on_garbage` —
-  pins defensive fallback so malformed public_url doesn't
-  crash funnel reconciliation
-
-**`proxy_matches_expected_backend` (1 test):**
-- `rejects_malformed_proxy` — empty / not-a-url / wrong host
-
-**BootstrapAuthorityState (1 test):**
-- `serialises_stable_keys` — JSON shape pinned (is_authority,
-  funnel.healthy, public_url skip_serializing_if = None)
-
-## Embedded artefacts
-
-(none — pure test additions to the bootstrap module)
+- Commits: `4202df9d2`
+- Files touched: `companion/android/app/src/main/AndroidManifest.xml`, `companion/android/app/src/main/java/com/cacophony/companion/widgets/QuickFileWidgetActivity.kt`, `companion/android/app/src/main/java/com/cacophony/companion/widgets/QuickFileWidgetConfigActivity.kt`, `companion/android/app/src/main/java/com/cacophony/companion/widgets/QuickFileWidgetContract.kt`, `companion/android/app/src/main/java/com/cacophony/companion/widgets/QuickFileWidgetProvider.kt`, `companion/android/app/src/main/res/drawable/quick_file_widget_background.xml`, `companion/android/app/src/main/res/layout/quick_file_widget.xml`, `companion/android/app/src/main/res/layout/quick_file_widget_compact.xml`, `companion/android/app/src/main/res/values/strings.xml`, `companion/android/app/src/main/res/xml/quick_file_widget_info.xml`, `companion/android/app/src/test/java/com/cacophony/companion/QuickFileWidgetPrefsTest.kt`
+- Tests: targeted Android compile + one targeted Robolectric unit test
+- Behavioural delta: the app now exposes a configurable launcher widget for quick-file bead creation, persists per-widget project/label preferences, adapts layout for compact widths, and opens the existing AI quick-file flow without requiring the full in-app navigation path.
 
 ## Operator-takeaway
 
-The bootstrap module is now defended at 21 tests instead of 9.
-Future refactors that:
-- change the funnel backend URL shape,
-- alter the relay peer fallback policy (e.g. accidentally include
-  self in the candidate pool),
-- rename / reshape the BootstrapAuthorityState JSON keys that the
-  bd-ecc616 admin dashboard reads,
-
-will light up loudly in focused tests instead of slipping through
-the broader integration suite.
+The Android companion now has a real quick-file home-screen entry point rather than only an in-app shortcut, and the implementation stayed intentionally small by reusing the existing quick-file composer instead of inventing a second bead-creation UI.
