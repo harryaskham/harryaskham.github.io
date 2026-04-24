@@ -1,43 +1,31 @@
-# Session summary — bd-0502bc
+# Session summary — bd-5bfb2c (slice 1)
 
 ## Goal
-Land bd-0502bc (P3, caco-cli): fix the misnamed `caco fleet disk` subcommand. The surface only ever read local-node telemetry despite the cluster-wide "fleet" prefix, misleading operators. Solution: (1) promote `caco node disk` as the canonical surface, (2) keep `caco fleet disk` working as a deprecated alias with a one-line hint, (3) add `--node` support (previously warned-and-ignored per bd-b76723) with validation for local-node-only.
+Integrate the workspace view into the main caco-web app shell as a first-class view, replacing the separate /workspace page that operator rejected as "VERY BAD, completely wrong UX, like a completely different app."
 
 ## Bead(s)
-- **bd-0502bc** (P3, caco-cli): rename `caco fleet disk` to canonical `caco node disk`. Primary bead.
+- **bd-5bfb2c** (P0 PERMANENT, caco-web): workspace-view DO-OVER
 
 ## Before state
-- `caco fleet disk` help text admitted it was "for the local node" yet lived under the cluster-wide "fleet" prefix.
-- `--node` was bd-b76723-warned-and-ignored: any `--node <name>` produced a warning but was silently ignored, always reading local-node telemetry.
-- No `node disk` subcommand existed.
-- No deprecation surface for `fleet disk`.
+- Workspace was a separate HTML page (/workspace) with its own header, CSS, JS — sharing nothing with the main app
+- Different visual language, navigation, typography from the rest of caco-web
+- Each pane reimplemented components from scratch instead of reusing canonical components
 
 ## After state
-- NEW: `caco node disk` registered in `NODE_SUBCOMMANDS` with full arg spec (`--top`, `--node`). No deprecation banner.
-- DEPRECATED: `caco fleet disk` retained in `FLEET_SUBCOMMANDS`. Summary text advertises DEPRECATED status and points to `caco node disk`. Text mode emits a one-line note before the table.
-- `--node` validation:
-  - Empty value rejected: "--node must not be empty (bd-0502bc)".
-  - Non-local node name rejected with clear error naming the local node and deferring cluster-aggregation to a follow-on bead.
-- JSON mode adds: `node: <local_node_name>`, `deprecated_surface: <bool>`, `canonical_surface: "caco node disk"`.
-- `dispatch_fleet_disk` signature extended to `(top, node_filter, legacy_alias, json_requested, config_override)`, routing both surfaces through shared implementation.
-
-## Tests
-- New test `bd0502bc_node_disk_subcommand_is_registered`: pins node disk registration + MCP/agent-safe/idempotent flags + --top/--node presence.
-- New test `bd0502bc_fleet_disk_alias_accepts_node_flag`: pins --node presence on legacy alias + DEPRECATED/canonical_surface strings in summary.
-- New test `bd0502bc_node_disk_rejects_empty_node_value`: pins empty --node rejection in both text and JSON modes.
-- New test `bd0502bc_node_disk_rejects_non_local_node`: pins end-to-end rejection of a non-local --node value via real dispatch path.
-- Existing `fleet_disk_subcommand_is_registered` still passes (alias unchanged).
-- Build: `cargo build -p caco-cli --tests` clean (post bd-ee2dd4 fix).
+- Workspace is now `<div class="view" id="view-workspace">` inside index.html
+- Same sidebar nav (keyboard shortcut 'w'), same header, same SSE state
+- Splittable pane layout with H/V splits, drag-resize handles, ratio persistence
+- 7 pane types (terminal, agents, beads, chat, logs, feed, source) all rendering from window.state
+- CSS uses existing design tokens (--bg-primary, --accent-primary, --border-subtle)
+- Layout persisted to localStorage (caco.workspace.layout)
+- Pane contents auto-refresh on SSE snapshot via Workspace.refresh() hook
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs`: +324/-20 lines across:
-  - New `NODE_DISK_ARGS` const (bd-0502bc marker).
-  - Updated `NODE_SUBCOMMANDS` with new "disk" entry.
-  - Updated `FLEET_SUBCOMMANDS` disk entry with DEPRECATED summary.
-  - Extended `FLEET_DISK_ARGS` with --node (deprecation pointer version).
-  - Extended `dispatch_fleet_disk` signature and body for node_filter, legacy_alias handling, deprecation note, JSON envelope changes, --node validation.
-  - Dispatcher routing for both `fleet disk` and `node disk` with shared logic.
-  - 4 new bd0502bc_* tests.
+- index.html: +nav item, +view-workspace container with split controls
+- workspace-integrated.js: new 500-line file with pane tree model + renderers
+- style.css: +workspace CSS using existing tokens
+- app.js: +Workspace.refresh() hook in snapshot handler
+- tests.rs: +4 new tests, +view-workspace to existing view list test
 
 ## Operator-takeaway
-Every operator who typed `caco fleet disk --node helsinki` and got warned-then-ignored now gets a clear "not the local node" error with guidance. Every operator discovering the surface via `caco fleet` help now sees "DEPRECATED — use `caco node disk` instead". The cluster-aggregation surface (actual per-peer telemetry via daemon RPC) remains deferred to a follow-on bead, but the naming and operator affordances are now honest.
+Press 'w' to switch to Workspace. Split panes with the toolbar buttons, change pane types via dropdown, drag handles to resize. Each pane shows the same data as the canonical views. This is slice 1 — terminal xterm.js mounting and further polish are next.
