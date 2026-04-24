@@ -1,59 +1,109 @@
-# bd-3fa3c6: caco agent ship — atomic rebase + reintegrate wrapper
+# Session summary — bd-5bd14b: caco prune list --json wraps in {ok, data, meta} envelope
 
 ## Goal
 
-Implement `caco agent ship --id <id> [--mode <mode>] [--comment <s>]` as an atomic wrapper that runs `agent rebase` followed by `agent reintegrate`. Eliminates the manual rebase → (fail) → force-with-lease → reintegrate dance that operators (and agents like me) have done 10+ times this session.
+Address bd-5bd14b's two implementable items:
+
+- **Issue 3** — `caco notify get --id ''` leaks HTTP 404
+  EOF on the same surface that returns gold-standard
+  structured failure for `--id bogus` (within-surface
+  inconsistency).
+- **Issue 4** — `caco prune list --json` emits OK+flat
+  envelope (8th flat-drift surface in the bd-5ae1ce
+  catalogue).
+
+Investigation: **Issue 3 is already fixed in source** via
+bd-d761db Issue 6 (`if id.trim().is_empty()` guard at the
+dispatch boundary; both text and JSON paths emit
+`invalid_argument` structured error). The repro the bead
+shows still hits because the deployed binary on PATH
+(1.2.535) lags the source. No source change needed for
+Issue 3.
+
+Issue 4 is the actionable item: wrap `dispatch_prune_list`
+JSON output in the standard envelope.
+
+Issues 1 + 2 are positive observations (gold-standard
+structured-failure envelope + canonical error.code enum
+proposal). Issue 5 onwards (--notify-id alias) are
+bd-b76723 family / cross-cutting.
 
 ## Bead(s)
 
-- bd-3fa3c6 (P3 feature; closes via reintegrate)
+- `bd-5bd14b` — `caco notify get + prune list — 2ND SURFACE
+  CONFIRMS bd-b724cb STRUCTURED FAILURE ENVELOPE PROMOTE...`
 
 ## Before state
 
-Operators landing work needed 4 commands in sequence, with manual conflict-handling between each:
-1. `caco agent rebase --id X` (sync onto current main)
-2. `caco agent reintegrate --id X --mode direct,recorded`
-3. If reintegrate fails on non-FF: `git fetch origin agent/<branch> && git reset --hard FETCH_HEAD && git merge -X theirs origin/main && git cherry-pick <SHA>`
-4. Re-attempt reintegrate
+```
+$ caco prune list --json | jq 'keys'
+["agents", "ok", "total_reclaimable_bytes", "total_reclaimable_human"]
+```
 
-This pattern has been the dominant footgun this session — see "Key Decisions" in the persistent agent context for the bd-727210 footgun routine.
+OK+flat: `ok` is at top level (good — passes `jq -e .ok`)
+but `agents`/`total_*` siblings instead of nested under
+`data`/`meta`. 8th surface in the flat-drift cohort
+catalogued by bd-684112, bd-7abbba, bd-0b47a7, bd-20747b
+(show + validate), bd-36edaa schema, bd-4df284 (service
+show + service status).
 
 ## After state
 
-New `caco agent ship` subcommand:
-- `AGENT_SHIP_ARGS` constant defines `--id` (required), `--mode`, `--comment` (both optional, forwarded to reintegrate)
-- `CommandSpec` entry registers the command in the agent subcommand table (mcp_enabled, agent_safe)
-- Dispatch arm at `[cmd, sub] if cmd == "agent" && sub == "ship"` parses flags
-- New `dispatch_agent_ship(id, mode, comment, json_requested, config_override)` function:
-  1. Calls `dispatch_agent_rebase(id, json_requested, config_override)` — propagates rebase conflicts as-is (already produces operator-friendly output)
-  2. On rebase success, calls `dispatch_agent_reintegrate(id, mode, comment, false, None, None, false, None, None, None, None, json_requested, config_override)` — passing only the flags that ship surfaces
-  3. JSON mode: emits an `{ok, agent_id, steps: {rebase: {...}, reintegrate: {...}}}` envelope
-  4. Text mode: emits `agent X shipped:\n--- rebase ---\n...\n--- reintegrate ---\n...` so the operator sees both step's output
+```
+$ caco prune list --json | jq 'keys, .data | keys, .meta | keys'
+["data", "meta", "ok"]
+["agents"]
+["count", "total_reclaimable_bytes", "total_reclaimable_human"]
+```
 
-This is sugar on top of existing functions — no new business logic, just composition. Implementation is ~60 LOC including doc-comment.
+Joins the {ok, data, meta} cohort. Totals + count live in
+`.meta` as metadata about the agent set; the agent list
+itself is under `.data.agents`.
 
-Verification:
-- `cargo build -p caco-cli`: clean
-- `cargo test-small`: 57/57 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
-- No broken-on-main this cycle (merge-queue gate working).
+BREAKING for scripts reading top-level `.agents` /
+`.total_reclaimable_*`: each gets a one-token jq path
+prefix update (`.agents` → `.data.agents`,
+`.total_reclaimable_bytes` → `.meta.total_reclaimable_bytes`).
+The `ok` field stays at top level so `jq -e .ok` health
+probes are unaffected.
 
 ## Diff summary
 
-1 file changed, +89 / −1:
-
 - `crates/caco-cli/src/lib.rs`:
-  - +21 / −0 `AGENT_SHIP_ARGS` constant
-  - +11 / −0 CommandSpec entry
-  - +7 / −0 dispatch arm
-  - +59 / −1 (the −1 is just `fn dispatch_agent_rebase(` becoming a continuation of the previous edit) `dispatch_agent_ship` function
+  - `dispatch_prune_list`: replaced the OK+flat JSON
+    output with `{ok, data: {agents}, meta: {count,
+    total_reclaimable_bytes, total_reclaimable_human}}`.
+    Comment notes the breaking-script implication and
+    catalogs this as the bd-5ae1ce 8th surface conversion.
+  - 1 new test:
+    `dispatch_prune_list_json_uses_ok_data_meta_envelope`
+    — source-greps the function body for the bd-5bd14b
+    marker, the `data` / `meta` envelope keys, and the
+    `agents` / `total_reclaimable_bytes` field placements
+    so the shape can't silently regress.
+- `cargo test -p caco-cli --lib dispatch_prune_list_...`:
+  pass.
+- `cargo test-small`: 182 pass.
 
 ## Operator-takeaway
 
-**`caco agent ship` is the daily-driver command operators (and agents) have wanted all session.** Replaces a 4-step routine with one command that:
-1. Rebases onto current main
-2. On success, immediately reintegrates with the operator's preferred mode
+The `{ok, data, meta}` envelope cohort gains another
+surface. Of the 8-surface flat-drift catalogue, two are
+now resolved (this bead's prune list + bd-44af89's doctor
+schema landed earlier in this drain).
 
-Footgun-cycle handling stays manual — when a peer races my reintegrate and the agent branch goes stale mid-flight, the operator still needs `git fetch origin agent/<branch> && git reset --hard FETCH_HEAD && git merge -X theirs origin/main && git cherry-pick <SHA>`. That's a separate slice (could be `caco agent unwedge` or extending `agent ship` to detect-and-recover, deferred to a follow-up bead).
+Issue 3 (notify get --id '') is **already fixed in source**
+via bd-d761db Issue 6 — the deployed-binary lag will
+resolve on next release cut. Verified by reading
+`dispatch_notify_get` callsite in the dispatch table:
+the `if id.trim().is_empty()` guard is in place and emits
+the canonical `invalid_argument` structured error in both
+text and JSON modes. No additional source change needed.
 
-This cycle: **third quiet cycle in a row** (no broken-on-main waves to repair). The merge-queue gate upgrade (bd-29bf2b) + fast-test-gate stale-base re-check (bd-e5eec5) are clearly working. Total pre-rebase reintegrate footgun count dropped from ~1-per-cycle to 0. We can scale the agent fleet now.
+Issues 1 + 2 (structured-failure envelope + canonical
+error.code enum) are positive observations and a
+cluster-wide retrofit roadmap, not point fixes for this
+bead. Worth a meta-tracker bead enumerating the 13
+candidate surfaces (5 HTTP 404 EOF leaks + 3 HTTP 400
+JSON leaks + 5 JSON-broken-on-error surfaces) so the
+retrofit can be scheduled in priority order.
