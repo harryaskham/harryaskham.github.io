@@ -1,26 +1,25 @@
-# Session summary — bd-87b21c caco doctor --node wiring
+# Session summary — bd-6c1c5d caco hello-world local/cluster swap
 
 ## Goal
-Make `caco doctor --node <name>` actually scope output (was a documented no-op).
+Fix `caco hello-world --json` labelling Tailscale IP as 'local' and loopback as 'cluster'.
 
 ## Bead(s)
-- `bd-87b21c` — caco doctor --node flag completely inert; help promises cosmetic labelling but it doesn't fire
+- `bd-6c1c5d` — daemon listener local/cluster swap in hello-world JSON
 
 ## Before state
-- `--node` parsed by clap but never reached dispatch_doctor.
-- Header always read local hostname; `--node bogus` and `--node ''` silently accepted.
-- Cosmetic-labelling promise in help was a lie.
+- runtime.listeners.daemon.local = `<bind_host>:<cluster_port>` (peer-reachable)
+- runtime.listeners.daemon.cluster = `127.0.0.1:<cluster_port>` (loopback)
+- Bootstrap consumers routed traffic exactly inverted.
 
 ## After state
-- main dispatch threads `parsed.flags.get("--node")` into dispatch_doctor.
-- Empty / unknown values rejected with clean error listing configured nodes.
-- Valid override propagates to: header label, config-check detail, `caco_cert::status_for_node`, `resolve_effective_daemon_listener`.
-- `local_node_name` retained distinctly so future probes can opt out of the override.
-- 3 new tests pin the behaviour (relabels, unknown errors, empty errors).
+- daemon.local = `127.0.0.1:<api_port>` (loopback, co-located only).
+- daemon.cluster = `<bind_host>:<public_cluster_port>` (mesh-reachable).
+- New `resolve_static_local_api_port` helper sources the API port; existing `resolve_static_cluster_contract` preserved (daemon-serve binder still needs cluster bind port).
+- 2 new tests pin both helpers.
 
 ## Diff summary
-- `crates/caco-cli/src/lib.rs` (+157 / -5): dispatch wiring, validation, 3 tests, signature update at 3 existing test call sites.
-- `cargo test-small`: 151 passing.
+- `crates/caco-cli/src/lib.rs` (+86 / -5): new helper, dispatcher fix, contract doc comment, 2 tests.
+- `cargo test-small`: 153 passing.
 
 ## Operator-takeaway
-`caco doctor --node helsinki` now actually scopes the output to helsinki (label, cert, daemon listener). `--node bogus` / `--node ''` produce clean errors instead of silent fall-through.
+`caco hello-world --json` now reports local/cluster correctly. Bootstrap tooling that consumed the JSON to choose dial addresses is unblocked.
