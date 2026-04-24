@@ -1,90 +1,70 @@
-# Session summary — bd-7b9a32: dev-loop link-step optimisation
+# Session summary — bd-408b35: ReimportRepairCounts on sync/open path
 
 ## Goal
 
-Investigate the ~3min cold rebuild observed for trivial single-line
-edits to `crates/caco-daemon/src/agent/lifecycle.rs`, identify whether
-the link/codegen step or the rustc compile step dominates, and land
-the highest-bang-per-buck improvement that requires no new tooling.
+Land step (a)+(b) of the bd-18aa72 plan (per msm-3 split note):
+a typed `ReimportRepairCounts` struct surfaced from `reimport_journal`
+and `reconcile` so the existing eprintln-only repair signal becomes
+consumable by the doctor sensor (child 2/3) and reconciler footer
+(child 3/3) without further beads-store edits.
 
 ## Bead(s)
 
-- `bd-7b9a32` — caco-daemon cold rebuild ~3min for trivial
-  lifecycle.rs edit — investigate link-step + codegen units (P3 task).
+- `bd-408b35` — [bd-18aa72 child 1/3] expose ReimportRepairCounts on
+  caco-beads sync/open path (P3 task).
 
 ## Before state
 
-- Workspace `Cargo.toml` had **no `[profile.dev]` overrides at all**.
-  Default rustc dev profile on Linux uses `split-debuginfo = "off"`,
-  which means every link step copies the full debuginfo of every
-  dependency into the final binary.
-- `.cargo/config.toml` had no `[target.*]` linker override; the
-  default GNU `ld` (via gcc-wrapper) was in use. Neither `mold` nor
-  `lld` are on PATH in the agent environment.
-- Measured baseline: incremental rebuild after a one-line edit to
-  `crates/caco-daemon/src/agent/lifecycle.rs` took **1m 17s** wall
-  time; the rustc compile step itself was fast and the link step
-  dominated.
+- The lenient `IndexMode::ReimportTruncate` repair path in
+  `index_mutation_in_tx_with_mode` eprintln'd a per-repair diagnostic
+  but produced no structured output. Callers (reimport_journal,
+  reconcile) returned `Result<(), BeadsError>` or `ReconcileResult`
+  with no repair-count surface. The doctor sensor (bd-18aa72 child
+  2/3) would have to parse stderr to know whether reimport is silently
+  fixing data.
 
 ## After state
 
-- `Cargo.toml` adds a `[profile.dev]` block setting
-  `split-debuginfo = "unpacked"`. With this, rustc keeps debuginfo in
-  per-object `.o` files alongside the rlibs, the linker only emits a
-  `.dwo` index, and incremental link time drops substantially with no
-  functional change. The setting is supported by stable rustc and
-  requires no new tooling on the host.
-- The block is documented inline with the bead provenance
-  (`bd-7b9a32`), the measured before/after numbers, and a `Future
-  work` note pointing operators at the `mold`/`lld` opt-in via
-  `.cargo/config.toml` should they want to install one of those
-  linkers later.
-- Measured after: incremental rebuild after the same one-line edit
-  took **59 s** wall time — a **24% improvement** with zero
-  functional risk, no new tools, no PATH changes, and no profile
-  divergence between agents.
+- New `ReimportRepairCounts` struct in `crates/caco-beads/src/model.rs`
+  with `empty_title_repairs` and `oversized_title_repairs` counters,
+  `is_zero()` predicate, and `total()` aggregator.
+- `ReconcileResult` gains a `reimport_repairs: ReimportRepairCounts`
+  field with `#[serde(default, skip_serializing_if = "is_zero")]` so
+  clean reconcile envelopes carry no all-zero block (existing JSON
+  consumers see no envelope drift).
+- `index_mutation_in_tx_with_mode` takes an optional `&mut
+  ReimportRepairCounts` and increments the appropriate counter in the
+  empty-title and oversized-title repair branches (alongside the
+  existing eprintln).
+- New `index_mutation_in_tx_lenient_with_counts` variant; legacy
+  `index_mutation_in_tx_lenient` passes `None` (no counter overhead).
+- `reimport_journal` returns `ReimportRepairCounts` instead of `()`.
+- `reconcile_with_options` threads its `result.reimport_repairs`
+  through the import phase.
 
 ## Diff summary
 
-- 1 file changed, +21 / -0:
-  - `Cargo.toml` — append `[profile.dev]` with
-    `split-debuginfo = "unpacked"` and an inline docblock.
+- 2 files changed, +260 / -18:
+  - `crates/caco-beads/src/model.rs` — add `ReimportRepairCounts`
+    struct and `reimport_repairs` field on `ReconcileResult`.
+  - `crates/caco-beads/src/store.rs` — thread counter through
+    `index_mutation_in_tx_with_mode`, add
+    `index_mutation_in_tx_lenient_with_counts`, change
+    `reimport_journal` return type, wire reconcile import phase,
+    and add 3 regression tests.
 
 ## Validation
 
-- Empirical timing on this checkout, single-line edit to
-  `crates/caco-daemon/src/agent/lifecycle.rs`:
-  - Before: `cargo build -p caco-daemon` → **1m 17s** real.
-  - After (post-clean, full rebuild then incremental): incremental
-    rebuild → **59 s** real, a **24% reduction**.
-- The very first build after the change (the post-`cargo clean -p
-  caco-daemon` rebuild of every dependency) took 2m 16s, which is
-  expected — the savings show up on every subsequent edit-loop
-  iteration, not the cold rebuild itself.
-- No code paths changed; no test surface affected.
+- `cargo test -p caco-beads --lib reimport_journal_returns_zero`: pass.
+- `cargo test -p caco-beads --lib reimport_journal_counts`: pass.
+- `cargo test -p caco-beads --lib reconcile_surfaces`: pass.
+- `cargo check --workspace --tests`: clean.
 
 ## Operator-takeaway
 
-A 24% iteration-loop win across every caco-dev worker touching
-caco-daemon, for one Cargo.toml line. The bead also surfaced two
-real follow-ups that are worth their own beads if/when someone has
-a free hour:
-
-1. **Install `mold` or `lld` in the agent base image** and add an
-   opt-in `[target.x86_64-unknown-linux-gnu]` linker block in
-   `.cargo/config.toml`. The toolchain change is small, the tooling
-   has to land in the Nix profile first, and the further win is
-   probably another 30-50% on incremental link.
-2. **Audit `caco-daemon/src/lib.rs` (~80k lines) and `agent/*.rs`
-   (~8k+ each) for crate-split candidates**. The bead mentions
-   `bd-1617ab` as the broader agent.rs decomposition draft — that's
-   the right surface for any structural work; this bead's win was
-   intentionally scoped to a non-invasive profile tweak so it could
-   land in a single session.
-
-The `split-debuginfo` choice (`"unpacked"`) was deliberate over
-`"packed"`: `"unpacked"` is the better dev-loop choice because the
-linker only has to emit the index, not gather debuginfo into a
-single `.dwp` file. `"packed"` is preferable for shipping artefacts
-where a single debug bundle is desired, but this profile is
-dev-only.
+This is purely internal plumbing — no CLI, TUI, or wire-format
+change. The two remaining children (doctor sensor, reconciler
+footer) can now consume `ReimportRepairCounts` directly off the
+`ReconcileResult` without re-parsing eprintln. The
+`skip_serializing_if = "is_zero"` guard ensures that the 99% case
+(clean journal, no repairs) adds zero bytes to the JSON envelope.
