@@ -1,57 +1,107 @@
-# bd-f72c32 + bd-bf1e86 polish #3: SessionKickedModal backfill + inbox empty-state keystroke hints
+# Session summary — bd-105e0c: undelivered.jsonl hard-cap safety net
 
 ## Goal
 
-(a) Repair the latest broken-on-main wave (4 `SessionKickedModal{}` fixture sites missing newly-required `tmux_history_*` fields).
-(b) Continue the bd-bf1e86 polish track: when an inbox section is empty, tell the operator how to leave it. Operators routinely conclude "the inbox is broken" when really they're parked on a quiet tab.
+Bound `undelivered.jsonl` disk usage on busy nodes where
+fan_out queues entries faster than ack-driven and retry-driven
+compaction can drain them. The bd-8469eb retention sweep
+(7-day TTL on a long cadence) is the right policy for "peer
+never came back" but useless as a defence against minutes-scale
+regrowth — observed at 71 MB / 13 min on helsinki post-rotation.
 
 ## Bead(s)
 
-- bd-f72c32 (P1 broken-on-main, claimed + closed by reintegrate)
-- bd-bf1e86 (P2 permanent, polish #3 — stays open)
+- `bd-105e0c` — `undelivered.jsonl regrows aggressively
+  post-rotation — bd-8469eb acceptance criteria breached`.
 
 ## Before state
 
-**bd-f72c32:** `cargo test-small` and `cargo clippy --workspace --all-targets -- -D warnings` both failed at E0063 with 4 sites in `crates/caco-tui/src/app.rs` (lines 53594, 53638, ~+45/+85): every `SessionKickedModal { … }` literal lacked the `tmux_history_limit` / `tmux_history_size` fields that the modal struct now declares as required. Same pattern as bd-bce6ea / bd-ab1c38; fundamental mitigation tracked at bd-29bf2b (mixin gate upgrade — already claimed by ms-dev-msd-4).
-
-**bd-bf1e86:** Empty inbox sections rendered as a single dim line — `"  No choices"`, `"  No direct messages"`, `"  Inbox is empty"`, etc. — with no indication that:
-- ←/→ cycle through the other sections (which may have items).
-- `Tab` toggles the archived view.
-
-This is the polish-#3 cycle on bd-bf1e86. Polish #1 was the inbox poll-error UI; polish #2 was the merge-queue freshness indicator. The bead is permanent and explicitly framed as "a place to land continuous TUI papercut fixes".
+- After rotation, undelivered.jsonl could grow to 71 MB / 83k
+  lines in 13 min on a busy node.
+- combined feed.jsonl + undelivered.jsonl crossed the 100 MB
+  bd-8469eb threshold within minutes.
+- The only bounding mechanisms were:
+  - `process_acks` compaction (driven by peer responsiveness).
+  - `retry_undelivered` compaction (10-second tick, drops only
+    entries past `MAX_RETRY_ATTEMPTS`).
+  - `prune_retention` (TTL = 7 days, runs periodically).
+- None of these caps the file between sweeps when peers are
+  slow/unreachable and write rate exceeds drain rate.
 
 ## After state
 
-**bd-f72c32:** Cargo-error-driven Python script applied (`/tmp/cw3.txt` → walk close braces → insert before): 4 `SessionKickedModal{}` literals backfilled with `tmux_history_limit: None, tmux_history_size: None`.
+`queue_undelivered` now enforces a hard size cap after each
+append:
 
-**bd-bf1e86 polish #3:** Empty-state rendering now emits two paragraphs separated by a blank line:
+- `UNDELIVERED_HARD_CAP_BYTES = 32 MB` ceiling.
+- `UNDELIVERED_HARD_CAP_KEEP_LINES = 20_000` newest entries
+  retained on emergency compaction (~17 MB at observed
+  ~850 bytes/line, comfortably below the cap).
+- New helper `compact_undelivered_to_newest(keep)` does FIFO
+  drop of the oldest entries. FIFO is correct because the
+  oldest entries are also the ones closest to the 7-day TTL
+  and the `MAX_RETRY_ATTEMPTS` cutoff.
+- Errors during emergency compaction are non-fatal —
+  `queue_undelivered` itself succeeded, the next append /
+  next sweep retries the cap. A `bd-105e0c:` log line is
+  emitted on both successful and failed compaction so
+  operators can see when the safety net triggers.
 
-```
-  No direct messages
-
-  Press ←/→ to switch section, or Tab to view archived.
-```
-
-Per-section variants:
-- `Choices`, `DirectMessages`, `Broadcasts`, `Speech`: hint mentions both ←/→ section cycling and `Tab` archived toggle.
-- `All`: hint mentions only `Tab` (no other sections to switch to that aren't already aggregated).
-- `inbox_show_archived` view: hint mentions only `Tab` to return to active inbox.
-
-Verification:
-- `cargo test-small`: 56/56 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+The bd-8469eb sweep (7-day TTL) and the retry/ack compaction
+remain the primary mechanisms; this is purely a safety net
+for the regrowth case.
 
 ## Diff summary
 
-2 files changed, +45 / -8:
-
-- `crates/caco-tui/src/app.rs`: +8 (4 paired field insertions for SessionKickedModal)
-- `crates/caco-tui/src/views/inbox.rs`: +37 / -8 (per-section empty-state with hint paragraphs)
+- `crates/caco-daemon/src/store.rs`:
+  - Added `UNDELIVERED_HARD_CAP_BYTES` and
+    `UNDELIVERED_HARD_CAP_KEEP_LINES` consts with rationale
+    docstrings.
+  - `queue_undelivered`: drop file handle after write, then
+    stat the path and trigger
+    `compact_undelivered_to_newest(UNDELIVERED_HARD_CAP_KEEP_LINES)`
+    when the size crosses the cap. Errors logged but
+    non-fatal.
+  - New private helper `compact_undelivered_to_newest(keep)` —
+    no-op when entries ≤ keep, otherwise rewrite with the
+    newest `keep` only; logs the drop count.
+  - 1 new test:
+    `compact_undelivered_to_newest_drops_oldest_first` —
+    queues 5 entries with distinct peer names, asserts that
+    `compact_undelivered_to_newest(2)` keeps the newest 2 in
+    insertion order (node3, node4) and is idempotent /
+    no-op when keep ≥ current count.
+- `cargo test -p caco-daemon --lib
+   compact_undelivered_to_newest_drops_oldest_first`: pass.
+- `cargo test-small`: 162 pass.
 
 ## Operator-takeaway
 
-Two flavors of the same recurring footgun in one commit:
-1. **Mechanical (bd-f72c32)** — 4 more sites broken by the same struct-evolution-without-grep antipattern. Sixth wave in this session. Mitigation already in flight at bd-29bf2b; nothing to add.
-2. **Discoverability (bd-bf1e86 polish #3)** — empty list rendered as a single line is an information-vacuum. Adding a one-line keystroke hint costs almost nothing and removes the "is this broken?" question entirely. Same pattern should be applied wherever the TUI says "(no data)" or "is empty" without telling the operator how to do something useful next. Candidates for follow-up polish: `Cluster > Merge Queue ─ (no data)` (no hint), events timeline `"  No events yet..."` (no hint), feed view empty (no hint), notifications view empty.
+The bead's primary suggestion (per-entry delivery-confirm
+prune) is already in place via `process_acks`. The actual
+gap is the absence of a hard upper bound when ack/retry
+drain rate falls behind queue rate — a 5.5 MB/min sustained
+write rate against a 10-second retry tick is a structural
+mismatch that no per-entry refinement can fully close.
 
-bd-f72c32 closes at reintegrate. bd-bf1e86 stays open for polish #4 — likely "propagate empty-state hints to the other surfaces listed above".
+The hard cap is a defensive backstop, not the canonical drain
+mechanism: it kicks in only in pathological regrowth windows,
+keeps the file bounded at ~32 MB worst case, and trades a
+small risk of dropping the oldest pending entries (the ones
+closest to TTL/MAX_RETRY anyway) for guaranteed bounded disk
+use.
+
+Out of scope (left as separate beads if relevant):
+- Tuning `RETRY_INTERVAL_SECS` (10s) — increasing retry
+  frequency on busy nodes could reduce the regrowth window.
+- Per-peer queue partitioning so a single flaky peer doesn't
+  back up the global file.
+- Triggering an immediate `prune_retention` from inside the
+  cap-fire path.
+
+The bd-8469eb acceptance criterion ("daemon directory bytes
+outside daemon.db stay under 100 MB on a busy node
+steady-state") is now defensible: feed.jsonl ≤ 14-day TTL +
+its own JSONL_PRUNE_MIN_BYTES floor, undelivered.jsonl ≤
+32 MB hard cap. Together they're well under the 100 MB
+threshold even mid-regrowth.
