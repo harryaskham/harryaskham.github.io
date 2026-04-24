@@ -1,68 +1,77 @@
-# Session summary — caco bd triage --interactive draft loop
+# Session summary — Nix build for the macOS app (bd-aa8a1a)
 
 ## Goal
 
-Add the interactive UX layer described in bd-eef036 on top of the existing
-non-interactive `caco bd triage --next/--promote/--discard/--defer`
-primitives, so an operator can sit at a terminal and triage the draft
-backlog one bead at a time without scripting glue.
+Wire `companion/macos/` into the top-level Nix flake so the macOS
+native app can be built and smoke-tested hermetically with a single
+command, on every developer's machine and in CI, without depending
+on Xcode being on PATH.
 
 ## Bead(s)
 
-- `bd-eef036` — [bd-2e2338 follow-up] caco bd triage --interactive:
-  promote/discard/merge-into/defer/label loop on the draft pool
+- `bd-aa8a1a` — Configure Nix builds for entire macOS app stack.
+- (parent: `bd-6d67e0` — Implement native macOS app with liquid
+  glass design.)
+- (precedes: `bd-ff6982` (CI), `bd-5cded9` (release artifacts).)
 
 ## Before state
 
-- `caco bd triage` only exposed read-only `--next` and per-bead-id
-  `--promote / --discard / --defer` (each requiring `--bead-id`),
-  meaning operators had to script around `caco bd triage --next --json |
-  jq -r ...` to get an interactive feel.
-- No merge-into action; no general add-label action.
-- No session cap.
-- Failing tests: none.
+- `nix build .#cacophony-macos-app` did not exist.
+- `flake.nix` only built `caco` and `tmux-cli`; nothing knew about
+  `companion/macos/`.
+- Developers had to invoke `nix shell --inputs-from .. nixpkgs#swift
+  nixpkgs#swiftpm -c swift build` by hand from inside the package
+  directory to build anything.
 
 ## After state
 
-- `caco bd triage --interactive` enters a per-bead loop:
-  P (promote, optional priority bump), D (discard with reason), M
-  (merge-into another bead, source description appended to target,
-  source closed with audit trail), F (defer label
-  `deferred-YYYY-MM-DD`), L (add a label, preserving existing labels by
-  GET-then-PUT), S (skip), Q (quit).
-- `--max N` (default 50) caps a session.
-- `--type` / `--priority` filters scope the draft queue.
-- The draft list is re-fetched each iteration so concurrent peer triage
-  is observed.
-- `--interactive` + `--json` is rejected with `invalid_argument`.
-- Two new unit tests:
-  `bd_triage_args_includes_interactive_and_max`,
-  `triage_session_summary_total_sums_all_actions`.
-- `cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
-  clean, `cargo build` clean.
+- `nix build .#cacophony-macos-app` works on `aarch64-darwin` and
+  `x86_64-darwin`.
+- The derivation:
+  - builds `Sources/CacophonyKit`, `Sources/Cacophony`, and
+    `Sources/CacophonyKitSmoke` under the nixpkgs `swift` +
+    `swiftpm` toolchains;
+  - runs `swift run CacophonyKitSmoke` in `checkPhase` (8 / 8
+    green inside the sandbox);
+  - installs `result/bin/Cacophony`,
+    `result/bin/CacophonyKitSmoke`, and a minimal
+    `result/Applications/Cacophony.app/` bundle with a real
+    `Info.plist` (CFBundleIdentifier `com.cacophony.macos`,
+    `LSMinimumSystemVersion 14.0`, version pulled from
+    `cargoVersion`).
+- Linux + non-darwin systems are unaffected: the package is gated
+  behind `pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin`.
+- `companion/macos/README.md` and `docs/macos-development.md` §8
+  document the new `nix build .#cacophony-macos-app` path.
 
 ## Diff summary
 
-- Commit: 1c14e280
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: +2 / -0 / flipped 0
-- Behavioural delta: new interactive triage mode; existing modes
-  unchanged.
+- Files touched:
+  - `flake.nix` — added `cacophony-macos-app` derivation (darwin-only
+    via `optionalAttrs stdenv.isDarwin`).
+  - `companion/macos/README.md` — Nix build documented as the
+    primary path; bd-aa8a1a marked landed.
+  - `docs/macos-development.md` — §8 "Quick start" updated.
+- Tests: smoke-test target invoked inside `checkPhase` (8 checks);
+  no new tests added.
+- Behavioural delta: `nix build .#cacophony-macos-app` produces a
+  hermetic, smoke-tested macOS app artefact. No Rust / non-darwin
+  surfaces affected.
+
+## Embedded artefacts
+
+- (none — output is a sandbox-validated `result/` symlink and a
+  signed-only-by-default `.app` bundle. Real signing / notarisation
+  is bd-5cded9.)
 
 ## Operator-takeaway
 
-This bead is the second slice of the bd-2e2338 triage epic — read-only
-`--next` shipped first, scripted single-bead actions second, now an
-interactive loop. The L (label) action is intentionally GET-then-PUT
-rather than a delta-style PATCH so existing provenance labels
-(`discovered-via-*`) are preserved across triage; if a future bead adds
-server-side label-set semantics that change should be a one-line swap.
-The M (merge-into) action is end-state-only — it appends the source
-description into the target and closes the source; it does not try to
-move metadata, dependencies, or assignees, because in practice draft
-beads being merged carry no such state.
-
-Out of scope but called out in the original bead: dup-detection by
-title-similarity for auto-suggested merges, sort by age/type/priority,
-batch heuristics. File follow-ups when an operator actually hits the
-need.
+Cold `nix build` is ~70s on M-series silicon (the Swift toolchain
+download is the dominant cost on first run; subsequent builds are
+~5-10s warm). The build deliberately produces a *minimal* `.app`
+bundle (no signing, no notarisation, no embedded assets) so it can
+run sandbox-only — the signed/notarised release artefact is
+explicitly bd-5cded9's scope. This means CI (bd-ff6982) only needs
+to invoke `nix build .#cacophony-macos-app` and check the exit
+code; the smoke tests run as part of `checkPhase`. Linux runners
+naturally skip the package because of the darwin gate.
