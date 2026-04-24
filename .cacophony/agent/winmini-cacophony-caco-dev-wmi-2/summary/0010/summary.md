@@ -1,63 +1,106 @@
-# bd-bf1e86 polish #5: empty-state hints in feed + merge_queue panels
+# Session summary — bd-6dc352: build show empty-id validator + project error lists configured
 
 ## Goal
 
-Continue the empty-state keystroke/context hint pattern established in polish #3 (inbox) and #4 (events + notifications). Apply to the remaining two panels that previously rendered empty states as a single dim line: the feed and the merge-queue panel's "no recent activity" arm.
+Address the two implementable bugs in bd-6dc352's
+mostly-positive conformance survey of `caco build`:
+
+- **Issue 9** — `caco build show --id ''` leaks an HTTP 404
+  EOF parser error instead of validating empty-string upfront
+  (9th member of the empty-string-bypass cohort).
+- **Issue 5 improvement** — promote the gold-standard
+  `--project` security-WHY error by also listing configured
+  projects (currently only explains the WHY, doesn't give
+  the corrective info).
+
+The remaining issues (1–7 are POSITIVE conformance
+observations; Issue 8 `--limit -1` is parser-level
+cross-cutting) are out of scope.
 
 ## Bead(s)
 
-- bd-bf1e86 (P2 permanent — TUI polish; stays open after reintegrate per endless-mode rules)
+- `bd-6dc352` — `caco build STRONGLY CONFORMANT — ... 8th
+  parser-ambiguity --limit -1; 9th empty-string-bypass`.
 
 ## Before state
 
-- `crates/caco-tui/src/views/feed.rs:73`: empty feed rendered only `"  Waiting for events..."`. New operators couldn't tell whether the feed was waiting on agent output, daemon logs, or inter-agent messages.
-- `crates/caco-tui/src/views/merge_queue.rs:208-213`: when `state.merge_queue_fetched && report.is_none()` the panel rendered only `"  No reintegration activity."`. No indication of what action would populate it.
-
-This is the fifth cycle on bd-bf1e86 in this session:
-- Polish #1: inbox poll-error UI surfacing.
-- Polish #2: merge-queue freshness indicator (`updated Ns ago` in title).
-- Polish #3: inbox empty-section keystroke hints.
-- Polish #4: events + notifications empty-state hints.
-- Polish #5 (this commit): feed + merge-queue empty-state hints.
+- `caco build show --id ''` →
+  `error: invalid response (HTTP 404 Not Found): EOF while
+  parsing a value at line 1 column 0` (leaked HTTP plumbing).
+- `caco build list --project bogus` →
+  `error: project 'bogus' is not configured; bead operations
+  must target a configured project to prevent routing to an
+  ambient external board` (no list of valid projects).
 
 ## After state
 
-**`feed.rs`**: empty feed now renders three lines:
-```
-  Waiting for events...
-
-  Feed shows agent stdout/stderr, daemon logs, and inter-agent messages as they stream in.
-```
-
-**`merge_queue.rs`**: "No reintegration activity" arm now renders:
-```
-  No reintegration activity.
-
-  This panel populates as agents call `caco agent reintegrate` (squash-merge into main).
-```
-
-`Loading…` arm (cold start, no fetch yet) is unchanged — it correctly conveys async wait without a hint being needed.
-
-Verification:
-- `cargo test-small`: 56/56 PASS
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
+- `caco build show --id ''` →
+  `error: --id must not be empty for caco build show`
+  (gold-standard 'must not be empty for caco X' template
+  established by msg snapshot --agent).
+- `caco build list --project bogus` (and any other
+  resolve_project / resolve_projects callsite) →
+  `error: project 'bogus' is not configured; bead
+  operations must target a configured project to prevent
+  routing to an ambient external board. Configured:
+  cacophony, picasso-health, ...` (security-WHY *plus*
+  corrective info).
+- The `Configured: ...` suffix lands on all three callsites
+  (resolve_project --project arm, resolve_project
+  CACO_PROJECT arm, resolve_projects fan-out arm).
 
 ## Diff summary
 
-3 files changed, +23 / -14:
-
-- `crates/caco-beads/src/model.rs`: `+0 / -0` net (resolved a stash-conflict against peer's identical SnapshotBead-fields addition; took upstream — this is a peer-overlap artefact, not a real change in this commit).
-- `crates/caco-tui/src/views/feed.rs`: +9 / -3 (List items with hint paragraph)
-- `crates/caco-tui/src/views/merge_queue.rs`: +5 / -0 (extra Line::push under the no-activity arm)
+- `crates/caco-cli/src/lib.rs`:
+  - `dispatch_build_show`: empty-string guard on `--id` after
+    the required-flag check, with the gold-standard wording.
+  - `resolve_project`: `--project` flag arm + `CACO_PROJECT`
+    env arm both gain the `Configured: {names}` (or `(none)`)
+    suffix.
+  - `resolve_projects` (the fan-out variant used by
+    snapshot/list-style multi-project commands): same
+    `Configured: ...` suffix.
+  - 2 new tests:
+    - `dispatch_build_show_rejects_empty_id` — source-greps
+      the dispatcher body for the gold-standard wording.
+    - `resolve_project_error_lists_configured_projects` —
+      source-greps the file for at least 3 occurrences of the
+      'project to prevent routing ... Configured:' compound
+      suffix so the three callsites can't drift independently.
+- `cargo test -p caco-cli --lib -- ...`: both pass.
+- `cargo test-small`: 176 pass.
 
 ## Operator-takeaway
 
-Five cycles of bd-bf1e86 polish landed in one session — the permanent-bead pattern works well for accumulating tiny TUI papercut fixes that would individually be too small to file. Each cycle adds 5-30 lines of code and improves one specific rough edge.
+The `--project` change is cross-cutting: every command path
+that calls `resolve_project` / `resolve_projects` now emits
+the richer error wording. That's most read-side surfaces
+(`build`, `test`, `release`, `bd`, `image`, `summary`,
+`changelog`, etc.) — operators should see the
+`Configured: ...` suffix consistently across the cluster
+after this lands.
 
-The empty-state hint pattern is now applied to: inbox sections (polish #3), events timeline (polish #4), notifications panel (polish #4), feed (polish #5), merge-queue (polish #5). Remaining surfaces with no-data states that could benefit from the same treatment — found via `grep "is_empty\|(no data)\|loading" crates/caco-tui/src/views/`:
-- `releases.rs`: per-project release jobs panel (different shape — per-project hashmap; needs more thought).
-- Various view-specific empty rows (cluster panels, agents list).
+The gold-standard wording is now:
 
-**Peer-overlap context**: today's session has run side-by-side with bd-fb9318 (`estimated_effort` schema add, ms-mac msm-3/msm-5) — that landed mid-cycle and I caught the resulting reconcile_skips_export_when_content_unchanged regression on rebase, root-caused it (4 SELECTs in store.rs had `close_reason, closed_by_session` line duplicated AND SnapshotBead was missing 4 fields causing round-trip default reset), filed bd-10e37c, started fixing — but msm-3 landed an identical fix concurrently. Stashed-changes conflict resolved by taking upstream. bd-10e37c now belongs to msm-3. Documented for the test-health log on bd-274c2d as wave #8.
+```
+project 'X' is not configured; bead operations must target
+a configured project to prevent routing to an ambient
+external board. Configured: a, b, c
+```
 
-Polish #6 candidate: investigate `releases.rs` per-project shape and decide whether the freshness-suffix pattern from polish #2 generalizes to that surface. Or pivot to something other than empty-state work since five cycles is a lot of one theme.
+This combines all three properties the bead family has been
+calling out separately:
+1. Names the bad value.
+2. Explains the WHY (security rationale).
+3. Inlines the allowed alternatives.
+
+Out of scope:
+- **Issue 8** (`--limit -1` → 'unsupported flag: -1') is a
+  parser-level ambiguity affecting 8 surfaces; needs the
+  flag-parser to recognise negative-integer values rather
+  than treating them as additional flag tokens. Worth a
+  dedicated bead.
+- The other 7 issues in bd-6dc352 are POSITIVE conformance
+  observations (12th inline-allowed-values exemplar, 5th
+  JSON-error-envelope exemplar, etc.) — no action needed,
+  they're meta-tracker updates for bd-5ae1ce.
