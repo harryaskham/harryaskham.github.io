@@ -1,81 +1,62 @@
-# Session summary — bd-db10da: STT indicator hide toggle
+# Session summary — bd-5278e2: add TUI cluster timeline view
 
 ## Goal
 
-Land AC5 from the bd-c16753 STT visual-indicators umbrella: the operator
-can hide the always-on STT visual-state dot in the speech indicator via
-the speech popup, the preference persists across restarts, and the mic
-+ dB level block remains visible regardless.
+Land the MVP TUI timeline surface as a real navigable cluster view: one new
+Timeline node under Cluster, a daemon-backed fetch from `/api/v1/timeline`, and
+an operator-readable pane that renders aggregated timeline entries in the same
+bubble/connector style as the existing Events view.
 
 ## Bead(s)
 
-- `bd-db10da` — [stt-ux] AC5: speech-popup toggle to hide STT visual
-  indicator (split off bd-c16753).
+- `bd-5278e2` — Create timeline view for TUI
 
 ## Before state
 
-- `SpeechState` had no field representing operator preference for
-  whether the STT visual-state dot is visible. The dot in
-  `speech_indicator_spans` rendered unconditionally whenever
-  `capabilities.stt_available`.
-- `PersistedMuteState` only stored `muted: bool`; no surface for any
-  other persisted operator preference.
-- The speech popup view exposed Input Mute, Read Messages Aloud, and
-  STT model rows, but no row for hiding the STT dot.
+- The daemon already exposed `GET /api/v1/timeline`, but the TUI had no
+  corresponding cluster Timeline node or pane.
+- Operators could only see the older feed-derived Events timeline, not the new
+  aggregated commit/changelog/release/bead timeline.
+- No TUI state, event, or client fetch path existed for timeline data.
 
 ## After state
 
-- `PersistedMuteState` gains a `stt_indicator_hidden: bool` field with
-  `#[serde(default)]` so existing on-disk files continue to load (a
-  new test asserts the back-compat path).
-- `SpeechState` gains a runtime `stt_indicator_hidden: bool` field
-  (default `false`) and a `toggle_stt_indicator_hidden()` method that
-  flips the in-memory flag and best-effort persists it alongside
-  `muted` when a `mute_state_path` is configured. Persistence is
-  skipped when `state_readonly` is set.
-- On `SpeechState::from_speech_config`, the persisted file is read and
-  `stt_indicator_hidden` is restored independently of mute_policy so
-  the preference survives whether or not the operator uses local mute.
-- `speech_indicator_spans` checks the new flag and skips the
-  red/grey/green/amber dot block when hidden. The mic + dB level block
-  (bd-bcf470 / bd-56e4b1) is unaffected — the entire indicator
-  surface still renders.
-- The speech popup view exposes a new "STT Indicator Dot" row with
-  values "VISIBLE" / "HIDDEN" and wires both the typed activation path
-  and the click-router branch to call the new toggle method.
+- Added a new `Cluster > Timeline` nav node and `ContentPane::GlobalTimeline`.
+- Added client/event/state plumbing for fetching and caching the cluster
+  timeline response from `/api/v1/timeline?scope=cluster`.
+- Added `views/timeline.rs`, which flattens per-project timeline payloads into
+  a cluster-sorted timeline and renders them using the existing bubble/
+  connector visual language.
+- Added workspace/tab/breadcrumb/shell-context integration so the new pane is a
+  first-class TUI surface rather than a dangling enum variant.
+- Added targeted tests for the new view plus nav/app regression pins.
 
 ## Diff summary
 
-- 3 files changed, +166 / -8:
-  - `crates/caco-tui/src/speech.rs` — add `stt_indicator_hidden` to
-    `PersistedMuteState` (+ `#[serde(default)]`) and to `SpeechState`,
-    update `Default`, restore from disk in `from_speech_config`,
-    update both `PersistedMuteState` write sites, add
-    `toggle_stt_indicator_hidden()`, and add 5 unit tests.
-  - `crates/caco-tui/src/views/speech_indicator.rs` — early-return
-    branch in the dot-render block + 1 unit test that confirms the
-    dot drops while the broader indicator surface continues to render.
-  - `crates/caco-tui/src/views/speech_popup.rs` — add
-    "STT Indicator Dot" row to `stt_rows` and route it in both the
-    typed-activation and click-router branches.
-
-## Validation
-
-- `cargo test -p caco-tui --lib stt_indicator_hidden`: **5 passed,
-  0 failed**.
-- `cargo test -p caco-tui --lib persisted_mute`: **4 passed, 0 failed**
-  (existing tests still pass; back-compat test asserts that an
-  on-disk file containing only `{"muted":true}` loads with
-  `stt_indicator_hidden = false` defaulted).
-- `cargo check -p caco-tui --tests`: clean.
+- Files touched:
+  - `crates/caco-tui/src/app.rs`
+  - `crates/caco-tui/src/client.rs`
+  - `crates/caco-tui/src/event.rs`
+  - `crates/caco-tui/src/nav.rs`
+  - `crates/caco-tui/src/shell_cwd.rs`
+  - `crates/caco-tui/src/state/mod.rs`
+  - `crates/caco-tui/src/views/mod.rs`
+  - `crates/caco-tui/src/views/nav_tree.rs`
+  - `crates/caco-tui/src/views/pane_tabs.rs`
+  - `crates/caco-tui/src/views/tab_bar.rs`
+  - `crates/caco-tui/src/views/timeline.rs`
+  - `crates/caco-tui/src/workspace.rs`
+- Tests:
+  - `cargo test -p caco-tui timeline -- --nocapture`
+  - `cargo test -p caco-tui empty_tree -- --nocapture`
+  - `cargo test -p caco-tui rebuild_nav_creates_tree -- --nocapture`
+- Behavioural delta:
+  - The TUI now exposes the daemon timeline pipeline directly, instead of only
+    the older feed-derived Events surface.
 
 ## Operator-takeaway
 
-This is one of three sub-beads of the bd-c16753 STT-UX umbrella. With
-this in, the operator can suppress the dot without losing any other
-speech-indicator information; the mic + dB block remains the always-on
-recording surface. The two remaining children are bd-7a8bc1 (P1 error
-toast with open-doctor link) and bd-88798a (P2 partial ghost text +
-final-commit flash) — those need new state-machine surfaces and a
-dedicated tab-bar overlay row, larger than this one. After all three
-land, bd-c16753 can close.
+This lands the MVP cluster timeline view, not the full multi-surface timeline
+feature set. The important step is that the daemon timeline is now visible and
+navigable in the TUI, which creates a real operator surface to iterate on for
+range controls, polling policy, and richer timeline UX later.
