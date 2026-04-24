@@ -1,62 +1,92 @@
-# Session summary — bd-909491: `--profile-path` for ad-hoc agent spawns
+# Session summary — bd-920711: revalidate closure-regression bead and finish the remaining `agent get` text-mode fix
 
 ## Goal
 
-Add `--profile-path <file.md>` to `caco agent new` and `caco bd dispatch`
-so operators can test a profile draft directly from disk without first
-installing it under `.cacophony/profiles/`.
+Resolve the still-live part of bd-920711 without repeating the original
+closure-discipline mistake.
+
+This bead documented two alleged regressions from earlier prematurely-closed
+beads:
+
+1. `bd-6c1c5d` — `caco hello-world --json` listener addresses allegedly still
+   inverted.
+2. `bd-3a6078` — `caco agent get` text mode still dropped the rich metadata
+   already present in JSON mode (`field`, `id`, `request_id`, `node`).
+
+The right approach here was to **re-verify both on current main**, not assume
+old repros were still current.
 
 ## Bead(s)
 
-- `bd-909491` — Add `--profile-path <file.md>` to `caco agent new/dispatch`
-  for ad-hoc profile loading.
+- `bd-920711` — closure-discipline follow-up covering the residual
+  `agent get` text-mode metadata gap and revalidation of the old
+  `hello-world` listener complaint.
 
 ## Before state
 
-- `caco agent new` only accepted `--profile <name>`.
-- `caco bd dispatch` only accepted `--profile <name>`.
-- Daemon profile resolution in `crates/caco-daemon/src/agent/profile.rs`
-  only searched `profile_search_dirs()` / embedded assets by name.
-- A draft profile file sitting somewhere on disk could be loaded by
-  `caco_profile::load_profile(&path)`, but there was no first-class CLI
-  path to get that file into a spawned worker.
+### Revalidation of the two reports
+
+- `caco hello-world --json` on current main here now reports the daemon
+  listener correctly:
+  - `daemon.local = 127.0.0.1:11100`
+  - `daemon.cluster = 100.124.46.12:12100`
+- So the `bd-6c1c5d` complaint documented in bd-920711 does **not** reproduce
+  on current main in this checkout.
+
+### Still-broken surface
+
+Using the checkout-built binary before this fix:
+
+```text
+$ cargo run -q -p caco -- agent get --id <agent> --field short_name
+agent: 3gjmwd2sgw1xw0nt
+short_name: easy-smoke
+```
+
+JSON mode already carried the richer metadata:
+
+```json
+{"ok":true,
+ "data":{"field":"short_name","id":"3gjmwd2sgw1xw0nt","value":"easy-smoke"},
+ "meta":{"request_id":"req-...","node":"winmini"}}
+```
+
+So the remaining real bug was: **text mode still dropped `meta.node` and
+`meta.request_id`, and encoded field/value in a lossy `field: value` line
+instead of clearly surfacing all fields.**
 
 ## After state
 
-- `caco agent new` now accepts `--profile-path <file.md>`.
-- `caco bd dispatch` now accepts `--profile-path <file.md>`.
-- `--profile` and `--profile-path` are mutually exclusive.
-- The CLI canonicalizes `--profile-path` to an absolute `.md` file path
-  before sending it.
-- Daemon profile resolution now detects when the supplied profile string is
-  actually an on-disk file path and loads it directly via
-  `caco_profile::load_profile`, bypassing named profile discovery / embedded
-  fallback.
-- Direct-path profiles also participate in `composes:` expansion, because
-  `expand_composes_visit()` now understands path-backed entries too.
+Using the checkout-built binary after this fix:
+
+```text
+$ cargo run -q -p caco -- agent get --id <agent> --field short_name
+agent: 3gjmwd2sgw1xw0nt
+field: short_name
+value: easy-smoke
+node: winmini
+request_id: req-0c3ef4d6874e0ce5
+```
+
+So text mode now preserves the operator-facing metadata already present in the
+JSON envelope instead of collapsing it away.
 
 ## Diff summary
 
 - Files touched:
   - `crates/caco-cli/src/lib.rs`
-  - `crates/caco-daemon/src/agent/profile.rs`
-  - `README.md`
-  - `AGENTS.md`
-  - `docs/agents.html`
+  - `.cacophony/agent/winmini-cacophony-caco-dev-wmi-1/summary/0000/summary.md`
 - Behavioural delta:
-  - Added `--profile-path` arg specs to `AGENT_NEW_ARGS` and
-    `BD_DISPATCH_ARGS`.
-  - Added `resolve_profile_arg()` helper in `caco-cli` to enforce
-    `--profile` xor `--profile-path`, validate `.md`, and canonicalize
-    the path.
-  - `dispatch_agent_new()` now skips name-inventory preflight warnings for
-    direct-path launches, because ad-hoc files are intentionally absent from
-    profile inventory.
-  - `dispatch_bd_dispatch()` now threads direct-path profile selection into
-    the spawned agent request body.
-  - `profile_direct_path()` in daemon profile resolution lets
-    `expand_composes_visit()`, `resolve_profile_with_overrides()`, and
-    `resolve_composite_profile_with_overrides()` load ad-hoc paths directly.
+  - extracted `render_agent_get_text_response(...)`
+  - `dispatch_agent_get()` text mode now renders:
+    - `agent: ...`
+    - `field: ...`
+    - `value: ...`
+    - `node: ...` when present
+    - `request_id: ...` when present
+  - added unit tests covering both:
+    - metadata preserved when present
+    - optional meta omitted when absent
 
 ## Embedded artefacts
 
@@ -64,7 +94,8 @@ installing it under `.cacophony/profiles/`.
 
 ## Operator-takeaway
 
-This is a contained quality-of-life spawn feature, not a broad refactor.
-You can now test a draft profile file directly with `caco agent new` or
-`caco bd dispatch` before promoting it into `.cacophony/profiles/`, and the
-normal profile bridge / `composes:` machinery still applies.
+This bead was exactly the kind of thing the closure-discipline rule is for:
+old repro text said two things were broken, but only one still reproduced on
+current main. I revalidated both before changing code. The `hello-world`
+listener complaint no longer reproduces here; the real remaining issue was the
+`agent get` text-mode metadata loss, and that is now fixed.
