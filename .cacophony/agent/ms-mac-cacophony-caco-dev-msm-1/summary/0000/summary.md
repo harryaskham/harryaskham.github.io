@@ -1,58 +1,81 @@
-# Session summary — caco audio prewarm broken default + capabilities devices
+# Session summary — companion/macos scaffold (bd-35352b)
 
 ## Goal
 
-Fix the test-user-reported regression where bare `caco audio prewarm` always
-errors because its default model is not in the daemon's supported STT model
-set, and surface the daemon's mic/speaker devices in the human-readable
-`caco audio capabilities` output (currently only available via `--json`).
+Stand up `companion/macos/` as the first buildable, testable
+surface for the native macOS app under epic `bd-6d67e0` so the
+sibling beads (Nix, CI, tests, parity, audit, release) have
+something concrete to operate on instead of an empty directory.
 
 ## Bead(s)
 
-- `bd-06075c` — caco audio prewarm default --model 'large-v3-turbo-q8_0' is
-  not in the supported STT model list — bare invocation always errors;
-  help example uses broken default
+- `bd-35352b` — Scaffold companion/macos native app skeleton
+  (SwiftPM + SwiftUI + CacophonyKit). Filed by msm-1 as the
+  implicit precursor to the rest of the macOS-app stack.
+- (parent: `bd-6d67e0` — Implement native macOS app with liquid
+  glass design.)
 
 ## Before state
 
-- `caco audio prewarm` (no args) → `error: Failed to prewarm model
-  'large-v3-turbo-q8_0': Unsupported STT model 'large-v3-turbo-q8_0'.
-  Supported: gpt-4o-mini-transcribe, whisper, scribble`.
-- `caco audio prewarm --help` example was the same broken default.
-- `caco audio capabilities` text output omitted `input_devices` and
-  `output_devices` entirely; only `--json` exposed them.
-- Failing tests: none for this code (manual repro only).
+- Failing tests: none related.
+- Relevant metrics: `companion/macos/` did not exist.
+- Context: epic `bd-6d67e0` was filed with six P0 children
+  (Nix / CI / tests / parity / audit / release), none of which
+  could meaningfully proceed without a buildable scaffold.
+  `docs/macos-development.md` §8 was a "Native macOS app (in
+  progress)" stub pointing at the epic. po4-2 (linux host) had
+  unclaimed the epic noting it needed an msm-* worker with macOS
+  context.
 
 ## After state
 
-- `dispatch_audio_prewarm` defaults to `"whisper"` — a model in
-  `SUPPORTED_STT_MODELS` (`gpt-4o-mini-transcribe, whisper, scribble`).
-- CLI flag help example updated to `whisper`.
-- `dispatch_audio_capabilities` text formatter renders Input devices and
-  Output devices with `[default]` markers, taken from the existing
-  `input_devices` / `output_devices` JSON arrays.
-- Build clean (`cargo build -p caco-cli`), clippy clean
-  (`cargo clippy -p caco-cli --lib`), no test additions (pure CLI surface).
+- Failing tests: none related.
+- Relevant metrics:
+  - `companion/macos/` is a SwiftPM package with three targets:
+    `CacophonyKit` (lib), `Cacophony` (SwiftUI app),
+    `CacophonyKitSmoke` (nix-friendly smoke executable).
+  - `swift build` under nixpkgs swift 5.10.1 + swiftpm: succeeds
+    in ~50s cold, ~4s warm.
+  - `swift run CacophonyKitSmoke`: 8 checks, all green.
+- Context: shell now renders a NavigationSplitView with Choices /
+  Beads / Settings panes and a `glassChrome()` modifier that uses
+  macOS 26 glass APIs when available and falls back to
+  `.thinMaterial` on older systems.
 
 ## Diff summary
 
-- Commit: 9305224d
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: +0 / -0 / flipped 0
-- Behavioural delta: bare `caco audio prewarm` now succeeds against an
-  API-based default; `caco audio capabilities` text output now lists
-  the daemon's audio devices.
+- Commits: see reintegration commit (squashed by daemon).
+- Files touched:
+  - `companion/macos/Package.swift` (new)
+  - `companion/macos/.gitignore` (new)
+  - `companion/macos/README.md` (new)
+  - `companion/macos/Sources/CacophonyKit/Models/{Bead,Choice,DaemonConfig}.swift` (new)
+  - `companion/macos/Sources/CacophonyKit/Connection/DaemonClient.swift` (new)
+  - `companion/macos/Sources/Cacophony/App/CacophonyApp.swift` (new)
+  - `companion/macos/Sources/Cacophony/Views/RootView.swift` (new)
+  - `companion/macos/Sources/Cacophony/Design/GlassChrome.swift` (new)
+  - `companion/macos/Sources/CacophonyKitSmoke/main.swift` (new)
+  - `docs/macos-development.md` (§8 stub replaced with a real
+    Quick start block).
+- Tests: +8 smoke checks (run via `swift run CacophonyKitSmoke`).
+- Behavioural delta: zero impact on the Rust workspace; entirely
+  additive under `companion/macos/`.
+
+## Embedded artefacts
+
+- (none in this reintegration — no terminal cast or screenshots
+  attached. Will add a screenshot once the app target is wired
+  to a `.app` bundle under bd-aa8a1a / bd-5cded9.)
 
 ## Operator-takeaway
 
-The `audio capabilities` JSON envelope is the source of truth for device
-enumeration; the text formatter just needed to be taught the shape. The
-prewarm default was never valid — the original `large-v3-turbo-q8_0`
-string is a whisper.cpp model file name, not a daemon STT identifier, so
-the help example shipped a copy-pasteable failure. If we later want to
-prewarm specific whisper variants (q4, q5, q8), the right place is the
-daemon-side validator, not the CLI default.
-
-Out-of-scope but noted in the bead: voices are listed flat without
-per-model grouping (28 voices across 3 providers). Worth a follow-up
-bead if the operator cares about it.
+The Nix swift toolchain on macOS does **not** ship XCTest, so I
+used a `CacophonyKitSmoke` executable target as a CI-friendly
+substitute (precondition-style assertions, exits non-zero on
+failure). The full XCTest-based suite is bd-d3a07a's
+responsibility and only needs to run when Xcode is on PATH —
+which means the bd-d3a07a worker should set up an opt-in test
+target rather than convert the smoke runner. This shape unblocks
+all six remaining children of bd-6d67e0; the next bead I'll
+claim is bd-aa8a1a (Nix integration), which only needs to wire
+this same `swift build` invocation into a flake derivation.
