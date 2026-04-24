@@ -1,69 +1,51 @@
-# Session summary — bd-02c5f7: caco branch-parent --json no-subcommand envelope
+# Session summary — bd-9c55aa Issue 7: caco msg inbox --kind/--type alias conflict
 
 ## Goal
 
-Stop the help-dispatcher from leaking through as a fake `{command,
-summary, args, subcommands}` data response when a branch parent
-(e.g. `caco config sparse`) is invoked bare with `--json`. Replace
-with the standard `{ok:false, error:{...}}` envelope.
+Reject `caco msg inbox --kind X --type Y` (with conflicting values)
+explicitly instead of silently ANDing the alias pair into a guaranteed-
+empty result. Closes Issue 7 of the bd-9c55aa multi-issue ticket.
 
 ## Bead(s)
 
-- `bd-02c5f7` — caco config sparse --json (parent without
-  subcommand) emits COMMAND-HELP JSON as fake response — novel
-  envelope = help-dispatcher leak (P3 bug, multi-issue).
-  This session pins ONLY Issue 1. Issues 2-3 (sparse show/validate
-  ignore --json on errors; sparse show --project bogus missing
-  inlined available projects) are siblings of bd-87425e / bd-89df3d
-  and remain in the bead body for follow-up.
+- `bd-9c55aa` — caco msg inbox MASTERCLASS validator surface (P3 bug,
+  multi-issue). This session pins **Issue 7 only** (alias conflict).
+  Issues 1-4 are POSITIVES (no code change needed); Issue 5 (`--max-age
+  -1` flag-parser ambiguity) is a parser-level concern with cluster-
+  wide impact and stays in the bead body for future work; Issue 6
+  (`--grep ''` empty-string semantics) is a documented convention
+  question; Issue 8 (text phrasing) is cosmetic.
 
 ## Before state
 
 ```
-$ caco config sparse --project bogus --json
-{
-  "command": "caco config sparse",
-  "summary": "Inspect project-level sparse-checkout spec (bd-5f6b62).",
-  "args": [],
-  "subcommands": [
-    {"name": "show", ...},
-    {"name": "validate", ...}
-  ]
-}
+$ caco msg inbox --project cacophony --kind speak --type broadcast
+[stdout: "no unread messages"]
 [exit: 0]
 ```
 
-A NOVEL envelope shape (no `ok`, no `error`, no `data`) returned
-with exit 0. Scripts piping to `jq` got fields they didn't expect
-and no signal that no work happened.
+The `--kind` / `--type` flags are documented aliases (per --help and
+the bd-60c7de shared validator). Supplying both with conflicting
+values silently ANDed them via the dispatcher's `or_else` chain
+(which actually picked `--kind` — but the operator's intent was
+ambiguous). Result was always empty.
 
 ## After state
 
 ```
-$ caco config sparse --json
-{
-  "ok": false,
-  "error": {
-    "code": "no_subcommand",
-    "message": "`caco config sparse` requires a subcommand: show, validate",
-    "available": ["show", "validate"]
-  }
-}
-[exit: 2]
+$ caco msg inbox --project cacophony --kind speak --type broadcast
+error: --kind speak and --type broadcast are aliases for the same filter; pass only one (or use the same value for both)
+[exit: 1]
 ```
 
-Standard error envelope on stdout, with `available` carrying the
-subcommand list (preserving the discoverability that the help-leak
-shape provided). Exit 2 (matches the unknown-subcommand path
-right above it).
-
-Text mode is unchanged: bare `caco config sparse` still renders
-the human-readable help page.
+Same-value (`--kind direct --type direct`) still works — only
+**conflicting** combinations are rejected. This matches the existing
+`--tail`/`--limit` warning pattern right above the new check.
 
 ## Diff summary
 
-- 1 file changed, +30 / -0 (`crates/caco-cli/src/lib.rs` catch-all
-  branch in the dispatcher's `_ =>` arm).
+- 1 file changed, +13 / -0 (`crates/caco-cli/src/lib.rs` msg inbox
+  dispatch).
 
 ## Validation
 
@@ -71,18 +53,8 @@ the human-readable help page.
 
 ## Operator-takeaway
 
-This is a **cluster-wide** fix, not just for `caco config sparse`.
-Every branch parent that lacks an explicit dispatch case (the vast
-majority — `caco bd`, `caco scratch`, `caco config`, etc.) now
-returns the standard error envelope on bare `--json` invocation
-instead of leaking the help structure.
-
-Three branch-roots (`caco tui --json`, `caco daemon --json`,
-`caco tts daemon --json`) still emit help-as-JSON because SPEC 8.2
-explicitly mandates that — those have an interactive default action
-and `--json` returns help to prevent accidental TTY-grab. Out of
-scope for this bead.
-
-The `available` field is new — consumers that previously relied on
-the `subcommands` field of the help-leak shape can now read
-`error.available` for the same data in a normalized format.
+Operators relying on `--kind` and `--type` as separate filters
+discover immediately that they're aliases instead of getting a
+silent-empty result. Same-value passes through unchanged so any
+existing scripts that double-pass the same value (defensive
+duplication) continue to work.
