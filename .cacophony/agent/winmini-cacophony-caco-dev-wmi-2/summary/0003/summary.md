@@ -1,88 +1,83 @@
-# Session summary — `caco service load` for idempotent supervisor reload (bd-4acdd7)
+# Session summary — bd-bc3d7d: caco ls validator parity for --kind/--project/--agent
 
 ## Goal
 
-Close the operational gap that bit ms-mac at 01:38 BST on 2026-04-22:
-the launchd `com.cacophony.lifecycle` unit was installed but
-unloaded (`active: ? not loaded`), so when caco-daemon got SIGTERM
-nothing respawned it. Recovery required manual `caco up`. The bead
-asked for two things:
-
-1. `caco doctor` flags `active: not loaded` as an error/warning, not
-   silent state.
-2. A first-class `caco service load` / `caco up` path that
-   re-bootstraps the launchd unit if installed-but-unloaded,
-   idempotently.
+Apply the bd-2dc0c3 validator pattern to `caco ls`: reject
+bogus values for `--kind`, `--project`, and `--agent` so all
+three filters give actionable errors instead of silently
+degrading to header-only output.
 
 ## Bead(s)
 
-- `bd-4acdd7` — `ms-mac lifecycle supervisor 'not loaded' — daemon
-  SIGTERM at 01:38 left no respawn, recovered only by manual caco up`.
+- `bd-bc3d7d` — `caco ls SILENT on bogus filters: --kind bogus,
+  --project nonexistent, --agent bogus all return header-only
+  with no error`.
 
 ## Before state
 
-- Doctor section 4b ("Native lifecycle supervisor (bd-4acdd7)") was
-  already wired in `crates/caco-cli/src/lib.rs`: it surfaces `not
-  loaded` as an `error` check with a hint pointing at `caco up`. So
-  acceptance criterion #1 was already satisfied on main.
-- Acceptance criterion #2 was NOT satisfied: `caco service` had
-  start/stop/restart/status/show/logs but no `load`. On launchd,
-  `service start` calls `launchctl kickstart`, which fails when the
-  unit isn't in the domain. So the only recovery was `caco up`,
-  which mixes lifecycle reload with full daemon convergence — not
-  the targeted reload the bead asked for.
+- `caco ls --kind bogus` → header-only, no error.
+- `caco ls --project nonexistent` → header-only, no error.
+- `caco ls --agent bogus` → header-only, no error.
+
+Same family as the bd-2dc0c3 issue on `caco ps`. The bead's
+secondary observations — `--json` envelope shape divergence
+(`{ok,entries,count,runtime_root,node}` vs the standard
+`{ok,data,meta}`) and the unscoped 444-line default — are
+out of scope here; this fix is the silent-filter
+acceptance item.
 
 ## After state
 
-New `caco service load` subcommand that idempotently (re)loads the
-native supervisor unit. Backend behaviour:
+`dispatch_ls` declares `KNOWN_KINDS = ["checkout", "beads",
+"agents", "logs", "state", "pki", "tokens", "diagnostics"]`
+matching the help-text values in `LS_ARGS`, plus three
+upfront validators that mirror bd-2dc0c3's pattern:
 
-- **launchd**:
-  1. `launchctl bootstrap gui/<uid> ~/Library/LaunchAgents/<unit>.plist`
-  2. `launchctl kickstart -k gui/<uid>/<unit>`
-  Step 1 is treated as success-equivalent if stderr says "service
-  already loaded" / "Service is already loaded" / "already loaded",
-  so re-running `service load` against an already-loaded unit is a
-  no-op success.
-- **systemd**: `systemctl --user daemon-reload` then
-  `systemctl --user enable --now <unit>`. Both idempotent.
-- **supervisord**: `supervisorctl reread` then
-  `supervisorctl update <unit>`. Both idempotent.
+- `caco ls: unknown --kind 'bogus'. Valid kinds: checkout,
+  beads, agents, logs, state, pki, tokens, diagnostics`.
+- `caco ls: project 'X' is not configured. Configured
+  projects: cacophony, …`.
+- `caco ls: agent 'X' has no on-disk checkout under
+  <root>/agents. Use 'caco agent list' to see known agents.`.
 
-Per-step results (command, exit code, stdout, stderr,
-treated_as_success) surface in both text and `--json` output, so
-operators and tests can see exactly what ran.
+The `--agent` validator does a cheap filesystem scan of
+`<runtime_root>/agents/<project>/<id>` rather than a daemon
+round-trip. The dispatcher already walks the agent runtime
+tree to assemble results; rejecting an unknown agent ID
+upfront just short-circuits a guaranteed-empty walk and
+gives the operator a clear next step.
 
 ## Diff summary
 
 - `crates/caco-cli/src/lib.rs`:
-  - `SERVICE_SUBCOMMANDS`: register `load` leaf with help text.
-  - Dispatch table: route `service load` to `dispatch_service_load`.
-  - New `dispatch_service_load` (~150 LOC) — runs the
-    backend-appropriate ordered command sequence, marks benign
-    "already loaded" stderr as success, returns text or JSON.
-  - Test `service_subcommand_help_includes_service`: assert `load`
-    is in the help subcommands list.
-- Tests: `cargo test -p caco-cli --lib
-  service_subcommand_help_includes_service` passes.
-- `cargo test-small`: 58 passed.
-- `cargo clippy -p caco-cli --tests`: clean.
-
-Behavioural delta: a new operator-/agent-safe verb that recovers
-the exact failure mode the bead documented, without invoking full
-`caco up` convergence.
+  - `dispatch_ls`: added `KNOWN_KINDS` const + three upfront
+    validators (`--kind`, `--project`, `--agent`).
+  - 1 new test:
+    `dispatch_ls_validates_kind_project_and_agent_filters` —
+    source-greps the dispatcher body for the validator error
+    wording and the `KNOWN_KINDS:` declaration.
+- `cargo test -p caco-cli --lib
+   dispatch_ls_validates_kind_project_and_agent_filters`: pass.
+- `cargo test-small`: 162 pass.
 
 ## Operator-takeaway
 
-When `caco doctor` shows `lifecycle  native supervisor   error
-not loaded  launchd (com.cacophony.lifecycle)`, the right
-single-purpose recovery is now `caco service load` (not `caco up`
-or hand-typed `launchctl bootstrap`). It bootstraps the unit into
-the gui/<uid> domain and kickstarts it in one call, and is safe
-to invoke when already loaded — useful for idempotent recovery
-loops in caco-doctor or convergence scripts.
+`caco ls` and `caco ps` now share the same upfront-validator
+pattern. The same shape extends naturally to any list-by-X
+subcommand whose filters reference an enum or a known set —
+the cheap path is two const arrays + three branches at
+function entry.
 
-Note: if this scenario keeps recurring (gui/<uid> scope dropping
-on user logout / fast user switch), the longer-term fix is to
-move the unit to `system/` scope in install-service. That's out
-of scope for this bead — flag it in a follow-up if seen twice.
+Out of scope (kept explicit so a future claimant doesn't
+think it landed):
+
+1. `--json` envelope unification: `caco ls` still emits
+   `{ok,entries,count,runtime_root,node}` instead of the
+   `{ok,data,meta}` family. That's a daemon-side response
+   shape question worth its own bead.
+2. Default-invocation scope: `caco ls` with no filters still
+   emits 444 lines. A `--limit` default or a top-level
+   summary view would be a separate UX feature.
+
+Both are noted in the bead description but deliberately not
+addressed here so the silent-filter fix lands cleanly.
