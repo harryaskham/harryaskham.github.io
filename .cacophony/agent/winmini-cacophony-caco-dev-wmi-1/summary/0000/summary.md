@@ -1,63 +1,58 @@
-# Session summary — bd-9d3623 Issues 5+7: msg history --type validator + msg stats limit phrasing
+# Session summary — bd-75d5a3 Issue 3: caco event log --json envelope wrap
 
 ## Goal
 
-Fix two sister-surface drifts inside the msg namespace:
-- **Issue 5**: `caco msg history --type bogus` silently accepted
-  invalid values (sister surface to `caco msg inbox` which validates
-  via bd-60c7de). Operator who learned the gold-standard error
-  message from inbox naturally retried on history and got 0 results
-  with no signal that the filter had been ignored.
-- **Issue 7**: `caco msg stats --limit 0` / `--top 0` returned the
-  minimal "must be > 0" message, drifting from the gold-standard
-  inbox phrasing that names alternatives sister-symmetrically.
+Wrap `caco event log --json` output in the standard `{ok, data,
+meta}` envelope so scripts can `jq -e .ok` and consume `count`
+consistently with the rest of the catalogued surfaces. Eliminates
+one of two remaining no-`ok` surfaces (the other being `caco cert
+status` from bd-1625db).
 
 ## Bead(s)
 
-- `bd-9d3623` — caco msg stats / snapshot / history sweep (P3 bug,
-  multi-issue). This session pins Issues 5 and 7. Issues 1-4 are
-  POSITIVES (cohort observations, no code change). Issue 6 (`--top
-  -1` / `--max-age -1` parser ambiguity) is the cross-cutting
-  parser concern from bd-9c55aa Issue 5 / bd-754fde Issue 6 and
-  remains for a parser-level fix. Issue 8 is cosmetic.
+- `bd-75d5a3` — caco event log sweep (P3 bug, multi-issue). Pins
+  Issue 3 (envelope wrap). Issues 1-2 are POSITIVES (cohort
+  observations on cross-namespace --since/--limit validator
+  symmetry — strongest positive yet). Issue 4 (--until missing) is
+  a feature add for parity with msg stats. Issue 5 (--limit -1
+  parser ambiguity) is the cross-cutting parser concern logged
+  under bd-9c55aa Issue 5 / bd-754fde Issue 6 / bd-9d3623 Issue 6.
+  Issues 6-7 are mild.
 
 ## Before state
 
 ```
-$ caco msg history --project cacophony --type bogus
-caco msg history (bd-d4e93d): project=cacophony returned=0 (cap=100)
-[exit 0]                          # silently dropped the invalid filter
-
-$ caco msg stats --project cacophony --limit 0
-error: --limit must be > 0        # minimal phrasing
-
-$ caco msg stats --project cacophony --top 0
-error: --top must be > 0          # minimal phrasing
+$ caco event log --since 1m --limit 1 --json
+{"count": 0, "events": []}
 ```
+
+No `ok`, no `meta`, no `data` wrapper. Same shape pattern as
+`caco cert status` (bd-1625db). 22nd distinct envelope variant in
+the bd-5ae1ce catalogue.
 
 ## After state
 
 ```
-$ caco msg history --project cacophony --type bogus
-error: unknown --type value 'bogus'. Allowed: direct, broadcast, speak, system
-
-$ caco msg stats --project cacophony --limit 0
-error: --limit must be >= 1 (use --limit 1 for a single result, or omit --limit for the default)
-
-$ caco msg stats --project cacophony --top 0
-error: --top must be >= 1 (use --top 1 for a single result, or omit --top for the default)
+$ caco event log --since 1m --limit 1 --json
+{
+  "ok": true,
+  "data": {
+    "events": []
+  },
+  "meta": {
+    "count": 0
+  }
+}
 ```
 
-`msg history --type` now validates against the same `[direct,
-broadcast, speak, system]` enum as `msg inbox --kind/--type` (using
-the existing `validate_enum_flag` helper). `msg stats --limit` and
-`--top` zero-rejection messages now match the gold-standard inbox
-phrasing.
+Matches `caco bd list --json`, `caco summary --json` (bd-bbcc36),
+`caco project list --json` (bd-925e1b), `caco cron list --json`
+(bd-2cedd3), and the rest of the standard envelope surfaces.
 
 ## Diff summary
 
-- 1 file changed, +20 / -3 (`crates/caco-cli/src/lib.rs` — msg
-  history dispatch + dispatch_msg_stats limit/top guards).
+- 1 file changed, +24 / -1 (`crates/caco-cli/src/lib.rs`
+  `dispatch_event_log` JSON branch).
 
 ## Validation
 
@@ -65,13 +60,12 @@ phrasing.
 
 ## Operator-takeaway
 
-Sister-surface symmetry restored within the msg namespace: scripts
-or operators using `--type` filters on `msg history` now get the
-same validator behaviour as `msg inbox`, and `msg stats` zero-input
-errors now name the alternatives sister-symmetrically with the rest
-of the cluster's `--limit` / `--top` guards.
+**BREAKING for scripts** reading top-level `.count` / `.events`
+from `caco event log --json`:
+- `.count`  → `.meta.count`
+- `.events` → `.data.events`
+- `.ok` is now present (always `true` for successful invocations).
 
-The novel Issue 1 gold-standard "explain-model-and-suggest-fix"
-range-conflict error message remains as a positive cohort exemplar
-for any future range-validator work (e.g. `--priority-min /
---priority-max`).
+Envelope-conformance count: 22 distinct shapes → 21 (minus this
+fix). One remaining bare-shape surface: `caco cert status`
+(bd-1625db).
