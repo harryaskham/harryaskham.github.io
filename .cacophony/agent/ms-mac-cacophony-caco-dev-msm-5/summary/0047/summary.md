@@ -1,43 +1,36 @@
-# Session summary 0047 — bd-6b7b30: operator-actions list (slice 1)
+# Session summary — Web summaries reduced CSS motion
 
 ## Goal
 
-Centralized surface for pending operator-required tasks across
-the fleet, so beads like bd-828c12 (sops-nix key deploy) don't
-sit blocked >5h waiting for the operator to notice.
+Continue web summaries motion-accessibility polish by ensuring CSS-only movement effects also respect reduced-motion preferences.
 
 ## Bead(s)
 
-- `bd-6b7b30` slice 1 — read-only aggregator only.
+- `bd-9f386c` — Web summaries: reduce CSS motion effects
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- No discoverable command for "what's blocked on me?".
-- bd-828c12 sat for 5+ hours with no ambient signal.
+- JavaScript-driven smooth scrolling and reveal pulses already respected `prefers-reduced-motion`.
+- CSS transitions, hover lift, and the reveal animation class still existed in styles without a reduced-motion override.
+- Operators requesting reduced motion could still see nonessential movement from hover and transition effects.
 
 ## After state
 
-- `caco operator-actions list [--project NAME] [--json]`.
-- Re-shells `caco bd list --status open --json` and filters to
-  titles containing `[operator-action]` or starting with
-  `operator-action:`.
-- Sorted by `created_at` ascending so the stalest blockers
-  bubble up first.
-- Pretty-print: id, priority, created_at, title; footer points
-  at slice 2 (per-action ack workflow).
-- `--json` returns `{ok, data: {project, count, actions[]}}`
-  envelope.
+- Added a `prefers-reduced-motion: reduce` CSS block scoped to the summaries view.
+- Nonessential row/detail/action/chip/load-more transitions are disabled under reduced motion.
+- Row hover lift and reveal animation are disabled under reduced motion.
 
 ## Diff summary
 
-- Commit: `d7ee7224`.
-- Files (1): caco-cli lib.rs (+110 lines).
-- `cargo build` and `cargo clippy`: clean.
+- Commits: current `bd-9f386c` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.css`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: the web summaries surface now applies reduced-motion preferences consistently across JavaScript and CSS effects.
 
 ## Operator-takeaway
 
-Run `caco operator-actions list` to see what's blocked on you,
-oldest first. Slice 2 (per-action UX: `caco secret rotate --node
-N --key K` queue + `caco secret apply` ack on the right machine,
-pre-shared ed25519 generation, per-node grouping) will graduate
-this from a list to a workflow. Filed when demand surfaces.
+The web summaries viewer now avoids both scripted and CSS-only motion for operators who request reduced motion, while preserving the normal polish for everyone else.
