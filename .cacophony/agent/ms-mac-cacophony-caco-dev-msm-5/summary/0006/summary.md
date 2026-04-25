@@ -1,58 +1,39 @@
-# Session summary — docs layout + component parity (bd-0ffc0d)
+# Session summary — Android summary artefact actions
 
 ## Goal
-Continue the docs/webapp design-system alignment from bd-0e2372 by
-applying the now-shared semantic tokens across the rest of docs/style.css
-and refreshing each docs HTML shell to match the webapp's component
-vocabulary (logo accent-split, skip-link, focus rings, button ramp,
-better mobile reflow).
+
+Continue the summaries UX burn-down by making Android summary detail artefacts actionable instead of static labels. This slice builds on the raw artefact endpoint and the prior Android visual polish pass.
 
 ## Bead(s)
-- bd-0ffc0d — Refresh GitHub Pages layout and components
-- consumes: bd-90d4d3 (audit), bd-0e2372 (token adoption)
-- siblings still open: bd-c2d025 (cross-surface validation)
+
+- `bd-360f20` — Summaries Android: native artefact actions and detail affordances
+- related: `bd-8d7f8c` — Summaries: serve embedded artefacts to viewer surfaces
+- related: `bd-1bfe29` — Summaries polish: elevate Android and web visual UX
 
 ## Before state
-- Failing tests: none.
-- docs/style.css used semantic tokens only for body and root; every
-  component (sidebar, headings, code, cards, tables, badges, callouts,
-  hero, footer) still referenced raw --nord* values.
-- 768px breakpoint hid the sidebar entirely (display:none) — no nav
-  on mobile.
-- No .btn, no .skip-link, no :focus-visible rings.
-- 19 × docs/*.html pages used plain-text logo and lacked skip-link +
-  main-content target.
+
+- Android summary detail showed `terminal.cast`, screenshots, and `data.json` as static rows.
+- Operators could see that artefacts existed, but could not open or copy a usable URL from mobile.
+- Web had already gained safe raw artefact URLs; Android did not consume that capability yet.
 
 ## After state
-- Failing tests: none. `cargo test -p caco-web --lib` = 155 passed (+2).
-  `cargo clippy -p caco-web --tests` clean (only the two pre-existing
-  unrelated warnings).
-- Every component selector in docs/style.css now references semantic
-  tokens; the only remaining --nord* references are inside the
-  palette-definition block at the top of :root.
-- 768px breakpoint reflows .page to column and keeps the sidebar
-  visible above content (max-height 50vh + scroll); 480px tightens
-  padding and table cells for narrow phones.
-- Webapp .btn ramp (default / -sm / -ghost / -accent) mirrored.
-- Skip-link ships on every docs page; logo accent-split parity.
+
+- `DaemonConfig` and `ConnectionManager` now expose `summaryArtefactUrl(...)`, matching the daemon raw endpoint path and URL-encoding agent IDs, path components, and project query values.
+- Android summary detail resolves each artefact into a raw URL.
+- Artefact rows are now rounded action cards with a title, explanatory subtitle, and `OPEN` / `COPY URL` chips.
+- `OPEN` uses Android `ACTION_VIEW` with defensive failure Toasts; `COPY URL` uses the app's existing clipboard helper with toast feedback.
 
 ## Diff summary
-- Modified: docs/style.css (semantic-token sweep, +.btn ramp,
-  +.skip-link, +480px breakpoint, 768px reflow)
-- Modified: 19 × docs/*.html (logo split + skip-link + main-content id)
-- Modified: crates/caco-web/src/tests.rs (+2 tests)
-- Tests: +2 / -0
-- Behavioural delta: docs surface only — webapp untouched.
+
+- Commits: `c484d8d23`
+- Files touched:
+  - `companion/android/app/src/main/java/com/cacophony/companion/connection/ConnectionManager.kt`
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/summaries/SummariesScreen.kt`
+- Tests:
+  - `cargo test-small` — 252 passed
+  - Android Gradle validation is unavailable on this node; Kotlin changes were kept local and reviewed syntactically.
+- Behavioural delta: Android summary artefact rows now perform useful mobile actions rather than only showing filenames.
 
 ## Operator-takeaway
-docs/ now reads as part of the same design system as the webapp without
-having grown a full SPA-shell — sidebar/logo/components match, mobile
-reflow works, a11y primitives are present, but the page-structure stays
-intentionally minimal (it is still a doc site). bd-c2d025 (cross-surface
-validation) can now run end-to-end: the four parity tests
-(docs_style_css_matches_webapp_design_tokens,
-docs_style_css_uses_semantic_tokens_not_raw_nord,
-docs_html_pages_load_webapp_fonts_and_favicon,
-docs_html_pages_have_logo_accent_split_and_skip_link) form the
-machine-checkable contract; visual regression diffs are the only
-remaining piece.
+
+Android summaries are now materially more usable: screenshots, terminal casts, and data blobs can be opened or copied from the phone. The surface is still lightweight, but it now participates in the same artefact-serving flow as the web viewer instead of being a dead-end metadata view.
