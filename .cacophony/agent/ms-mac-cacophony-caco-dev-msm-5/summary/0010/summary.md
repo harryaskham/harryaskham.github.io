@@ -1,62 +1,35 @@
-# Session summary — bd-b9b8af: drop duplicate restart-announce broadcast
+# Session summary — Summaries cross-surface UX contract
 
 ## Goal
 
-Halve the inbox spam every cluster restart produced. The
-`announce daemon restart` hook in `.cacophony/automation.yaml` fired
-both `caco msg speak` AND `caco msg broadcast --global` per restart,
-each adding ~5 messages per fleet-wide version bump that narrators
-then re-narrated.
+Capture the summaries viewer product contract after several fast polish slices, so future Android, web, TUI, daemon, and CLI changes have a shared standard for beauty, usability, performance, and consistency.
 
 ## Bead(s)
 
-- `bd-b9b8af` — Restart-broadcast spam: every 'caco restart'
-  produces 1-2 broadcasts that flood every controller's inbox
+- `bd-206809` — Summaries: cross-surface UX contract and polish checklist
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `.cacophony/automation.yaml` `announce daemon restart` hook ran
-  both `caco msg speak` and `caco msg broadcast` per restart.
-- 5 nodes × 2 messages × narrator re-narration ≈ 20+ identical-shape
-  inbox messages per fleet-wide version bump.
-- Operator counted ~8 restarts in one night → ~160 messages of
-  identical shape across the fleet inbox.
+- The implementation had grown across daemon API, CLI, TUI, web, and Android, but the docs did not spell out the UX contract.
+- Expectations for section ordering, NORD accents, artefact actionability, web pagination/keyboard, and Android search/actions lived only in code and session history.
 
 ## After state
 
-- The hook now invokes only `caco msg speak`. The explicit
-  `caco msg broadcast --global` line is removed with an inline
-  comment explaining why.
-- Speak still reaches narrators that re-publish to operator
-  inboxes via the established narration chain, so operators
-  continue to see one (1) message per restart per node — not two.
-- No code changes to caco-daemon / caco-cli — config-only fix in
-  `.cacophony/automation.yaml`.
+- SPEC now defines a session-summary viewer UX contract under the UI endpoint section.
+- README now has a Session Summaries concept section that names the surfaces and core affordances.
+- Both documents cover raw artefact safety/actionability, canonical sections, visual accent consistency, long-list usability, keyboard/search expectations, and mobile affordances.
 
 ## Diff summary
 
-- Commit: `e3e05ed2`
-- Files touched: `.cacophony/automation.yaml` (+8 / -1).
-- Tests: none added (config-level hook).
-- Behavioural delta: per-restart inbox messages drop from ~2 → ~1
-  per node before narrator amplification.
-
-## Out of scope (deferred)
-
-The bead suggested three remediations:
-
-1. **Coalesce / rate-limit per-node restart broadcasts** — orthogonal
-   hardening; left as a separate concern. The bd-03a2b6 per-agent
-   comms scope work will subsume it.
-2. **Scope to operator + cluster-ctrl only** — also orthogonal,
-   subsumed by bd-03a2b6.
-3. **Drop one of the two duplicates** — applied in this commit.
-
-This bead's primary acceptance ("halve the spam") is satisfied by
-suggestion 3 alone; 1 and 2 stay open under their natural homes.
+- Commits: `a15923f14`
+- Files touched:
+  - `SPEC.md`
+  - `README.md`
+- Tests:
+  - `cargo test-small` — 252 passed
+- Behavioural delta: no runtime behaviour change; this makes the summaries polish standards explicit and durable.
 
 ## Operator-takeaway
 
-Next time the fleet restarts, the inbox spam will be roughly half
-what it was tonight. The narrator chain still announces the restart
-once per node, so operator situational awareness is preserved.
+The summaries surfaces now have a written product bar: not just “the endpoint exists,” but what a usable, polished, cross-surface viewer must show and how artefacts, filters, long histories, and mobile actions should behave.
