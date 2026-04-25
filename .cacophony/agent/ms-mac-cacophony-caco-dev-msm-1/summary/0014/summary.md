@@ -1,48 +1,33 @@
-# Session 0014 — bd-61e600: TUI quick-file bead popup
+# Session summary — macOS deep agent actions
 
 ## Goal
-Implement the webapp's quick-file bead popup in the TUI, bound to
-bare `b`; move the full bead-create dialog to `Shift+B`.
 
-## Decisions
-- **Two-field minimal popup**: Project picker + freeform Text. Mirrors
-  the webapp's `showQuickBeadModal()` (app.js ~2754).
-- **Wire to existing `expand_beads` endpoint** (`/api/v1/projects/<p>/beads/expand`)
-  rather than the structured create-bead path. The daemon LLM already
-  structures freeform text into one or more beads and persists them.
-- **Ephemeral state**: no draft restoration. Successful submit closes;
-  Esc closes without persistence. Failure re-enables for retry.
-- **Key extraction refactor**: Pulled the legacy bare-`b` handler body
-  (bd-aa6b1c, bd-249b5c, bd-687e93, bd-f53223, bd-a02f7f, bd-351b11)
-  into `open_full_bead_create_dialog()` so `b`/`B` paths are clean.
+Make Agent Controls more useful as a native operator surface by adding attach metadata, pause/resume, completion, and discard controls while keeping dangerous actions behind explicit confirmations.
 
-## Code
-- `crates/caco-tui/src/state/mod.rs`
-  - `QuickFileBeadDialog` struct + `QuickFileBeadField { Project, Text }`
-  - `quick_file_bead_dialog: Option<QuickFileBeadDialog>` on AppState
-- `crates/caco-tui/src/app.rs`
-  - `open_quick_file_bead_dialog()` helper
-  - `open_full_bead_create_dialog()` extracted helper (formerly bare-b body)
-  - `submit_quick_file_bead()` -> client.expand_beads via tokio::spawn
-  - `handle_quick_file_bead_dialog_key()` Esc/Enter/Tab/typing/arrows
-  - `render_quick_file_bead_overlay()` 70x17 centered modal
-  - Wired `KeyCode::Char('b')` -> quick-file, `Char('B')` -> full
-  - Close/retry hooks in BeadExpandSucceeded / BeadExpandFailed
-  - 7 new tests (open, no-projects, esc, typing, tab, arrow, empty-submit)
-  - 3 pre-existing bead_create_* tests updated to use Shift+B
+## Bead(s)
 
-## Tests
-- `cargo test -p caco-tui --lib`: 2870 passed, 0 failed
-- `cargo test-small`: 146 passed
-- `cargo clippy -p caco-tui --lib --no-deps`: clean (no new warnings)
+- `bd-d43fb9` — `[macOS gap] Deep agent actions: attach, reintegrate, complete, pause/resume with confirmations`
+- Parent context: `bd-d6f18a` — macOS native app feature parity umbrella
 
-## Operator Acceptance Criteria
-- [x] Quick-file popup opens on `b` press
-- [x] Shows minimal form for quick file bead creation (project + text)
-- [x] Regular beads modal accessible via Shift+B
-- [x] Esc closes the quick-file popup
+## Before state
 
-## Constraints Honored
-- No docker builds (pure Rust TUI work)
-- Merge-queue mixin: test-small + targeted + clippy
-- Speaking claim/close via `caco msg speak`
+- Failing tests: none observed for this slice.
+- Relevant metrics: `CacophonyKitSmoke` had 47 checks.
+- Context: Agent Controls could inspect status/diff/log, nudge, and guarded stop, but it lacked attach metadata and broader lifecycle controls.
+
+## After state
+
+- Failing tests: none observed in targeted validation so far.
+- Relevant metrics: `swift build` passed; `CacophonyKitSmoke` now has 49 checks.
+- Context: the Controls tab now includes attach command copy, nudge, pause/resume, guarded completion with mode/comment, guarded stop, and guarded discard with optional file deletion.
+
+## Diff summary
+
+- Commits: current branch commit for `bd-d43fb9`.
+- Files touched: `AgentControlPane.swift`, `DaemonClient.swift`, `AgentControls.swift`, `CacophonyKitSmoke/main.swift`.
+- Tests: +2 smoke assertions for attach metadata and lifecycle response decoding.
+- Behavioural delta: no daemon API changes; the macOS client now uses existing daemon lifecycle endpoints with native confirmation UX.
+
+## Operator-takeaway
+
+The macOS app now exposes the high-risk agent lifecycle operations in a safer native workflow: inspect first, copy attach commands explicitly, and confirm before completion/stop/discard.
