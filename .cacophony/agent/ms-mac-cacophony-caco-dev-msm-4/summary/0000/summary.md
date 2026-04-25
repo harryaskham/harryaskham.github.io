@@ -1,28 +1,25 @@
-# Session summary — bd-5bfb2c (slice 9)
+# Session summary — bd-5bfb2c (slice 10)
 
 ## Goal
-IDE-class pane manipulation: drag tabs to rearrange, double-click handles to even-split.
+Per-pane action affordances + Cmd+P quick switcher for keyboard-driven workflow.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Pane layout fixed once split — could close but not move
-- Split ratios drift over time, no quick reset
+- Pane tab had only type-selector + close button
+- No way to quickly switch focused pane type without dropdown
 
 ## After state
-- Drag any pane tab to:
-  - Center of another pane → swap
-  - Left/right/top/bottom 25% edge → split with dragged on that side
-- Live drop-zone preview with clip-path overlay
-- Double-click split handle to reset to 50/50
-- Source pane fades while dragging (0.5 opacity)
-- 228/228 tests green (2 new)
+- Per-tab action row (hover/focus): refresh, split-H, split-V, maximize, close
+- Cmd/Ctrl+P opens quick pane-type switcher with text filter, arrow nav, Enter
+- Help overlay lists Cmd+P shortcut
+- 230/230 tests green (2 new)
 
 ## Diff summary
-- workspace-integrated.js: drag/drop wiring on tabs, handlePaneDrop, detachLeaf, dblclick on handle
-- style.css: drop-zone visualization
+- workspace-integrated.js: 4 new tab buttons + showPaneTypeSwitcher
+- style.css: switcher styling
 - tests.rs: 2 new tests
 
 ## Operator-takeaway
-Layout feels native now. Drag tabs around to rearrange like VSCode; drop on any 25% edge to split, drop on center to swap. Double-click any split handle to reset 50/50.
+Cmd+P from anywhere in workspace → type-filter pane types → Enter to switch focused pane. Hover any pane tab for inline actions.
