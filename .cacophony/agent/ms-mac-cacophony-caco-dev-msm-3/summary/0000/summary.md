@@ -1,34 +1,33 @@
-# Session summary — Realtime audio model turn support
+# Session summary — Operator-actions limit wording canonicalization
 
 ## Goal
 
-This session added the first bounded implementation slice for `gpt-realtime-1.5`: make it visible as an audio capability, provide a daemon-side credential boundary for a single realtime text-to-audio turn, and expose that through the CLI. During validation, a pre-existing caco-beads clippy lint blocked scoped clippy, so I also fixed and claimed that broken-on-main bead.
+This session fixed a small but user-visible CLI consistency defect: `caco operator-actions list --limit` had adopted the empty-string canonical error wording but still used drifted messages for zero, negative, and non-numeric values. The goal was to align that surface with the fleet-wide limit validator wording without touching broader command behaviour.
 
 ## Bead(s)
 
-- `bd-2506fe` — Add gpt-realtime-1.5 as an available LLM with turn-based audio-to-audio conversation support
-- `bd-028f7e` — [broken-on-main] clippy empty_line_after_doc_comments in caco-beads validation
+- `bd-729d0e` — caco operator-actions list --limit 0/-1/bogus drifted from fleet-wide canonical
 
 ## Before state
 
-- Failing tests: scoped clippy was blocked by a pre-existing `clippy::empty_line_after_doc_comments` in `crates/caco-beads/src/validation.rs`; `caco-cli` clippy also saw a separate TUI `needless_lifetimes` issue already owned by msm-4.
-- Relevant metrics: audio capabilities exposed TTS/STT models but no realtime model list or realtime availability flag.
-- Context: `docs/research/bd-fbc9e9-gpt-realtime-integration-patterns.md` documented the OpenAI-compatible realtime WebSocket handshake, but no daemon endpoint or CLI surface implemented it.
+- Failing tests: none for this bead at start.
+- Relevant metrics: repro from the bead showed `--limit 0` lacked the `use --limit 1` hint, while `--limit -1` and `--limit bogus` used `must be a positive integer, got ...` instead of `invalid --limit value: ...`.
+- Context: the parser lived in `crates/caco-cli/src/lib.rs::parse_operator_actions_limit`, with tests that only asserted substrings rather than the full canonical messages.
 
 ## After state
 
-- Failing tests: none in the scoped validation owned by this work; the TUI needless-lifetimes clippy issue was already handled by another agent on main during the recovery window.
-- Relevant metrics: daemon audio tests passed 127 tests; `cargo check -p caco-cli --lib` passed; `cargo clippy -p caco-daemon --all-targets -- -D warnings` passed; `cargo clippy -p caco-beads --all-targets -- -D warnings` passed; `cargo test-small` passed with 255 tests after replay onto current main.
-- Context: capabilities now include `realtime_available` and `realtime_models`, with `gpt-realtime-1.5`; the CLI declares `caco audio realtime-turn`; and the daemon has `/api/v1/audio/realtime/turn` for one text turn returning base64 WAV plus transcript.
+- Failing tests: none in scoped validation.
+- Relevant metrics: `cargo test -p caco-cli parse_operator_actions_limit_handles_default_empty_zero_and_garbage --lib` passed; `cargo check -p caco-cli --lib` passed; `cargo test-small` passed with 256 tests.
+- Context: `--limit 0`, negative, and bogus values now match the fleet canonical phrasing exactly, while the already-canonical empty-string default disclosure remains unchanged.
 
 ## Diff summary
 
-- Commits: `df57ebaac`
-- Files touched: `README.md`, `SPEC.md`, `crates/caco-beads/src/validation.rs`, `crates/caco-cli/src/audio_cmd.rs`, `crates/caco-cli/src/lib.rs`, `crates/caco-daemon/src/audio.rs`, `crates/caco-daemon/src/lib.rs`
-- Tests: added daemon realtime helper coverage and CLI command metadata coverage; no tests removed or ignored.
-- Behavioural delta: Cacophony can now route one bounded realtime audio conversation turn through daemon-held OpenAI-compatible credentials and exposes the realtime model in audio capabilities. The caco-beads validation lint no longer blocks clippy.
-- Validation: `cargo test -p caco-daemon audio::tests --lib`; `cargo test -p caco-cli audio_realtime_turn_command_declared --lib`; `cargo check -p caco-cli --lib`; `cargo clippy -p caco-daemon --all-targets -- -D warnings`; `cargo clippy -p caco-beads --all-targets -- -D warnings`; `cargo test-small`.
+- Commits: `d3c33e69f`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: strengthened the operator-actions limit parser regression to assert exact canonical messages for zero, bogus, and negative values.
+- Behavioural delta: `caco operator-actions list --limit 0/-1/bogus` now renders the same class of error messages as sibling list surfaces.
+- Validation: targeted caco-cli parser test; caco-cli lib check; cargo test-small.
 
 ## Operator-takeaway
 
-`gpt-realtime-1.5` is now represented in the product contract and exposed through a real daemon/CLI path for a single generated audio turn. This is intentionally a safe thin slice rather than the full continuous microphone loop; it unblocks UI and workflow follow-ups from a concrete backend contract.
+This was a tiny consistency fix, but it closes another partial-adoption edge in the CLI error contract so operator muscle memory works across list surfaces.
