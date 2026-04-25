@@ -1,32 +1,32 @@
-# Session summary — macOS command output readability polish
+# Session summary — macOS agent detail handoff polish
 
 ## Goal
 
-Improve command-output review in the native macOS controls surface so operators can quickly understand whether an action or cron result succeeded, needs review, or is just empty.
+Improve the native macOS agent detail view so operators can quickly copy useful context into CLI follow-up, chat handoffs, or peer debugging without manually gathering metadata from multiple cards.
 
 ## Bead(s)
 
-- `bd-3c877a` — `[macOS excellence] Command output readability polish`
+- `bd-c9de87` — `[macOS excellence] Agent detail copy handoff polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline was 53 checks.
-- Context: Command output was a raw monospaced pane with minimal context, making it slower to distinguish successful runs, stderr-bearing results, cron logs, and no-output states.
+- Context: Agent details exposed useful fields, but handoff required manually selecting individual rows and missing branch context had no explanatory fallback.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with `CacophonyKitSmoke: OK (53 checks)`.
-- Context: Action output now includes status, exit, and stdout/stderr byte summaries; cron logs include a header and line count; the output pane has a native summary header with result-specific guidance.
+- Context: Agent details now include Copy Handoff, a handoff summary card, copyable consolidated metadata, and branch guidance even when no branch is reported.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-3c877a`.
-- Files touched: `companion/macos/Sources/Cacophony/Views/OperatorControlsPane.swift`.
+- Commits: current branch commit for `bd-c9de87`.
+- Files touched: `companion/macos/Sources/Cacophony/Views/AgentsPane.swift`.
 - Tests: no smoke-count change; app build and smoke suite passed.
-- Behavioural delta: operators can scan command results faster and know whether to copy, retry, inspect stderr, or read cron logs.
+- Behavioural delta: handoff/debug workflows are faster because agent ID, state, project, node, bead, branch, profile, and checkout are copyable in one action.
 
 ## Operator-takeaway
 
-The action/cron output pane is now an interpretation surface, not just a text dump: it summarizes success, review-worthy output, and empty states before the raw log.
+Agent detail is now a better bridge between native UI and operational handoff: one button produces the context a peer or CLI session needs.
