@@ -1,33 +1,32 @@
-# Session summary — bd-bea0d0 macOS feedback banner polish
+# Session summary — bd-aaa1cf macOS Operations command feedback wording
 
 ## Goal
 
-Improve the native macOS global feedback banner so command successes and errors are calmer, easier to interpret, and easier to act on without leaving the current pane.
+Use the improved macOS global feedback banner from the prior slice with clearer Operations-pane command receipts, so queued builds, queued tests, and release syncs read like operator-facing confirmations instead of terse debug strings.
 
 ## Bead(s)
 
-- `bd-bea0d0` — [macOS excellence] Native feedback banner affordance polish
+- `bd-aaa1cf` — [macOS excellence] Operations command feedback wording polish
 
 ## Before state
 
-- Feedback appeared as a simple top banner with generic “Done” and “Needs attention” titles.
-- Operators could dismiss the banner, but there was no direct copy affordance for handoffs or debugging.
-- Success/error styling relied mostly on icon color and border, with little guidance about next action.
+- The ready queue was empty and remaining open beads were already owned by other workers.
+- Collab-mode inspection found OperationsPane still emitted terse lower-case receipts: `queued build <id>`, `queued test <id>`, and `release sync: N jobs`.
+- Those strings worked technically but did not provide enough project or next-step context for the new copyable feedback banner.
 
 ## After state
 
-- Success banners now say “Command completed”; error banners say “Command needs attention”.
-- Added dedicated copy buttons with distinct accessibility labels for confirmations and errors.
-- Added short guidance text telling operators when to copy details and when to dismiss.
-- Banner styling now uses stronger success/error tinted backgrounds, borders, shadows, text selection, and calmer wording.
+- Build queue feedback now includes the selected project, job id, and where to track it.
+- Test queue feedback now includes the selected project, job id, and where to track it.
+- Release sync feedback now reads as a completed sync receipt with pluralized job count.
 
 ## Diff summary
 
-- Commit: `b3b30116e` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`.
+- Commit: `b69c21cdf` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/OperationsPane.swift`.
 - Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
-- Behavioural delta: command feedback is now more actionable and self-explanatory, with one-click copy and explicit dismiss affordances.
+- Behavioural delta: no API behavior changed; only the operator-visible command feedback text became more descriptive and actionable.
 
 ## Operator-takeaway
 
-The macOS app’s global command feedback should now feel less like a transient toast and more like a small actionable receipt: copy if needed, dismiss when acknowledged.
+Operations actions now produce receipts that are safe to copy into handoffs: they say what was queued, for which project, and where to watch progress.
