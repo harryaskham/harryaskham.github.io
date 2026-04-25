@@ -1,38 +1,36 @@
-# Session summary 0042 — bd-1ac1b7: on_revival hook field
+# Session summary — Web summaries selected-detail focus flow
 
 ## Goal
 
-Schema slice for the auto-rehydration hook. Profile authors get
-a place to declare what to run on crash-revival.
+Continue web summaries keyboard polish by making the advertised Enter shortcut do useful focus work and providing a keyboard way back to the selected row.
 
 ## Bead(s)
 
-- `bd-1ac1b7` slice 1 — schema + compose only.
+- `bd-97c5cb` — Web summaries: add selected-detail keyboard focus flow
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- bd-d5d63b slice 1 shipped `caco rehydrate` CLI but nothing
-  ran it automatically; operator had to invoke.
+- The web summaries shortcut strip advertised `Enter open row`.
+- Row selection changed the detail pane, but pressing Enter from the list did not move focus into the selected detail context.
+- Returning from the detail pane to the selected row required pointer use or other focus traversal.
 
 ## After state
 
-- `ProfileFrontmatter.on_revival: Option<String>` field added
-  with `#[serde(default)]`.
-- `compose_profiles` takes the first non-None value across
-  constituent profiles (override-semantics work is slice 2).
-- 295 caco-profile tests pass.
+- Pressing Enter in the summaries view focuses and reveals the selected summary detail pane.
+- The detail pane is explicitly focusable and labelled for assistive technologies.
+- Pressing Escape while detail is focused reveals and focuses the selected row, closing the keyboard loop between list and detail.
 
 ## Diff summary
 
-- Commit: `28074fb9`.
-- Files (4): caco-profile model.rs + compose.rs + bridge.rs +
-  lib.rs (Profile literals updated).
-- `cargo build` and `cargo test`: clean.
+- Commits: current `bd-97c5cb` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: keyboard users can move from selected row to detail with Enter and back to the selected row with Escape.
 
 ## Operator-takeaway
 
-Profile authors can now write `on_revival: caco rehydrate` in
-frontmatter. The supervisor doesn't yet honour the hook — slice
-2 will read the field at revival time, run the command, and pipe
-stdout into the agent's first turn. With this schema landed, the
-slice-2 work is a self-contained supervisor change.
+The web summaries viewer now has a more complete keyboard loop: select a run, press Enter to inspect its detail, then press Escape to return to the exact selected row.
