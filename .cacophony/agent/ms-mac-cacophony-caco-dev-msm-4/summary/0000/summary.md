@@ -1,31 +1,30 @@
-# Session summary — bd-000afe caco-web metrics
+# Session summary — bd-f7d64d TUI kitty graphics performance audit
 
 ## Goal
-Add a bounded observability slice to caco-web so operators can inspect request volume, failure shape, and latency counters without introducing a full tracing stack or daemon schema dependency.
+Audit the TUI kitty graphics rendering path for performance/flicker opportunities and leave actionable follow-up work rather than making unsupported real-terminal claims from this non-interactive session.
 
 ## Bead(s)
 
-- `bd-000afe` — Add telemetry/observability to caco web service
+- `bd-f7d64d` — Audit the TUI kitty graphics performance, especially graphics rendering
 
 ## Before state
 
-- caco-web already emitted structured per-request logs from `bd-b4f748`, but it had no scrapeable metrics surface.
-- `bd-000afe` was blocked on a stale dependency label for per-request logs; that dependency was already closed as `bd-b4f748`, so I cleared the stale dependency before claiming.
+- The queue contained a broad audit request asking for ways to preserve the current kitty graphics look while reducing render cost/flicker.
+- A sibling flicker bead (`bd-972c76`) already noted that real-terminal reproduction requires a kitty-capable session with 5+ tabs.
 
 ## After state
 
-- Added process-local request counters for total requests, 4xx responses, 5xx responses, aggregate request duration, and max observed request duration.
-- The existing request middleware records metrics even when request logging is disabled by `CACO_WEB_REQUEST_LOG=0`.
-- Added `/metrics`, returning Prometheus-style text for the new counters/gauge.
-- Added unit coverage for request metric recording and rendered metric names.
+- Added `docs/investigations/bd-f7d64d-tui-kitty-graphics-performance.md` documenting the rendering pipeline, existing guardrails, likely hot path, findings, and recommended implementation slices.
+- Confirmed the code already has stable surface IDs, upload throttling, dedupe, retained-image redisplay, non-animation redraw suppression, role suppression, and graphics perf telemetry.
+- Filed three draft follow-ups from the audit: tab-bar surface churn regression (`bd-4b2b79`), graphics summary diagnostics (`bd-c84513`), and delete/upload spike warnings (`bd-9c9ac8`).
 
 ## Diff summary
 
-- Commits: `63b57b2c9`.
-- Files touched: `crates/caco-web/src/server.rs`.
-- Tests: added `bd_000afe_web_metrics_track_request_failures_and_durations`.
-- Validation: `cargo test -p caco-web bd_000afe --lib`; `cargo clippy -p caco-web --all-targets -- -D warnings`; `cargo check --workspace --tests`.
+- Commits: `77c9aebcc`.
+- Files touched: `docs/investigations/bd-f7d64d-tui-kitty-graphics-performance.md`.
+- Tests: no code tests added; this is an audit/documentation deliverable.
+- Validation: `./docs/validate-pages.sh` passed 146/146 checks.
 
 ## Operator-takeaway
 
-caco-web now has a simple first-party `/metrics` surface that explains whether the service is receiving traffic, returning client/server errors, or seeing slow requests, complementing the existing request log stream with machine-readable counters.
+The likely next high-value work is not generic throttling; it is proving and preventing tab-bar placement/delete/re-upload churn, plus exposing existing graphics perf counters in an operator-friendly summary.
