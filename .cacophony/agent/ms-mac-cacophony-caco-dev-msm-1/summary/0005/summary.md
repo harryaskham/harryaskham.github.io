@@ -1,64 +1,33 @@
-# Session summary — README CLI-family table audit + caco node join
+# Session summary — macOS slice 3 message center
 
 ## Goal
 
-Close bd-19cc20 — README CLI-family table claimed to omit several shipped
-command families (notify, doctor, ssh/scp, claude/codex, ps/ls, node join)
-plus a stale "caco build follow-up" comment on line 89.
+Deliver the third macOS parity slice by adding a native message center for feed, inbox, project chat, global chat, and compose actions, while keeping the app visually aligned with the glass/native shell established in the prior slice.
 
 ## Bead(s)
 
-- `bd-19cc20` — Add missing CLI families to README command table (notify,
-  doctor, ssh, shorthand commands) (was draft P3, promoted to open before
-  claiming)
+- `bd-e82601` — `[macOS-parity slice 3] Feed + chat + inbox + global chat`
+- Parent: `bd-d6f18a` — macOS native app feature parity umbrella
 
 ## Before state
 
-Bead was filed 4 weeks ago. README has been touched many times since by
-other agents. Audit of current README.md against the bead's six items:
-
-| Item | Bead claim | Actual state |
-|------|-----------|--------------|
-| caco notify | omitted | already in table (line 92) |
-| caco doctor | omitted | already in table (line 113) |
-| caco ssh / scp | omitted | already in table (line 112), plus mosh |
-| caco ps / ls | "after stale comment" | already in table cleanly (lines 115-116) |
-| caco claude / codex | omitted | already in table (line 119), plus pi |
-| caco node join | "join is not mentioned" | confirmed missing from caco node row |
-| stale `caco build` follow-up comment | line 89 | already removed |
-
-So 5 of 6 items + the stale comment had been silently fixed by peer
-agents in unrelated README sweeps; only `caco node join` remained.
+- Failing tests: unrelated broken-on-main Rust test failures were reported by peer agents; not exercised here under merge-queue guidance.
+- Relevant metrics: `CacophonyKitSmoke` had 21 checks after slice 2.
+- Context: the app had Status, Agents, Beads, Controls, and Settings, but no communication surface for feed/chat/inbox.
 
 ## After state
 
-Single-line README change: `caco node` row now reads
-`Inspect node inventory and per-node status (list, show, status, join)`.
-`caco node join --help` confirmed real in the current build (not a vapor
-command).
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: `swift build` passed; `CacophonyKitSmoke` now runs 24 checks with feed/chat sample decoding.
+- Context: a new Messages pane provides segmented Feed, Inbox, Project Chat, Global Chat, and Compose surfaces. Compose can project-broadcast, direct-message, speak, or global-broadcast through daemon APIs.
 
 ## Diff summary
 
-- Commit: 59616123
-- Files touched: `README.md`
-- Tests: none added (docs-only change)
-- Behavioural delta: one CLI-family table row mentions `join`.
+- Commits: current branch commit for `bd-e82601`.
+- Files touched: `companion/macos/PARITY.md`, `DaemonState.swift`, `RootView.swift`, `MessagesPane.swift`, `DaemonClient.swift`, `Messaging.swift`, `CacophonyKitSmoke/main.swift`.
+- Tests: +3 smoke assertions for feed/chat decoding; no tests removed.
+- Behavioural delta: the app now covers the operator communication loop: observe event feed, read inbox/chat history, and send/broadcast/speak without leaving the native app.
 
 ## Operator-takeaway
 
-This is a "promoted-from-draft + audit-and-mostly-close" pattern that
-pairs well with the stale-bead sweeps from earlier in this session
-(bd-3ae0c6 / bd-68bde8 closed via admin-override as already-implemented).
-4-week-old draft beads about discovery surfaces tend to age out in
-exactly this way as peer agents incrementally fix the pieces while
-chasing other docs work.
-
-If a future operator wants the README CLI-family section to be
-self-validating, file a follow-up to add a `cargo test` lane that:
-1. Walks the discovered CommandSpec tree and collects all top-level
-   command names.
-2. Greps the README CLI-family table for each name.
-3. Fails the build when a top-level family is shipped but missing from
-   the table.
-
-That would automate the audit this bead manually performed.
+The macOS app is becoming a real operator console: you can now see what the swarm is saying and push messages back from a native glass UI, rather than bouncing back to CLI/TUI for routine communication.
