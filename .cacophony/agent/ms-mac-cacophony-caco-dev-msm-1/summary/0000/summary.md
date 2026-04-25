@@ -1,32 +1,32 @@
-# Session summary — macOS connection setup confidence
+# Session summary — macOS guided empty states
 
 ## Goal
 
-Improve first-run and recovery confidence in the native macOS app by making daemon connection readiness explicit before operators attempt to connect.
+Make drained or blank macOS app panes feel intentional and actionable instead of empty, with native guidance and next-step controls.
 
 ## Bead(s)
 
-- `bd-682157` — `[macOS excellence] Connection setup confidence polish`
+- `bd-a16892` — `[macOS excellence] Empty state guided actions pass`
 
 ## Before state
 
-- Failing tests: current main exposed a Swift visibility issue where `MessagesPane` referenced `ProjectScopeBadge` while it was private to `RootView`.
+- Failing tests: none observed for this slice.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: Settings had profile and token helpers, but readiness was implicit in disabled buttons and operators had to infer which field was missing or invalid.
+- Context: Agents and Beads had functional blank states, but they were minimal and did not guide operators toward refresh, controls, bead work, or filter reset paths.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: Settings now includes a native connection readiness card with endpoint preview, profile/endpoint/token checks, connected/not-connected badge, and clearer success/failure feedback after connect attempts. `ProjectScopeBadge` visibility was widened so peer-landed Messages polish compiles.
+- Context: Agents now has a richer no-agents state with refresh, controls, and Beads actions. Beads now has separate empty-selection guidance plus an empty-filter state with a one-click filter reset.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-682157`.
-- Files touched: `SettingsView.swift`, `RootView.swift`.
+- Commits: current branch commit for `bd-a16892`.
+- Files touched: `AgentsPane.swift`, `BeadsPane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: operators get pre-flight connection confidence and actionable setup guidance before storing daemon credentials.
+- Behavioural delta: blank panes now explain what is happening and provide the next likely operator actions.
 
 ## Operator-takeaway
 
-The macOS app now feels safer and clearer during first-run setup: it says what is ready, what needs attention, where it will connect, and whether credentials were saved successfully.
+The macOS app is less dead-end-prone: empty operational surfaces now guide operators back toward useful action rather than presenting a passive blank screen.
