@@ -1,32 +1,32 @@
-# Session summary — macOS final inspector scanability polish
+# Session summary — macOS settings onboarding copy polish
 
 ## Goal
 
-Improve Final Inspector orientation so operators can understand exceptions, command events, source browsing, and performance evidence faster.
+Improve Settings/onboarding copy so operators understand daemon trust, token storage, profile saving, and connection testing before controlling a daemon from the native app.
 
 ## Bead(s)
 
-- `bd-5c0a51` — `[macOS excellence] Final inspector overview scan polish`
+- `bd-3f2a1d` — `[macOS excellence] Settings onboarding copy polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: Final Inspector exposed valuable evidence, but top-level guidance and empty states were sparse outside the source browser.
+- Context: Settings already supported Keychain-backed profiles and connection readiness, but some trust and save/test semantics were implicit.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: Final Inspector now has tab-specific guidance plus richer empty states for exceptions, command events, and performance traces.
+- Context: Settings now explains local vs remote tokens, Keychain storage, test-vs-save behavior, verified connection meaning, and clear-profile-secrets impact.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-5c0a51`.
-- Files touched: `FinalInspectorPane.swift`.
+- Commits: current branch commit for `bd-3f2a1d`.
+- Files touched: `SettingsView.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: the inspector is easier to orient in and less ambiguous when evidence streams are quiet.
+- Behavioural delta: first-run and remote-profile setup are less ambiguous and safer for operators.
 
 ## Operator-takeaway
 
-Final Inspector now helps an operator decide what kind of evidence they are looking at instead of just showing raw lists or blank panes.
+Settings now makes daemon trust and token handling explicit, reducing the risk of saving or targeting the wrong daemon profile.
