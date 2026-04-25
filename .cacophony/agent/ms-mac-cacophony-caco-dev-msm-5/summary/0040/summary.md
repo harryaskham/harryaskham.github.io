@@ -1,45 +1,38 @@
-# Session summary 0040 — bd-d5d63b: caco rehydrate (slice 1)
+# Session summary — TUI summaries detail scroll keys
 
 ## Goal
 
-Give crash-revived persistents a one-shot read-only state-hint
-dump so the post-revival agent can self-rehydrate without
-operator-prompt.
+Continue TUI summaries usability polish by letting keyboard users scroll the selected summary detail without changing the list selection.
 
 ## Bead(s)
 
-- `bd-d5d63b` slice 1 — read-only CLI only.
+- `bd-d03247` — TUI summaries: add keyboard detail scrolling
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- After a managed-session-revival-after-crash (or OOM-kill or
-  upgrade restart), a persistent had no built-in way to figure
-  out where it left off; operator had to hand-feed context.
+- TUI summaries list navigation worked with arrows, vim keys, paging, and boundary keys.
+- Detail content could be scrolled by mouse/trackpad, but keyboard scrolling was not directly advertised or handled in the summaries view.
+- Long summaries required pointer/terminal scroll support to inspect lower sections while keeping the selected row stable.
 
 ## After state
 
-- `caco rehydrate [agent-id]` (defaults to `$CACO_AGENT_ID`).
-- `--project <name>` (defaults to `$CACOPHONY_PROJECT` or
-  `cacophony`).
-- Hits two existing daemon endpoints:
-  - `GET /api/v1/projects/{project}/messages/inbox?limit=20`
-  - `GET /api/v1/projects/{project}/beads?assignee={agent}&limit=5&sort=updated_at`
-- Pretty-prints `## Recent inbox` (kind, sender, 120-char body
-  snippet) and `## Recent beads claimed by agent` (id, status,
-  title).
-- `--json` mode emits structured envelope for scripting.
+- `Ctrl-U` scrolls the selected summary detail upward by a half-page-ish step.
+- `Ctrl-D` scrolls the selected summary detail downward and clamps against the existing detail line estimate.
+- The footer help now advertises `Ctrl-U/D detail scroll`.
+- List selection remains unchanged when detail scrolling.
 
 ## Diff summary
 
-- Commit: `ed88180a`.
-- Files (1): caco-cli lib.rs (+149 lines).
-- `cargo build` and `cargo clippy`: clean.
+- Commits: current `bd-d03247` implementation commit
+- Files touched:
+  - `crates/caco-tui/src/app.rs`
+  - `crates/caco-tui/src/views/summaries.rs`
+- Tests:
+  - `cargo test -p caco-tui summaries --lib` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: keyboard-only TUI users can scroll summary detail content independently of row selection.
 
 ## Operator-takeaway
 
-After a persistent restarts, the supervisor (or the agent itself
-via on_revival hook) can run `caco rehydrate` to get a fresh
-state-hint dump. Slice 2 (daemon-side last-N-events checkpoint
-per persistent + profile `on_revival` hook that auto-runs
-`caco rehydrate` post-restart) is filed as a follow-up — that
-turns this manual command into automatic post-crash recovery.
+The TUI summaries viewer is now more usable for long recorded summaries because detail-pane scrolling is available from the keyboard and shown in the help line.
