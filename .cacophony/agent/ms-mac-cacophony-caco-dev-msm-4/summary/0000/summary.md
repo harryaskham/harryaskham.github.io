@@ -1,30 +1,31 @@
-# Session summary — bd-f7d64d TUI kitty graphics performance audit
+# Session summary — bd-cf3183 web timeline preferences
 
 ## Goal
-Audit the TUI kitty graphics rendering path for performance/flicker opportunities and leave actionable follow-up work rather than making unsupported real-terminal claims from this non-interactive session.
+Deliver a bounded timeline configuration slice by making the existing caco-web timeline remember useful display preferences locally, without attempting the broader all-surface/device-sync ambition in one pass.
 
 ## Bead(s)
 
-- `bd-f7d64d` — Audit the TUI kitty graphics performance, especially graphics rendering
+- `bd-cf3183` — Add timeline view configuration options
 
 ## Before state
 
-- The queue contained a broad audit request asking for ways to preserve the current kitty graphics look while reducing render cost/flicker.
-- A sibling flicker bead (`bd-972c76`) already noted that real-terminal reproduction requires a kitty-capable session with 5+ tabs.
+- The web timeline had fixed defaults for the time window, refresh staleness, event type filters, and cluster-wide scope.
+- Users could toggle event type checkboxes in-session, but preferences were not persisted and there was no refresh interval or project-vs-cluster scope control.
 
 ## After state
 
-- Added `docs/investigations/bd-f7d64d-tui-kitty-graphics-performance.md` documenting the rendering pipeline, existing guardrails, likely hot path, findings, and recommended implementation slices.
-- Confirmed the code already has stable surface IDs, upload throttling, dedupe, retained-image redisplay, non-animation redraw suppression, role suppression, and graphics perf telemetry.
-- Filed three draft follow-ups from the audit: tab-bar surface churn regression (`bd-4b2b79`), graphics summary diagnostics (`bd-c84513`), and delete/upload spike warnings (`bd-9c9ac8`).
+- Added `timeline.preferences.v1` localStorage persistence for time window, refresh interval, granularity, and selected event types.
+- Added UI controls for refresh interval and whole-cluster vs current-project granularity.
+- Project granularity adds the current project to `/api/v1/events` query params when available.
+- Timeline auto-refresh now respects the persisted refresh interval instead of a hard-coded 30 seconds.
 
 ## Diff summary
 
-- Commits: `77c9aebcc`.
-- Files touched: `docs/investigations/bd-f7d64d-tui-kitty-graphics-performance.md`.
-- Tests: no code tests added; this is an audit/documentation deliverable.
-- Validation: `./docs/validate-pages.sh` passed 146/146 checks.
+- Commits: `393c6aeec`.
+- Files touched: `crates/caco-web/static/timeline.js`, `crates/caco-web/src/tests.rs`.
+- Tests: added `bd_cf3183_timeline_preferences_are_persisted_and_scopeable`.
+- Validation: `cargo test -p caco-web bd_cf3183 --lib`; `cargo test -p caco-web timeline_js_is_embedded --lib`; `cargo clippy -p caco-web --all-targets -- -D warnings`; `cargo check --workspace --tests`.
 
 ## Operator-takeaway
 
-The likely next high-value work is not generic throttling; it is proving and preventing tab-bar placement/delete/re-upload churn, plus exposing existing graphics perf counters in an operator-friendly summary.
+The timeline now has practical user-facing configuration in the web surface: it remembers filters/window/refresh/scope locally and can show either whole-cluster or current-project activity.
