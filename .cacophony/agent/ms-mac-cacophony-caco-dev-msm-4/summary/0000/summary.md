@@ -1,34 +1,34 @@
-# Session summary — bd-30d01f macOS message composer polish
+# Session summary — bd-5ac733 macOS operations queue grouping
 
 ## Goal
 
-Improve the native macOS Messages composer so operators can see the target project/context before sending, use a keyboard send shortcut, and recover or discard drafts quickly.
+Make the native macOS Operations pane easier to scan by visually separating active queue work from recent terminal jobs and by giving states clearer color/icon treatment.
 
 ## Bead(s)
 
-- `bd-30d01f` — [macOS excellence] Message composition quality-of-life
+- `bd-5ac733` — [macOS excellence] Operations queue visual grouping
 
 ## Before state
 
-- The composer had mode selection, optional direct-message target, a text editor, and a send button.
-- The selected project was only implicit in the send implementation rather than visible at compose time.
-- Operators had no in-pane copy/clear draft helpers and no visible keyboard-send affordance.
+- Build, test, and release jobs rendered as a flat list.
+- State badges used a limited color mapping and no leading state icon.
+- Active versus completed/failed jobs required reading every row rather than scanning grouped sections.
 
 ## After state
 
-- Added active `ProjectScopeBadge` and per-mode context copy at the top of the composer.
-- Added a visible `⌘↩ sends` hint plus Command-Return keyboard shortcut for sending.
-- Added contextual placeholders for project broadcast, direct message, speak, and global broadcast modes.
-- Added Copy draft and Clear helpers using the macOS pasteboard and compose focus restoration.
-- Tightened send validation to trim direct-message targets and report the send context in command feedback.
+- Added grouped queue rendering with Active and Recent sections for build, test, and release queues.
+- Added section headers with icons and counts.
+- Added shared `QueueVisuals` state classification for active states, status colors, and status icons.
+- Updated job rows with leading status icons, stronger filled state badges, and queued/triggered timestamp context.
+- Preserved existing run build/test and release sync actions.
 
 ## Diff summary
 
-- Commit: `628710175` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/MessagesPane.swift`.
+- Commit: `215d631eb` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/OperationsPane.swift`.
 - Tests: `just macos-app-test`; `./docs/validate-pages.sh`.
-- Behavioural delta: chat/inbox workflow is smoother because the composer now makes scope/target explicit, supports keyboard send, and offers draft copy/clear actions.
+- Behavioural delta: queue status is easier to scan because active work is grouped first and state color/icon treatment is consistent across operations queues.
 
 ## Operator-takeaway
 
-The Messages pane now behaves more like a native power-user composer instead of a bare text box, reducing accidental wrong-scope sends and draft friction.
+Operations now reads like an operational dashboard instead of a raw job table: active work is visually separated, counted, and colour-coded.
