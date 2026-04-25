@@ -1,33 +1,31 @@
-# Session summary — bd-efb808 macOS notarization-ready packaging
+# Session summary — bd-4f63a8 macOS UI acceptance harness
 
 ## Goal
-Prepare the native macOS release packaging path for real Developer ID signing and Apple notarization while keeping local and CI validation secret-free when credentials are absent.
+Add a deterministic, runner-safe native macOS UI/visual acceptance harness so release/manual lanes can capture a representative app path without running expensive UI automation on every push.
 
 ## Bead(s)
 
-- `bd-efb808` — [macOS excellence] Notarization-ready signing configuration
+- `bd-4f63a8` — [macOS excellence] UI automation and visual regression harness
 
 ## Before state
 
-- `just macos-app-package` could build a signed app, ZIP, DMG, and metadata, but only exposed `CACO_MACOS_CODESIGN_IDENTITY` and had no notarytool/stapling path.
-- Release workflow invoked the package recipe without forwarding notarization-related secret environment variables.
-- macOS docs said notarization was future work.
+- The native macOS app had build, install, smoke, package, and release workflows, but no command that launched the app and captured a deterministic UI artifact.
+- The manual/tag-gated macOS CI job packaged artifacts but did not exercise the rendered SwiftUI app path beyond smoke binaries.
 
 ## After state
 
-- `just macos-app-package` supports optional Developer ID signing, hardened-runtime signing options, notarytool submission, stapling, validation, and a required-notarization mode.
-- Local runs remain secret-free: without notary credentials the recipe prints a clear skip message and packages normally.
-- Release workflow now passes `CACO_MACOS_CODESIGN_IDENTITY`, keychain-profile, and Apple ID/team/password notary variables from GitHub secrets.
-- README and macOS development docs describe the new environment-variable contract and fallback behavior.
+- Added `companion/macos/Scripts/ui-acceptance.sh`, which launches the built app, opens the offline Settings path, captures `dist/macos-ui/settings.png`, verifies key Settings labels in source, and writes `dist/macos-ui/summary.json` with bytes and SHA-256.
+- Added `just macos-app-ui-acceptance` to build if needed and run the harness on macOS only.
+- Wired the command into the already manual/tag-gated macOS app CI job and documented the workflow in the macOS README/development guide.
 
 ## Diff summary
 
-- Commit: `d072e1dab` after stale-branch replay.
-- Files touched: `justfile`, `.github/workflows/release.yml`, `companion/macos/README.md`, `docs/macos-development.md`.
-- Tests: no Rust tests required for packaging/docs-only shell workflow changes.
-- Validation: `just --list`; `./docs/validate-pages.sh`.
-- Behavioural delta: release runners with credentials notarize and staple the app; local/no-secret runs keep working and report notarization as skipped in metadata.
+- Commit: `2e48781b6` after stale-branch replay.
+- Files touched: `justfile`, `.github/workflows/ci.yml`, `companion/macos/Scripts/ui-acceptance.sh`, `companion/macos/README.md`, `docs/macos-development.md`.
+- Tests: no Rust tests required for this shell/docs/UI-harness slice.
+- Validation: `just --list`; `bash -n companion/macos/Scripts/ui-acceptance.sh`; `./docs/validate-pages.sh`.
+- Behavioural delta: manual/tag macOS lanes now produce a visual-regression screenshot and JSON metadata for the app's Settings path.
 
 ## Operator-takeaway
 
-The macOS app release path is now ready for real notarization once secrets are configured, but developer and runner validation still degrades gracefully instead of requiring Apple credentials everywhere.
+The native macOS app now has a first deterministic visual acceptance artifact path, giving operators something concrete to inspect in gated CI without spending scarce macOS runner time on every push.
