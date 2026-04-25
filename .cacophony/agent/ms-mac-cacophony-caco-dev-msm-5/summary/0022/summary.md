@@ -1,45 +1,36 @@
-# Session summary 0022 — bd-3bcac8 slice 1: caco daemon shutdown
+# Session summary — Android summaries scroll preservation
 
 ## Goal
 
-Add a `caco daemon shutdown` CLI command + matching daemon endpoint
-that requests a clean process exit (no respawn), as scaffolding for
-future drain logic.
+Continue polishing Android summaries usability for long histories by ensuring operators return to the same list position after opening and backing out of a detail view.
 
 ## Bead(s)
 
-- `bd-3bcac8` — graceful shutdown (slice 1).
+- `bd-599c8e` — Android summaries: preserve list scroll when returning from detail
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- Only mechanism to stop the daemon was SIGTERM via `caco restart`
-  or external kill. `caco restart` always respawns; there was no
-  "stop and stay stopped" command, complicating safe binary swaps.
+- Android summaries already had paging, search, stable row keys, section copy/collapse, and artefact actions.
+- The list used a default LazyColumn state scoped only inside composition, so the intended return-to-list behavior was not explicit.
+- For long histories, opening a detail and returning risked losing scroll context or relying on incidental Compose behavior.
 
 ## After state
 
-- New `POST /api/v1/daemon/shutdown` endpoint returns 200 with
-  `{accepted: true, delay_ms: 500}` then schedules
-  `process::exit(0)` after 500ms (giving the HTTP response time to
-  flush).
-- Route registered on both the main daemon router and the
-  standalone variant.
-- `caco daemon shutdown` CLI subcommand POSTs to the endpoint and
-  prints "daemon shutdown accepted; daemon will exit in 500ms (no respawn)".
+- The summaries list now owns a remembered LazyListState at screen scope.
+- The LazyColumn is wired to that state, so scroll offset is preserved while the detail screen temporarily replaces the list view and then returns.
+- Existing search, paging, selection, and detail-fetch behavior is unchanged.
 
 ## Diff summary
 
-- Commit: `ecebcf6d`.
-- Files (2): `crates/caco-daemon/src/lib.rs`,
-  `crates/caco-cli/src/lib.rs`.
-- `cargo build -p caco-daemon -p caco-cli` + clippy: clean.
+- Commits: current `bd-599c8e` implementation commit
+- Files touched:
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/summaries/SummariesScreen.kt`
+- Tests:
+  - `nix develop .#android --command bash -lc 'cd companion/android && gradle :app:compileDebugKotlin --no-daemon'` — passed
+  - `cargo test-small` — 254 passed
+- Behavioural delta: Android users can open a summary detail, go back, and stay near the same list position instead of losing long-history context.
 
 ## Operator-takeaway
 
-Run `caco daemon shutdown` to stop the daemon cleanly without
-spawning a replacement. Useful for binary-swap upgrades:
-`caco daemon shutdown && cp new-caco /usr/local/bin/caco && caco up`.
-
-Note: this slice does **not** drain in-flight reconciles — pending
-work is interrupted by the exit. Drain logic + 503/Retry-After for
-new requests during the drain window are tracked in a follow-up bead.
+This is a small but high-feel mobile polish fix: Android summaries now behave like a mature list/detail app, preserving the operator's place during deep inspection.
