@@ -1,45 +1,37 @@
-# Session summary 0025 — bd-d8fc57: bead parent_bead_id (slice 1)
+# Session summary — Android summaries back-to-list action
 
 ## Goal
 
-Add a first-class `parent_bead_id` field to the bead model so the
-parent-child relationship currently encoded in title prefixes
-("[bd-XXX follow-up]") becomes structured data, queryable later
-by tree-rendering and child-aware close UX.
+Continue Android summaries polish by adding an explicit, touch-friendly way back from summary detail to the preserved list context, complementing the system back affordance.
 
 ## Bead(s)
 
-- `bd-d8fc57` slice 1 — schema + create flag.
+- `bd-53e741` — Android summaries: add explicit detail back-to-list affordance
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- Parent/child decomposition was prose-only (title prefix). No
-  field; no index; no way to walk descendants programmatically.
+- Android summaries detail had a top-left back icon and system back handling.
+- The detail context card already explained the structured reintegration note and exposed `COPY SUMMARY` when raw body text was loaded.
+- After scroll-preservation work, returning to the list kept position, but the detail body itself did not advertise that action in the main content flow.
 
 ## After state
 
-- `Bead.parent_bead_id: Option<String>` on the model.
-- `issues.parent_bead_id TEXT` column + `idx_issues_parent_bead_id`
-  index. ALTER TABLE migration handles existing DBs.
-- `CreateBeadParams.parent_bead_id` propagated through all
-  CreateBeadParams call sites (4 sites updated).
-- `CreateBeadRequest.parent_bead_id` JSON field.
-- `caco bd create --parent bd-XXX` CLI flag.
-- `caco bd info` renders `parent: bd-XXX` when present.
+- The detail context card now always includes a `BACK TO LIST` action chip.
+- The chip uses an auto-mirrored list icon and calls the existing detail `onBack` path, preserving the list scroll state landed in the prior Android slice.
+- `SummaryActionChip` now supports an optional icon while keeping existing copy/expand/collapse uses working.
+- The Android compile warning from the non-auto-mirrored list icon was avoided by using `Icons.AutoMirrored.Filled.List`.
 
 ## Diff summary
 
-- Commit: `b97d71e4`.
-- Files (6): caco-beads model.rs + store.rs, caco-daemon
-  beads.rs + audit.rs + release_queue.rs, caco-cli lib.rs.
-- `cargo build` and `cargo clippy` for caco-beads + caco-daemon
-  + caco-cli: clean.
+- Commits: current `bd-53e741` implementation commit
+- Files touched:
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/summaries/SummariesScreen.kt`
+- Tests:
+  - `nix develop .#android --command bash -lc 'cd companion/android && gradle :app:compileDebugKotlin --no-daemon'` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: Android detail users now have a clear in-content back-to-list action in addition to the toolbar and system back controls.
 
 ## Operator-takeaway
 
-When filing follow-ups, use:
-`caco bd create --title '...' --parent bd-XXX ...`
-to attach the new bead as a child. `caco bd info bd-CHILD` will
-show the parent reference. Tree walks (`caco bd list --tree
-bd-XXX`), close-children prompting, and parent auto-close are
-deferred follow-ups but the persistence layer is now in place.
+Android summaries now make the list/detail loop more obvious: the detail page explicitly offers “Back to list,” and because scroll state is preserved, that action returns operators to the same long-history context.
