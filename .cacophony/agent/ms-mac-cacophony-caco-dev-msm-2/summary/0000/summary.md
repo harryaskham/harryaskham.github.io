@@ -1,29 +1,24 @@
-# bd-e73f7a Recorded PR-backed artefacts
+# PR reintegration config switch
 
 ## Goal
-Implement recorded PR-backed reintegration support so PR code branches do not carry `.cacophony/agent/...` summary artefacts, while summaries are still durably published to the cacophony-state branch and linked from generated PR bodies.
+Switch the Cacophony development profile and Cacophony project configuration to exercise PR-backed reintegration for newly recreated dev workers.
 
 ## Bead(s)
-- bd-e73f7a — `[recorded] Support PR-backed recorded reintegration via state artifacts`
+- Operator-requested follow-up to the PR-based reintegration workflow rollout.
 
 ## Before state
-Direct-branch PR reintegration could push agent branch content and open/update a PR, but recorded summaries were not guaranteed to be split into cacophony-state for PR-backed flows. A PR branch could carry `.cacophony/agent/...` artefacts, and the generated PR body did not identify the state branch commit/path that held the summary.
+The `dev` profile defaulted to direct reintegration only, and the `cacophony` project did not declare explicit PR-backed integration policy/topology in repository config.
 
 ## After state
-Recorded direct-branch PR flow now publishes `.cacophony/agent/...` artefacts to the configured state branch before PR work proceeds, refuses to continue if no durable recorded artefact is produced, uses a code-only publish ref for the PR branch when recorded artefacts are present, and adds a generated Cacophony summary section to PR bodies with the state branch, artefact commit, and paths.
+The `dev` profile defaults to `pr_review` while still allowing direct and recorded reintegration overrides. The `cacophony` project declares an explicit writable fork remote, PR target remote, `integration.pr_base`, `integration.reintegrate_target`, and `default_intent: review` / `backend: pull_request` policy.
 
 ## Diff summary
-- Updated `crates/caco-daemon/src/reintegration.rs` direct-branch flow to split recorded artefacts into cacophony-state and push them before PR creation/update.
-- Added code-only publish ref synthesis so recorded artefacts are removed from the PR branch without mutating the agent checkout history.
-- Extended generated PR body content with a Cacophony recorded artefacts section.
-- Added focused daemon tests for state publication and PR body links.
+- Updated `.cacophony/profiles/dev.md` reintegration frontmatter from `direct` to `pr_review` and expanded allowed modes.
+- Updated `.cacophony/projects.yaml` for the `cacophony` project with PR remotes and pull-request integration policy.
+- Validated the materialized config with the project overlay.
 
 ## Validation
-- `timeout 900 cargo test -p caco-daemon --lib 'bd_e73f7a' -- --nocapture`
-- `timeout 900 cargo test -p caco-daemon --lib direct_branch -- --nocapture`
-- `timeout 900 cargo test -p caco-cli --lib 'bd_e5e1bd' -- --nocapture`
-- `timeout 600 cargo check -p caco-daemon -p caco-cli`
-- `timeout 1500 cargo test-small`
+- `caco config validate --strict --project-config-dir .cacophony`
 
 ## Operator-takeaway
-bd-e73f7a is implementation-complete and validated without local Docker. PR-backed recorded reintegration now keeps code branches clean while preserving summary artefacts on cacophony-state and linking them from the PR body.
+After this lands and the daemon reloads the config, recreating a dev worker should use PR review reintegration by default so the worker can test the updated PR workflow directly.
