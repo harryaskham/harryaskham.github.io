@@ -1,81 +1,37 @@
-# Session summary — bd-7b19c1: workers stuck on cargo test/build after daemon restart
+# Session summary — caco tendril compatibility guidance
 
 ## Goal
 
-Root-cause + ship the smallest patch that breaks the reported wedge:
-agent runtimes silently looping forever on `caco test`/`caco build`
-after the daemon restarts mid-job. The bead labelled this an
-"interceptor" issue; the investigation shows there is no interceptor
-in the path — it's a missing-persistence + silent-404 bug.
+Start the operator-assigned TUI Ghostty/Tendril driver loop by first fixing the immediately observed first-party computer-control confusion: `caco tendril` and `caco tendril --help` should not leave operators with `no command supplied` or `unknown command path` when the supported control surface is the separate Tendril CLI / Pi MCP tools.
 
 ## Bead(s)
 
-- **bd-7b19c1** (P2 bug, owned).
-- bd-d5e2bc — closed as duplicate of bd-7b19c1 (same symptom, same
-  misleading "interceptor" framing).
-- bd-98acfe — filed as the deeper daemon-side persistence follow-up
-  (TestQueueInner / BuildQueueInner save+load, mark previously-
-  running jobs as state=error reason=daemon_restarted on startup).
+- `bd-c1c272` — [PERMANENT] TUI ghostty/tendril improvement and computer-control audit
+- `bd-0bdb2a` — caco tendril command surface is missing despite first-party computer-control expectation
 
 ## Before state
 
-- `TestQueueManager` and `BuildQueueManager` hold all state in a
-  single `Arc<Mutex<TestQueueInner>>` with three `HashMap`s and zero
-  on-disk persistence. Daemon restart wipes them entirely.
-- Child cargo processes spawned with `kill_on_drop(true)` — only
-  reaped on clean shutdown; SIGKILL/crash leaves them as orphans.
-- `handle_test_show` returns HTTP 404 for unknown job IDs (correct).
-- The CLI poll loop in `dispatch_test_run_wait` and the parallel
-  `dispatch_build_run_wait` silently `continue`d on any non-2xx
-  response, including 404. Workers polled the entire `wait_timeout`
-  (default 600s) and returned a "still running" message; agent
-  runtime treated it as soft-transient and retried → infinite loop.
+- Failing commands: `caco tendril` returned `error: no command supplied`; `caco tendril --help` returned `error: unknown command path for help: caco tendril`.
+- Relevant metrics: included one downsized manual preview screenshot for traceability; future captures should stay low-quality / narrow-region by default because screenshots fill context quickly.
+- Context: the codebase already documents that Tendril itself is a separate project/CLI, but the Cacophony CLI did not offer actionable compatibility guidance at the command path the operator naturally tried.
 
 ## After state
 
-- New: `docs/investigations/bd-7b19c1-test-queue-restart.md` with
-  TL;DR, manual reproduction (launchctl/systemctl restart between
-  enqueue and poll), code references, root cause, and a separate
-  "no interceptors are involved; the framing is the bug" note.
-- `crates/caco-cli/src/lib.rs`: both `dispatch_test_run_wait` and
-  `dispatch_build_run_wait` now count consecutive HTTP 404 responses
-  and, after `NOT_FOUND_THRESHOLD = 3` (~9s at the existing 3s
-  `POLL_INTERVAL`), return a structured `CliError` calling out the
-  likely cause and the recovery action ("re-submit the job"). The
-  counter resets on any non-404 response, so a single transient
-  blip during a daemon bounce does not nuke the wait.
-- Tests: extended `test_run_wait_blocks_until_terminal` structural
-  assertions to pin (a) the `NOT_FOUND_THRESHOLD` constant, (b) the
-  explicit `StatusCode::NOT_FOUND` inspection (no more silent
-  continue), (c) both the `bd-7b19c1: test job` and `bd-7b19c1:
-  build job` error strings are in the binary.
-- bd-d5e2bc closed via `caco bd update --duplicate-of bd-7b19c1`.
-- bd-98acfe filed as the deeper follow-up (queue persistence +
-  startup-time mark-as-error sweep + per-job PID file for orphan
-  detection).
+- Failing tests: none in the targeted validation run.
+- Relevant metrics: `caco tendril --help` now renders actionable compatibility guidance, including direct `tendril list`, `tendril capture`, `tendril run`, and Pi MCP tool names; bare `caco tendril` now explains it is compatibility help rather than an action surface.
+- Context: this keeps the current architectural boundary honest while removing the dead-end help path encountered during TUI driver setup.
 
 ## Diff summary
 
-- Commit `0ae06d98`: bd-7b19c1: surface daemon-restart-induced job loss
-  instead of silent poll forever.
-- Files touched:
-  - `crates/caco-cli/src/lib.rs` — both poll loops + the structural
-    test (~+90).
-  - `docs/investigations/bd-7b19c1-test-queue-restart.md` — new (+86).
-- Tests: 0 new tests, 4 new assertions inside an existing test
-  (`test_run_wait_blocks_until_terminal`).
-- Behavioural delta: workers no longer loop until `wait_timeout` after
-  daemon restart — they fail fast (~9s) with an actionable error.
-- 1092 caco-cli lib tests pass; clippy clean.
+- Commits: `592b8214b`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: added focused unit coverage for registered Tendril compatibility help and for bare `caco tendril` no longer reporting `no command supplied`.
+- Behavioural delta: Cacophony now points operators and agents to the supported Tendril control surfaces instead of failing discovery.
+
+## Embedded artefacts
+
+- `screenshots/manual-border-preview.png` — downsized operator-provided Ghostty preview showing the kind of border drawing artefacts the follow-on TUI audit loop should investigate.
 
 ## Operator-takeaway
 
-Two-pronged: stop-the-bleeding shipped this slice, deeper structural
-fix filed (bd-98acfe) so the next agent knows where to pick up. The
-investigation explicitly debunks the "interceptor" framing in both
-bd-7b19c1 and bd-d5e2bc (now dup-closed): there is no interceptor
-between caco-cli and the daemon's queue HTTP endpoints, the request
-path is direct HTTP, and the wedge is purely the silent-404 in the
-poll loop on top of an in-memory-only queue. Future bug reports of
-this shape should be triaged toward "queue persistence" or "CLI
-poll error-handling", not "interceptors".
+The TUI driver loop now has a cleaner first step: if an operator or agent reaches for `caco tendril`, the CLI explains the real Tendril routes instead of implying a broken or missing Cacophony action wrapper.
