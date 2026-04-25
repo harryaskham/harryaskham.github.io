@@ -1,123 +1,90 @@
-# Session summary — bd-de0282 extend eager profile validation
+# Session summary — agents read previous summaries on startup (bd-20d2dc)
 
 ## Goal
 
-Follow-up to bd-0977ba: cover the two remaining `ProfileSelection`
-surfaces that previously fell through to spawn-time failure.
-Re-use the same pure helper, same hard-error severity, same
-remediation-hint shape.
+Operator quote: "agents on startup should look at their previous
+summaries". Make every spawned agent see its most recent reintegration
+summaries injected into its context-on-disk surface (CLAUDE.md /
+AGENTS.md) so it has continuity across reintegrations and recreate
+cycles.
 
 ## Bead(s)
 
-- `bd-de0282` — [bd-0977ba follow-up] eager-validate profile refs
-  in agents.presets[].profile and rule SpawnActionParams.profile.
+- `bd-20d2dc` — Agents should read their previous summaries on startup.
 
 ## Before state
 
-- `agents.presets[].profile`: validated only by the spawn path;
-  typo broke every spawn that picked the preset.
-- `modes.<name>.rules[N].then.spawn.profile` and
-  `.then.spawn_and_claim.profile`: validated only at rule-fire
-  time; typo silently failed the rule.
+- `inject_managed_claude_md` / `inject_managed_codex_agents_md`
+  injected only static no-Plan-mode instructions on every spawn.
+- Agents started with no awareness of their own session history.
+  Recreate cycles (operator-directed re-spawn after stranding) lost
+  all prior reflection completely; reintegrate-then-resume cycles
+  required the agent to manually `caco summary list` for itself.
+- The `cacophony-state` branch already commits summaries via
+  `bd-fddde3` (reintegrate split), and `summary::enumerate_summaries`
+  already walks the working-tree path. No surface read them at
+  startup.
 
 ## After state
 
-Both surfaces now hard-reject at config-load time with the same
-remediation-hint phrasing as bd-0977ba. Errors include the
-preset id (for preset.profile) or full rule path (for rule.then.*)
-so operators can navigate straight to the fix site.
-
-## Files touched
-
-- `crates/caco-config/src/validate.rs` (+~190 / -5).
-- `crates/caco-config/tests/config.rs` (+3 one-liner profile
-  declarations to keep three pre-existing YAML-parse tests
-  green under the new eager check).
+- New `inject_recent_summaries_block(checkout, agent_id, count=5)` in
+  `crates/caco-daemon/src/agent/spawn.rs`.
+- Wired into `lifecycle.rs` directly after the existing
+  `inject_managed_claude_md` / `inject_managed_codex_agents_md` calls,
+  so it runs unconditionally on every spawn (cold + recreate +
+  pool-resume that re-runs the spawn handshake).
+- The injected block is sentinel-bracketed:
+  `<!-- BEGIN AUTOGEN: previous-summaries (bd-20d2dc) -->` ...
+  `<!-- END AUTOGEN: previous-summaries (bd-20d2dc) -->` and
+  REPLACED on every spawn (not appended) so it always reflects the
+  latest 5 entries, in most-recent-first order.
+- Block content: short markdown table with `# | Title | Timestamp |
+  Path` rows. Title taken from each summary's first H1; agents
+  follow up to the listed `summary_path` for full reads.
+- Empty-list case: still emits sentinel pair with a "no previous
+  summaries on disk" notice so the block is deterministic and the
+  next spawn can replace it cleanly.
+- Opt-out via `CACO_DISABLE_PREVIOUS_SUMMARIES_INJECTION=1` in the
+  spawn env. When set, neither CLAUDE.md nor AGENTS.md is touched.
+- Non-fatal: errors are logged via stderr (no `tracing` dep added)
+  and the spawn continues. Better to spawn an agent without history
+  than to block spawn on a docs-injection edge case.
+- 8 new tests in `crates/caco-daemon/src/agent/tests.rs`:
+  - `inject_recent_summaries_block_creates_sentinels_in_new_file`
+  - `inject_recent_summaries_block_is_idempotent` (key invariant)
+  - `inject_recent_summaries_block_replaces_existing_block`
+    (validates user content above/below survives, sentinels stay
+    uniquely paired)
+  - `inject_recent_summaries_block_handles_no_summaries_gracefully`
+  - `inject_recent_summaries_block_respects_opt_out_env`
+  - `render_recent_summaries_block_orders_most_recent_first`
+  - `render_recent_summaries_block_truncates_to_count`
+  - `render_recent_summaries_block_escapes_pipe_in_title`
+  - All passing; clean `cargo build -p caco-daemon`.
 
 ## Diff summary
 
-Three production-code edits in `crates/caco-config/src/validate.rs`:
-
-1. Inside the existing preset loop in
-   `validate_config_with_extra_profiles`, add a check that calls
-   `missing_profiles_in_selection(preset.profile, &profile_names)`
-   and emits one hard error per missing entry naming the preset
-   id and missing profile.
-2. `validate_modes` and `validate_then_action` gain a
-   `profile_names: &HashSet<&str>` parameter so the rule-path
-   action validators can call the same shared helper. This is
-   the same threading pattern used by `validate_concurrency`
-   already.
-3. `validate_then_action`'s `Spawn` and `SpawnAndClaim` arms now
-   each call `missing_profiles_in_selection` on the params'
-   optional profile field and emit hard errors per missing entry.
-
-Test additions: a new `preset_and_rule_profile_bd_de0282`
-submodule under `validate::tests` with 8 tests covering accept /
-reject / no-profile / composite-with-missings for both preset
-and rule-action surfaces. Uses the same pattern as the
-bd-0977ba tests (synthetic fixture, extra_profile_names supplied
-directly, no I/O).
-
-Test-fixture updates required because the new eager check is now
-applied to existing tests:
-
-- `validate::tests::accepts_valid_burndown_mode`: previously
-  passed because the rule-action profile was unchecked. Now
-  declares `worker` in `config.profiles` so the eager check sees
-  it. Single-block addition, no behavioural change to what the
-  test exercises.
-- `tests/config.rs::spec_documented_burndown_mode_yaml_parses`,
-  `all_then_action_variants_parse_from_mapping_yaml`,
-  `then_action_yaml_tag_form_still_works`: each appends a
-  `profiles: [{ name: worker }]` block to the YAML literal so
-  validation continues to pass. Tests still exercise the same
-  YAML parsing / round-trip logic; the new block is a one-liner.
-
-Severity choice — hard error not warning, same reasoning as
-bd-0977ba: presets and rule defaults are templates that affect
-every spawn picking them up.
+- `crates/caco-daemon/src/agent/spawn.rs`: +`inject_recent_summaries_block`,
+  `render_recent_summaries_block`, `upsert_summaries_block`,
+  `escape_markdown_table_cell`, `RECENT_SUMMARIES_BEGIN/END` consts
+  (+~140 LOC).
+- `crates/caco-daemon/src/agent/lifecycle.rs`: 1 call site after
+  existing CLAUDE.md/AGENTS.md inject (+5 LOC, comment-heavy).
+- `crates/caco-daemon/src/agent/tests.rs`: +8 tests + `write_fake_summary`
+  helper (+~180 LOC).
 
 ## Operator-takeaway
 
-`caco config validate` (and `caco config validate --strict`) now
-catches typos in three more profile-reference surfaces:
-`agents.presets[].profile`, `modes.<name>.rules[N].then.spawn
-.profile`, and `modes.<name>.rules[N].then.spawn_and_claim
-.profile`. Workflow unchanged; previously-silent failure modes
-become eagerly surfaced. Existing valid configs continue to
-validate; existing invalid configs that would have crashed at
-spawn-/rule-fire time now fail at config-load with a clear path
-to the offending field.
+On the next spawn (or recreate) of any agent, its CLAUDE.md and
+AGENTS.md will gain a "Previous summaries" section listing the most
+recent 5 reintegration summaries it authored, sourced from the
+working-tree `.cacophony/agent/<id>/summary/` path (which the
+`cacophony-state` reintegrate flow keeps refreshed). Agents reading
+the file at startup get continuity for free.
 
-## Validation
-
-- `cargo test -p caco-config preset_and_rule_profile_bd_de0282`:
-  8/8 PASS.
-- `cargo test -p caco-config`: 739 lib + 290 integration + 1 doc
-  PASS green (delta: +8 in lib, +0 in integration; the existing
-  burndown-mode and YAML-parse tests still pass after the
-  one-liner profile additions).
-- `cargo clippy -p caco-config --all-targets -- -D warnings`:
-  clean.
-- `cargo test-small`: blocked by a pre-existing caco-tui compile
-  failure on main (`state::AgentDisplayState` missing
-  `tmux_history_limit` / `tmux_history_size` fields, presumably
-  bd-7ef076 in-flight). Verified the breakage exists on
-  `origin/main` independent of this commit (git stash + rebuild
-  from clean main reproduced the same errors). Not in scope to
-  fix here.
-
-## Notes / follow-ups
-
-- bd-7ef076 caco-tui compile failure is blocking workspace-wide
-  test-small for everyone; would be worth a quick fix or revert
-  by whoever's mid-flight on it.
-- Remaining unchecked profile-reference surfaces in the data
-  model (per a quick grep): none in the validate-relevant types.
-  `agents.presets[].command` and `scopes` / `mcp_servers` (the
-  bead's item 3) are different shapes and pair with bd-aac755 /
-  bd-8a56ce already in_progress.
-- bd-845653 / bd-58ff27 / bd-c24ff7 / bd-0977ba still on main
-  but bead-close blocked until the daemon picks up bd-845653
-  (commit-message bead-id harvester) on next operator restart.
+State-branch sourcing (`enumerate_summaries_from_state_branch`) is
+NOT yet wired in — slice 1 reads working-tree only. Working-tree is
+correct for fresh + post-reintegrate spawns because reintegrate syncs
+the checkout to main before completing. State-branch sourcing for
+the "fresh node hydrate from remote" case is a follow-up slice; the
+helper is already factored to make that swap a one-line change.
