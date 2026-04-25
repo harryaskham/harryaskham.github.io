@@ -1,33 +1,33 @@
-# Session summary — bd-ce8103 timeline numeric validators
+# Session summary — bd-aedb1e restart-pending advisory false positives
 
 ## Goal
 
-Fix `caco timeline` numeric validator drift so `--max-age-hours` and `--min-commits` no longer leak raw Rust parse errors and no longer diverge from the canonical positive-integer behaviour already used by `--limit`.
+Stop the restart-pending peer-health advisory from implying replication starvation or recommending force-restart remediation when the only signal is a stale config-hash/restart-pending probe.
 
 ## Bead(s)
 
-- `bd-ce8103` — caco timeline --max-age-hours and --min-commits raw parse-error drift
+- `bd-aedb1e` — bd-67876b restart-pending advisory false-positives when hash-endpoint stalls but replication is healthy
 
 ## Before state
 
-- `caco timeline --limit` emitted polished Family-A validator errors for empty, zero, negative, and non-numeric values.
-- `--max-age-hours` and `--min-commits` used direct `parse()` plus `ParseIntError` formatting, leaking messages like `cannot parse integer from empty string` and `invalid digit found in string`.
-- `--max-age-hours -1` was parsed through an inconsistent signed path instead of the positive-integer validator family.
+- A peer stuck in `restart_pending == true` beyond the stale threshold became `actionable` even when the only evidence was hash mismatch.
+- The note said “replication may be starved” and recommended force-restarting the peer if manual count checks diverged.
+- Operators observed healthy replication moving in lockstep while this advisory persisted for hours, making the wording/actionability misleading.
 
 ## After state
 
-- Added a timeline-specific positive integer parser for `--max-age-hours` and `--min-commits` with canonical empty, invalid, and zero messages.
-- `--max-age-hours -1`, `bogus`, and empty values now fail before daemon access with operator-facing text.
-- `--min-commits` now uses the same validator shape while preserving its flag-specific hints.
-- Extended the existing timeline CLI validation regression test to cover the new paths.
+- Hash-only restart-pending mismatch is explicitly advisory and no longer flips the peer into the actionable outage bucket.
+- The note now states that stale restart-pending is a hash-only advisory, not replication-divergence evidence.
+- The stale-threshold note asks operators to verify bead counts before remediation and avoids “replication may be starved” / “force-restart” wording based solely on stale hash data.
+- Updated the daemon regression test to enforce the new advisory semantics.
 
 ## Diff summary
 
-- Commit: `0f9c09d25` after replay onto the remote agent branch.
-- Files touched: `crates/caco-cli/src/lib.rs`.
-- Tests: `cargo test -p caco-cli timeline_cli_validates_limit_since_and_cluster_project_note_bd_bf19ae --lib`; `cargo fmt --all -- --check`; `git diff --check`.
-- Behavioural delta: timeline numeric flag mistakes now produce clean, consistent CLI errors instead of stdlib parse-error leakage.
+- Commit: `53cf5956e` after replay onto the remote agent branch.
+- Files touched: `crates/caco-daemon/src/lib.rs`.
+- Tests: `cargo test -p caco-daemon peer_health_annotation_keeps_stale_restart_pending_advisory_bd_aedb1e --lib`; `cargo check -p caco-daemon --tests`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: peer-health summaries distinguish stale hash lifecycle state from proven replication divergence.
 
 ## Operator-takeaway
 
-`caco timeline` now matches the validator quality expected across the CLI: all three numeric knobs explain what went wrong and how to recover.
+A stale restart-pending hash probe will no longer push operators toward destructive peer restarts unless another sensor actually proves divergence.
