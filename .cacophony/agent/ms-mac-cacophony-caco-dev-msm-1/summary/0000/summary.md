@@ -1,32 +1,32 @@
-# Session summary — macOS scratchpad editor guidance polish
+# Session summary — macOS timeline readability polish
 
 ## Goal
 
-Improve the native macOS scratchpad editing workflow so operators better understand note selection, editing safety, save behavior, metadata, and copy options.
+Improve the native macOS Workspace timeline so operators can quickly understand empty states, selected project context, and event types while scanning project history.
 
 ## Bead(s)
 
-- `bd-627ddb` — `[macOS excellence] Scratchpad editor guidance polish`
+- `bd-f60e61` — `[macOS excellence] Timeline empty and event readability polish`
 
 ## Before state
 
-- Failing tests: current main needed a small `RootView` feedback copy helper fix for the app build.
+- Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: Scratchpad editing worked but had minimal empty states, sparse note metadata, no copy affordance, and little guidance that edits are local until saved.
+- Context: Timeline data rendered as basic lists, but an empty timeline or project with no events looked blank and event rows did not provide strong type-based visual hierarchy.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: Scratchpad now has richer list badges, empty states, selected-note metadata, explicit local-until-saved guidance, copy contents action, and clearer save feedback. The current-main feedback copy helper is restored so the app builds.
+- Context: The timeline now explains unloaded/no-event states, labels selected projects, uses count-backed badges, and gives commit/bead/agent/message/default events distinct native icons and colors.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-627ddb`.
-- Files touched: `WorkspacePane.swift`, `RootView.swift`.
+- Commits: current branch commit for `bd-f60e61`.
+- Files touched: `WorkspacePane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: scratchpad editing feels safer and more native, with fewer dead ends and more confidence before saving.
+- Behavioural delta: timeline scanning is more resilient and operator-friendly, especially when data is sparse or project context matters.
 
 ## Operator-takeaway
 
-The macOS scratchpad is now a clearer operational notes surface: operators can see metadata, copy before editing, and understand when changes are actually persisted.
+The Workspace timeline no longer feels like a blank raw feed when data is missing; it now gives operators readable context and stronger visual cues for event type and project selection.
