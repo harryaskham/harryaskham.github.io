@@ -1,81 +1,85 @@
-# Session summary — companion/macos scaffold (bd-35352b)
+# Session summary — macOS app install/run shortcuts (bd-a3f852)
 
 ## Goal
 
-Stand up `companion/macos/` as the first buildable, testable
-surface for the native macOS app under epic `bd-6d67e0` so the
-sibling beads (Nix, CI, tests, parity, audit, release) have
-something concrete to operate on instead of an empty directory.
+Make Cacophony.app trivially installable and launchable on a developer
+machine via three independent operator surfaces (justfile, caco
+actions, flake apps), so neither the operator nor a future agent has
+to hand-roll the `nix build` + `cp` + `codesign --force --deep
+--sign -` + `open` dance every time.
 
 ## Bead(s)
 
-- `bd-35352b` — Scaffold companion/macos native app skeleton
-  (SwiftPM + SwiftUI + CacophonyKit). Filed by msm-1 as the
-  implicit precursor to the rest of the macOS-app stack.
-- (parent: `bd-6d67e0` — Implement native macOS app with liquid
-  glass design.)
+- `bd-a3f852` — Add install/run shortcuts for the macOS app
+  (justfile + caco action + flake apps).
+- (parent: `bd-6d67e0`; depends on landed `bd-aa8a1a` Nix package.)
 
 ## Before state
 
-- Failing tests: none related.
-- Relevant metrics: `companion/macos/` did not exist.
-- Context: epic `bd-6d67e0` was filed with six P0 children
-  (Nix / CI / tests / parity / audit / release), none of which
-  could meaningfully proceed without a buildable scaffold.
-  `docs/macos-development.md` §8 was a "Native macOS app (in
-  progress)" stub pointing at the epic. po4-2 (linux host) had
-  unclaimed the epic noting it needed an msm-* worker with macOS
-  context.
+- Building and installing the app required this hand-typed sequence:
+  `nix build .#cacophony-macos-app && rm -rf
+  /Applications/Cacophony.app && cp -R
+  $(readlink -f result)/Applications/Cacophony.app
+  /Applications/ && chmod -R u+w /Applications/Cacophony.app &&
+  codesign --force --deep --sign - /Applications/Cacophony.app
+  && open -a /Applications/Cacophony.app`.
+- Forgetting any step (chmod, codesign) produced confusing
+  Gatekeeper / "permission denied" errors on relaunch.
 
 ## After state
 
-- Failing tests: none related.
-- Relevant metrics:
-  - `companion/macos/` is a SwiftPM package with three targets:
-    `CacophonyKit` (lib), `Cacophony` (SwiftUI app),
-    `CacophonyKitSmoke` (nix-friendly smoke executable).
-  - `swift build` under nixpkgs swift 5.10.1 + swiftpm: succeeds
-    in ~50s cold, ~4s warm.
-  - `swift run CacophonyKitSmoke`: 8 checks, all green.
-- Context: shell now renders a NavigationSplitView with Choices /
-  Beads / Settings panes and a `glassChrome()` modifier that uses
-  macOS 26 glass APIs when available and falls back to
-  `.thinMaterial` on older systems.
+Three operator-facing surfaces, all wrapping the same dance:
+
+1. **justfile** (developer + CI):
+   - `just macos-app-build` — `nix build .#cacophony-macos-app`.
+   - `just macos-app-install` — build, copy to `/Applications`,
+     chmod, ad-hoc codesign, log version.
+   - `just macos-app-run` — install (idempotent), kill any prior
+     running instance, `open -a`.
+   - `just macos-app-uninstall` — kill + `rm -rf`.
+
+2. **`.cacophony/actions.yaml`** (operator role):
+   - `install-macos-app`, `run-macos-app`,
+     `uninstall-macos-app` — wrap the matching `just` recipes,
+     `roles_permitted: [operator]`, 600s timeout.
+
+3. **flake apps** (zero-checkout dev):
+   - `nix run .#cacophony-macos-app` — copies the bundle into
+     `~/Library/Caches/com.cacophony.macos/Cacophony.app` (since
+     /nix/store paths cannot host a LaunchServices-managed `.app`),
+     ad-hoc signs, and `open -W -a` blocks until the app exits.
+   - Darwin-only via `lib.optionalAttrs pkgs.stdenv.isDarwin`.
+
+End-to-end verified: uninstall → install → run produced PID 74371
+running from `/Applications/Cacophony.app/Contents/MacOS/Cacophony`
+on this machine.
 
 ## Diff summary
 
-- Commits: see reintegration commit (squashed by daemon).
 - Files touched:
-  - `companion/macos/Package.swift` (new)
-  - `companion/macos/.gitignore` (new)
-  - `companion/macos/README.md` (new)
-  - `companion/macos/Sources/CacophonyKit/Models/{Bead,Choice,DaemonConfig}.swift` (new)
-  - `companion/macos/Sources/CacophonyKit/Connection/DaemonClient.swift` (new)
-  - `companion/macos/Sources/Cacophony/App/CacophonyApp.swift` (new)
-  - `companion/macos/Sources/Cacophony/Views/RootView.swift` (new)
-  - `companion/macos/Sources/Cacophony/Design/GlassChrome.swift` (new)
-  - `companion/macos/Sources/CacophonyKitSmoke/main.swift` (new)
-  - `docs/macos-development.md` (§8 stub replaced with a real
-    Quick start block).
-- Tests: +8 smoke checks (run via `swift run CacophonyKitSmoke`).
-- Behavioural delta: zero impact on the Rust workspace; entirely
-  additive under `companion/macos/`.
-
-## Embedded artefacts
-
-- (none in this reintegration — no terminal cast or screenshots
-  attached. Will add a screenshot once the app target is wired
-  to a `.app` bundle under bd-aa8a1a / bd-5cded9.)
+  - `justfile` — four new `macos-app-*` recipes (~55 lines).
+  - `.cacophony/actions.yaml` — three new operator actions.
+  - `flake.nix` — `apps.<system>.cacophony-macos-app` runner under
+    a Darwin gate, using a `pkgs.writeShellScript` that copies the
+    bundle to `~/Library/Caches` before `open`-ing it.
+  - `companion/macos/README.md` — new "Operator one-liners"
+    section at the top of the build docs.
+- Tests: no Rust changes; YAML validated; `just --list` shows the
+  new recipes; `nix eval .#apps.aarch64-darwin.cacophony-macos-app`
+  resolves; full `uninstall → install → run` cycle exercised
+  locally and confirmed running.
+- Behavioural delta: zero impact on Linux / non-darwin; on macOS
+  the install/run flow drops from a 6-step dance to a single
+  command with three equivalent invocation styles.
 
 ## Operator-takeaway
 
-The Nix swift toolchain on macOS does **not** ship XCTest, so I
-used a `CacophonyKitSmoke` executable target as a CI-friendly
-substitute (precondition-style assertions, exits non-zero on
-failure). The full XCTest-based suite is bd-d3a07a's
-responsibility and only needs to run when Xcode is on PATH —
-which means the bd-d3a07a worker should set up an opt-in test
-target rather than convert the smoke runner. This shape unblocks
-all six remaining children of bd-6d67e0; the next bead I'll
-claim is bd-aa8a1a (Nix integration), which only needs to wire
-this same `swift build` invocation into a flake derivation.
+`just macos-app-run` is the path to use day-to-day. The flake app
+runner (`nix run .#cacophony-macos-app`) is the right pick for
+"give me the app from a fresh checkout without polluting
+/Applications". `caco actions run install-macos-app` is the right
+pick for operator-from-controller scenarios. All three converge on
+the same `nix build .#cacophony-macos-app` derivation and the
+same ad-hoc `codesign --sign -` step — change the dance in one
+place and add a recipe/action that calls into it rather than
+hand-rolling another variant.
