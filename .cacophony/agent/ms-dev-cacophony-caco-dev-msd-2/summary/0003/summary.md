@@ -1,68 +1,90 @@
-# Session summary — short-name routing ambiguity detection (bd-4dd73a)
+# PR-mode reintegrate warns on local-mirror push (bd-1ef80b)
 
 ## Goal
 
-Audit and fix agent short-name routing in `caco agent --name` CLI
-surface. Operator reported surprise ("ah the short names are being
-routed?!") when `msm-4` resolved silently to one of several persistent
-agents sharing the same suffix (e.g. `caco-dev-msm-4`,
-`caco-config-helper-msm-4`, `caco-cluster-debugger-msm-4`). The fix
-makes ambiguous short-name lookups error explicitly with all matches
-listed, instead of silently picking the first one.
+Stop `pr_review` / `pr_auto_merge` reintegration paths from
+silently no-op'ing when the configured `remote` is the daemon's
+local checkout mirror (not a real forge URL). Operators were
+reading the success message ("agent branch pushed; PR pending forge
+integration") as "PR will appear shortly" and discovering hours
+later that nothing reached GitHub.
 
 ## Bead(s)
 
-- `bd-4dd73a` — Audit short-name routing for agent control surfaces.
+- `bd-1ef80b` — PR-mode reintegration succeeds locally but never
+  reaches forge (no GH PR opened).
 
 ## Before state
 
-- `resolve_agent_id_by_name` matched `pid == name || pid.ends_with("-{name}")`.
-  When multiple agents matched the suffix, it returned the first
-  project-scoped hit (or first any-project hit) — silently routing
-  operator commands to whichever agent happened to appear first in the
-  daemon list. Zero ambiguity detection.
-- CLI test suite had a pre-existing broken-on-main duplicate test
-  definition (`dispatch_codespace_new_pushes_rendezvous_bootstrap_secret_bd_0bed93`
-  defined twice) preventing `cargo test -p caco-cli --lib` from
-  compiling.
+`reintegrate_pr_review` and `reintegrate_pr_auto_merge` in
+`crates/caco-daemon/src/reintegration.rs` push the agent branch
+to `req.remote` and unconditionally return:
+
+> "agent branch pushed; PR for review into main pending forge
+> integration"
+
+When the configured remote is the daemon's local mirror (e.g.
+`/Users/harryaskham/.cacophony/daemon/checkouts/cacophony`), the
+push lands on the mirror only. `gh pr create` is never invoked
+in either path. Operators see "success" + "PR pending" and assume
+the PR will appear.
+
+The bead acceptance offered two valid paths:
+1. complete the forge integration so PR mode actually opens a GH PR;
+2. downgrade pr_review to a no-op-with-warning until it works.
+
+This change implements (2) by classifying the remote and emitting
+an explicit warning when it is not a forge URL. Path (1) — calling
+`open_or_update_pr` from the PR modes — is a follow-up; the wiring
+already exists for the direct+create-pr path but threading the
+forge-base argument through PR-mode requires API surface changes
+that are best done together with bd-c1c272 (forge-integration
+epic).
 
 ## After state
 
-- Factored out `resolve_agent_id_by_name_in_response(name, body,
-  current_project)` — pure resolver taking the parsed `/api/v1/agents`
-  envelope so the project-scoping + ambiguity logic is unit-testable
-  without a live daemon.
-- Match precedence: (1) exact `persistent_id` match (always
-  unambiguous) → prefer current project, (2) suffix match scoped to
-  current project → error if >1, (3) suffix match globally → error
-  if >1. Every ambiguity path surfaces `bd-4dd73a:` cite, all
-  matching `persistent_id`s, and suggests using the full ID or
-  setting `CACO_PROJECT` to disambiguate.
-- Removed the duplicate test definition (broken-on-main sidecar fix).
-- 6 new tests:
-  - `short_name_resolves_unambiguous_in_current_project`
-  - `short_name_refuses_silent_routing_when_ambiguous_in_project` (core bug)
-  - `short_name_exact_match_wins_over_suffix_collisions`
-  - `short_name_project_scope_disambiguates_cross_project_collision`
-  - `short_name_global_ambiguity_suggests_caco_project`
-  - `short_name_no_match_returns_not_found_error`
-- `cargo build -p caco-cli`: clean. All 6 new tests pass.
+New helper `remote_url_is_forge(&str) -> bool` recognises
+`https://`, `http://`, `git@`, `ssh://`, `git://` (with leading
+whitespace tolerated). Anything else — including absolute paths,
+relative paths, and `file://` URLs — is treated as a local mirror.
+
+Both `reintegrate_pr_review` and `reintegrate_pr_auto_merge` now
+inspect the resolved remote URL and return a loud warning message
+when the push only reached a local mirror:
+
+> "bd-1ef80b: agent branch pushed to LOCAL MIRROR only (origin =
+> /Users/.../checkouts/cacophony); NO forge PR was opened. Use
+> direct,recorded for now, or wire a forge-URL remote (e.g. an
+> https://github.com/... origin) before invoking pr_review again."
+
+The forge-URL happy path message is unchanged so a forge-wired
+remote still reads as "pending forge integration" until the
+follow-up wiring lands.
 
 ## Diff summary
 
-- `crates/caco-cli/src/lib.rs`:
-  - Refactored `resolve_agent_id_by_name` into thin network wrapper +
-    `resolve_agent_id_by_name_in_response` pure resolver (~120 LOC).
-  - Removed duplicate `dispatch_codespace_new_...` test definition
-    (broken-on-main sidecar).
-  - +6 tests (~100 LOC) with `agent_envelope` test helper.
+- `crates/caco-daemon/src/reintegration.rs`:
+  - New `pub(crate) fn remote_url_is_forge` helper next to
+    `resolve_local_remote_path`. Doc-comment cites the
+    operator-confusion failure mode.
+  - `reintegrate_pr_review` branches its message on
+    `remote_url_is_forge` of the resolved remote URL.
+  - `reintegrate_pr_auto_merge` does the same for its
+    success message.
+  - 4 new unit tests:
+    `remote_url_is_forge_https_github`,
+    `remote_url_is_forge_ssh_github`,
+    `remote_url_is_forge_rejects_local_mirror`,
+    `remote_url_is_forge_trims_whitespace`.
 
 ## Operator-takeaway
 
-The daemon-side `AgentManager::resolve_agent_id` (lifecycle.rs:2720)
-has a similar first-match-wins pattern using `agent_name` suffix, but
-it's used for internal routing where the caller provides a full
-composite ID (not operator-supplied short names). If that surface also
-needs ambiguity detection, it's a separate bead with its own test
-pattern. This PR covers only the CLI-facing `--name` flag used by
-operators (e.g. `caco agent nudge --name msm-4`).
+PR-mode reintegrations against the daemon's local mirror now
+explicitly say "LOCAL MIRROR only — NO forge PR opened" and tell
+the operator to use direct,recorded or wire a forge URL.
+Forge-URL remotes still show the existing "pending forge
+integration" message; full forge integration remains follow-up
+work tracked by the PR-modes acceptance criteria 1 (the forge
+wiring path) of this bead, which we explicitly did NOT take in
+this change. Acceptance criterion 2 (downgrade to
+no-op-with-warning) is satisfied.
