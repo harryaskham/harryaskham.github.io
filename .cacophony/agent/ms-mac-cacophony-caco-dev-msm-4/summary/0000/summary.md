@@ -1,32 +1,25 @@
-# Session summary — bd-5bfb2c (slice 13: visual polish + animation)
+# Session summary — bd-5bfb2c (slice 14)
 
 ## Goal
-Make workspace feel alive and cohesive — animations, hover states, zero inline styles.
+Add hooks + crons pane types for full TUI data-parity (21 total).
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- No animations, hover states missing in many places
-- ~20 inline style.cssText assignments scattered across JS
-- Pane type selector was raw unstyled select
-- No visual feedback on focus/drag/entry
+- 19 pane types, missing hooks + crons (which have web state data)
 
 ## After state
-- Entry animation on pane mount (scale + fade)
-- Chat message slide-in, empty state icon pulse
-- Drag opacity/scale, split handle glow + expansion
-- Hover highlights on log lines, feed rows, source tree
-- Focused tab: accent gradient underline + accent label
-- All inline styles eliminated → CSS utility classes
-- Priority badges match canonical design
-- Status bar has frosted glass effect
-- 231/231 tests green
+- 21 pane types (hooks + crons added)
+- Both with search, status badges, empty states
+- Help overlay lists all 21
+- 233/233 tests green (2 new)
 
 ## Diff summary
-- style.css: +130 lines (animations, hover states, utility classes)
-- workspace-integrated.js: 3 inline styles → className
-- workspace-panes.js: 4 inline styles → className / style.prop
+- workspace-integrated.js: +2 pane type entries, help text update
+- workspace-panes.js: +50 lines (renderPaneHooks + renderPaneCrons)
+- index.html: +2 dropdown options
+- tests.rs: +2 tests
 
 ## Operator-takeaway
-Workspace now feels alive — panes fade in, chat messages slide up, empty states breathe. Every interactive element has hover/focus feedback. Zero inline styles for maintainability.
+21 pane types now. Every web-backed TUI surface is a workspace pane.
