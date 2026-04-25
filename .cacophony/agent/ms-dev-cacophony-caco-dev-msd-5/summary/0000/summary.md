@@ -1,72 +1,33 @@
-# Session summary — bd-07bd29 panic-audit close-out
+# Session summary — TTS audibility probe
 
 ## Goal
 
-Close the panic-audit acceptance item on bd-07bd29 (the architectural
-rule that agent-subprocess errors must never propagate to daemon
-death) by removing the last non-test panic-prone sites in the
-agent-launch / maintenance hot path. Earlier sessions (msd-2, msd-3)
-had already landed the per-fingerprint error rate-limiter and the
-per-persistent-id launch governor; the remaining acceptance gap was
-the residual `unreachable!()` and `unwrap()` audit.
+Add a first-party, bounded way to distinguish "the TTS daemon reported played" from "local speaker output was acoustically detectable" so future ms-mac audio incidents do not depend solely on Harry or another local listener being present.
 
 ## Bead(s)
 
-- `bd-07bd29` — Non-fatal agent-subprocess errors must never propagate
-  to daemon death — reconcile/launch/preinstall failures are
-  agent-scoped (P0 bug, kept claimed; resource-accounting and crash-log
-  acceptance items stay under their dedicated follow-ups).
-
-Related, intentionally not closed by this session:
-- `bd-b174bb` — per-agent resource accounting (open follow-up).
-- `bd-65813b` — silent daemon crash log preservation (open follow-up).
+- `bd-20f163` — ms-mac TTS: add microphone-loopback audibility check so agents can self-verify hardware playback without operator listening
+- Related closed context: `bd-c8361e` — Add microphone loopback proof for ms-mac TTS local-device audibility
 
 ## Before state
 
-- Two non-test panic-prone sites in `crates/caco-daemon/src/agent/spawn.rs`:
-  - `build_resume_init_script`: `_ => unreachable!()` after a match
-    over the result of `detect_resume_runtime`. Architecturally
-    sound today, but a future runtime added to detection without a
-    matching arm here would panic on the agent-launch hot path.
-  - `clear_pi_session_history`: `session_files.split_first().unwrap()`
-    guarded only by an earlier empty-vec early return. Agent-subprocess
-    maintenance paths must not depend on a programmer invariant for
-    panic-freedom.
-- Failing tests in scope: none.
-- Existing infra: `ErrorRateLimiter` (5-min window per fingerprint) +
-  `LaunchGovernor` (per-persistent-id concurrency + attempts ceiling)
-  already wired into `launch_persistent_agent` and
-  `report_structured_log_error_best_effort`.
+- Failing tests: none known for this scope.
+- Relevant metrics: ms-mac router probes were reporting local-device/MacBook Pro Speakers terminal `played` with non-silent RMS/peak metrics, but prior microphone attempts captured all-zero audio.
+- Context: Operators could inspect daemon status, output routing, and trace metrics, but there was no canonical `caco tts` command that ran a bounded acoustic loopback probe and explicitly reported mic-permission/input failures as unverifiable rather than audible.
 
 ## After state
 
-- Both sites converted to structured `Err` returns / graceful no-ops.
-- Two new regression tests in `crates/caco-daemon/src/agent/tests.rs`:
-  - `clear_pi_session_history_no_directory_returns_zero_zero`
-  - `clear_pi_session_history_keep_last_does_not_panic_on_single_file`
-- `cargo test -p caco-daemon --lib clear_pi_session_history`: 7 passed.
-- `cargo test -p caco-daemon --lib build_resume_init_script`: 11 passed.
-- `cargo clippy -p caco-daemon --lib --tests`: clean.
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: added 3 focused unit tests for audibility classification (`detected`, all-zero unverifiable, below-threshold unverifiable); `cargo check -p caco-cli --tests` passed; `cargo test -p caco-cli tts_audibility_probe --lib` passed; `cargo run -q -p caco -- tts audibility probe --help` showed the new CLI surface.
+- Context: Harry later confirmed the active ms-mac TTS route is healthy after the local-device fix, so this change remains a durable follow-up proof path rather than emergency TTS firefighting.
 
 ## Diff summary
 
-- Commits: `c59d1933`
-- Files touched:
-  - `crates/caco-daemon/src/agent/spawn.rs` (+22 / -2)
-  - `crates/caco-daemon/src/agent/tests.rs` (+38 / -0)
-- Tests: +2 / 0 flipped / 0 removed.
-- Behavioural delta: agent-launch / pi-session-maintenance code paths
-  no longer have any reachable `unwrap` / `unreachable!` on the hot
-  path; an unforeseen new runtime now surfaces as a `DaemonError` the
-  caller already handles, instead of a daemon-thread panic that would
-  rely on `spawn_background_task`'s `catch_unwind` to absorb.
+- Commits: current HEAD for this summary chunk (`bd-20f163: add TTS audibility probe`)
+- Files touched: `crates/caco-cli/src/lib.rs`, `SPEC.md`, `README.md`, `docs/macos-development.md`, `.cacophony/agent/ms-dev-cacophony-caco-dev-msd-5/summary/0000/summary.md`
+- Tests: +3 focused unit tests / -0 / flipped 0
+- Behavioural delta: `caco tts audibility probe` now records a short baseline, emits one explicit `caco msg speak`, records a short default-input sample, reports normalized amplitude stats, and classifies results as `audibility=detected` or `audibility=unverifiable` with explicit `reason=no-mic-permission-or-muted-input` for all-zero captures. Probe WAVs are deleted unless `--keep-audio` is passed.
 
 ## Operator-takeaway
 
-bd-07bd29's architectural rule — agent-subprocess failures must not
-take the daemon down — is now defended at three layers: (1) per-
-fingerprint error-emission rate limit, (2) per-persistent-id launch
-governor, and (3) zero panic-prone code on the agent-launch hot path.
-Resource accounting and crash-log preservation remain genuine
-follow-ups (bd-b174bb, bd-65813b) and are the next items to land in
-the supervision-hardening sweep.
+The important distinction is now encoded in the product surface: daemon trace success and non-silent buffer metrics are useful, but they are not the same as acoustic audibility. The new probe gives agents a safe, short, privacy-bounded check and refuses to overclaim when macOS microphone permission or input routing makes audibility unverifiable.
