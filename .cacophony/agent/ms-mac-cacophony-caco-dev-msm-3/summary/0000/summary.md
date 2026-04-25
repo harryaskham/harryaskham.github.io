@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Session summary — log exceptions component filter
 
 ## Goal
@@ -30,3 +31,38 @@ This session fixed `caco log exceptions --component ...` so operators can filter
 ## Operator-takeaway
 
 Operators can now use `caco log exceptions --component <process>` as the natural filter for service/component exception triage, including TTS daemon investigations.
+=======
+# Session summary — AKS self-contained config foundation
+
+## Goal
+
+This session started the operator-requested AKS self-contained Cacophony cluster by landing the config foundation: a renderable AKS-only node graph that still inherits shared identities, key paths, providers, TTS, TUI themes, profiles, actions, and project defaults from the main config.
+
+## Bead(s)
+
+- `bd-0095d3` — AKS self-contained cluster config foundation
+- parent: `bd-07f7a2` — AKS self-contained Cacophony cluster topology
+
+## Before state
+
+- Failing tests: no dedicated validation existed for an AKS-only config render.
+- Relevant metrics: the live AKS config projected local nodes such as `ms-mac`, `helsinki`, and `aca-ca` into the pod, and `caco status` inside AKS listed peers the cluster could not mutually reach.
+- Context: the operator clarified that AKS must differ for PKI/bootstrap/node topology but still share identities, `caco`/`caco-work` keys, TTS settings, TUI themes, provider settings, and project defaults.
+
+## After state
+
+- Failing tests: none in scoped validation.
+- Relevant metrics: `deploy/aks/validate.sh` passed with 63 checks; `CACO_BIN="cargo run -q -p caco --" deploy/aks/validate-self-contained-config.sh` passed.
+- Context: `deploy/aks/render-config.sh --self-contained` now combines shared safe config sections with `deploy/aks/config/topology.yaml`, producing six AKS nodes only: `caco-aks-ca-0`, `caco-aks-relay-0`, `caco-aks-master-0`, and `caco-aks-0..2`.
+
+## Diff summary
+
+- Commits: `7644d2cd2`
+- Files touched: `deploy/aks/config/*`, `deploy/aks/render-config.sh`, `deploy/aks/validate-self-contained-config.sh`, `deploy/aks/validate.sh`, `deploy/aks/README.md`, `justfile`
+- Tests: added `just aks-config-validate` / `deploy/aks/validate-self-contained-config.sh` to assert AKS-only nodes plus retained shared identity/provider/TTS/TUI/project settings.
+- Behavioural delta: AKS can now render a dedicated self-contained config foundation without local-node leakage while preserving shared operator settings.
+
+## Operator-takeaway
+
+The AKS work now has a clean base: topology-sensitive sections are AKS-owned, while shared secrets/key paths, themes, TTS, providers, and project defaults continue to come from mainline config so future main config changes do not silently fork the AKS environment.
+>>>>>>> e182feadb (bd-0095d3: record AKS config foundation summary)
