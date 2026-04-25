@@ -1,32 +1,32 @@
-# Session summary — test/build job missing-id wording
+# Session summary — release cancel missing-id wording
 
 ## Goal
 
-This session aligned the queued job inspection/cancel commands so missing `--id` errors point operators to the matching list command.
+This session aligned `caco release cancel` with the rest of the release job inspection family by adding a discoverability pointer when `--id` is missing.
 
 ## Bead(s)
 
-- `bd-a9908e` — [CLI polish] test/build job commands missing-id discoverability wording
+- `bd-6c1c52` — [CLI polish] release cancel missing-id discoverability wording
 
 ## Before state
 
-- Failing tests: no exact regression covered missing `--id` for `caco test show/logs/cancel` or `caco build show/logs/cancel`.
-- Relevant metrics: these commands emitted bare `--id is required ...` errors.
-- Context: recent CLI polish work established list pointers for discoverable missing identifiers.
+- Failing tests: no exact regression covered missing `--id` for `caco release cancel`.
+- Relevant metrics: release status/logs already pointed to `caco release list`, while release cancel emitted a bare `--id is required for release cancel` error.
+- Context: this was a narrow sibling consistency miss found during CLI polish burn-down.
 
 ## After state
 
 - Failing tests: none in scoped validation before replay.
-- Relevant metrics: `cargo test -p caco-cli test_and_build_job_commands_missing_id_use_list_pointers --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; focused regression is rerun after replay.
-- Context: test job commands now point to `caco test list`, and build job commands point to `caco build list`.
+- Relevant metrics: `cargo test -p caco-cli release_cancel_missing_id_points_to_release_list --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; focused regression is rerun after replay.
+- Context: release cancel missing-id now guides operators to `caco release list` to find queued/active jobs.
 
 ## Diff summary
 
-- Commits: `407350c9b`
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added exact regression `test_and_build_job_commands_missing_id_use_list_pointers`.
-- Behavioural delta: six job-related command surfaces now guide users to discover valid job IDs.
+- Commits: `a930ea557`
+- Files touched: `crates/caco-cli/src/release_cmd.rs`, `crates/caco-cli/src/lib.rs`
+- Tests: added exact regression `release_cancel_missing_id_points_to_release_list`.
+- Behavioural delta: `caco release cancel` missing-id error now has the same release-list pointer as status/logs.
 
 ## Operator-takeaway
 
-Missing job IDs on test/build show, logs, and cancel now lead users to the appropriate list command instead of a dead-end required-argument error.
+The release cancellation path no longer dead-ends on missing job IDs; it now tells operators how to discover the relevant release job.
