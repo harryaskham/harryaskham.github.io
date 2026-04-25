@@ -1,62 +1,32 @@
-# Session summary — bd-2f3840 sidecar test coverage gaps
+# Session summary — Codespaces per-task secret decision
 
 ## Goal
 
-Close the highest-leverage remaining error-path coverage gaps in
-`crates/caco-sidecar/src/lifecycle.rs::start_sidecars_as_processes`,
-and capture any newly discovered defects as follow-up beads rather
-than papering over them with tests that lie about behaviour.
+Resolve the documentation ambiguity around whether `caco codespace secret push/list/remove` is a shipped feature or a future design. The goal was to make the current operator guidance match the implemented CLI surface without starting new secret-management implementation work.
 
 ## Bead(s)
 
-- `bd-2f3840` — Improve caco-sidecar unit test coverage for lifecycle
-  and error paths.
-- Filed follow-up: `bd-45a6cb` — `start_sidecars_as_processes` returns
-  Ok for bogus launcher binary because Linux fork+exec means
-  `Command::spawn()` succeeds before the child's exec failure surfaces.
+- `bd-eadb2b` — [docs] Decide whether Codespaces per-task secret push should ship
 
 ## Before state
 
-- `caco-sidecar/src/lib.rs`: 18 tests (up from 2 at filing).
-- `caco-sidecar/src/lifecycle.rs::start_sidecars_as_processes`:
-  3 happy-path tests (passes config + node, skips in-process, skips
-  pid-only). No coverage of mkdir-failure, alive-sidecar
-  short-circuit, or spawn-failure paths.
+- Failing tests: none; this was a documentation/product-scope task.
+- Relevant metrics: `crates/caco-cli/src/lib.rs` registers `caco codespace new/ls/stop/resume/revoke/remove/rekey/enroll`, but no `caco codespace secret push/list/remove` family.
+- Context: `docs/codespaces.md` already warned that per-task secret commands were not shipped, while the key-distribution design still read like a future CLI contract without an explicit deferral decision.
 
 ## After state
 
-- `start_sidecars_as_processes` now has 6 tests covering:
-  - happy path with config/node forwarded to child (existing)
-  - in-process services skipped (existing)
-  - pid-only services skipped (existing)
-  - **mkdir failure surfaces a structured error** (new)
-  - **alive sidecar short-circuits without invoking launcher** (new)
-  - **bogus-launcher behavioural pin** (new — documents a real bug,
-    filed as bd-45a6cb)
-- Sidecar workspace test count: 231 → 234.
-- `cargo test-small` workspace-wide green; `cargo clippy
-  -p caco-sidecar --lib --tests` clean.
+- Failing tests: none.
+- Relevant metrics: `git diff --check` passed; targeted grep confirms `bd-eadb2b` decision language appears in both `docs/codespaces.md` and the key-distribution design.
+- Context: docs now explicitly decide to keep first-party Codespaces per-task secret commands out of the current slice and point operators to GitHub Codespaces user secrets or repo-owned container secret-file projection.
 
 ## Diff summary
 
-- Commit: `9c4fc5bf` (bd-2f3840: cover three
-  start_sidecars_as_processes error paths + pin spawn-bogus-launcher
-  behavioural quirk).
-- Files touched: `crates/caco-sidecar/src/lifecycle.rs`
-  (+152 / -15 — three new tests + cleanup of one prior assertion that
-  expected impossible Err behaviour).
-- Tests: +3 / -0 / flipped 0.
-- Behavioural delta: zero — all changes are test-only.
+- Commits: `3467916a2` (docs), plus the recorded-summary commit containing this file.
+- Files touched: `docs/codespaces.md`, `docs/epics/bd-f32dda-codespaces-key-distribution.md`, `.cacophony/agent/ms-dev-cacophony-caco-dev-msd-1/summary/0003/summary.md`.
+- Tests: +0 / -0 / flipped 0.
+- Behavioural delta: no CLI behavior changed; operator docs no longer imply the per-task secret command family is imminent or shipped.
 
 ## Operator-takeaway
 
-The discovery here — that `Command::spawn()` returns Ok for a
-non-existent binary because the exec failure happens in the forked
-child after spawn() has already returned — is a recurring footgun in
-Rust process supervision code and the right fix (a `child.try_wait()`
-check after spawn) is filed as bd-45a6cb. The behavioural-pin test
-is intentionally chosen over either silently leaving the gap or
-adding the fix in this session: the next implementer who lands the
-fix will see the test fail with a clear "if this assertion fails,
-also update the function to..." pointer comment, making the fix a
-one-line assertion flip instead of a coverage-gap discovery exercise.
+Codespaces per-task secrets are intentionally deferred for now. Operators should continue using GitHub Codespaces user secrets for native devcontainers or the `deploy/codespaces/runtime/secrets/` file projection for the repo-owned container flow until a future implementation bead is explicitly prioritized.
