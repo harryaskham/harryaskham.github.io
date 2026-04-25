@@ -1,68 +1,40 @@
-# Session summary 0014 — bd-732406 slice 1: post-restart tmux survival detection
+# Session summary — Web summaries detail actions
 
 ## Goal
 
-bd-732406 wants persistent agents whose tmux survived a daemon restart
-to re-attach instead of respawn. Slice 1 is the cheapest, lowest-risk
-first step: detect the situation and log a structured warning so
-operators can see it; defer the actual reattach implementation to a
-follow-up bead where the design can be reviewed.
+Continue burning down summaries-view UX polish by making the web detail pane easier to read, navigate, and reuse when summaries contain long sections.
 
 ## Bead(s)
 
-- `bd-732406` slice 1 — this commit.
-- Filed `bd-7a035f` for the actual reattach implementation.
+- `bd-99159c` — Web summaries: improve detail readability and section actions
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `launch_persistent_agent`'s `cleanup_stale_persistent_agent` branch
-  returning `Ok(None)` silently fell through to `state.agents.create`
-  which spawned a fresh agent record + new tmux session.
-- If the prior daemon left a tmux session alive (recorded in the
-  sentinel's persisted `tmux_session` + `tmux_socket` fields), the
-  fresh spawn produced a duplicate process. The orphan tmux was
-  eventually reaped by `repair_stale_tmux_sessions` but the brief
-  window allowed two processes to hold workspace locks.
-- No log line surfaced the situation, so operators investigating
-  bd-2b7a37 stuck-after-restart symptoms had to infer the cause.
+- Web summaries had list pagination, keyboard shortcuts, filters, raw artefact links, and styled section cards.
+- Long sections could dominate the detail pane with no collapse affordance.
+- Operators had to manually select text to copy a section or whole summary.
+- The detail header scrolled away quickly, reducing context in long summaries.
 
 ## After state
 
-- In the `Ok(None)` branch of `cleanup_stale_persistent_agent`, the
-  daemon now consults the sentinel's recorded `tmux_session` +
-  `tmux_socket` (which persist across daemon restarts via on-disk
-  sentinel state).
-- If both are recorded AND `crate::agent::verify_tmux_alive_pub_on`
-  says the tmux session is still alive, a structured `bd-732406`
-  warning is logged that explicitly names the persistent_id, decl
-  name, session, and socket. This makes the post-restart wedge
-  immediately visible in daemon logs.
-- No behavioural change to the spawn path itself — the fresh agent
-  record is still created. The follow-up bead (`bd-7a035f`) handles
-  the actual reattach.
+- Detail header is sticky on desktop and includes `Copy summary` plus `Jump to sections` actions.
+- Each rendered section has `Copy` action and long sections gain `Show full` / `Collapse` controls.
+- Long section previews are clipped with a fade and explanatory hint for readability.
+- Clipboard actions use native clipboard when available, with a textarea fallback and temporary copied feedback.
+- Section body wrapping now uses `overflow-wrap: anywhere` to avoid pathological long-line overflow.
 
 ## Diff summary
 
-- Commit: `97815142`.
-- Files: `crates/caco-daemon/src/lib.rs` (+32).
-- Tests: none added (logging-only path, deferred reattach gets test
-  coverage in bd-7a035f).
-- `cargo build -p caco-daemon`: clean.
-- `cargo clippy -p caco-daemon`: clean.
-
-## Out of scope (deferred to bd-7a035f)
-
-- Actually skipping the spawn and reattaching to the surviving tmux.
-- Reconstructing in-memory AgentInfo bound to the surviving tmux.
-- Verifying the process inside tmux is the right binary (not just a
-  leftover shell).
-- Workspace-lock / fd state re-acquisition concerns.
+- Commits: current `bd-99159c` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+  - `crates/caco-web/static/summaries.css`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 252 passed
+- Behavioural delta: no daemon/API changes; web summaries detail is more usable for long sessions and easier to copy into follow-up work.
 
 ## Operator-takeaway
 
-After the next daemon restart on a node that hosts persistents,
-grep the daemon log for `bd-732406` to see whether any persistent's
-tmux survived the restart while the in-memory record was lost. Each
-such line names the surviving session — currently you can manually
-`caco agent recreate` to clean it up; bd-7a035f will eventually do
-this automatically.
+The web viewer is now better for real operator workflows: you can keep context while reading long summaries, collapse noisy sections, and copy either a section or the whole parsed summary without fighting the page.
