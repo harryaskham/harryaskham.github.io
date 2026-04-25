@@ -1,32 +1,32 @@
-# Session summary — notify ack JSON exit code
+# Session summary — log exceptions component filter
 
 ## Goal
 
-This session fixed the JSON error path for `caco notify ack` so structured daemon error envelopes no longer flow through a success exit status.
+This session fixed `caco log exceptions --component ...` so operators can filter exception listings by the process/component identifier instead of seeing an unknown-flag warning followed by unfiltered output.
 
 ## Bead(s)
 
-- `bd-302a0d` — [CLI polish] notify ack --json not-found exit code
+- `bd-587b9d` — [CLI polish] log exceptions component filter is ignored
 
 ## Before state
 
-- Failing tests: no regression guarded `notify ack --json` exit-code handling for `ok:false` envelopes.
-- Relevant metrics: `notify get --json` already inspected structured envelopes and returned non-zero for `ok:false`; `notify ack --json` returned the envelope directly.
-- Context: this was filed in collab-mode after the queue was empty and adjacent notify get/ack wording fixes landed.
+- Failing tests: no regression covered `log exceptions --component` registration or dispatch filtering.
+- Relevant metrics: `caco log exceptions --project cacophony --component caco-tts-daemon --limit 20` emitted a bd-b76723 unrecognised-flag warning and then ignored the intended filter.
+- Context: discovered while inspecting old draft `bd-3220d4`; the current TTS error no longer reproduced, but the CLI filter bug was immediate and actionable.
 
 ## After state
 
 - Failing tests: none in scoped validation before replay.
-- Relevant metrics: `cargo test -p caco-cli notify_ack_json_inspects_error_envelope_for_exit_code --lib` and `cargo check -p caco-cli --lib` passed before replay; the focused regression is rerun after replay.
-- Context: `notify ack --json` now mirrors `notify get --json` by deriving exit code from the envelope `ok` field.
+- Relevant metrics: `cargo test -p caco-cli log_exceptions_declares_and_dispatches_component_filter --lib` and `cargo check -p caco-cli --lib` passed before replay; the focused regression is rerun after replay.
+- Context: `--component` is now advertised on `log exceptions`, validated as non-empty, filters exception `process_id`, and reports filter counts in text/JSON output.
 
 ## Diff summary
 
-- Commits: `d28b36fb1`
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added exact source regression `notify_ack_json_inspects_error_envelope_for_exit_code`.
-- Behavioural delta: JSON callers get exit code 1 for `ok:false` notify-ack responses instead of a false success.
+- Commits: `e7f65b02f`
+- Files touched: `crates/caco-cli/src/lib.rs`, `crates/caco-cli/src/outbox_cmd.rs`
+- Tests: added source regression `log_exceptions_declares_and_dispatches_component_filter`.
+- Behavioural delta: component-scoped exception inspection now works instead of silently falling back to unfiltered results.
 
 ## Operator-takeaway
 
-The notify command family is now more script-safe: both get and ack preserve structured JSON while still returning non-zero for structured failures.
+Operators can now use `caco log exceptions --component <process>` as the natural filter for service/component exception triage, including TTS daemon investigations.
