@@ -1,29 +1,24 @@
-# Session summary — bd-5bfb2c (slice 12: design system alignment)
+# Session summary — bd-5bfb2c (slice 12b: inline style cleanup)
 
 ## Goal
-Fix 78 design token mismatches so workspace uses the same visual language as the rest of caco-web.
+Replace inline styles with CSS utility classes for maintainability + visual consistency.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Workspace used ad-hoc tokens: --bg-elevated (doesn't exist), --accent-primary (wrong), --border-subtle with wrong rgba values, hardcoded #4c566a for text-muted
-- No shadows, no transitions, no radius tokens — felt flat and disconnected
-- Cards, inputs, modals looked different from canonical views
+- ~15 inline style.cssText assignments with duplicated layout values across JS files
 
 ## After state
-- Every workspace class uses canonical :root tokens: --bg-elev/--bg-tertiary/--bg-secondary, --accent/--accent-dim/--accent-soft, --border/--border-strong, --shadow-sm/--shadow/--shadow-lg, --radius/--radius-lg, --transition
-- Panes have shadow elevation + transition on focus
-- Tabs have backdrop-filter blur (frosted glass)
-- Cards hover-lift with shadow escalation
-- Chat input has accent-soft focus glow
-- Data table headers have frosted glass
-- Modals use shadow-lg for proper depth
+- 5 CSS utility classes: ws-pane-column, ws-pane-scroll, ws-pane-scroll--compact, ws-pane-search-bar, ws-pane-search-input
+- Search inputs now have focus glow (accent-soft ring) — was impossible with inline styles
+- Single source of truth for common layout patterns
+- 231/231 tests green
 
 ## Diff summary
-- style.css: 339 lines changed (188+/161-) — pure token migration + visual upgrade
-- workspace-integrated.js: 4 inline style token fixes
-- workspace-panes.js: 6 inline style token fixes
+- style.css: +18 lines (utility classes)
+- workspace-integrated.js: ~8 inline styles → className
+- workspace-panes.js: ~7 inline styles → className
 
 ## Operator-takeaway
-Workspace now matches the rest of the app visually — same shadows, borders, radii, colors, transitions. No more "feels like a different app."
+Cleaner code, consistent spacing, search inputs now glow on focus like the rest of the app.
