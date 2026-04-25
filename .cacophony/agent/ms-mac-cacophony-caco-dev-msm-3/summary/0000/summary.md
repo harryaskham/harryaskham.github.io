@@ -1,33 +1,33 @@
-# Session summary — Stable kitty tab-pill moves
+# Session summary — AKS Terranix provisioning surface
 
 ## Goal
 
-This session fixed the TUI kitty graphics flicker reported when many tabs are open. The likely visible artifact was not unstable logical IDs, but the resize/move path deleting an existing kitty image before the replacement placement was uploaded whenever header/tab pill rectangles shifted.
+This session created the missing repo-owned Azure Kubernetes Service provisioning surface needed before the full cloud deployment bead can be completed. The aim was a checked-in, reusable Terranix/Terraform module that provisions the Kubernetes substrate for the existing Helm chart without introducing any local Docker build path.
 
 ## Bead(s)
 
-- `bd-972c76` — Fix TUI kitty borders flickering with many tabs
+- `bd-8b0dbb` — Set up independent AKS cluster provisioning via Terranix
+- Related blocker observed: `bd-40cb10` — Deploy current system stack to cloud as self-contained setup
 
 ## Before state
 
-- Failing tests: none at start.
-- Relevant metrics: prior investigation pointed at tab-bar graphics registration and kitty surface churn; moving a same-key enhancement to a new rect used the normal `reserve` path, which eagerly queued a delete for the displayed image.
-- Context: workspace/header tab pills can shift horizontally as tab count changes or as the centered tab group is recalculated. With several visible tabs, deleting before replacement upload can flash as blank/recreate flicker.
+- Failing tests: none known for this scope.
+- Relevant metrics: `bd-40cb10` successfully built image `harryaskhamcacoacr.azurecr.io/cacophony:4752072ee453` via ACR remote build, but deployment stopped before ACA apply because `deploy/aca/terraform/terraform.tfvars` was absent.
+- Context: the repo already had `deploy/helm/` for Kubernetes runtime manifests, but no `deploy/aks/` infrastructure code to create an independent AKS cluster with named/dynamic pools.
 
 ## After state
 
 - Failing tests: none in scoped validation.
-- Relevant metrics: `cargo test -p caco-tui movable_enhancement_rect_shift_does_not_queue_delete_bd_972c76 --lib` passed; `cargo clippy -p caco-tui --lib -- -D warnings` passed; `cargo test-small` passed with 256 tests before recovery replay, and the targeted test passed again after replay.
-- Context: span pill graphics now use a movable enhancement registration path. Rect changes keep the same surface ID, mark the surface for replacement upload, and do not queue an eager delete.
+- Relevant metrics: `just aks-validate` passed with 41 checks; `just helm-validate` passed with 66 checks; `nix build .#caco-aks-terraform-config --no-link` under `deploy/aks` successfully generated the Terranix config derivation.
+- Context: `deploy/aks/` now contains a flake, Terranix module, example tfvars, README/runbook, and static validator. The module provisions AKS, fixed named node pools, autoscaling dynamic node pools, ACR pull permissions, SSH key input, and useful outputs for Helm rollout.
 
 ## Diff summary
 
-- Commits: `2c64ea99b`
-- Files touched: `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/kitty.rs`
-- Tests: added a kitty surface-manager regression proving moved tab-pill surfaces keep a stable ID, become upload-pending, and queue no deletes.
-- Behavioural delta: header/workspace tab pill movements should update in place instead of blanking the old placement before the new one lands, reducing flicker when 5+ tabs are open or tab geometry shifts.
-- Validation: targeted caco-tui kitty test; caco-tui clippy; cargo test-small.
+- Commits: `ff07b34bb`
+- Files touched: `deploy/aks/README.md`, `deploy/aks/flake.nix`, `deploy/aks/flake.lock`, `deploy/aks/terraform/terraform.nix`, `deploy/aks/terraform/terraform.tfvars.example`, `deploy/aks/validate.sh`, `justfile`, `README.md`, `AGENTS.md`, `SPEC.md`
+- Tests: +1 static AKS validator exposed via `just aks-validate`.
+- Behavioural delta: operators now have a repo-owned Terranix AKS provisioning path that complements the existing Helm chart and no-local-Docker remote-build rollout path.
 
 ## Operator-takeaway
 
-The fix targets the visual flicker mechanism directly: for move-heavy decorative tab surfaces, keep the old kitty placement alive until the replacement upload supersedes it, rather than deleting first and hoping the upload arrives in the same frame.
+The missing AKS substrate is now represented in the repository. The next cloud deployment attempt can start from a checked-in `deploy/aks/` path instead of relying on an out-of-band cluster or ad hoc Terraform.
