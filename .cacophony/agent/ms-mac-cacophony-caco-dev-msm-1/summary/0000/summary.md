@@ -1,32 +1,32 @@
-# Session summary — macOS admin inspector clarity polish
+# Session summary — macOS command output readability polish
 
 ## Goal
 
-Improve the native macOS Admin Inspector so high-risk configuration, mode, profile, node, and project inventory data is easier to understand and safer to act on.
+Improve command-output review in the native macOS controls surface so operators can quickly understand whether an action or cron result succeeded, needs review, or is just empty.
 
 ## Bead(s)
 
-- `bd-eb1ed7` — `[macOS excellence] Admin inspector operator clarity polish`
+- `bd-3c877a` — `[macOS excellence] Command output readability polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline was 53 checks.
-- Context: The Admin pane exposed the right data, but top-level guidance, filter feedback, empty states, and high-risk restart/config copy were sparse.
+- Context: Command output was a raw monospaced pane with minimal context, making it slower to distinguish successful runs, stderr-bearing results, cron logs, and no-output states.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with `CacophonyKitSmoke: OK (53 checks)`.
-- Context: The inspector now provides tab-specific guidance, filter clearing, restart-risk explanations, empty states across inventories, node/project context copy, and profile/preset scan hints.
+- Context: Action output now includes status, exit, and stdout/stderr byte summaries; cron logs include a header and line count; the output pane has a native summary header with result-specific guidance.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-eb1ed7`.
-- Files touched: `companion/macos/Sources/Cacophony/Views/AdminInspectorPane.swift`.
+- Commits: current branch commit for `bd-3c877a`.
+- Files touched: `companion/macos/Sources/Cacophony/Views/OperatorControlsPane.swift`.
 - Tests: no smoke-count change; app build and smoke suite passed.
-- Behavioural delta: administrative data is more explanatory and safer to use because quiet/empty filtered states and restart-risk states are explicit.
+- Behavioural delta: operators can scan command results faster and know whether to copy, retry, inspect stderr, or read cron logs.
 
 ## Operator-takeaway
 
-The Admin inspector is now a clearer audit surface: it tells operators what each tab means, when empty is safe, and when config drift requires care before restarting.
+The action/cron output pane is now an interpretation surface, not just a text dump: it summarizes success, review-worthy output, and empty states before the raw log.
