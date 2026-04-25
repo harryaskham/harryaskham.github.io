@@ -1,32 +1,32 @@
-# Session summary — Lightweight macOS app validation
+# Session summary — Terraform-free AKS validation shell
 
 ## Goal
 
-Add a low-impact validation path for native macOS app source changes so managed workers can catch obvious Swift syntax issues and request cloud build validation without running heavy Swift/Nix frontend builds on the shared `ms-mac` node.
+Split quick AKS status and server-side dry-run validation from the heavier ACA/Terraform provisioning shell so operators and agents can run production-safe checks without first building the Terraform/Terranix dependency closure.
 
 ## Bead(s)
 
-- `bd-0a38cb` — Add lightweight macOS Swift validation path that does not overload ms-mac
+- `bd-940a2a` — Split AKS status/dry-run dev shell from Terraform dependency closure
 
 ## Before state
 
 - Failing tests: none known for this bead.
-- Relevant metrics: local Swift/Nix app builds are guarded on shared `ms-mac`; existing guidance offered provenance checks and cloud build dispatch, but no single lightweight validation recipe for source-editing agents.
-- Context: the bead came from a macOS visual QA session where source changes could not be locally syntax-validated without risking expensive frontend builds on the shared host.
+- Relevant metrics: previous validation attempted `nix develop .#aca --command just aks-self-dry-run` and timed out after 900 seconds while building `terraform-1.9.8-go-modules` before reaching kubectl/helm.
+- Context: the existing `aks-self-status` and `aks-self-dry-run` recipes were already production-safe, but the documented hermetic shell pulled in provisioning dependencies that were unnecessary for status/dry-run loops.
 
 ## After state
 
 - Failing tests: none observed.
-- Relevant metrics: `bash -n scripts/macos-app-swift-syntax.sh` passed; `just --dry-run macos-app-validate` passed; `just --dry-run macos-app-swift-syntax` passed; `just --list` exposes `macos-app-validate` and `macos-app-swift-syntax`.
-- Context: `just macos-app-validate` now runs provenance plus parse-only Swift syntax locally on `ms-mac`, then dispatches the GitHub-hosted macOS app cloud build with `package=false`; non-macOS workers also dispatch that cloud build without packaging.
+- Relevant metrics: `just --dry-run aks-self-status-lite`, `just --dry-run aks-self-dry-run-lite`, `just --dry-run aks-lite-shell 'kubectl version --client'`, `nix eval --raw .#devShells.x86_64-linux.aks-lite.name`, `nix flake check --no-build`, and `deploy/aks/validate-operator-surfaces.sh` all passed.
+- Context: the repo root now exposes `nix develop .#aks-lite` with kubectl, helm, caco, and python+PyYAML while intentionally excluding Terraform; just wrappers run the existing AKS status/dry-run recipes through that shell.
 
 ## Diff summary
 
-- Commits: `07e9818a4`
-- Files touched: `scripts/macos-app-swift-syntax.sh`, `justfile`, `docs/macos-development.md`, `docs/macos-development.html`, `README.md`, `AGENTS.md`
-- Tests: +0 Rust tests / +1 shell helper / +2 just recipes / flipped 0.
-- Behavioural delta: shared macOS workers have a documented default validation path that avoids local heavy builds while still providing local parse-only signal and cloud build coverage.
+- Commits: `9fab6f512`
+- Files touched: `flake.nix`, `justfile`, `deploy/aks/README.md`, `deploy/aks/PRODUCTION-ROLLOUT.md`, `README.md`, `AGENTS.md`
+- Tests: +0 Rust tests / +3 just wrapper recipes / +1 devShell.
+- Behavioural delta: AKS quick validation has a first-party Terraform-free shell and documented `*-lite` recipes; full ACA/Terraform shell remains available for provisioning and nodepool recovery.
 
 ## Operator-takeaway
 
-For native macOS frontend changes, agents should use `just macos-app-validate` first: it is safe for shared `ms-mac` and still gets the full GitHub-hosted build/smoke path moving without packaging overhead.
+Use `just aks-self-status-lite` and `just aks-self-dry-run-lite` for fast production AKS inspection/dry-runs; reserve `nix develop .#aca` for flows that actually need Terraform or Azure provisioning tools.
