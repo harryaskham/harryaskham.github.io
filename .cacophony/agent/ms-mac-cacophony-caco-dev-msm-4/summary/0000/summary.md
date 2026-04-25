@@ -1,29 +1,28 @@
-# Session summary — bd-b39bdc deferred dependency resolution
+# Session summary — bd-77653d Codespaces integration tests
 
 ## Goal
-Implement a focused slice of deferred dependency resolution in the beads store so dependency status lookups happen lazily and are cached, rather than broad eager status scans in ready-list and enrichment paths.
+Add hermetic integration coverage for the Codespaces enrollment path without running Docker builds locally or requiring live GitHub Codespaces infrastructure.
 
 ## Bead(s)
-- `bd-b39bdc` — Add deferred dependency resolution logic
-- Related obsolete closeouts before this slice: `bd-f5ce49` and `bd-8d77ba` were closed by operator steer as no-op/obsolete XML-prefix work.
+- `bd-77653d` — Write integration tests for Codespaces support
+- Related coordination: msm-5 filed `bd-f1ce08` for the duplicate caco-cli Codespaces test observed broken-on-main; this slice removes that duplicate as part of the Codespaces test work.
 
 ## Before state
-- `list_ready` loaded every non-closed bead ID into a set before filtering candidates by dependencies, so work scaled with total open project size even if candidate beads had few dependencies.
-- Single-bead and enrichment paths duplicated direct dependency-status query loops.
-- Prior triage had already landed codec preservation for unresolved dependency IDs, but true lazy resolution remained open.
+- Codespaces CLI tests covered command registration, list parsing, JSON formatting, action shell-out paths, and bootstrap secret source checks.
+- `caco codespace enroll` did not have a hermetic integration test that exercised HTTP enrollment, isolated HOME identity/state writes, and JSON output.
+- Main had a duplicate `dispatch_codespace_new_pushes_rendezvous_bootstrap_secret_bd_0bed93` test that broke `cargo check --workspace --tests`.
 
 ## After state
-- Added `DeferredDependencyStatusResolver`, which defers dependency status fetching until a dependency ID is actually queried and caches repeated IDs.
-- `list_ready` now resolves only dependency IDs present on candidate beads, no longer materializing all non-closed IDs.
-- `is_bead_blocked`, `enrich_bead_with_conn`, and `enrich_beads_with_conn` share the resolver path.
-- Missing/unknown dependencies remain conservative/blocking.
-- Validation: `cargo test -p caco-beads --lib` passed 276/276; `cargo clippy -p caco-beads --all-targets` clean.
+- Added `dispatch_codespace_enroll_posts_to_mock_rendezvous_and_persists_state_bd_77653d`.
+- The test binds a local mock rendezvous server, verifies the enroll request path/body, verifies identity marker creation, verifies state persistence, and checks JSON response structure.
+- Removed the duplicate existing Codespaces test, fixing the caco-cli test-target compile failure.
+- Validation: `cargo test -p caco-cli codespace` passed 11/11; `cargo check --workspace --tests` clean; `cargo clippy -p caco-cli --all-targets` clean.
 
 ## Diff summary
-- Commits: `edf57f4d0`, `ffaf24f11`
-- Files touched: `crates/caco-beads/src/store.rs`
-- Tests: +1 resolver test covering lazy construction, caching, closed/open/missing dependency behavior.
-- Behavioural delta: dependency resolution is now lazy/cached in the core read paths while preserving existing blocked/unblocked semantics.
+- Commits: `4792c0ed7`, `3842c458c`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: +1 hermetic Codespaces enroll integration test; -1 duplicate test definition.
+- Behavioural delta: Codespaces enrollment now has regression coverage for rendezvous communication and local state materialization without Docker or live Codespaces.
 
 ## Operator-takeaway
-The bead store now has real deferred dependency resolution mechanics rather than only preserving dependency IDs. Ready-list generation avoids an eager all-open-ID scan and only checks dependency IDs it actually needs.
+Codespaces enrollment is now covered by a real mock-rendezvous integration test, and the duplicate caco-cli test that other agents saw broken-on-main is fixed in the same landed slice.
