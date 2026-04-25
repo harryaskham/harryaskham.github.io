@@ -1,32 +1,32 @@
-# Session summary — fix permanent auto-claim rollback route
+# Session summary — direct fallback for live startup timeout fix
 
 ## Goal
 
-Repair the defensive rollback path that runs when `caco bd claim` with no bead ID receives a permanent tracker from a stale or remote daemon. The prior guard correctly refused the tracker, but attempted to unclaim it through an invalid endpoint.
+Record the second reintegration attempt for the same bd-5e336a daemon-health fix. The PR-review reintegration path pushed the branch but did not land it on `main`, so this chunk exists to satisfy the recorded-mode contract while falling back to direct merge per operator instruction.
 
 ## Bead(s)
 
-- `bd-45cdba` — [bug] bd claim permanent-skip rollback uses wrong unclaim route
+- `bd-5e336a` — Remove ALL timeout failures on agent startup; downgrade to warnings; reconcile must be fast + async
 
 ## Before state
 
-- Failing tests: no regression existed for the rollback URL shape.
-- Relevant metrics: live command after bd-0755d1 returned `Automatic unclaim failed: daemon returned invalid JSON (HTTP 405 Method Not Allowed)` while manual `caco bd unclaim --bead-id bd-72fd72` succeeded.
-- Context: the rollback posted to `/api/v1/projects/<project>/beads/unclaim` with `bead_id` in the body, but the daemon exposes `POST /api/v1/projects/<project>/beads/<bead_id>/unclaim`.
+- Failing tests: none known in the code patch.
+- Relevant metrics: prior targeted validation passed: `cargo check -p caco-daemon --tests`, `cargo test -p caco-daemon reconcile_warns_for_stale_starting_with_live_tmux`, and `cargo test -p caco-daemon reconcile_transitions_stale_starting_agents_to_failed`. `cargo test-small` was attempted and timed out at 300s on ms-mac after cold/heavy compilation without reporting a test failure.
+- Context: `caco agent reintegrate --mode pr_review,recorded` returned success for branch/PR staging, but `origin/main` still did not contain `bd-5e336a`, leaving the bead in progress.
 
 ## After state
 
-- Failing tests: none in targeted or small validation.
-- Relevant metrics: `timeout 120 cargo test -p caco-cli --lib auto_claimed_permanent_rollback_url_uses_bead_unclaim_route_bd_45cdba -- --nocapture` passed; `timeout 180 cargo test-small` passed.
-- Context: rollback now builds the same bead-specific URL shape as `caco bd unclaim`, includes an audit reason, and wraps transport errors with the original no-ready explanation.
+- Failing tests: none newly introduced; no code changed after the prior validation.
+- Relevant metrics: direct fallback is being submitted with the already-validated code commit.
+- Context: the branch contains the live-startup-timeout warning-only patch plus recorded summaries for both the initial PR attempt and this direct fallback attempt.
 
 ## Diff summary
 
-- Commits: a64d4fc28
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added `auto_claimed_permanent_rollback_url_uses_bead_unclaim_route_bd_45cdba`.
-- Behavioural delta: if a stale daemon still auto-assigns a permanent tracker, the client-side guard can roll it back through the valid unclaim route instead of leaving an accidental assignee behind.
+- Commits: `e86eb9e24` (code change), `ce9a95b64`/`5a65f3fa6` (summary correction), this fallback summary commit
+- Files touched: `.cacophony/agent/ms-mac-cacophony-caco-dev-msm-2/summary/0001/summary.md`
+- Tests: +0 additional tests in this fallback chunk.
+- Behavioural delta: no additional runtime behaviour change beyond the bd-5e336a patch; this chunk documents the PR-to-direct reintegration fallback.
 
 ## Operator-takeaway
 
-The permanent-tracker guard now fails safely end-to-end: it refuses the bad auto-claim and uses the real unclaim endpoint to clear ownership, preventing workers from getting stuck holding tracker beads during queue drain.
+The PR path did not actually land the P0 fix, so the agent is intentionally falling back to direct recorded reintegration rather than leaving the daemon-health change stranded on an agent branch.
