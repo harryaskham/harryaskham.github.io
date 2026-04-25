@@ -1,30 +1,32 @@
-# Session summary — bd-b27a45 macOS terminal preview
+# Session summary — bd-ecdc53 macOS project-scoped dashboard mode
 
 ## Goal
-Add a guarded native macOS surface for agent terminal/attach context without taking on full PTY/WebSocket integration in this slice.
+Add a visible, persistent project selector to the native macOS dashboard and remove the most important hardcoded `cacophony` project assumptions from project-scoped panes.
 
 ## Bead(s)
 
-- `bd-b27a45` — [macOS excellence] Embedded agent terminal preview
+- `bd-ecdc53` — [macOS excellence] Project-scoped dashboard mode
 
 ## Before state
 
-- Agent Controls had an Attach card that only displayed and copied the attach command.
-- The app explicitly did not open terminals, and there was no nearby preview of recent agent output.
+- `DaemonState.refresh()` hardcoded `cacophony` for project inbox/chat, build/test/release queues, scratchpads, and source tree refresh.
+- Messages compose and Operations queue actions hardcoded `cacophony`.
+- Workspace had its own local project picker that was not shared with the rest of the dashboard.
 
 ## After state
 
-- The Attach card is now a Terminal preview card that shows attach metadata, the exact command, a copy action, an explicit user-initiated Open in Terminal action, and a recent log preview.
-- Launching Terminal is guarded behind the button; the app still does not steal focus or attach automatically.
+- `DaemonState` owns a persisted `selectedProject` using `macos.dashboard.selectedProject`, defaulting to `cacophony`.
+- Root sidebar shows a dashboard project picker populated from project status data.
+- Messages compose, Operations actions, Workspace picker/timeline selection, scratchpad/source refresh, and project chat/inbox refresh now use the selected dashboard project.
 
 ## Diff summary
 
-- Commit: `083f33ff3` after stale-branch replay.
-- Files touched: `companion/macos/Sources/Cacophony/Views/AgentControlPane.swift`.
+- Commit: `b2914496e` after stale-branch replay.
+- Files touched: `companion/macos/Sources/Cacophony/App/DaemonState.swift`, `companion/macos/Sources/Cacophony/Views/RootView.swift`, `companion/macos/Sources/Cacophony/Views/MessagesPane.swift`, `companion/macos/Sources/Cacophony/Views/OperationsPane.swift`, `companion/macos/Sources/Cacophony/Views/WorkspacePane.swift`.
 - Tests: no dedicated XCTest; native smoke build validates Swift compile/runtime sample path.
 - Validation: `just macos-app-test`; `./docs/validate-pages.sh`.
-- Behavioural delta: selected agents now have richer terminal context and a one-click launch path from inside the native app.
+- Behavioural delta: the macOS dashboard can visibly scope key project panes/actions to a selected project instead of always targeting `cacophony`.
 
 ## Operator-takeaway
 
-The macOS app now gives operators a safe terminal preview and explicit launch affordance for selected agents, stopping short of risky automatic PTY attachment.
+Project selection is now a first-class dashboard state in the macOS app, visible in the sidebar and used by Messages, Operations, and Workspace surfaces.
