@@ -1,33 +1,33 @@
-# Session summary — AKS private access overlays
+# Session summary — AKS validation and operator surfaces
 
 ## Goal
 
-This session added a private/operator access layer for the self-contained AKS topology without making the daemon broadly public. The chart now supports opt-in web HTTPS ingress, daemon/SSE service exposure for trusted routes, and SSH/Git identity projection through Kubernetes Secrets.
+This session finished the self-contained AKS chain by adding operator-safe validation and control surfaces for the multi-role topology. The work focused on static and production-AKS-safe checks because local Docker on `ms-mac` was causing machine load issues.
 
 ## Bead(s)
 
-- `bd-6f9479` — AKS private access, web HTTPS, and SSH/TUI connectivity
+- `bd-e0cca3` — AKS self-contained cluster validation and operator surfaces
 - parent: `bd-07f7a2` — AKS self-contained Cacophony cluster topology
 
 ## Before state
 
-- Failing tests: none known; Docker Desktop validation was stopped because Docker was overloading `ms-mac`.
-- Relevant metrics: Helm validation had 86 checks before this slice; access to web, daemon/SSE, and SSH was only implicit through the headless service and existing container prelude capabilities.
-- Context: operator requested no more local Docker-heavy work on `ms-mac`; validation for this slice stayed static/API-render oriented.
+- Failing tests: none known in the AKS static validators.
+- Relevant metrics: existing AKS/Helm validators covered topology, PKI/bootstrap, and private access, but there was no dedicated operator-surface validator for the self-contained AKS workflow.
+- Context: the live production AKS release still showed a legacy single StatefulSet deployment rather than the new multi-role self-contained shape.
 
 ## After state
 
-- Failing tests: none in scoped static validation.
-- Relevant metrics: `deploy/helm/validate.sh` passed with 98 checks; `deploy/aks/validate.sh` passed with 68 checks.
-- Context: private access is opt-in: web Service/Ingress, daemon/SSE Service, and SSH Secret projection render only when values are set.
+- Failing tests: none in scoped validation.
+- Relevant metrics: `deploy/aks/validate-operator-surfaces.sh` passed 14 checks; `deploy/aks/validate.sh` passed 72 checks; `deploy/helm/validate.sh` passed 98 checks; `deploy/aks/validate-self-contained-config.sh` passed.
+- Context: `just aks-self-status` read-only production AKS inspection succeeded and showed the current legacy `cacophony-aks` StatefulSet pending while the rendered self-contained node graph contains `caco-aks-ca-0`, `caco-aks-relay-0`, `caco-aks-master-0`, `caco-aks-0`, `caco-aks-1`, and `caco-aks-2`.
 
 ## Diff summary
 
-- Commits: `59cf78178`
-- Files touched: `deploy/helm/cacophony/templates/access-services.yaml`, `deploy/helm/cacophony/templates/ingress.yaml`, `deploy/helm/cacophony/templates/statefulset.yaml`, `deploy/helm/cacophony/values.yaml`, `deploy/helm/validate.sh`, `deploy/helm/README.md`, `deploy/aks/README.md`, `deploy/aks/validate.sh`
-- Tests: Helm validation now renders and asserts private access Services, Ingress, and SSH env projection; AKS validation asserts docs cover role enablement and SSH/web access.
-- Behavioural delta: operators can opt into private web HTTPS and daemon/SSE access while keeping direct-mesh routing separate, and project Git SSH identities can be projected through `ssh.secretName` for `caco`/`caco-work` without baking keys into images.
+- Commits: `e20d7983f`, `2069bce27`
+- Files touched: `justfile`, `deploy/aks/validate-operator-surfaces.sh`, `deploy/aks/validate.sh`, `deploy/aks/README.md`
+- Tests: added a no-Docker operator-surface validator covering `aks-push-config`, `aks-self-dry-run`, `aks-self-status`, server-side dry-run, large ConfigMap replacement, docs, self-contained config render, and multi-role Helm render.
+- Behavioural delta: operators now have first-party recipes for server-side dry-run validation, read-only production AKS inspection, and safe self-contained ConfigMap updates using `kubectl replace` rather than annotation-heavy `apply`.
 
 ## Operator-takeaway
 
-The AKS topology now has a provider-neutral private access contract: expose only the surfaces you choose through private ingress/Tailscale/kubectl forwarding, while the same values shape can later map to micro-VMs or Azure dynamic compute.
+The AKS chain now has a safe operational loop: validate with static/server-side dry-runs, inspect production AKS read-only, and only then apply config updates. The live cluster still needs a deliberate rollout from the legacy single StatefulSet to the multi-role self-contained topology.
