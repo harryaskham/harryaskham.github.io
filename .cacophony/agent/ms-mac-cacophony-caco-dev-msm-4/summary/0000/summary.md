@@ -1,27 +1,25 @@
-# Session summary — bd-5bfb2c (slice 16: micro-polish)
+# Session summary — bd-5bfb2c (slice 17: command bar + restart)
 
 ## Goal
-Visual micro-polish: stat card glow, focus pulse, split grip, chat grouping, source spinner.
+Unified command bar for fleet driving — the TUI killer feature, now in web.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Flat stat cards, no focus animation, no handle affordance, chat messages not grouped, source had "Loading…" text
+- No unified command interface — had to navigate menus/buttons for each action
+- Agent detail missing restart button
 
 ## After state
-- Stat cards: gradient overlay + text glow on hover
-- Focused pane: gentle 3s pulse on border
-- Split handles: directional grip pattern on hover
-- Chat: consecutive same-sender messages grouped (hidden header)
-- Source: CSS spinner on loading
-- 239/239 tests green (2 new)
+- Cmd/Ctrl+K or / opens command bar with 5 categories: slash commands, presets, pane types, views, actions
+- Fuzzy filter, arrow nav, Enter to execute
+- Agent restart button with confirm
+- 241/241 tests green (2 new)
 
 ## Diff summary
-- style.css: +85 lines (animations, grip pattern, spinner, grouping)
-- workspace-integrated.js: chat prevSender grouping logic
-- workspace-panes.js: source loading spinner class
+- workspace-integrated.js: showCommandBar() with command registry, keyboard wiring
+- workspace-panes.js: restart button + endpoint call
 - tests.rs: 2 new tests
 
 ## Operator-takeaway
-Everything feels more tactile — focus breathes, handles show grip dots, stat cards glow, chat groups consecutive messages, source shows a real spinner.
+Press Cmd+K from workspace for everything — dispatch beads, broadcast messages, switch layouts, navigate views. Like VSCode's command palette but for fleet ops.
