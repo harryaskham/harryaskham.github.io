@@ -1,32 +1,32 @@
-# Session summary — reintegration policy deduplication
+# Session summary — TUI diagnostic command naming
 
 ## Goal
 
-Reduce drift between `caco agent complete` and `caco agent reintegrate` by extracting their duplicated reintegration policy resolution into one helper. This keeps future changes to mode defaults, allowed modes, PR-backend routing, tag pushing, and auto-rebase retry limits from being applied to one lifecycle path but missed in the other.
+Make the TUI command surface harder to misuse during visual audits by clearly separating the live dashboard, the real-dashboard benchmark harness, and the isolated graphics testbed. The immediate operator pain was an agent launching the isolated graphics testbed when the expected target was the real dashboard/audit surface.
 
 ## Bead(s)
 
-- `bd-626b48` — Deduplicate agent complete/reintegrate policy resolution
+- `bd-8dfaa5` — Rename TUI diagnostic/testbed commands so agents pick the intended audit target
 
 ## Before state
 
-- Failing tests: none known for this refactor.
-- Relevant metrics: both dispatch paths carried separate copies of profile/env/project mode resolution, allowed-mode enforcement, direct PR-backend selection, `push_tags`, and `auto_rebase_retry_limit` lookup.
-- Context: the duplicate code lived in `crates/caco-cli/src/lib.rs` inside `dispatch_agent_complete` and `dispatch_agent_reintegrate`.
+- Failing tests: none known at start.
+- Relevant metrics: TUI help exposed `caco tui benchmark`, `caco tui fps-benchmark`, and `caco tui graphics-testbed`, but the old names/summaries did not strongly distinguish real-dashboard vs isolated chrome-only targets.
+- Context: docs and operator guidance still recommended `graphics-testbed` directly, making it easy for agents to pick the wrong surface.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
-- Relevant metrics: one `ResolvedAgentReintegrationPolicy` helper now resolves mode, recorded flag, direct PR-backend routing, tag pushing, and auto-rebase retry limit for both lifecycle paths.
-- Context: the two dispatch paths now only unpack the resolved policy before constructing their existing reintegration requests.
+- Relevant metrics: `caco tui dashboard-benchmark` now names the real dashboard benchmark path; `caco tui isolated-graphics-testbed` names the chrome-only harness; `graphics-testbed` and `benchmark` remain compatibility aliases with explicit disambiguating help.
+- Context: README, SPEC, AGENTS, docs, just recipes, and CLI metadata now all use the clearer names.
 
 ## Diff summary
 
-- Commits: `45b3f9d92`
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: `cargo fmt --all -- --check`; `cargo check -p caco-cli --tests`; `cargo test -p caco-cli allowed_reintegration_modes_block_disallowed_selection --lib`
-- Behavioural delta: no intended user-facing behavior change; this is an internal refactor to make complete/reintegrate policy behavior stay consistent.
+- Commits: `a664254fc`
+- Files touched: `crates/caco-cli/src/lib.rs`, `README.md`, `SPEC.md`, `AGENTS.md`, `docs/cli.html`, `docs/tui.html`, `justfile`
+- Tests: `cargo fmt --all -- --check`; `git diff --check`; `cargo test -p caco-cli tui_ --lib`; `cargo check -p caco-cli --tests`; `cargo run -q -p caco -- help tui`; `cargo run -q -p caco -- help tui isolated-graphics-testbed`; `cargo run -q -p caco -- help tui dashboard-benchmark`; `docs/validate-pages.sh`
+- Behavioural delta: no existing command is removed; clearer aliases and help text steer agents toward the real dashboard when that is the audit target and toward the isolated harness only for border/effect experiments.
 
 ## Operator-takeaway
 
-The lifecycle policy decision point is now shared between complete and mid-flight reintegrate, reducing the chance that future PR-backed or direct-merge policy fixes only land on one path.
+The old commands still work, but future agents should see unambiguous help: use `caco tui` for the live dashboard, `caco tui dashboard-benchmark` for the real-dashboard benchmark, and `caco tui isolated-graphics-testbed` only for chrome-only graphics experiments.
