@@ -1,33 +1,32 @@
-# Session summary — macOS slice 3 message center
+# Session summary — local macOS app focus socket
 
 ## Goal
 
-Deliver the third macOS parity slice by adding a native message center for feed, inbox, project chat, global chat, and compose actions, while keeping the app visually aligned with the glass/native shell established in the prior slice.
+Implement the handoff bead for a local-only command surface so agents and operators can drive the running native macOS app semantically instead of relying on brittle Tendril coordinate clicks.
 
 ## Bead(s)
 
-- `bd-e82601` — `[macOS-parity slice 3] Feed + chat + inbox + global chat`
-- Parent: `bd-d6f18a` — macOS native app feature parity umbrella
+- `bd-b1e41c` — [macOS] Add local app command socket for CLI-driven pane focus
 
 ## Before state
 
-- Failing tests: unrelated broken-on-main Rust test failures were reported by peer agents; not exercised here under merge-queue guidance.
-- Relevant metrics: `CacophonyKitSmoke` had 21 checks after slice 2.
-- Context: the app had Status, Agents, Beads, Controls, and Settings, but no communication surface for feed/chat/inbox.
+- Failing tests: unrelated broken-on-main issues are owned by other agents.
+- Relevant metrics: `cargo check -p caco-cli --lib --jobs 1` and `swift build --jobs 1` were the lightweight validation targets after full binary build proved too resource-heavy.
+- Context: Tendril visual QA showed coordinate clicks and keyboard shortcuts were fragile under focus theft/window size changes.
 
 ## After state
 
-- Failing tests: none observed in targeted validation.
-- Relevant metrics: `swift build` passed; `CacophonyKitSmoke` now runs 24 checks with feed/chat sample decoding.
-- Context: a new Messages pane provides segmented Feed, Inbox, Project Chat, Global Chat, and Compose surfaces. Compose can project-broadcast, direct-message, speak, or global-broadcast through daemon APIs.
+- Failing tests: none observed in targeted validation for this slice.
+- Relevant metrics: `swift build --jobs 1` passed; `cargo check -p caco-cli --lib --jobs 1` passed.
+- Context: The macOS app starts a local Unix-domain socket at `/tmp/cacophony-macos.sock` by default, permissioned user-only. `caco macos focus <pane>` sends a focus request to that socket and reports a clear error when the app is not running.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-e82601`.
-- Files touched: `companion/macos/PARITY.md`, `DaemonState.swift`, `RootView.swift`, `MessagesPane.swift`, `DaemonClient.swift`, `Messaging.swift`, `CacophonyKitSmoke/main.swift`.
-- Tests: +3 smoke assertions for feed/chat decoding; no tests removed.
-- Behavioural delta: the app now covers the operator communication loop: observe event feed, read inbox/chat history, and send/broadcast/speak without leaving the native app.
+- Commits: `0e22090df`
+- Files touched: `companion/macos/Sources/Cacophony/App/CacophonyApp.swift`, `companion/macos/Sources/Cacophony/App/LocalCommandServer.swift`, `crates/caco-cli/src/lib.rs`
+- Tests: +0 / -0 / flipped 0
+- Behavioural delta: The native app now exposes a local-only semantic focus control path suitable for Tendril-free pane switching.
 
 ## Operator-takeaway
 
-The macOS app is becoming a real operator console: you can now see what the swarm is saying and push messages back from a native glass UI, rather than bouncing back to CLI/TUI for routine communication.
+This adds the first practical bridge toward `caco macos focus agents`: app-driving can move from fragile screen coordinates to local semantic commands, while failures remain explicit if the app is not running.
