@@ -1,32 +1,32 @@
-# Session summary — Android companion copy density
+# Session summary — helsinki daemon inbox transient audit
 
 ## Goal
 
-Make the Android companion feel less like embedded documentation and more like a native control surface by trimming steady-state helper text, empty states, menu subtitles, and confirmation copy while preserving useful labels and error guidance.
+Audit the two reported `caco msg inbox` / daemon-reachability transients on helsinki and determine whether they were unexplained daemon stalls or explainable lifecycle windows.
 
 ## Bead(s)
 
-- `bd-76a97b` — [Android visual polish] Reduce explanatory chrome and tighten native copy density
+- `bd-7cd0fc` — helsinki daemon: intermittent connection-refused on `/api/v1/projects/cacophony/messages/inbox`
 
 ## Before state
 
-- Failing tests: none known before this bead.
-- Relevant metrics: Android steady-state UI copy included verbose menu descriptions such as “Operator surfaces, system health, and settings”, “In-flight reintegrations and recent outcomes”, and “Session summaries from agent reintegrations”. Settings and empty-state screens also used long explanatory helper text.
-- Context: operator feedback from native macOS QA asked for a more minimalistic native-feeling Android surface, cross-referencing macOS philosophy bead `bd-86ff04`.
+- Failing tests: none; this was an operational log-audit bead.
+- Relevant metrics: two reported transient failures, one around 21:00 BST and one around 22:50 BST on 2026-04-25. Symptoms recovered without restart intervention.
+- Context: the bead asked for log/metric audit on helsinki and escalation to P2 only if the pattern looked recurrent outside expected restart behavior.
 
 ## After state
 
-- Failing tests: none observed in targeted validation.
-- Relevant metrics: 16 Android files touched; net copy/test update was 74 insertions and 81 deletions before summary. Targeted validation passed: `git diff --check`, `gradle :app:testDebugUnitTest --tests com.cacophony.companion.SettingsScreenTest`, and `gradle :app:testDebugUnitTest --tests com.cacophony.companion.SettingsScreenTest --tests com.cacophony.companion.FullAppNavigationTest` inside the Android Nix dev shell.
-- Context: More-menu subtitles, connection/settings helper text, empty states, notification/watch helper copy, and destructive confirmation copy are shorter. Android navigation tests were updated to reflect Beads as a bottom-tab destination rather than a More sub-page.
+- Failing tests: none observed.
+- Relevant metrics: helsinki daemon logs showed restart windows at `20:47:00Z -> 20:48:12Z` and `21:47:03Z -> 21:48:13Z`, plus post-restart startup reconciliation churn. A live `caco node status --node helsinki --json` showed `caco-daemon` running on version `1.2.552` after the audit.
+- Context: the audit concluded the reported connection-refused windows align with daemon restart/grace windows rather than a standalone accept-loop stall or DB lock.
 
 ## Diff summary
 
-- Commits: `04bb8a122`
-- Files touched: `companion/android/app/src/main/java/com/cacophony/companion/MainActivity.kt`, `companion/android/app/src/main/java/com/cacophony/companion/ui/**`, `companion/android/app/src/test/java/com/cacophony/companion/FullAppNavigationTest.kt`, `companion/android/app/src/test/java/com/cacophony/companion/SettingsScreenTest.kt`
-- Tests: +0 new test files / updated 2 existing Android UI test files for renamed labels and current navigation shape.
-- Behavioural delta: no data or navigation behavior changed; visible copy is denser, more native, and less explanatory in steady-state UI.
+- Commits: `b52edc220`
+- Files touched: `docs/audits/bd-7cd0fc-helsinki-daemon-inbox-transient.md`
+- Tests: no code tests; validation was `git diff --check` plus direct helsinki log/status inspection.
+- Behavioural delta: no runtime behavior changed; the repo now has a durable audit note with evidence, conclusion, and escalation triggers.
 
 ## Operator-takeaway
 
-The Android app now presents common surfaces with shorter labels and less instructional chrome, matching the minimal-native direction from the macOS QA feedback while keeping validation coverage for Settings and full-app navigation green.
+No P2 escalation is warranted from the current evidence: both observed helsinki inbox failures line up with daemon restart windows. Escalate only if connection-refused recurs without nearby `daemon stopped` / `daemon started` log pairs, or if endpoints stay unavailable while status reports the daemon running outside restart grace.
