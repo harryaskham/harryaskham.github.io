@@ -1,32 +1,32 @@
-# Session summary — macOS Settings profile-list polish
+# Session summary — CLI show missing-argument discoverability
 
 ## Goal
 
-This session improved the native macOS Settings saved-daemon-profile list so operators can more safely scan, copy, select, and forget connection profiles, while preserving the stronger row component that landed concurrently on main.
+This session fixed the `bd-c3fcdd` addendum by aligning `caco outbox show` and sister show surfaces with canonical missing-required-argument wording plus list/discoverability pointers.
 
 ## Bead(s)
 
-- `bd-bab96f` — [macOS excellence] Settings profile list polish
+- `bd-b0fadd` — [CLI polish] outbox show and sister missing-arg discoverability wording
 
 ## Before state
 
-- Failing tests: none specific.
-- Relevant metrics: saved profiles were shown as compact rows with name, `host:port`, active badge, Use, and a trash icon.
-- Context: the UI lacked explicit last-updated context, endpoint copy affordance, and safer delete/recovery microcopy.
+- Failing tests: no exact regression covered the outbox/profile/choices/bd show no-argument wording cohort.
+- Relevant metrics: `caco outbox show` emitted old usage-style text; `caco bd show`, `caco profile show`, and `caco choices show` used required-argument wording but lacked a list pointer.
+- Context: `bd-c3fcdd` had already fixed the same pattern for `caco node show`.
 
 ## After state
 
-- Failing tests: none in scoped validation before recovery replay.
-- Relevant metrics: `just macos-app-test` passed via smoke fallback with 53 checks; `just macos-app-build` built the full Nix macOS app package and ran its check phase successfully before replay; scoped validation is rerun after replay.
-- Context: each saved profile row now uses the existing `ProfileRow` component with active/loaded state, selectable endpoint, last-updated text, Keychain account context, endpoint copy, and delete feedback that explains the daemon is not affected and the profile can be recreated.
+- Failing tests: none in scoped validation before replay.
+- Relevant metrics: `cargo test -p caco-cli show_missing_arguments_use_discoverability_pointers --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; targeted regression is rerun after replay.
+- Context: all four surfaces now point operators to the relevant list command when a required show identifier is missing.
 
 ## Diff summary
 
-- Commits: `df7f87f10`
-- Files touched: `companion/macos/Sources/Cacophony/Views/SettingsView.swift`
-- Tests: macOS app smoke test and full Nix app build/check path before replay.
-- Behavioural delta: Settings profile management is easier to scan and safer to operate, with copy and recovery guidance built into the row and delete feedback.
+- Commits: `bcd1f947f`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: added exact CLI regression `show_missing_arguments_use_discoverability_pointers`.
+- Behavioural delta: `outbox show`, `bd show`, `profile show`, and `choices show` now share canonical missing-argument plus discoverability guidance.
 
 ## Operator-takeaway
 
-The macOS app’s saved-profile list now communicates “what is active or loaded, where does it point, when was it changed, and what happens if I forget it” without requiring guesswork.
+The CLI no longer dead-ends users with bare usage or sparse required-argument errors on these show commands; every missing-id case tells them which list command can discover valid targets.
