@@ -1,74 +1,68 @@
-# Session summary — bd-274c2d test-health clippy fix
+# Session summary — short-name routing ambiguity detection (bd-4dd73a)
 
 ## Goal
 
-Permanent test-health cycle: keep workspace clippy green on main.
-A spot-check after rebasing onto a fresh main surfaced two trivial
-clippy regressions in caco-cli introduced by msd-4's recent
-bd-83a84d landing of `caco agent log`. Fixed both inline.
+Audit and fix agent short-name routing in `caco agent --name` CLI
+surface. Operator reported surprise ("ah the short names are being
+routed?!") when `msm-4` resolved silently to one of several persistent
+agents sharing the same suffix (e.g. `caco-dev-msm-4`,
+`caco-config-helper-msm-4`, `caco-cluster-debugger-msm-4`). The fix
+makes ambiguous short-name lookups error explicitly with all matches
+listed, instead of silently picking the first one.
 
 ## Bead(s)
 
-- `bd-274c2d` — Permanent: continuous test suite health (does not close).
+- `bd-4dd73a` — Audit short-name routing for agent control surfaces.
 
 ## Before state
 
-- `cargo test-small`: PASS 720+291+18+2814+52 green on main.
-- `cargo clippy --workspace --all-targets -- -D warnings`: FAIL with
-  two errors in `crates/caco-cli/src/lib.rs`:
-  - line 30014: `doc_overindented_list_items` — continuation
-    line in a `///` list item indented 22 spaces; clippy wants 2.
-  - line 30119: `explicit_counter_loop` — manual `taken` counter
-    incremented in a for-line loop where `.lines().take(k)` is the
-    idiomatic form.
+- `resolve_agent_id_by_name` matched `pid == name || pid.ends_with("-{name}")`.
+  When multiple agents matched the suffix, it returned the first
+  project-scoped hit (or first any-project hit) — silently routing
+  operator commands to whichever agent happened to appear first in the
+  daemon list. Zero ambiguity detection.
+- CLI test suite had a pre-existing broken-on-main duplicate test
+  definition (`dispatch_codespace_new_pushes_rendezvous_bootstrap_secret_bd_0bed93`
+  defined twice) preventing `cargo test -p caco-cli --lib` from
+  compiling.
 
 ## After state
 
-- Doc continuation re-indented to 2 spaces (clippy-compliant).
-- Manual counter loop replaced with `for line in raw_output.lines().take(*k)`.
-- `cargo test-small`: PASS 720+291+18+2814+52 green (unchanged).
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
-
-## Files touched
-
-- `crates/caco-cli/src/lib.rs` (+2 / -7 lines).
+- Factored out `resolve_agent_id_by_name_in_response(name, body,
+  current_project)` — pure resolver taking the parsed `/api/v1/agents`
+  envelope so the project-scoping + ambiguity logic is unit-testable
+  without a live daemon.
+- Match precedence: (1) exact `persistent_id` match (always
+  unambiguous) → prefer current project, (2) suffix match scoped to
+  current project → error if >1, (3) suffix match globally → error
+  if >1. Every ambiguity path surfaces `bd-4dd73a:` cite, all
+  matching `persistent_id`s, and suggests using the full ID or
+  setting `CACO_PROJECT` to disambiguate.
+- Removed the duplicate test definition (broken-on-main sidecar fix).
+- 6 new tests:
+  - `short_name_resolves_unambiguous_in_current_project`
+  - `short_name_refuses_silent_routing_when_ambiguous_in_project` (core bug)
+  - `short_name_exact_match_wins_over_suffix_collisions`
+  - `short_name_project_scope_disambiguates_cross_project_collision`
+  - `short_name_global_ambiguity_suggests_caco_project`
+  - `short_name_no_match_returns_not_found_error`
+- `cargo build -p caco-cli`: clean. All 6 new tests pass.
 
 ## Diff summary
 
-Two-hunk single-file fix in `crates/caco-cli/src/lib.rs`. First
-hunk reflows a documentation continuation line so its indent
-matches the parent list item (clippy `doc_overindented_list_items`).
-Second hunk replaces a manual loop counter with
-`Iterator::take(*k)` (clippy `explicit_counter_loop`). No behaviour
-change to `dispatch_agent_log` or its callers; same set of lines
-emitted in the same order.
+- `crates/caco-cli/src/lib.rs`:
+  - Refactored `resolve_agent_id_by_name` into thin network wrapper +
+    `resolve_agent_id_by_name_in_response` pure resolver (~120 LOC).
+  - Removed duplicate `dispatch_codespace_new_...` test definition
+    (broken-on-main sidecar).
+  - +6 tests (~100 LOC) with `agent_envelope` test helper.
 
 ## Operator-takeaway
 
-Workspace clippy is back to green on main. No code-path or CLI
-contract change. The `caco agent log` subcommand (bd-83a84d)
-behaves identically to before; the head-mode loop now uses the
-canonical iterator-take form. This is a test-health bead so no
-follow-up bead filing is needed.
-
-## Validation
-
-- `cargo test-small`: PASS 720+291+18+2814+52 (no test count delta;
-  no functional change).
-- `cargo clippy --workspace --all-targets -- -D warnings`: clean
-  (1m20s).
-- Did not run full workspace tests per merge-queue mixin and the
-  no-Rust-functional-diff scope.
-
-## Notes / follow-ups
-
-- The lint that fired (`doc_overindented_list_items`) is enabled
-  by default in clippy 1.94+. Worth a one-line CI tickle so this
-  class of lint failure surfaces before reintegration rather than
-  on the next agent's clippy preflight. Not in scope for this
-  cycle.
-- bd-845653 / bd-58ff27 / bd-c24ff7 all still on main but blocked
-  from `caco bd close --bead-id` because the daemon-binary on flight
-  is the pre-bd-845653-fix one (the very bug this session shipped a
-  fix for). Operator restart of the reintegration daemon will
-  unblock the close path for those three.
+The daemon-side `AgentManager::resolve_agent_id` (lifecycle.rs:2720)
+has a similar first-match-wins pattern using `agent_name` suffix, but
+it's used for internal routing where the caller provides a full
+composite ID (not operator-supplied short names). If that surface also
+needs ambiguity detection, it's a separate bead with its own test
+pattern. This PR covers only the CLI-facing `--name` flag used by
+operators (e.g. `caco agent nudge --name msm-4`).
