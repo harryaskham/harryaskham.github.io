@@ -1,40 +1,38 @@
-# Session summary 0026 — dev.md: force-with-lease last-resort doc
+# Session summary — TUI summary artefact labels
 
 ## Goal
 
-Document the narrow recovery path used in summary 0025 so future
-sessions don't repeat the cherry-pick conflict loop.
+Continue TUI summaries polish by making embedded artefact rows more informative and closer in clarity to the web and Android artefact treatments.
 
 ## Bead(s)
 
-- self-improvement (no bead claim).
+- `bd-20feaa` — TUI summaries: improve embedded artefact detail labels
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- dev.md described the standard FF-recovery loop only.
-  When `caco agent reintegrate` had internally resolved a
-  conflict against a concurrent main update (bd-7858a4),
-  the cherry-pick recovery re-conflicted in a loop because the
-  origin agent branch lacked the upstream context.
+- The TUI detail pane listed sibling artefact filenames, but labels were terse: `terminal.cast`, `data.json`, and screenshot names.
+- Operators could see that files existed but not what each artefact type was for.
+- Large screenshot bundles could crowd the terminal detail pane with every filename.
 
 ## After state
 
-- dev.md gains a "Last-resort: when concurrent main moves cause
-  unresolvable divergence (bd-d8fc57)" section under the
-  non-fast-forward footgun.
-- Documents `git push origin --force-with-lease HEAD:agent/<branch>`
-  as a one-shot recovery, scoped to the agent branch only,
-  and emphasises documenting use in the session summary.
+- Artefact rendering is factored into `push_artefact_affordances`.
+- The artefact section now shows a total file count and notes that raw files are served through the summaries API for web/Android viewing.
+- `terminal.cast` is labelled as an asciinema terminal recording.
+- `data.json` is labelled as structured metrics / machine-readable data.
+- Screenshot bundles show count, purpose, up to four readable filenames, and a compact remaining-count line.
 
 ## Diff summary
 
-- Commit: `d160ce34`.
-- Files (1): `.cacophony/profiles/dev.md`.
+- Commits: current `bd-20feaa` implementation commit
+- Files touched:
+  - `crates/caco-tui/src/views/summaries.rs`
+- Tests:
+  - `cargo test -p caco-tui summaries --lib` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: no API change; the terminal detail pane now communicates artefact meaning and avoids overwhelming long screenshot lists.
 
 ## Operator-takeaway
 
-If you exhaust the cherry-pick FF-recovery loop after caco's
-internal rebase merged a conflict, push the agent branch with
-`--force-with-lease` and retry reintegrate. Never apply this to
-main. Always note the use in the session summary so the pattern
-stays surfaceable.
+TUI summaries now explain embedded artefacts instead of just dumping filenames, making terminal-only review closer to the richer web and Android experience.
