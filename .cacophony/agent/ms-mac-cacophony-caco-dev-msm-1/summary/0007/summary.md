@@ -1,74 +1,33 @@
-# Session summary — fix persistent_recreate test isolation
+# Session summary — macOS slice 5 operations dashboard
 
 ## Goal
 
-Resolve bd-03a276: two `caco-daemon` lib tests
-(`persistent_recreate_relaunches_project_controller_replacement` and
-`running_persistent_agent_recreate_forces_destructive_relaunch`) were
-failing intermittently with a tmux socket dial error followed by a 30s
-handler timeout returning 500 instead of 200. Diagnose root cause and
-land a fix without disturbing production code paths.
+Deliver the fifth macOS parity slice by adding a native operations dashboard for merge queue, queued builds/tests, and releases, prioritising operator readability and safe buttons over raw table dumps.
 
 ## Bead(s)
 
-- `bd-03a276` — [broken-on-main] persistent_recreate tests fail with tmux
-  socket dial error then 30s handler timeout
-- (also closed earlier in session: `bd-4cbb82` — caco-web Dispatch button
-  always 422s — fix already on main from prior session, leaked claim)
+- `bd-be235a` — `[macOS-parity slice 5] Merge queue + builds + tests + releases`
+- Parent: `bd-d6f18a` — macOS native app feature parity umbrella
 
 ## Before state
 
-- Failing tests in `cargo test -p caco-daemon --lib persistent`:
-  - `persistent_recreate_relaunches_project_controller_replacement`
-  - `running_persistent_agent_recreate_forces_destructive_relaunch`
-- Failure shape:
-  - `bd-7e2934: tmux set-environment -g PATH failed on socket
-    'caco-agent-cacophony-localhost-cacophony-ctrl': error connecting to
-    /private/tmp/tmux-501/caco-agent-cacophony-localhost-cacophony-ctrl
-    (No such file or directory)`
-  - `bd-3a85f7: handler timed out after 30s — POST
-    /api/v1/persistent/<id>/recreate; returning 500`
-  - `assertion left == right failed: left: 500, right: 200`
-- Both tests passed in isolation but failed when other `persistent*`
-  tests ran in parallel.
+- Failing tests: unrelated broken-on-main failures reported by peers; not part of this slice.
+- Relevant metrics: `CacophonyKitSmoke` had 28 checks after diagnostics slice.
+- Context: the app had no merge/build/test/release view; these workflows required CLI/TUI.
 
 ## After state
 
-- Failing tests: none (in scope). `cargo test -p caco-daemon --lib
-  persistent` is now 135/135 passing.
-- Five other lib tests still failing on main, all confirmed pre-existing
-  and unrelated:
-  - `retention_sweep_skips_non_completed_agents` → filed `bd-578267`
-  - Four `all_embedded_profile*` tests (filer.md frontmatter parse) →
-    filed `bd-b4e52e`
-- `cargo clippy -p caco-daemon --tests --no-deps` clean.
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: `swift build` passed; `CacophonyKitSmoke` now runs 31 checks with merge queue and queue job sample decoding.
+- Context: a new Operations pane provides segmented Merge Queue / Builds / Tests / Releases views, glass metric cards, queue job rows, and buttons to queue project-configured build/test jobs and sync releases.
 
 ## Diff summary
 
-- Commits: `b91cd037` — bd-03a276: parameterize persistent_recreate test
-  fixture decl key
-- Files touched: `crates/caco-daemon/src/lib.rs` (+14 / -2)
-- Tests: 0 added / 0 removed; 2 fixed (no longer flaky under parallel
-  execution).
-- Behavioural delta: test-only. No production code changed. The
-  `setup_persistent_recreate_test_fixture` helper now derives a unique
-  persistent decl key from `(profile_name, std::process::id())` instead
-  of hard-coding `"ctrl"`. This gives each test its own
-  `agent_id` → its own per-agent tmux socket
-  (`caco-agent-{project}-{agent_id}`) and its own tmux session name,
-  eliminating the cross-test collision on the shared
-  `caco-agent-cacophony-localhost-cacophony-ctrl` socket.
+- Commits: current branch commit for `bd-be235a`.
+- Files touched: `companion/macos/PARITY.md`, `DaemonState.swift`, `RootView.swift`, `OperationsPane.swift`, `DaemonClient.swift`, `Operations.swift`, `CacophonyKitSmoke/main.swift`.
+- Tests: +3 smoke assertions for merge queue and queued job decoding; no tests removed.
+- Behavioural delta: the native app can now observe merge queue/release state and start queued build/test workflows from a glass operator dashboard.
 
 ## Operator-takeaway
 
-Per-agent tmux sockets + per-agent tmux session names are derived from
-`{node}-{project}-{agent_name}`. When two parallel tests inject the same
-persistent declaration name into the same `localhost_fixture` config,
-they share a socket and a session — and one test's `tmux new-session`
-sees a session of the same name already alive on the shared server,
-blocking the alive-sentinel write past the 30s handler timeout. This is
-a pattern worth remembering when adding new fixtures: persistent decl
-keys MUST be parameterized (or include `std::process::id()`) the same
-way temp dirs are, otherwise the failure mode is silent flake under
-`cargo test` parallelism rather than a clean error. Two pre-existing
-broken-on-main lib failures remain (bd-578267, bd-b4e52e) for follow-up.
+MacOS now covers the operational queue layer: you can inspect merge/release state and trigger build/test workflows in-app, with the same native visual treatment as the rest of the console.
