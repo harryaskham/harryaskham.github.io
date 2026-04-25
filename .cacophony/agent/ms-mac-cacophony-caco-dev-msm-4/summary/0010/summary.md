@@ -1,81 +1,32 @@
-# Session summary — webapp audit slice 3: explicit 'Insufficient scope' banner for 401/403
+# Slice 8 — bd-9518e2: canonical error for invalid tts io output set --mode
 
 ## Goal
 
-Close the loop on the deferred follow-up of `bd-b6ab99` (slice 2): if
-the dashboard ever talks to a daemon endpoint that returns 401 or 403,
-surface it as an explicit, sticky, operator-readable state instead of
-the generic "Reconnecting (n)" cycle that masked the slice-1 / slice-2
-regression for so long.
+Fix misleading error when `caco tts io output set --mode ''` or `--mode bogus` falls through to "named pulse output requires --server" instead of enumerating valid modes.
 
 ## Bead(s)
 
-- `bd-834dd5` — caco-web: surface 401/403 from `/api/v1/ui/*` as
-  explicit "Insufficient scope" state (P3, claimed by msm-4)
-- (parent: `bd-c1c272` — webapp audit umbrella)
-- (related: `bd-b6ab99` — slice 2, closed)
+- **bd-9518e2** (bug, P3) — caco tts io output set --mode bogus emits misleading error.
 
 ## Before state
 
-- `loadSnapshot` treated all non-2xx responses as a generic network
-  error: `setConnectionStatus('disconnected')` + retry every 5 s.
-- The connection-status pill rendered "Reconnecting (n)" / "Disconnected"
-  with no distinction between "daemon unreachable" and "daemon present
-  but rejecting our token".
-- `setConnectionStatus` had no `forbidden` branch.
-- During slice 1 / slice 2 this exact symptom hid a 403 cascade behind
-  a perpetual reconnect spinner.
+- `caco tts io output set --mode ''` → `named pulse output '' requires --server address`
+- `caco tts io output set --mode bogus` → `named pulse output 'bogus' requires --server address`
+- User thinks they need `--server` when they actually need a valid mode.
 
 ## After state
 
-- `loadSnapshot` now branches on `resp.status === 401 || resp.status === 403`
-  and calls `setConnectionStatus('forbidden')` before throwing.
-- The catch block no longer downgrades an already-set `forbidden`
-  status to `disconnected` on the next retry tick — it stays sticky.
-- `setConnectionStatus` has a new `'forbidden'` case:
-  - reuses the `disconnected` red dot styling so colour-only consumers
-    still get the right gestalt,
-  - sets the pill text to **"Insufficient scope"**,
-  - tooltip explains the cause ("Daemon rejected dashboard request
-    (HTTP 403). The bearer token in use lacks node scope.") and the
-    remediation ("Restart caco web from a non-managed-worker shell,
-    or unset `CACO_AGENT_TOKEN` so the on-disk node token is used.").
-- New one-shot error toast on transition into `'forbidden'` so the
-  state can't be missed by an operator who isn't already looking at
-  the header pill.
-- Regression test
-  `app_js_surfaces_403_as_explicit_forbidden_state` asserts every
-  invariant of the new flow against the bundled `app.js`, so the
-  same drift gets caught at unit-test time next time.
+- Empty mode: `--mode value cannot be empty for tts io output set (allowed base modes: local-default, local-device, pulse-default; or a named pulse output with --server).`
+- Unrecognized mode: `--mode 'bogus' is not a recognized base mode (allowed: local-default, local-device, pulse-default). If 'bogus' is a named pulse output, also pass --server <host:port>.`
+- Matches fleet canonical pattern from bd-2b096e, bd-58220a, caco notify list --level.
 
 ## Diff summary
 
-- `crates/caco-web/static/app.js` (+36 / -2): snapshot fetch path,
-  catch-block sticky check, `'forbidden'` branch, transition toast.
-- `crates/caco-web/src/tests.rs` (+32 / 0): new regression test.
-
-## Test status
-
-- New test authored; not executed locally per operator's
-  "tests-killed-machine" guidance. The assertions are pure substring
-  checks against `static/app.js` embedded via `StaticAssets::get`, so
-  they will pass on the CI runner (every asserted substring is
-  present in the diff above).
-- No behavioural change for any non-401/403 path (`disconnected`,
-  `cached`, `connecting`, `connected` cases unchanged).
+```
+ crates/caco-cli/src/lib.rs | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+```
 
 ## Operator-takeaway
 
-Slice 2 made the dashboard work; slice 3 makes sure that if it ever
-breaks the same way again, the operator sees **"Insufficient scope"**
-instead of an infinite "Reconnecting (n)" loop. Also fires a loud
-toast on transition. No remaining slice-3 follow-ups for this bead.
-
-Webapp audit umbrella `bd-c1c272` is in good shape after these three
-slices: keyboard contract honest, dashboard data plumbing fixed, and
-a clear failure mode for the same regression. Next candidates already
-identified in slice 1 / slice 2 summaries:
-1. Walk Beads / Feed / Chat / Nodes / Services / Workspace nav (now
-   that the dashboard actually loads) and file UX beads as discovered.
-2. Investigate `bd-1ef80b` (PR-mode reintegration succeeds locally
-   but never reaches forge) — operator-impacting infra bug.
+Invalid `--mode` values in `caco tts io output set` now show which modes are valid instead of suggesting the wrong flag.
