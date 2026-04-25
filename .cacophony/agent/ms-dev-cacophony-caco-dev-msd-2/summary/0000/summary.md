@@ -1,53 +1,40 @@
-# Clippy cleanup on docs_gen::summarize_description (bd-f32a48 follow-up)
-
 ## Goal
 
-Clear helsinki's broken-on-main flag for `clippy::explicit_counter_loop`
-in `crates/caco-profile/src/docs_gen.rs::summarize_description` —
-workspace clippy gate (`-D warnings`) was failing. Authoring author
-owns the cleanup.
+Fix broken-on-main `just docs-build` (rc=3) caused by caco-docs-gen
+requiring AUTOGEN sentinels in docs/profiles.html when the file still
+uses legacy sentinels from `scripts/render-profiles-docs.py`.
 
 ## Bead(s)
 
-- `bd-f32a48` — docs autogen (slice 1 already on main; this is a
-  clippy follow-up flagged by helsinki as broken-on-main).
+- `bd-167bd6` — follow-up hotfix for graceful no-op on missing sentinels.
 
 ## Before state
 
-helsinki's broadcast: `clippy::explicit_counter_loop` violation in
-`crates/caco-profile/src/docs_gen.rs::summarize_description` at
-line 144 was blocking workspace clippy gate. Code looked like:
-
-```rust
-let mut count = 0usize;
-for (i, _) in trimmed.char_indices() {
-    if count >= 140 { cut = i; break; }
-    count += 1;
-}
-```
+`caco-docs-gen` returned exit code 3 (MissingSentinel) when run
+against the on-disk `docs/profiles.html` which uses legacy
+`BEGIN GENERATED SHIPPED PROFILES` markers. This broke `just docs-build`
+for any agent rebasing onto main.
 
 ## After state
 
-Folded the manual counter into `enumerate()`:
-
-```rust
-for (count, (i, _)) in trimmed.char_indices().enumerate() {
-    if count >= 140 { cut = i; break; }
-}
-```
-
-Functionally identical (count starts at 0, advances monotonically
-per char). `cargo clippy -p caco-profile --lib --bins -- -D warnings`
-is clean. Authoring author owned the cleanup rather than blocking on
-helsinki's cross-agent hand-off.
+Binary now treats MissingSentinel as a graceful no-op (rc=0) with an
+informational stderr message explaining that `scripts/render-profiles-docs.py`
+remains the canonical generator. Also reverted the legacy-sentinel
+auto-detection in `apply_shipped_profiles_section` that would have
+silently rewritten the file with an incompatible layout. 1 new test
+covers the error-variant contract the binary depends on.
 
 ## Diff summary
 
-- `crates/caco-profile/src/docs_gen.rs`: 4 lines → 3 lines, no
-  semantic change. Existing 3 `summarize_description_*` tests pass.
+- `crates/caco-profile/src/bin/caco-docs-gen.rs`: MissingSentinel
+  match arm returns rc=0 with informational message instead of rc=3.
+- `crates/caco-profile/src/docs_gen.rs`: reverted legacy-sentinel
+  auto-detect in `apply_shipped_profiles_section`; replaced with test
+  `apply_shipped_profiles_section_errors_with_autogen_name_on_legacy_only_input`
+  documenting the contract.
 
 ## Operator-takeaway
 
-Workspace clippy gate is green again on `caco-profile`. No behavioural
-change to docs autogen output (`summarize_description` produces
-byte-identical strings). helsinki freed to focus on bd-db867a.
+`just docs-build` no longer breaks on main. The Rust generator
+gracefully defers to the python script when AUTOGEN sentinels are
+absent. Full sentinel migration remains a future step.
