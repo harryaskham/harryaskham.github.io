@@ -1,33 +1,33 @@
-# Session summary — AKS validation and operator surfaces
+# Session summary — AKS production rollout blocked by node outage
 
 ## Goal
 
-This session finished the self-contained AKS chain by adding operator-safe validation and control surfaces for the multi-role topology. The work focused on static and production-AKS-safe checks because local Docker on `ms-mac` was causing machine load issues.
+This session attempted the production rollout from the legacy single-StatefulSet AKS deployment to the self-contained multi-role Cacophony topology.
 
 ## Bead(s)
 
-- `bd-e0cca3` — AKS self-contained cluster validation and operator surfaces
-- parent: `bd-07f7a2` — AKS self-contained Cacophony cluster topology
+- `bd-decf57` — Roll out self-contained AKS multi-role topology to production
+- blocker filed: `bd-535c46` — Repair Azure CLI / AKS node recovery path on ms-mac
 
 ## Before state
 
-- Failing tests: none known in the AKS static validators.
-- Relevant metrics: existing AKS/Helm validators covered topology, PKI/bootstrap, and private access, but there was no dedicated operator-surface validator for the self-contained AKS workflow.
-- Context: the live production AKS release still showed a legacy single StatefulSet deployment rather than the new multi-role self-contained shape.
+- Failing tests: none in repo validators.
+- Relevant metrics: production server-side dry-run initially failed on existing Namespace/ConfigMap objects; live AKS showed the legacy `cacophony-aks` StatefulSet pending on a NotReady node.
+- Context: local Docker remained off-limits; production validation used Kubernetes API and Helm only.
 
 ## After state
 
-- Failing tests: none in scoped validation.
-- Relevant metrics: `deploy/aks/validate-operator-surfaces.sh` passed 14 checks; `deploy/aks/validate.sh` passed 72 checks; `deploy/helm/validate.sh` passed 98 checks; `deploy/aks/validate-self-contained-config.sh` passed.
-- Context: `just aks-self-status` read-only production AKS inspection succeeded and showed the current legacy `cacophony-aks` StatefulSet pending while the rendered self-contained node graph contains `caco-aks-ca-0`, `caco-aks-relay-0`, `caco-aks-master-0`, `caco-aks-0`, `caco-aks-1`, and `caco-aks-2`.
+- Failing tests: none in scoped repo validation.
+- Relevant metrics: `deploy/aks/validate-operator-surfaces.sh` passed; `deploy/aks/validate.sh` passed; `just aks-self-dry-run` passed against production after the helper fix.
+- Context: Helm release `cacophony-aks` revision 21 is deployed with four multi-role StatefulSets, but every pod is pending because the only AKS node is NotReady with shutdown/out-of-service/unreachable taints.
 
 ## Diff summary
 
-- Commits: `e20d7983f`, `2069bce27`
-- Files touched: `justfile`, `deploy/aks/validate-operator-surfaces.sh`, `deploy/aks/validate.sh`, `deploy/aks/README.md`
-- Tests: added a no-Docker operator-surface validator covering `aks-push-config`, `aks-self-dry-run`, `aks-self-status`, server-side dry-run, large ConfigMap replacement, docs, self-contained config render, and multi-role Helm render.
-- Behavioural delta: operators now have first-party recipes for server-side dry-run validation, read-only production AKS inspection, and safe self-contained ConfigMap updates using `kubectl replace` rather than annotation-heavy `apply`.
+- Commits: `8e9ed867f`
+- Files touched: `justfile`, `deploy/aks/PRODUCTION-ROLLOUT.md`
+- Tests: operator-surface and AKS validators rerun; production server-side dry-run passed before the Helm upgrade.
+- Behavioural delta: `aks-self-dry-run` now handles existing production Namespace/ConfigMap objects, and the partial rollout state is documented with the exact blocker and recovery commands.
 
 ## Operator-takeaway
 
-The AKS chain now has a safe operational loop: validate with static/server-side dry-runs, inspect production AKS read-only, and only then apply config updates. The live cluster still needs a deliberate rollout from the legacy single StatefulSet to the multi-role self-contained topology.
+The production chart/config rollout was applied, but steady-state validation is blocked by AKS infrastructure: the only node stopped posting status before the rollout. Do not close `bd-decf57` until the nodepool is recovered and the multi-role pods become Ready.
