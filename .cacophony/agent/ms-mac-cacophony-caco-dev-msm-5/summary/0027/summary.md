@@ -1,45 +1,37 @@
-# Session summary 0027 — bd-62a9d0: caco bd dedup (slice 1, read-only)
+# Session summary — Web summaries accessibility labels
 
 ## Goal
 
-Give operators a one-shot CLI to scan an existing draft pool for
-duplicate beads, addressing the 988-draft accumulation observed
-tonight without requiring full triage workflow.
+Continue polishing caco-web summaries by improving screen-reader and keyboard context for list selection, detail actions, section controls, and artefact buttons.
 
 ## Bead(s)
 
-- `bd-62a9d0` slice 1 — read-only Jaccard scanner.
+- `bd-ffe289` — Web summaries: improve accessibility labels for list and artefact actions
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- 988 drafts accumulated; the only way to find duplicates was
-  manual grep + `caco bd show` per candidate.
+- Summary rows were keyboard-focusable and exposed `aria-selected`, but their accessible names were mostly derived from nested text.
+- Detail actions and artefact controls had visible labels, but many did not describe the target artefact or section to assistive technology.
+- The mobile `Show in list` affordance had visible text but no richer accessible context.
 
 ## After state
 
-- New `caco bd dedup` subcommand. Default behavior:
-  `caco bd dedup --by title-similarity --status draft --limit 500`.
-- Scans beads matching the status filter, groups by Jaccard
-  similarity (≥0.85) on lowercased title word-sets (≥3 chars).
-- Prints groups with canonical (oldest) marked, members listed.
-- `--json` emits `{status, by, threshold, scanned,
-  groups:[{size, canonical, members:[{id, title}]}]}`.
-- Read-only — slice 1 is dry-run only. Mutation (close-as-
-  duplicate-of, `--apply`) deferred.
-- Other heuristics (`stderr-signature`, `description-hash`)
-  rejected with a clear "deferred" message.
+- Each summary row now has an explicit `aria-label` and `title` including reintegration index, agent, and title.
+- Detail-level actions now describe copying the full summary, jumping to parsed sections, and showing the selected summary in the list.
+- Section copy/toggle controls now include section names in their accessible labels.
+- Artefact actions now include target-specific labels for terminal casts, screenshots, and data.json raw URLs.
 
 ## Diff summary
 
-- Commit: `66b72a5b`.
-- Files (1): `crates/caco-cli/src/lib.rs` (+201 lines).
-- `cargo build -p caco-cli` + clippy: clean.
+- Commits: current `bd-ffe289` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: no visual or API change; keyboard and screen-reader users get clearer context for rows and actions.
 
 ## Operator-takeaway
 
-Run `caco bd dedup` to see candidate duplicate groups in the
-draft pool. Use `--limit N` to widen the scan. JSON mode is
-script-friendly — pipe groups into `caco bd close` to manually
-collapse. The `--apply` mode (auto-collapse) is filed as a
-follow-up bead so the canonical-choice heuristic can be reviewed
-on real groups first.
+The web summaries viewer is now more usable through assistive technology: controls announce what they operate on instead of relying only on short visible labels.
