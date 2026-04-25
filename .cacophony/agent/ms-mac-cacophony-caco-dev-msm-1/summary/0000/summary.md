@@ -1,32 +1,32 @@
-# Session summary — macOS status severity polish
+# Session summary — macOS agent detail readability
 
 ## Goal
 
-Make the native macOS Status dashboard more confidence-building by clarifying severity, healthy/quiet states, and live-update wording.
+Improve the native macOS Agent detail view so operators can diagnose lifecycle, work context, branch, and runtime information faster.
 
 ## Bead(s)
 
-- `bd-e7a3b6` — `[macOS excellence] Status card microcopy and severity polish`
+- `bd-d97883` — `[macOS excellence] Agents detail readability polish`
 
 ## Before state
 
 - Failing tests: none observed for this slice.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: Status had useful metrics and recommendations, but healthy, quiet, and attention states were less explicitly summarized for operators.
+- Context: Agent detail used a compact GroupBox info table that exposed the data but had little visual hierarchy, no copy affordances, and missing values simply disappeared.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: Status now has a severity readout with action/watch/quiet/healthy badges, more precise metric subtitles, clearer stream copy, and a reassuring no-attention state.
+- Context: Agent detail now has a native glass header, status/kind/type badges, copy ID/branch actions, grouped Lifecycle and Work context cards, visible Not reported placeholders, checkout size formatting, and clearer state icons.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-e7a3b6`.
-- Files touched: `StatusPane.swift`.
+- Commits: current branch commit for `bd-d97883`.
+- Files touched: `AgentsPane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: the Status dashboard communicates what matters now instead of only listing counts.
+- Behavioural delta: the Agent detail panel is much more scannable for operator diagnosis and branch/bead lookup.
 
 ## Operator-takeaway
 
-The macOS landing page now gives a calmer, clearer operational readout: it distinguishes urgent action, pending decisions, in-flight automation, quiet fleet state, and healthy monitoring.
+Agent inspection now feels like a native diagnostic card rather than a raw table, improving confidence when investigating worker state.
