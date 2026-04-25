@@ -1,33 +1,29 @@
-# Session summary — harden PR branch flow topology
+# bd-e73f7a Recorded PR-backed artefacts
 
 ## Goal
-
-Harden the existing direct-branch/PR workflow so it reuses project-declared git topology and the configured `gh` wrapper instead of assuming a single origin remote or invoking raw `gh` without the auth multiplexing setup.
+Implement recorded PR-backed reintegration support so PR code branches do not carry `.cacophony/agent/...` summary artefacts, while summaries are still durably published to the cacophony-state branch and linked from generated PR bodies.
 
 ## Bead(s)
-
-- `bd-e5e1bd` — [pr-integration] Harden existing pr_auto_merge/pr_review around existing git topology
-- Parent: `bd-bea9dc` — [EPIC] Harden direct reintegration and add project-policy PR-backed integration
+- bd-e73f7a — `[recorded] Support PR-backed recorded reintegration via state artifacts`
 
 ## Before state
-
-- Failing tests: none known for this scope.
-- Relevant metrics: direct-branch reintegration had existing push tests, but the CLI passed an empty allowed-push-remote list, required explicit `--create-pr`, and daemon PR creation invoked `gh` directly.
-- Context: project config already carries `remote`, `default_branch`, `identity`, `remotes`, `integration.pr_base`, and checkout bootstrap snippets containing `gh_command_override`.
+Direct-branch PR reintegration could push agent branch content and open/update a PR, but recorded summaries were not guaranteed to be split into cacophony-state for PR-backed flows. A PR branch could carry `.cacophony/agent/...` artefacts, and the generated PR body did not identify the state branch commit/path that held the summary.
 
 ## After state
-
-- Failing tests: none observed.
-- Relevant metrics: `timeout 420 cargo test -p caco-cli --lib 'bd_e5e1bd' -- --nocapture` passed; `timeout 480 cargo test -p caco-daemon --lib direct_branch -- --nocapture` passed under heavy host load; `timeout 420 cargo test-small` passed before the agnostic-example follow-up after an earlier 240s timeout.
-- Context: direct-branch PR flow now derives allowed push remotes from `projects[].remotes`, defaults PR base from `projects[].integration.pr_base`, and can run PR `gh` commands through a project-specific/global env override or the existing checkout bootstrap `gh()` snippet.
+Recorded direct-branch PR flow now publishes `.cacophony/agent/...` artefacts to the configured state branch before PR work proceeds, refuses to continue if no durable recorded artefact is produced, uses a code-only publish ref for the PR branch when recorded artefacts are present, and adds a generated Cacophony summary section to PR bodies with the state branch, artefact commit, and paths.
 
 ## Diff summary
+- Updated `crates/caco-daemon/src/reintegration.rs` direct-branch flow to split recorded artefacts into cacophony-state and push them before PR creation/update.
+- Added code-only publish ref synthesis so recorded artefacts are removed from the PR branch without mutating the agent checkout history.
+- Extended generated PR body content with a Cacophony recorded artefacts section.
+- Added focused daemon tests for state publication and PR body links.
 
-- Commits: 3aea19ac2, 3176e27c5
-- Files touched: `crates/caco-cli/src/lib.rs`, `crates/caco-daemon/src/reintegration.rs`
-- Tests: added CLI regressions for allowed remotes, project-specific gh override, and checkout-bootstrap gh override; updated daemon direct-branch request fixtures for the new gh override field; kept PR-topology examples generic after operator correction.
-- Behavioural delta: no change for existing single-origin direct-branch usage; multi-remote projects now get first-class push safety and PR-base defaults from existing project topology.
+## Validation
+- `timeout 900 cargo test -p caco-daemon --lib 'bd_e73f7a' -- --nocapture`
+- `timeout 900 cargo test -p caco-daemon --lib direct_branch -- --nocapture`
+- `timeout 900 cargo test -p caco-cli --lib 'bd_e5e1bd' -- --nocapture`
+- `timeout 600 cargo check -p caco-daemon -p caco-cli`
+- `timeout 1500 cargo test-small`
 
 ## Operator-takeaway
-
-This keeps the PR migration aligned with your constraint: Cacophony does not grow a parallel GitHub config surface. The PR path now consumes the project git topology and `gh` auth wrapper operators already maintain, with examples kept generic rather than tied to a hosted project.
+bd-e73f7a is implementation-complete and validated without local Docker. PR-backed recorded reintegration now keeps code branches clean while preserving summary artefacts on cacophony-state and linking them from the PR body.
