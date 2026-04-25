@@ -1,88 +1,33 @@
-# Session 0017 — bd-cf54cb (RE-IMPLEMENTATION)
+# Session summary — macOS release packaging
 
-## What
+## Goal
 
-**bd-cf54cb** was closed earlier (~12h ago per bead metadata) but the
-implementation never reached origin/main — verified by grepping
-`origin/main:crates/caco-daemon/src/reintegration.rs` and finding zero
-`pub state_branch:` fields, and zero `resolve_cacophony_state` callsites
-in caco-cli/caco-daemon lib on main. This is a bd-c0b499-class
-silent-loss: bead closed but squash never landed.
+Add a release-quality macOS packaging path that produces signed app, zip, DMG, and checksum metadata without increasing per-push macOS CI load.
 
-Per operator directive (24.04): reopened bd-cf54cb with `caco bd update
---status open`, added an append-description note explaining the
-premature close, re-claimed, re-implemented from scratch, rebased on
-fresh main (which added bd-ab3050 refuse-on-dirty preflight and a JSON
-envelope wrap on `caco agent artefacts`), and shipped via `caco agent
-ship` this time.
+## Bead(s)
 
-## Changes
+- `bd-e952b0` — `[macOS gap] Full release-quality packaging: signed app, DMG, update channel`
+- Parent context: `bd-5cded9` — Add macOS to release process and artifacts
 
-`crates/caco-daemon/src/cacophony_state.rs`
-- Added `state_branch: &str` param to six public functions:
-  `remote_branch_exists`, `resolve_state_branch_tip`,
-  `split_and_commit_artefacts`, `push_both_branches_atomic`,
-  `push_cacophony_state`, `list_agent_artefacts`.
-- All internal `CACOPHONY_STATE_BRANCH` const uses replaced with the
-  threaded param.
-- Four existing in-file tests updated to pass the default const.
-- New integration test `split_honours_per_project_state_branch_override`:
-  project with prefix `picasso/cacophony-state` produces (a) override
-  branch created locally, (b) default `cacophony-state` NOT created,
-  (c) `push_cacophony_state` lands override on bare remote, (d)
-  `list_agent_artefacts` enumerates artefacts on override branch.
+## Before state
 
-`crates/caco-daemon/src/reintegration.rs`
-- Added `pub state_branch: String` field to `ReintegrationRequest`.
-- Threaded through `finalize_direct_merge` and
-  `finalize_direct_merge_with_checkout_recovery` signatures to the
-  three cacophony_state callsites (split, push-both-atomic, push-state).
-- All 50 `ReintegrationRequest { ... }` test fixtures updated to pass
-  `CACOPHONY_STATE_BRANCH.to_string()` (preserves bit-for-bit
-  behaviour).
+- Failing tests: none observed for this slice.
+- Relevant metrics: previous macOS app Nix builds passed with 49 smoke checks.
+- Context: the flake produced a minimal `.app`, and CI verified it only on tags/manual dispatch, but there was no repeatable zip/DMG/checksum packaging path or release workflow upload for the app.
 
-`crates/caco-daemon/src/test_bridge.rs`
-- `ReintegrationRequest` construction at line 149 passes
-  `CACOPHONY_STATE_BRANCH.to_string()`.
+## After state
 
-`crates/caco-cli/src/lib.rs`
-- Two `dispatch_reintegrate` variants (single-project and
-  cross-project) resolve per-project override:
-  `proj.and_then(|p| p.branches.as_ref())
-      .map(|b| b.resolve_cacophony_state(CACOPHONY_STATE_BRANCH))
-      .unwrap_or_else(|| CACOPHONY_STATE_BRANCH.to_string())`.
-- `dispatch_agent_artefacts` does the same resolve + passes to
-  `list_agent_artefacts` and reports the resolved branch name in
-  both JSON and text output.
-- Merged cleanly with main's bd-ab3050 refuse-on-dirty preflight and
-  the envelope-wrapping of `caco agent artefacts --json`.
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: `just --summary` passed; `just macos-app-package` produced `Cacophony-macOS.zip` (~1.2 MB), `Cacophony-macOS.dmg` (~1.7 MB), and valid JSON metadata after running the Nix app build/smoke check.
+- Context: local/release packaging now signs the app (ad-hoc by default, configurable via `CACO_MACOS_CODESIGN_IDENTITY`), creates zip + DMG + SHA-256 metadata, uploads manual/tag CI artifacts, and attaches macOS app assets to tag releases.
 
-## Verification
+## Diff summary
 
-- `cargo test -p caco-daemon --lib reintegration` → 136 pass.
-- `cargo test -p caco-daemon --lib cacophony_state` → 7 pass (includes
-  new override test).
-- `cargo clippy -p caco-daemon -p caco-cli --no-deps --tests` → clean;
-  only pre-existing `too_many_arguments` and `doc_lazy_continuation`
-  warnings on unrelated code.
-- Default behaviour preserved bit-for-bit when `proj.branches.is_none()`.
+- Commits: current branch commit for `bd-e952b0`.
+- Files touched: `justfile`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `companion/macos/README.md`.
+- Tests: no smoke-count change; packaging validation ran the Nix build/checkPhase and JSON validation.
+- Behavioural delta: release tags can now publish macOS app artifacts while preserving the explicit tag/manual-only constraint for macOS runner usage.
 
-## Close-discipline notes
+## Operator-takeaway
 
-- Reopened bd-cf54cb via `caco bd update --status open` + appended a
-  REOPENED note with timestamp and the origin/main grep evidence before
-  re-claiming.
-- This session also audited my claimed beads: all 4 in_progress P3/P4s
-  in my inbox are CLI-UX triage beads claimed by other agents (msd-1,
-  msd-4, msd-5, wmi-1, wmi-2); not my work.
-- Answered operator lost-work check via `caco msg speak`: 0 commits
-  ahead of origin/main, no failed reintegrates since 00:00 UTC, daemon
-  reachable, all recent closes traceable on origin/main except this
-  bd-cf54cb which was the silent-loss I'm now re-landing.
-
-## Next
-
-- Cycle to next ms-mac-friendly P1/P2 bead after ship + sync.
-- NOTE workspace-view do-over epic bd-5bfb2c is now PERMANENT + P0;
-  operator rule = one agent/pair claims the WHOLE do-over as a coherent
-  arc, no piecemeal. Do not pick workspace sub-beads.
+The native macOS app is no longer just a local Nix build: it has a repeatable packaging path and tag-release upload path for zip/DMG/checksum artifacts.
