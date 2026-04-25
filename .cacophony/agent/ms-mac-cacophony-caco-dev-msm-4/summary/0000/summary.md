@@ -1,33 +1,32 @@
-# Session summary — bd-190284 macOS bead decision context
+# Session summary — bd-a04b65 auto-claim queue hygiene
 
 ## Goal
 
-Improve the native macOS Beads detail pane so claim/close decisions carry clearer status, priority, dependency, and risk context at the point where operators act.
+Fix the board bug discovered during burn-down where bead-id-less `caco bd claim` could assign permanent reference/umbrella beads to workers, leaving them with non-implementation work in the dispatch path.
 
 ## Bead(s)
 
-- `bd-190284` — [macOS excellence] Bead detail decision context polish
+- `bd-a04b65` — caco bd claim must not assign permanent beads
 
 ## Before state
 
-- Bead detail showed status/priority chips, metadata, dependencies, and guarded close action.
-- It did not summarize decision implications such as “claimable”, “coordinate”, “blocked”, high-priority caution, or downstream unblock impact.
-- Dependency chips were present but lacked explanatory copy for why a blocker/dependent matters.
+- Running `caco bd claim` with no bead id assigned `bd-5bfb2c`, even though it was `status: permanent` and meant to be a tracking umbrella.
+- `claim_next_ready` skipped epics but allowed permanent beads returned by `list_ready` to flow into the auto-claim path.
+- Explicit permanent bead claim/unclaim behavior existed and needed to remain intact.
 
 ## After state
 
-- Added a “Decision context” card with status, priority, and dependency chips plus concise action guidance.
-- Dependency sections now explain blocked-by and downstream-unblock counts before the chips.
-- Close action now includes explicit risk copy: close only after work lands on main and validation is recorded; blocked/claimed work should not be closed.
-- Copy/share export now includes a one-line decision summary.
+- `BeadsStore::claim_next_ready` now skips `BeadStatus::Permanent` candidates before attempting claim.
+- Explicit permanent claim/unclaim semantics are unchanged.
+- Regression coverage verifies a P0 permanent bead is skipped in favor of a lower-priority open implementation bead and remains unassigned.
 
 ## Diff summary
 
-- Commit: `548a25385` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/BeadsPane.swift`.
-- Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
-- Behavioural delta: the macOS bead detail view now communicates decision risk and dependency context before operators claim, unclaim, copy/share, or close.
+- Commits: `6257de276` after replay onto the remote agent branch.
+- Files touched: `crates/caco-beads/src/store.rs`.
+- Tests: `cargo test -p caco-beads claim_next_ready_skips_permanent_beads --lib`; `cargo test -p caco-beads claim_permanent_bead_stays_permanent --lib`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: auto-claim drains only implementable open work and no longer strands permanent tracking beads on workers.
 
 ## Operator-takeaway
 
-The macOS Beads pane is now safer for live board operations: the UI nudges operators away from false closes and makes dependency/downstream consequences visible before action.
+Permanent beads can still exist as visible reference/umbrella records, but they will not be handed to workers by the no-id burn-down claim path.
