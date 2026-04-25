@@ -1,60 +1,38 @@
-# Session summary 0016 — bd-aa4add slice 1: GETTING-STARTED.md
+# Session summary — Web summaries mobile flow polish
 
 ## Goal
 
-Deliver the docs-side sister of the bd-aa4add 'caco bootstrap dev'
-onboarding feature — a 5-minute walkthrough that takes a new operator
-from zero through their first reintegrated agent. The CLI command
-itself (scope items 2-5 of the parent bead) is filed as two
-follow-ups.
+Continue the summaries-view burn-down by improving the web summaries page on narrow/mobile widths, where the stacked list/detail layout needed clearer context and better touch targets.
 
 ## Bead(s)
 
-- `bd-aa4add` — primary; this delivers the docs sister.
-- Filed `bd-334962` (precondition checker `--check`) and `bd-ce32fa`
-  (full interactive bootstrap) as follow-ups for the CLI work.
+- `bd-d7c7ea` — Web summaries: improve mobile responsive list/detail flow
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- README.md had a brief Quickstart but no narrative onboarding doc.
-- New operators had to piece together: build, config init, daemon
-  start, project setup, agent spawn, attach, reintegrate — across
-  multiple SPEC sections and trial-and-error.
-- No troubleshooting table for the most common first-run failures.
+- Desktop summaries were increasingly polished, but narrow layouts simply stacked list and detail panes.
+- Once reading detail on mobile, there was no compact selected-summary context or way to jump back to the selected row.
+- Filter controls and row targets were still sized like desktop controls at small widths.
 
 ## After state
 
-- New top-level `GETTING-STARTED.md` (~170 lines) with:
-  - Prerequisites (rust/cargo OR nix; tmux/sqlite/git).
-  - 6 numbered steps from build through reintegrate.
-  - "What just happened?" lifecycle summary tying the steps to the
-    cluster's mental model.
-  - "Next steps" pointing at SPEC sections for deeper learning.
-  - Troubleshooting table covering the 4 highest-value first-run
-    failures (port conflict, missing profile, agent runtime auth,
-    post-restart stuck → bd-2b7a37).
-- README.md Quickstart section gains a callout box pointing at
-  GETTING-STARTED.md so the existing terse cheat-sheet stays for
-  return visitors but new operators get the walkthrough.
+- Detail pane renders a mobile-only selected-summary context strip with ordinal, agent label, and `Show in list` action.
+- `Show in list` scrolls and focuses the selected row to make the stacked list/detail relationship explicit.
+- Summary rows have larger minimum height, padding, and stronger selected shadow for touch use.
+- Small-width CSS now expands filter controls/buttons to full width, adds a shortcut panel treatment, and improves pane/row spacing.
 
 ## Diff summary
 
-- Commit: `e8680309`.
-- Files: `GETTING-STARTED.md` (new, +170), `README.md` (+5 callout).
-- Tests: none added (pure docs).
-
-## Out of scope (deferred)
-
-- **`caco bootstrap dev --check`** precondition checker → bd-334962
-  (P3, lower-risk first slice).
-- **`caco bootstrap dev`** full interactive setup (config init,
-  daemon start, sample project + bead, demo agent dispatch) →
-  bd-ce32fa (P2, the heavier delivery).
+- Commits: current `bd-d7c7ea` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+  - `crates/caco-web/static/summaries.css`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 252 passed
+- Behavioural delta: no API changes; web summaries is easier to use on small screens and touch devices.
 
 ## Operator-takeaway
 
-A new operator can now read a single `GETTING-STARTED.md` file and end
-up with a working daemon plus their first reintegrated agent without
-flipping through SPEC.md or AGENTS.md. The CLI bootstrap-dev command
-that automates these steps is filed for follow-up; until it lands,
-GETTING-STARTED.md is the canonical onboarding path.
+The web summaries viewer no longer feels like a desktop-only tool squeezed onto mobile: it shows what is selected, provides a touch-friendly route back to the list, and makes controls/rows easier to hit.
