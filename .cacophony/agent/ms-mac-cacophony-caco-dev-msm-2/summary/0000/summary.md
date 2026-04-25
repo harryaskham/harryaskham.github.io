@@ -1,32 +1,32 @@
-# Session summary — skip permanent trackers in auto-claim
+# Session summary — mirror permanent auto-claim fallback filters
 
 ## Goal
 
-Fix the live auto-claim regression observed during burn-down where a beadless claim could assign a permanent workspace tracker instead of returning no ready implementation work.
+Close a queue-hygiene gap found during collab-mode: the daemon now skips permanent trackers by status, title prefix, or label, but the CLI's defensive stale-daemon fallback only recognized permanent status.
 
 ## Bead(s)
 
-- `bd-0755d1` — [bug] beadless claim can assign permanent workspace tracker
+- `bd-6af77f` — [bug] CLI permanent auto-claim fallback misses title and label trackers
 
 ## Before state
 
-- Failing tests: none known for this bead; live CLI behaviour assigned `bd-5bfb2c`, a permanent workspace tracker, from `caco bd claim --project cacophony` when no ready implementation beads were available.
-- Relevant metrics: targeted regression did not yet cover permanent intent encoded as a title prefix or label.
-- Context: `claim_next_ready` already skipped `status = permanent`, but the live tracker was still selected, indicating permanent tracker semantics can exist in other persisted shapes.
+- Failing tests: no regression covered title-prefix or label-based permanent tracker detection in `auto_claimed_permanent_bead_message`.
+- Relevant metrics: ready queue was empty, and beadless claim was already skipping status-permanent trackers cleanly after bd-45cdba.
+- Context: if a stale/routed daemon returned a tracker represented as `[PERMANENT]` title prefix or `permanent` label while status was `in_progress`, the CLI fallback could report a successful implementation claim.
 
 ## After state
 
-- Failing tests: none in the targeted regression or timed small suite.
-- Relevant metrics: `timeout 120 cargo test -p caco-beads claim_next_ready_skips_permanent_beads -- --nocapture` passed; `timeout 180 cargo test-small` passed.
-- Context: beadless auto-claim now skips permanent-status beads, `[PERMANENT]` title-prefixed trackers, and beads labeled `permanent` before attempting assignment.
+- Failing tests: none in targeted or small validation.
+- Relevant metrics: `timeout 120 cargo test -p caco-cli --lib auto_claimed_permanent_bead_message_detects_title_and_label_trackers_bd_6af77f -- --nocapture` passed; `timeout 180 cargo test-small` passed.
+- Context: the fallback now mirrors the daemon guard for status permanent, trim-start `[PERMANENT]` title prefix, and case-insensitive `permanent` labels.
 
 ## Diff summary
 
-- Commits: 833337d78
-- Files touched: `crates/caco-beads/src/store.rs`
-- Tests: expanded `claim_next_ready_skips_permanent_beads` to cover status, title-prefix, and label-shaped permanent trackers.
-- Behavioural delta: no-id auto-claim no longer assigns permanent tracker beads that are represented as open records with permanent intent encoded outside the status field.
+- Commits: 43e629c4a
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: added `auto_claimed_permanent_bead_message_detects_title_and_label_trackers_bd_6af77f`.
+- Behavioural delta: stale or routed daemon responses are rejected consistently across all three tracker encodings, preventing workers from being stranded on permanent tracker beads.
 
 ## Operator-takeaway
 
-The burn-down loop exposed a real queue hygiene issue: permanent tracker records could still leak into worker auto-claim. The server-side resolver now filters those tracker shapes before ownership changes, so idle workers should stop bouncing off the workspace umbrella bead.
+The CLI-side safety net now matches the daemon's permanent-tracker semantics, so queue drain remains safe even during mixed-version or routed-beads windows.
