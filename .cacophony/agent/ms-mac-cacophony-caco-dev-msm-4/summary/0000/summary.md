@@ -1,33 +1,34 @@
-# Session summary — bd-1727d4 macOS detail pane readability
+# Session summary — bd-662ed9 macOS pane-level help hints
 
 ## Goal
 
-Make dense native macOS detail panes easier to scan by replacing ad-hoc text blocks with consistent section cards and selectable monospaced snippets.
+Make the native macOS dashboard more discoverable by surfacing lightweight shortcut and scoping guidance in the root navigation and Status pane.
 
 ## Bead(s)
 
-- `bd-1727d4` — [macOS excellence] Detail pane readability polish
+- `bd-662ed9` — [macOS excellence] Pane-level help and shortcut hints
 
 ## Before state
 
-- Agent Controls mixed identity, runtime, attach metadata, errors, diffs, logs, and terminal preview into mostly flat rows or inline scroll views.
-- Bead detail used a plain group box for metadata and a bespoke description block.
-- Dense snippets were selectable but visually inconsistent across panes.
+- Command-K, Command-R, pane number shortcuts, favorites, and project scoping existed but were mostly implicit.
+- The root header showed pane title/tagline only.
+- Status had operator summary/recommendations but no compact help panel explaining keyboard actions or project scoping.
 
 ## After state
 
-- Added shared `DetailSectionCard` and `MonospacedSnippet` readability helpers.
-- Agent Controls now groups inspector fields into Identity, Runtime, Last error, and Attach metadata cards; diff/log/attach/preview content uses the same selectable monospaced snippet treatment.
-- Beads detail now uses the same card treatment for metadata and description, giving bead text the same scan/copy affordance as agent panes.
+- Added `ShortcutHint` and `ShortcutHintStrip` helpers for compact native hint chips.
+- Sidebar header now exposes Command-K, Command-R, pane jump, and favorite hints.
+- Pane headers show contextual shortcut chips for opening panes, Command-K, refresh, and selected pane-specific copy/project hints.
+- Status now includes a Quick help section covering project scoping, Command-K actions, refresh, pane navigation, and favorites.
 
 ## Diff summary
 
-- Commit: `0d7ce6910` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/AgentControlPane.swift`, `companion/macos/Sources/Cacophony/Views/BeadsPane.swift`, `companion/macos/Sources/Cacophony/Views/DetailReadability.swift`.
-- Tests: no unit tests added; this is SwiftUI presentation polish.
+- Commit: `0950df703` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `companion/macos/Sources/Cacophony/Views/StatusPane.swift`.
+- Tests: no unit tests added; this is SwiftUI help/readability wiring.
 - Validation: `just macos-app-test`; `./docs/validate-pages.sh`.
-- Behavioural delta: at least two dense panes now share consistent headings, spacing, selectable monospaced blocks, and card grouping.
+- Behavioural delta: operators can discover Command-K, refresh, pane shortcuts, favorites, and project scoping from the native UI itself.
 
 ## Operator-takeaway
 
-Agent and bead detail panes now have a reusable readability vocabulary, which should make future macOS dense-pane polish cheaper and more consistent.
+The macOS companion now teaches its power-user controls in context instead of relying on prior knowledge or external docs.
