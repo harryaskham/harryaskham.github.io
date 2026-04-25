@@ -1,34 +1,33 @@
-# Session summary — bd-662ed9 macOS pane-level help hints
+# Session summary — bd-1803a7 macOS project scope confidence
 
 ## Goal
 
-Make the native macOS dashboard more discoverable by surfacing lightweight shortcut and scoping guidance in the root navigation and Status pane.
+Make the active project scope impossible to miss in the native macOS companion and provide visible feedback when operators switch projects.
 
 ## Bead(s)
 
-- `bd-662ed9` — [macOS excellence] Pane-level help and shortcut hints
+- `bd-1803a7` — [macOS excellence] Project switcher confidence polish
 
 ## Before state
 
-- Command-K, Command-R, pane number shortcuts, favorites, and project scoping existed but were mostly implicit.
-- The root header showed pane title/tagline only.
-- Status had operator summary/recommendations but no compact help panel explaining keyboard actions or project scoping.
+- The selected project lived in the sidebar picker, but the current scope was not repeated in the main header.
+- Switching projects refreshed state but gave no explicit success feedback.
+- Status explained project scoping in help text, but it did not show a dedicated active-project panel.
 
 ## After state
 
-- Added `ShortcutHint` and `ShortcutHintStrip` helpers for compact native hint chips.
-- Sidebar header now exposes Command-K, Command-R, pane jump, and favorite hints.
-- Pane headers show contextual shortcut chips for opening panes, Command-K, refresh, and selected pane-specific copy/project hints.
-- Status now includes a Quick help section covering project scoping, Command-K actions, refresh, pane navigation, and favorites.
+- Added a reusable `ProjectScopeBadge` shown in the sidebar picker area and every pane header.
+- Project switching now goes through `switchProject`, sets `lastCommandOutput`, and refreshes, so operators get an explicit success banner.
+- Status now includes an “Active project scope” panel explaining that Messages, Operations, Workspace, scratchpad, and source panes follow the selected project.
 
 ## Diff summary
 
-- Commit: `0950df703` after replay onto the remote agent branch.
+- Commit: `33bf583c6` after replay onto the remote agent branch.
 - Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `companion/macos/Sources/Cacophony/Views/StatusPane.swift`.
-- Tests: no unit tests added; this is SwiftUI help/readability wiring.
+- Tests: no unit tests added; this is SwiftUI project-scope visibility wiring.
 - Validation: `just macos-app-test`; `./docs/validate-pages.sh`.
-- Behavioural delta: operators can discover Command-K, refresh, pane shortcuts, favorites, and project scoping from the native UI itself.
+- Behavioural delta: active project context is visible in the root sidebar, pane header, and Status overview, and project switches produce feedback.
 
 ## Operator-takeaway
 
-The macOS companion now teaches its power-user controls in context instead of relying on prior knowledge or external docs.
+The macOS companion now reinforces project scope everywhere important, reducing the chance of reading or acting on the wrong project context.
