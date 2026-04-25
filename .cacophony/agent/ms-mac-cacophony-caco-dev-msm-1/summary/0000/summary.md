@@ -1,32 +1,32 @@
-# Session summary — macOS guided empty states
+# Session summary — macOS status severity polish
 
 ## Goal
 
-Make drained or blank macOS app panes feel intentional and actionable instead of empty, with native guidance and next-step controls.
+Make the native macOS Status dashboard more confidence-building by clarifying severity, healthy/quiet states, and live-update wording.
 
 ## Bead(s)
 
-- `bd-a16892` — `[macOS excellence] Empty state guided actions pass`
+- `bd-e7a3b6` — `[macOS excellence] Status card microcopy and severity polish`
 
 ## Before state
 
 - Failing tests: none observed for this slice.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: Agents and Beads had functional blank states, but they were minimal and did not guide operators toward refresh, controls, bead work, or filter reset paths.
+- Context: Status had useful metrics and recommendations, but healthy, quiet, and attention states were less explicitly summarized for operators.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: Agents now has a richer no-agents state with refresh, controls, and Beads actions. Beads now has separate empty-selection guidance plus an empty-filter state with a one-click filter reset.
+- Context: Status now has a severity readout with action/watch/quiet/healthy badges, more precise metric subtitles, clearer stream copy, and a reassuring no-attention state.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-a16892`.
-- Files touched: `AgentsPane.swift`, `BeadsPane.swift`.
+- Commits: current branch commit for `bd-e7a3b6`.
+- Files touched: `StatusPane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: blank panes now explain what is happening and provide the next likely operator actions.
+- Behavioural delta: the Status dashboard communicates what matters now instead of only listing counts.
 
 ## Operator-takeaway
 
-The macOS app is less dead-end-prone: empty operational surfaces now guide operators back toward useful action rather than presenting a passive blank screen.
+The macOS landing page now gives a calmer, clearer operational readout: it distinguishes urgent action, pending decisions, in-flight automation, quiet fleet state, and healthy monitoring.
