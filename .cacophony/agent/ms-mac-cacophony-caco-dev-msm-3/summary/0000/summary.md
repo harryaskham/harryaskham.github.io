@@ -1,32 +1,32 @@
-# Session summary — CLI show missing-argument discoverability
+# Session summary — outbox retry missing-id wording
 
 ## Goal
 
-This session fixed the `bd-c3fcdd` addendum by aligning `caco outbox show` and sister show surfaces with canonical missing-required-argument wording plus list/discoverability pointers.
+This session fixed the remaining outbox missing-id surface discovered immediately after `bd-b0fadd`: `caco outbox retry` still emitted old usage-style text when `--id` was omitted.
 
 ## Bead(s)
 
-- `bd-b0fadd` — [CLI polish] outbox show and sister missing-arg discoverability wording
+- `bd-ee8e16` — [CLI polish] outbox retry missing-id discoverability wording
 
 ## Before state
 
-- Failing tests: no exact regression covered the outbox/profile/choices/bd show no-argument wording cohort.
-- Relevant metrics: `caco outbox show` emitted old usage-style text; `caco bd show`, `caco profile show`, and `caco choices show` used required-argument wording but lacked a list pointer.
-- Context: `bd-c3fcdd` had already fixed the same pattern for `caco node show`.
+- Failing tests: no regression covered `caco outbox retry` with no `--id`.
+- Relevant metrics: `caco outbox retry` returned `usage: caco outbox retry --id <entry_id>`.
+- Context: `caco outbox show` and other show surfaces had just been aligned to required-argument wording with list pointers.
 
 ## After state
 
 - Failing tests: none in scoped validation before replay.
 - Relevant metrics: `cargo test -p caco-cli show_missing_arguments_use_discoverability_pointers --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; targeted regression is rerun after replay.
-- Context: all four surfaces now point operators to the relevant list command when a required show identifier is missing.
+- Context: `caco outbox retry` now tells operators `--id` is required and points to `caco outbox list` for queued entries.
 
 ## Diff summary
 
-- Commits: `bcd1f947f`
+- Commits: `eda95d90b`
 - Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added exact CLI regression `show_missing_arguments_use_discoverability_pointers`.
-- Behavioural delta: `outbox show`, `bd show`, `profile show`, and `choices show` now share canonical missing-argument plus discoverability guidance.
+- Tests: extended `show_missing_arguments_use_discoverability_pointers` to cover `caco outbox retry`.
+- Behavioural delta: retry missing-id errors now match the canonical outbox show wording shape.
 
 ## Operator-takeaway
 
-The CLI no longer dead-ends users with bare usage or sparse required-argument errors on these show commands; every missing-id case tells them which list command can discover valid targets.
+The outbox command family now has consistent, discoverable missing-id guidance for both show and retry paths, reducing another CLI dead-end.
