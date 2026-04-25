@@ -1,32 +1,32 @@
-# Session summary — macOS profile inventory trust polish
+# Session summary — macOS project inventory workload cues
 
 ## Goal
 
-Improve the native macOS Admin profile and preset inventory so operators can quickly assess profile persistence, launch scope, and preset trust before starting or diagnosing agents.
+Improve Admin project inventory cards so operators can quickly distinguish active projects, quiet projects, queued work without workers, draft-only queues, and missing remote metadata.
 
 ## Bead(s)
 
-- `bd-a7cbc9` — `[macOS excellence] Profile inventory trust polish`
+- `bd-64d505` — `[macOS excellence] Project inventory workload cues polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline was 53 checks.
-- Context: Profile and preset rows existed, but the view relied on sparse badges and did not summarize inventory or explicitly warn when scope/profile metadata was missing.
+- Context: Project cards showed status, remote, and counts, but did not interpret workload shape or explain when quiet/empty states were expected versus actionable.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with `CacophonyKitSmoke: OK (53 checks)`.
-- Context: The profile tab now has inventory metric cards, explicit persistent/one-shot and scope badges, trust hints, and preset launch-target warnings.
+- Context: Project cards now include workload labels, guidance copy, queue quiet/no-active/remote-missing badges, and stronger remote-missing styling.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-a7cbc9`.
+- Commits: current branch commit for `bd-64d505`.
 - Files touched: `companion/macos/Sources/Cacophony/Views/AdminInspectorPane.swift`.
 - Tests: no smoke-count change; app build and smoke suite passed.
-- Behavioural delta: operators get faster profile trust context before launching or debugging agents from native macOS surfaces.
+- Behavioural delta: Admin project scan now surfaces whether a project needs pickup, is active, is quiet, or needs config inspection.
 
 ## Operator-takeaway
 
-The Admin profile inventory now explains the operational meaning of profile metadata instead of simply displaying raw rows, making launch-scope review safer.
+The native Admin project inventory now interprets workload health instead of making operators infer it from raw counts.
