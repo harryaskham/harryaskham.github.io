@@ -1,34 +1,34 @@
-# Session summary — bd-c77af9 automated Android F-Droid publishing
+# Session summary — bd-30d01f macOS message composer polish
 
 ## Goal
 
-Wire the Android companion release workflow to a repeatable private F-Droid publishing path so tagged APK builds can be pushed into the chosen private distribution repository without manual copy steps.
+Improve the native macOS Messages composer so operators can see the target project/context before sending, use a keyboard send shortcut, and recover or discard drafts quickly.
 
 ## Bead(s)
 
-- `bd-c77af9` — Implement automated update distribution
+- `bd-30d01f` — [macOS excellence] Message composition quality-of-life
 
 ## Before state
 
-- `bd-555682` added the private F-Droid repo bootstrap and low-level `update-fdroid-repo.sh` helper.
-- Android companion CI built/staged APK/AAB release artefacts, but did not publish them to any private update channel.
-- The Android Nix dev shell did not include `fdroidserver`, so release hosts had to provide it separately.
+- The composer had mode selection, optional direct-message target, a text editor, and a send button.
+- The selected project was only implicit in the send implementation rather than visible at compose time.
+- Operators had no in-pane copy/clear draft helpers and no visible keyboard-send affordance.
 
 ## After state
 
-- Added `companion/android/scripts/publish-fdroid-release.sh` as the high-level release publisher.
-- The publisher builds a release APK when needed, or accepts a prebuilt APK from CI, then updates the configured private F-Droid repo.
-- Added `fdroidserver` to the Android Nix dev shell and documented the F-Droid publish command in the shell hook.
-- Extended `.github/workflows/android-companion.yml` so tag builds publish to F-Droid when `CACO_FDROID_REPO_DIR` is configured as a repository variable.
-- Updated `companion/android/fdroid/README.md` with the automated publish flow and CI variables.
+- Added active `ProjectScopeBadge` and per-mode context copy at the top of the composer.
+- Added a visible `⌘↩ sends` hint plus Command-Return keyboard shortcut for sending.
+- Added contextual placeholders for project broadcast, direct message, speak, and global broadcast modes.
+- Added Copy draft and Clear helpers using the macOS pasteboard and compose focus restoration.
+- Tightened send validation to trim direct-message targets and report the send context in command feedback.
 
 ## Diff summary
 
-- Commit: `10285a015` after replay onto the remote agent branch.
-- Files touched: `.github/workflows/android-companion.yml`, `companion/android/fdroid/README.md`, `companion/android/flake.nix`, `companion/android/scripts/publish-fdroid-release.sh`.
-- Tests: `bash -n companion/android/scripts/publish-fdroid-release.sh companion/android/scripts/update-fdroid-repo.sh`; parsed `.github/workflows/android-companion.yml` with Python YAML; `git diff --check`.
-- Behavioural delta: tagged Android companion releases can now publish the staged APK into the private F-Droid repository when the release runner has the repo directory and optional public URL configured.
+- Commit: `628710175` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/MessagesPane.swift`.
+- Tests: `just macos-app-test`; `./docs/validate-pages.sh`.
+- Behavioural delta: chat/inbox workflow is smoother because the composer now makes scope/target explicit, supports keyboard send, and offers draft copy/clear actions.
 
 ## Operator-takeaway
 
-The automated F-Droid update path is now repo-owned and CI-addressable; operators only need to provision the persistent private repo directory/hosting and set the workflow variables.
+The Messages pane now behaves more like a native power-user composer instead of a bare text box, reducing accidental wrong-scope sends and draft friction.
