@@ -1,27 +1,26 @@
-# Session summary — bd-fd300a BeadTitle write-path validation
+# Session summary — bd-fa707d GitHub Pages header images
 
 ## Goal
-Hoist bead title length validation into the typed `BeadTitle` wrapper for create and update paths so invalid titles fail before SQLite CHECK constraints.
+Create optimized header images for the GitHub Pages documentation site and wire them into visible docs pages using the project's existing design language.
 
 ## Bead(s)
-- `bd-fd300a` — Beads validation: hoist title-length validation from CHECK constraint into a typed BeadTitle wrapper
+- `bd-fa707d` — Create header images for GitHub Pages documentation
 
 ## Before state
-- `BeadTitle` existed and was used by the reimport repair path, but create/update write paths still relied on validator/string logic and ultimately the SQLite title CHECK as the hard floor.
-- Validation had its own max-title constant instead of reusing the typed wrapper invariant.
+- The docs site had a TUI screenshot on the overview page but no reusable visual header assets for documentation sections.
+- Key docs pages opened with text-only headers.
 
 ## After state
-- Added `BeadsStore::validate_title_for_write`, which constructs `crate::title::BeadTitle` before SQL writes.
-- `create_bead_inner` rejects invalid titles before duplicate detection / mutation write.
-- `update_bead` applies the same typed guard before setting a new title.
-- `validation.rs` now shares `crate::title::TITLE_MAX_CHARS` and uses `BeadTitle::try_new` for overlong detection.
-- Validation: `cargo test -p caco-beads --lib` passed 277/277; `cargo clippy -p caco-beads --all-targets` clean.
+- Added five pure SVG header images in `docs/images/`: overview, architecture, operations, interfaces, and codespaces.
+- Wired headers into `index.html`, `architecture.html`, `agents.html`, `beads.html`, `api.html`, and `codespaces.md`.
+- Added responsive `.hero-image--header` styling for consistent 10:3 header presentation.
+- Validation: `./docs/validate-pages.sh` passed 146/146 checks.
 
 ## Diff summary
-- Commits: `8b6bfed38`, `066b8a945`
-- Files touched: `crates/caco-beads/src/store.rs`, `crates/caco-beads/src/validation.rs`
-- Tests: +1 regression test covering create/update overlong title failures before raw SQLite CHECK errors.
-- Behavioural delta: create/update title length failures now surface through the typed wrapper path instead of SQLite.
+- Commits: `f49176ff5`, `ecbdcca3f`.
+- Files touched: docs pages, `docs/style.css`, five new SVG assets.
+- Tests: docs QA unchanged but passing; no Rust tests required for docs-only image assets.
+- Behavioural delta: docs pages now have consistent, optimized visual headers aligned with the Cacophony palette.
 
 ## Operator-takeaway
-The `BeadTitle` type is now load-bearing for normal bead create/update writes, not just a helper for reimport repair. Operators should see typed/actionable validation rather than raw SQLite title-length failures.
+The GitHub Pages docs now have lightweight, repo-owned SVG headers that look like Cacophony rather than generic text pages, without adding external image dependencies.
