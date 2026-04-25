@@ -1,47 +1,38 @@
-# Session summary 0033 — bd-6a50ec: caco bootstrap dev --start-daemon (slice 1)
+# Session summary — Web summaries live accessibility
 
 ## Goal
 
-Cover step 3 of bd-ce32fa scope (idempotent daemon launch) so a
-fresh dev can run `--init-config` → `--start-daemon` → `--check`
-to land at a working daemon without touching launchd/systemd.
+Continue web summaries accessibility polish by improving live status announcements and making filter/load-more controls describe their effects more clearly.
 
 ## Bead(s)
 
-- `bd-6a50ec` slice 1 — daemon-start only.
+- `bd-976271` — Web summaries: improve live status and filter chip accessibility
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `caco bootstrap dev` accepted only `--check` / `--init-config`.
-- New devs had to run `caco supervisor`, `caco up`, or install a
-  launchd unit by hand to start the daemon.
+- The web summaries list was keyboard-accessible and had row/action labels from prior polish.
+- Loading and error states were visible but not explicitly announced as status/alert regions.
+- Active filter chips had a title but not a target-specific accessible label.
+- The load-more button showed the remaining count visually but did not expose it as a dedicated accessible label.
 
 ## After state
 
-- `caco bootstrap dev --start-daemon`:
-  - Probes `GET /api/v1/health` (any HTTP response = alive).
-  - If alive: no-op, exit 0.
-  - Otherwise shells out to `caco up --skip-update`, then re-probes
-    for up to 5s (10 × 500ms).
-  - Surfaces `caco up` stdout/stderr in the output for diagnostic.
-  - `--json` returns `{ok, data:{already_running, health_url,
-    action, up_exit_status, now_running, up_stdout, up_stderr}}`.
-  - Exit code 1 if daemon still unreachable after retry window.
-- Independent of `--check` / `--init-config`.
+- The summaries list now marks loading state with `aria-busy` and polite live announcements.
+- Loading and error empty states now use `role="status"` and `role="alert"` respectively.
+- Active filter chips now include explicit `Clear <filter> filter <value>` labels.
+- The load-more button now announces how many summaries remain.
 
 ## Diff summary
 
-- Commit: `db2a4c71`.
-- Files (1): caco-cli lib.rs (+131 lines).
-- `cargo build` and `cargo clippy` for caco-cli + caco-daemon: clean.
+- Commits: current `bd-976271` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: no visual or API change; assistive technology receives clearer live updates and control targets.
 
 ## Operator-takeaway
 
-Three-command bootstrap now works:
-
-    caco bootstrap dev --init-config
-    caco bootstrap dev --start-daemon
-    caco bootstrap dev --check
-
-Slice 2 (`--join PROJECT` / `--create-project` / `--demo-agent`)
-is the remaining bd-6a50ec work and is filed as a follow-up.
+The web summaries viewer now communicates loading, errors, active filters, and pagination controls more clearly to screen-reader users.
