@@ -1,25 +1,29 @@
-# Session summary — bd-5bfb2c (slice 17: command bar + restart)
+# Session summary — bd-5bfb2c (slice 18)
 
 ## Goal
-Unified command bar for fleet driving — the TUI killer feature, now in web.
+Line numbers, bead tags/deps, nav badge, welcome experience.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- No unified command interface — had to navigate menus/buttons for each action
-- Agent detail missing restart button
+- Source viewer had no line numbers
+- Bead detail didn't show tags or dependencies
+- No indicator on sidebar when choices pending
+- First-time users got empty single pane
 
 ## After state
-- Cmd/Ctrl+K or / opens command bar with 5 categories: slash commands, presets, pane types, views, actions
-- Fuzzy filter, arrow nav, Enter to execute
-- Agent restart button with confirm
-- 241/241 tests green (2 new)
+- Source: synced line number gutter
+- Bead detail: tags as pills, depends_on + linked_beads as code links
+- Nav badge: red pill with count, pop animation
+- Welcome: first-run gets Mission Control preset
+- 245/245 tests (4 new)
 
 ## Diff summary
-- workspace-integrated.js: showCommandBar() with command registry, keyboard wiring
-- workspace-panes.js: restart button + endpoint call
-- tests.rs: 2 new tests
+- workspace-panes.js: line number gutter, bead tags/deps rendering
+- workspace-integrated.js: nav badge update, welcome first-run logic
+- style.css: gutter, tags, deps, badge CSS
+- tests.rs: 4 new tests
 
 ## Operator-takeaway
-Press Cmd+K from workspace for everything — dispatch beads, broadcast messages, switch layouts, navigate views. Like VSCode's command palette but for fleet ops.
+Source viewer now has line numbers. Bead detail shows tags + dependencies. Red badge appears on sidebar when choices need attention. First-time visitors land on Mission Control.
