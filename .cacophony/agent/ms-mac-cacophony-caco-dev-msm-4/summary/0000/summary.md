@@ -1,33 +1,35 @@
-# Session summary — bd-1803a7 macOS project scope confidence
+# Session summary — bd-07c8e0 macOS notification triage
 
 ## Goal
 
-Make the active project scope impossible to miss in the native macOS companion and provide visible feedback when operators switch projects.
+Make native macOS notification triage faster by surfacing attention filters, error counts, and bulk acknowledge helpers in the Audio & Notifications pane.
 
 ## Bead(s)
 
-- `bd-1803a7` — [macOS excellence] Project switcher confidence polish
+- `bd-07c8e0` — [macOS excellence] Notification triage quality-of-life
 
 ## Before state
 
-- The selected project lived in the sidebar picker, but the current scope was not repeated in the main header.
-- Switching projects refreshed state but gave no explicit success feedback.
-- Status explained project scoping in help text, but it did not show a dedicated active-project panel.
+- Notifications rendered as one unfiltered list.
+- Operators could acknowledge individual unacknowledged rows only.
+- The pane counted total and unacknowledged notifications, but did not highlight warning/error/fatal rows separately.
 
 ## After state
 
-- Added a reusable `ProjectScopeBadge` shown in the sidebar picker area and every pane header.
-- Project switching now goes through `switchProject`, sets `lastCommandOutput`, and refreshes, so operators get an explicit success banner.
-- Status now includes an “Active project scope” panel explaining that Messages, Operations, Workspace, scratchpad, and source panes follow the selected project.
+- Added `NotificationFilter` with Attention, Unacked, Errors, and All segmented filters.
+- Added an Errors metric covering fatal/critical/error/warn/warning levels.
+- Default triage view focuses attention rows: unacknowledged items or warning/error-level items.
+- Added `Ack visible` to acknowledge all visible unacknowledged rows with success feedback.
+- Empty filtered states now explain which filter has no matches.
 
 ## Diff summary
 
-- Commit: `33bf583c6` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `companion/macos/Sources/Cacophony/Views/StatusPane.swift`.
-- Tests: no unit tests added; this is SwiftUI project-scope visibility wiring.
+- Commit: `33fdd8cd6` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/AudioNotificationsPane.swift`.
+- Tests: no unit tests added; this is SwiftUI triage affordance wiring.
 - Validation: `just macos-app-test`; `./docs/validate-pages.sh`.
-- Behavioural delta: active project context is visible in the root sidebar, pane header, and Status overview, and project switches produce feedback.
+- Behavioural delta: notification triage can focus attention/error rows and clear visible unacknowledged notifications in bulk.
 
 ## Operator-takeaway
 
-The macOS companion now reinforces project scope everywhere important, reducing the chance of reading or acting on the wrong project context.
+The macOS notifications pane is now an actionable triage surface rather than a raw notification list.
