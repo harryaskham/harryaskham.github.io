@@ -1,58 +1,36 @@
-# Session summary — bd-fbe1d7 set checkout branch upstream
+# Session summary — caco-web Beads UX polish
 
 ## Goal
 
-Make `git pull --rebase` and `git push` work inside any project
-checkout (agent shared-clone or manual operator checkout) without
-the user having to know the internal branch naming scheme.
+Make the caco-web Beads surfaces feel more intentional and operator-facing: reduce label clutter, clarify ownership/action language, make high-priority and in-progress rows easier to scan, and replace awkward close/unclaim copy with language aligned to the actual workflow.
 
 ## Bead(s)
 
-- `bd-fbe1d7` — Project checkout branches have no upstream
-  tracking — git pull fails for agents and manual operator
-  checkouts.
+- `bd-5c0367` — caco-web Beads surfaces need UX/designer visual polish
 
 ## Before state
 
-- `caco project checkout cacophony --path <dir>` followed by
-  `git pull --rebase` produced:
-  `fatal: There is no tracking information for the current
-  branch.`
-- Agent shared-clones on `agent/<node>/<project>/<id>` and manual
-  checkouts on `manual/project_checkout/<project>` were both
-  affected.
-- No tests exercised the upstream-tracking property of the
-  freshly created branch.
+- Failing tests: none specific to this bead.
+- Relevant metrics: Beads list showed all labels equally, so provenance labels could dominate primary content; row states had limited visual hierarchy; close confirmation was generic; workspace Beads pane used icon-only row actions and a stale `claimed` status concept.
+- Context: Android and TUI Beads polish were owned by other agents, so this session stayed scoped to caco-web dashboard/workspace surfaces.
 
 ## After state
 
-- `create_shared_clone` now runs `git branch --set-upstream-to=
-  origin/main <branch>` immediately after `git checkout -b`. The
-  shared clone already carries an `origin` remote tracking main,
-  so the upstream resolves cleanly.
-- Failure of the upstream step is logged to stderr and treated as
-  non-fatal — the checkout remains usable.
-- New unit test
-  `agent::spawn::tests::create_shared_clone_sets_branch_upstream_to_origin_main`
-  spins up a real canonical git repo with a `main` branch and
-  initial commit, calls `create_shared_clone`, and asserts that
-  `<branch>@{upstream}` resolves to `origin/main`.
-- `cargo test -p caco-daemon --lib agent::spawn::` — 8 passed.
+- Failing tests: none observed.
+- Relevant metrics: `cargo test -p caco-web --lib -- --nocapture`, `cargo check -p caco-web`, `cargo clippy -p caco-web --all-targets -- -D warnings`, `node --check` for touched JS files, `git diff --check`, and `cargo test-small` all passed.
+- Context: headless Chromium visual QA captured the updated dashboard Beads list at `screenshots/caco-web-beads-after-snap.png`. A normal non-snap capture was initially blank because the page was still connecting; snap-mode loaded the live snapshot and produced the final evidence.
 
 ## Diff summary
 
-- Commits: `755abab7`
-- Files touched: `crates/caco-daemon/src/agent/spawn.rs`
-- Tests: +1 / -0 / flipped 0
-- Behavioural delta: every shared-clone callsite (agent spawn +
-  `caco project checkout`) now produces a checkout with a usable
-  upstream so bare `git pull` / `git push` succeed.
+- Commits: 5fa92344b
+- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/static/style.css`, `crates/caco-web/static/workspace-integrated.js`, `crates/caco-web/src/tests.rs`
+- Tests: +3 source-level web polish tests; existing caco-web and workspace tests still pass.
+- Behavioural delta: Beads rows now use priority/status tone rails and compact subtitles; label rendering splits primary labels from low-signal system/provenance labels; detail label editing hides system labels behind a disclosure; unclaim copy says “release back to ready queue”; close confirmation says to close only after work is merged on main; workspace Beads actions use text labels and owner/label columns instead of icon-only clutter.
+
+## Embedded artefacts
+
+- `screenshots/caco-web-beads-after-snap.png` — headless Chromium capture of the polished caco-web Beads list with live snapshot data.
 
 ## Operator-takeaway
 
-If you ever see a fresh project checkout fail with "no tracking
-information", check the stderr log of the spawn / checkout step
-for the `bd-fbe1d7` warning — it means the post-checkout
-`git branch --set-upstream-to` failed and you can re-run it
-manually as `git -C <checkout> branch --set-upstream-to=
-origin/main <branch>`.
+The web Beads surface is still data-dense, but the noisy parts are now visually demoted: operators see work state, title, owner, and primary labels first, while system provenance labels and destructive workflow copy no longer dominate the main path.
