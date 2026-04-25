@@ -1,33 +1,33 @@
-# Session summary — Reintegration verification against upstream
+# Session summary — Bead journal SIGBUS hardening
 
 ## Goal
 
-This session investigated the P0 reintegration work-loss reports and converted the clearest observed failure mode into a concrete fix. The aim was to stop agents from being told their work was stranded when the merge had actually landed upstream but the worker checkout was verifying against a stale managed `origin` view.
+This session continued the bead burn-down with the reopened git SIGBUS bug in the beads store. The goal was to finish the remaining hardening after the earlier atomic-write slice: make the reconcile rewrite and git staging path a single locked critical section and avoid the `git add` mmap path for `.beads/issues.jsonl` entirely.
 
 ## Bead(s)
 
-- `bd-ec1b89` — Investigate work loss in reintegration process
+- `bd-fc60ff` — git SIGBUS in libz-ng adler32 during `git add .beads/issues.jsonl`
 
 ## Before state
 
 - Failing tests: none in scoped validation.
-- Relevant metrics: `caco agent audit-reintegration --since 1d` reported no suspicious direct reintegrations, but two unverifiable entries missing persisted outcome data; my prior reintegration had also produced a false post-verification failure before a later fetch showed the merge commit on `origin/main`.
-- Context: in managed topology, an agent checkout's `origin` points at the daemon canonical checkout, and the daemon canonical checkout's own `origin` points at the real upstream. Caller-side post-verification in `verify_direct_outcome` fetched and checked `origin/main` from the worker checkout, which can read a stale local branch from the canonical checkout rather than the authoritative upstream.
+- Relevant metrics: caco-beads tests were passing before this slice; the reopened bead documented remaining ACs for a single-writer reconcile lock, hash-object stdin fallback, and doctor sensor coverage.
+- Context: atomic replacement for reconcile rewrites and the coredump doctor sensor already existed on main. Normal `commit_pending` held a mutation lock around git operations, but reconcile's export rewrite was still outside that lock, and staging `.beads/issues.jsonl` still used `git add`, which can mmap large regular files.
 
 ## After state
 
 - Failing tests: none in scoped validation.
-- Relevant metrics: targeted regression `verify_direct_outcome_uses_canonical_upstream_not_stale_worker_origin` passes; `cargo test-small` passes with 252 tests.
-- Context: direct reintegration post-verification now detects managed canonical-checkout topology and verifies reachability by fetching the canonical checkout's upstream remote. This preserves the existing polling behavior while avoiding false stranded-work outcomes caused by stale worker-origin refs.
+- Relevant metrics: `cargo test -p caco-beads --lib` passed with 278 tests; `cargo clippy -p caco-beads --all-targets -- -D warnings` passed; `cargo test-small` passed with 252 tests.
+- Context: first-party git-backed `BeadsStore` instances now remember their branch so reconcile can use the optimized locked path. Reconcile holds the mutation lock across atomic write plus staging/commit, and `.beads/issues.jsonl` is staged by `git hash-object -w --stdin` plus `git update-index --cacheinfo`, avoiding `git add`'s mmap path for the journal payload.
 
 ## Diff summary
 
-- Commits: `853f8fd2f`
-- Files touched: `crates/caco-daemon/src/reintegration.rs`
-- Tests: added 1 regression; no tests removed or ignored.
-- Behavioural delta: `verify_direct_outcome` no longer trusts the worker checkout's `origin/main` when that origin is the daemon checkout. It resolves through the canonical checkout to the real upstream and verifies the advertised merge commit there.
-- Validation: `cargo test -p caco-daemon verify_direct_outcome_uses_canonical_upstream_not_stale_worker_origin --lib` passed; `cargo test-small` passed with 252 tests.
+- Commits: `f4523e247`
+- Files touched: `crates/caco-beads/src/store.rs`
+- Tests: added 1 regression covering hash-object/update-index journal staging; no tests removed or ignored.
+- Behavioural delta: the beads reconciler no longer exposes an unlocked window between rewriting `issues.jsonl` and staging it, and the critical journal file is staged through stdin instead of via mmap-based `git add`.
+- Validation: `cargo test -p caco-beads --lib`; `cargo clippy -p caco-beads --all-targets -- -D warnings`; `cargo test-small`.
 
 ## Operator-takeaway
 
-The root cause for this class of apparent work loss was a verification-topology bug, not the merge itself disappearing: worker checkouts can see a stale daemon-checkout `origin/main`. The fix makes post-verification authoritative by checking the upstream remote behind the daemon checkout.
+This completes the practical SIGBUS mitigation stack for bead journal commits: atomic rename preserves old inodes for readers, the reconcile critical section is serialized, and the journal staging path no longer relies on git mmaping the file at all.
