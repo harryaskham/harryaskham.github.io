@@ -1,32 +1,33 @@
-# Session summary — bd-9a9bf7 macOS action feedback wording
+# Session summary — bd-5d6538 macOS diagnostics empty-state guidance
 
 ## Goal
 
-Continue the macOS feedback polish by making bead and agent action confirmations read as operator-facing receipts instead of raw verb/id fragments.
+Improve the native macOS Diagnostics pane so logs and performance telemetry are easier to scan, especially when data is empty or filters hide every result.
 
 ## Bead(s)
 
-- `bd-9a9bf7` — [macOS excellence] Bead and agent action feedback wording polish
+- `bd-5d6538` — [macOS excellence] Diagnostics empty-state guidance polish
 
 ## Before state
 
-- The open ready queue had no unowned implementation beads, so this was filed from productive idle after a duplicate search.
-- Bead actions reported feedback as terse strings like `claimed bd-...` or `closed bd-...`.
-- Agent control actions reported feedback as terse strings like `paused <agent>` or `discarded <agent>`.
+- Diagnostics had useful filter controls and metric cards, but no explicit guidance describing how to scan logs versus performance telemetry.
+- Empty logs/perf lists appeared as blank list areas, so operators could not tell whether data was missing or filters were too narrow.
+- Clearing filters required manually editing both filter controls.
 
 ## After state
 
-- Bead actions now report `Bead <id> <verb> for <project>.` through the global feedback banner.
-- Agent controls now report `Agent <id> <verb>.` through the same banner.
-- API calls, refresh behavior, and pane layout are unchanged.
+- Added a guidance card below the filter row explaining how to scan the selected diagnostics tab and when to copy/share visible data.
+- Added a clear-filters affordance when text or severity filters are active.
+- Added dedicated empty states for no loaded data and no matches, with tailored recovery copy for logs and performance telemetry.
+- Added a reusable `DiagnosticsEmptyState` view for icon, message, and optional action rendering.
 
 ## Diff summary
 
-- Commit: `5013fed1a` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/BeadsPane.swift`, `companion/macos/Sources/Cacophony/Views/AgentControlPane.swift`.
+- Commit: `cf1d05242` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/DiagnosticsPane.swift`.
 - Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
-- Behavioural delta: operator-visible action receipts are more explicit and copyable for handoffs.
+- Behavioural delta: no API behavior changed; diagnostics now has explicit empty/loading and filtered-no-match guidance.
 
 ## Operator-takeaway
 
-MacOS action feedback is now consistently shaped across Operations, Beads, and Agent Controls: command receipts identify the target type and id rather than exposing bare implementation strings.
+Diagnostics should now explain what to do when it looks blank: refresh if no data is loaded, clear filters if the current query hides everything, and copy/share the visible slice for handoff.
