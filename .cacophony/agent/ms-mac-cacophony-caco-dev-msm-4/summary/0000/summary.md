@@ -1,25 +1,27 @@
-# Session summary — bd-5bfb2c (slice 10)
+# Session summary — bd-5bfb2c (slice 11)
 
 ## Goal
-Per-pane action affordances + Cmd+P quick switcher for keyboard-driven workflow.
+Always-visible status bar surfacing fleet health + pending operator action.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Pane tab had only type-selector + close button
-- No way to quickly switch focused pane type without dropdown
+- No persistent at-a-glance fleet status while in workspace
+- Operators had to check choices view manually to see pending items
 
 ## After state
-- Per-tab action row (hover/focus): refresh, split-H, split-V, maximize, close
-- Cmd/Ctrl+P opens quick pane-type switcher with text filter, arrow nav, Enter
-- Help overlay lists Cmd+P shortcut
-- 230/230 tests green (2 new)
+- Status bar at bottom: panes count, focused pane, project filter,
+  agents (running/failed), beads (open/claimed), choices badge
+  (clickable to choices view, alert when >0), connection state
+- Updates on every render — feels live
+- 231/231 tests green (1 new)
 
 ## Diff summary
-- workspace-integrated.js: 4 new tab buttons + showPaneTypeSwitcher
-- style.css: switcher styling
-- tests.rs: 2 new tests
+- workspace-integrated.js: updateStatusBar() called from renderTree()
+- index.html: status bar segments
+- style.css: status bar styling
+- tests.rs: 1 new test
 
 ## Operator-takeaway
-Cmd+P from anywhere in workspace → type-filter pane types → Enter to switch focused pane. Hover any pane tab for inline actions.
+Always know when there's an operator choice waiting — status bar shows it as ⚠ N choices, click to jump.
