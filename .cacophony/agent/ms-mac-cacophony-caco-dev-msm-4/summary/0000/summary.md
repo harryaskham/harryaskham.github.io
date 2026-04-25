@@ -1,34 +1,33 @@
-# Session summary — bd-682157 macOS connection setup confidence
+# Session summary — bd-ce8103 timeline numeric validators
 
 ## Goal
 
-Improve the native macOS app’s connection/setup experience so an operator can understand endpoint/token readiness, test a daemon connection with confidence, and recover from offline or misconfigured states without guessing.
+Fix `caco timeline` numeric validator drift so `--max-age-hours` and `--min-commits` no longer leak raw Rust parse errors and no longer diverge from the canonical positive-integer behaviour already used by `--limit`.
 
 ## Bead(s)
 
-- `bd-682157` — [macOS excellence] Connection setup confidence polish
+- `bd-ce8103` — caco timeline --max-age-hours and --min-commits raw parse-error drift
 
 ## Before state
 
-- Settings had local-token helpers and connect/save, but no explicit confidence panel showing whether host, port, token, and daemon response were ready.
-- Operators could only connect-and-save; there was no separate “test connection” action.
-- Offline recovery showed the last error, but not the last attempted endpoint or redacted token shape.
+- `caco timeline --limit` emitted polished Family-A validator errors for empty, zero, negative, and non-numeric values.
+- `--max-age-hours` and `--min-commits` used direct `parse()` plus `ParseIntError` formatting, leaking messages like `cannot parse integer from empty string` and `invalid digit found in string`.
+- `--max-age-hours -1` was parsed through an inconsistent signed path instead of the positive-integer validator family.
 
 ## After state
 
-- Settings now includes a “Connection confidence” card with endpoint, token readiness, last test time, attempted endpoint, and step pills.
-- Added a separate “Test Connection” action that validates daemon URL/token without saving a profile.
-- Connect/save now reports explicit success/failure messages and only saves named profiles after a successful daemon response.
-- DaemonState tracks last connection attempt time and redacted attempted config for Settings/offline recovery.
-- NotConnectedView now surfaces the attempted endpoint and redacted token plus a clearer four-step recovery checklist.
+- Added a timeline-specific positive integer parser for `--max-age-hours` and `--min-commits` with canonical empty, invalid, and zero messages.
+- `--max-age-hours -1`, `bogus`, and empty values now fail before daemon access with operator-facing text.
+- `--min-commits` now uses the same validator shape while preserving its flag-specific hints.
+- Extended the existing timeline CLI validation regression test to cover the new paths.
 
 ## Diff summary
 
-- Commit: `7f19fd576` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/App/DaemonState.swift`, `companion/macos/Sources/Cacophony/Views/SettingsView.swift`, `companion/macos/Sources/Cacophony/Views/NotConnectedView.swift`, `companion/macos/Sources/CacophonyKit/Models/DaemonConfig.swift`.
-- Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
-- Behavioural delta: macOS setup now separates readiness, testing, and saving, while keeping token display redacted.
+- Commit: `0f9c09d25` after replay onto the remote agent branch.
+- Files touched: `crates/caco-cli/src/lib.rs`.
+- Tests: `cargo test -p caco-cli timeline_cli_validates_limit_since_and_cluster_project_note_bd_bf19ae --lib`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: timeline numeric flag mistakes now produce clean, consistent CLI errors instead of stdlib parse-error leakage.
 
 ## Operator-takeaway
 
-The macOS companion now makes daemon connection setup feel intentional and verifiable: operators can see what will be tested, test it safely, and recover from failures with concrete endpoint/token context.
+`caco timeline` now matches the validator quality expected across the CLI: all three numeric knobs explain what went wrong and how to recover.
