@@ -1,30 +1,31 @@
-# Session summary — bd-96d69d rule-based timeline narrative
+# Session summary — bd-88798a STT final-commit chime marker
 
 ## Goal
-Add a practical smart timeline summarization slice by shipping a deterministic rule-based narrative fallback in the web timeline, leaving room for a future AI/model-backed replacement.
+Finish the remaining bounded part of the STT partial-to-final UX bead by adding a testable final-commit chime marker while preserving the already-landed partial transcript, flash, and history behavior.
 
 ## Bead(s)
 
-- `bd-96d69d` — Integrate AI model for smart timeline summarization
+- `bd-88798a` — [stt-ux] AC2: live partial-transcript ghost text + AC3 final-commit flash
 
 ## Before state
 
-- The web timeline visualized events and categorized markers, but it did not provide a human-readable narrative explaining what happened in the selected window.
-- A full external AI/model integration would be too broad for a safe burn-down slice.
+- Prior slices had already landed `partial_transcript`, `last_final_at`, active utterance rendering, final flash timing, transcript history, and partial-to-final render tests.
+- The bead was reopened because AC3 still lacked a chime-related marker and the validation path was briefly blocked by broken-on-main `bd-028f7e`, which another worker fixed.
 
 ## After state
 
-- Added `timelineNarrative(events)`, a deterministic fallback that summarizes visible event count, time span, busiest category, and category mix using the existing classifier.
-- Rendered the narrative in a scoped `.timeline-smart-summary` panel below the legend.
-- Exposed `timelineNarrative` through `window.Timeline` so a future provider/model-backed path can replace or augment it without rewiring the view.
+- Added `SpeechState::pending_final_chimes` as a drainable count of final transcript commits that should trigger the optional confirmation chime.
+- `commit_final_transcript` increments the marker with saturating arithmetic whenever a final boundary is committed.
+- Added `drain_pending_final_chimes()` so the UI/audio integration can clear the marker exactly once after playback.
+- Added regression coverage that final commits enqueue and drain the chime marker.
 
 ## Diff summary
 
-- Commits: `9a6d88adb`.
-- Files touched: `crates/caco-web/static/timeline.js`, `crates/caco-web/static/timeline.css`, `crates/caco-web/src/tests.rs`.
-- Tests: added `bd_96d69d_timeline_has_rule_based_smart_summary_fallback`.
-- Validation: `cargo test -p caco-web bd_96d69d --lib`; `cargo test -p caco-web timeline_css_is_embedded --lib`; `cargo clippy -p caco-web --all-targets -- -D warnings`; `cargo check --workspace --tests`.
+- Commits: `129575e83` before rebase, replayed on current main.
+- Files touched: `crates/caco-tui/src/speech.rs`, `crates/caco-tui/src/views/speech_indicator.rs`.
+- Tests: added `commit_final_transcript_enqueues_drainable_chime_marker`.
+- Validation: `cargo test -p caco-tui commit_final_transcript_enqueues_drainable_chime_marker --lib`; `cargo test -p caco-tui speech_indicator_partial_then_final_transitions --lib`; `cargo clippy -p caco-tui --all-targets -- -D warnings`; `cargo check --workspace --tests`.
 
 ## Operator-takeaway
 
-The timeline now explains itself in plain language even without an AI provider: operators get an immediate narrative of activity mix and busiest category, with an explicit seam for future model-backed summaries.
+The STT final-commit path now has a concrete, test-covered hook for a soft confirmation chime, completing the reopened non-visual part without disturbing the existing partial/final transcript UX.
