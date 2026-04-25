@@ -1,71 +1,77 @@
-# Session summary — bd-4431dc workspace-view testing cycle (4 new persistence + fuzz tests)
+# Route stale test tmux sessions away from ambiguous_ownership (bd-62b44e)
 
 ## Goal
 
-Cycle the workspace-view testing permanent (bd-4431dc) by adding ≥1
-new integration / stress test per the bead's every-cycle checklist.
-Specifically targets criteria 3 (drag-resize fuzz) and 4 (saved-view
-round-trip), with bonus coverage for default-invariant under random
-mutation and multi-operator isolation under load.
-
-Done deliberately on the Rust storage layer (not the JS harness side)
-to avoid worsening bd-d5b850 (caco-web suite per-test node spawns —
-4.9s → 35.9s regression filed by msm-5).
+Stop transient test-session leaks from flagging runtime repair as
+degraded. Operator-visible symptom: `caco status` showed "ambiguous
+ownership: 43" even when the cited sessions were `caco-testnode-*` /
+`caco-test-runtime-*` — not actionable, but degrading health.
 
 ## Bead(s)
 
-- `bd-4431dc` — [PERMANENT] workspace-view ongoing testing
-- (parent epic: `bd-027e9d` caco-web Workspace View)
-- (related: `bd-d5b850` caco-web suite perf regression — informed
-  the choice to keep new tests pure-Rust)
+- `bd-62b44e` — Runtime repair health degrades on ambiguous tmux
+  ownership events for test sessions.
 
 ## Before state
 
-- Failing tests: none in scope
-- 9 unit tests in workspace_views.rs covered CRUD, defaults,
-  validator, ordering, uniqueness, forward-compat
-- No restart-survival test for the saved-view storage
-- No fuzz coverage for layout-payload persistence under repeated
-  mutation
-- No invariant test for "at-most-one-default-per-operator" under
-  random mixed-op workloads
+In `repair_stale_tmux_sessions` (`crates/caco-daemon/src/agent/lifecycle.rs`),
+any session that didn't match Case 1/1b/2 (terminal-agent, id-suffix
+match, ownership file) fell into Case 3 → `record_ambiguous_ownership`,
+which **always** sets `RuntimeRepairSummary::degraded = true`. Test
+sessions leaked from crashed test processes (`caco-testnode-{proj}-{name}`,
+`caco-test-runtime-{pid}`) accumulate naturally on shared sockets,
+poison the ambiguous-ownership budget, and trigger degraded status
+indefinitely until someone manually reaps them.
 
 ## After state
 
-- +4 tests in `crates/caco-daemon/src/workspace_views.rs`:
-  - `saved_view_restart_survival_round_trip_bd4431dc` — file-backed
-    DB → write 3 views with mixed defaults + a rename → close →
-    reopen → assert every record survives byte-exactly
-  - `drag_resize_layout_fuzz_bd4431dc` — 1000 randomized
-    layout-payload updates against a single view; each must read
-    back byte-identical and continue to validate
-  - `default_invariant_holds_under_random_ops_bd4431dc` — 400 mixed
-    create/promote/delete ops; at every step asserts ≤1 default per
-    operator (the easiest invariant to violate in default-promotion
-    code paths)
-  - `multi_operator_isolation_stress_bd4431dc` — 25 operators × 20
-    views each; each operator sees only their own views + their own
-    default
-- Suite delta: +0.3s wall (workspace_views suite total still <0.5s)
-- No new node spawns, no new harnesses, no new fixtures
+New helper `agent::is_test_session_name(&str)` recognises the two
+documented test-session prefixes. The reconciler routes those into
+a new repair-event kind `test_session_skipped` (handled by
+`RuntimeRepairSummary::record_test_session_skipped`) which:
+
+1. Increments a separate `test_sessions_skipped: u32` counter.
+2. Pushes a `RepairEvent { kind: "test_session_skipped", … }` for
+   visibility (so an unexpected spike is still observable in
+   `caco status` and the TUI status surface).
+3. **Does NOT set `degraded`** — these are not managed runtime; they
+   either get torn down by another in-flight test or harmlessly
+   linger.
+4. Adds the session to the ambiguous-dedup set so the skip event
+   doesn't re-emit every reconcile cycle.
+
+Real ambiguous-ownership cases (managed sockets, no ownership file,
+no test-prefix match) still degrade exactly as before.
 
 ## Diff summary
 
-- Files touched: 1 (modified)
-  - `crates/caco-daemon/src/workspace_views.rs` (+175 lines, all in
-    the existing `#[cfg(test)] mod tests` block)
-- Tests: +4 / -0
-- Behavioural delta: zero — pure test additions
+- `crates/caco-daemon/src/agent/mod.rs`: new `pub fn
+  is_test_session_name(session: &str) -> bool` after
+  `extract_known_agent_id`. Single source of truth for test prefixes.
+- `crates/caco-daemon/src/agent/types.rs`: new
+  `test_sessions_skipped: u32` field on `RuntimeRepairSummary`,
+  new `record_test_session_skipped` method (NON-degrading), updated
+  `has_events()` to include the new counter.
+- `crates/caco-daemon/src/agent/lifecycle.rs`:
+  - In `repair_stale_tmux_sessions` Case 3 path, check
+    `is_test_session_name(session)` before falling through to
+    `ambiguous_ownership`. If matched, push a `test_session_skipped`
+    repair action with the same dedup behaviour.
+  - In the apply-actions loop, route the new kind to
+    `record_test_session_skipped`.
+- `crates/caco-daemon/src/agent/tests.rs`: 5 new tests
+  (`is_test_session_name_recognises_testnode_prefix`,
+  `is_test_session_name_recognises_test_runtime_prefix`,
+  `is_test_session_name_rejects_real_agent_sessions`,
+  `record_test_session_skipped_does_not_set_degraded`,
+  `record_test_session_skipped_then_ambiguous_only_one_degrades`).
 
 ## Operator-takeaway
 
-This is a permanent-cycle landing: the next agent who picks up
-bd-4431dc should look at OTHER under-covered areas (terminal-pane
-mid-stream WS reconnection, chat-pane broadcast fan-out semantics,
-log-pane SSE catch-up after disconnect — none of these have
-behavioural tests yet, only contract sniffs).
-
-The 4 tests here are deliberately Rust-only to stay clear of the
-bd-d5b850 perf regression on the caco-web side. Once that bead lands
-its shared-node-process refactor, future cycles can safely add JS-side
-behavioural tests without re-tripping the 7× wall-time regression.
+Health pass on a node with stale test sessions reports
+`test_sessions_skipped: N` instead of `ambiguous_ownership: N` and
+no longer flags repair as degraded for that reason alone. Real
+ambiguous ownership still degrades; the budget is now isolated from
+test-process churn. Acceptance criteria 1, 2, and 4 from the bead
+are met directly; criterion 3 (existing acceptance: not held
+degraded solely due to stale test sessions) is the headline outcome.
