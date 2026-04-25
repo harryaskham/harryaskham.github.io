@@ -1,46 +1,36 @@
-# Session summary 0048 — bd-939541: choices --notify-mode (slice 1)
+# Session summary — Web summaries detail retry action
 
 ## Goal
 
-Schema + CLI surface for choice-notification escalation, so AFK
-operators don't miss critical choice-presentations.
+Continue web summaries resilience polish by making selected-detail load failures recoverable without requiring a full page or list refresh.
 
 ## Bead(s)
 
-- `bd-939541` slice 1 — schema + CLI flag only.
+- `bd-b784ed` — Web summaries: add retry action for failed detail loads
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `caco choices present` could only signal via speak (broadcast).
-- Tonight cluster-ctrl's threshold-cross choice sat ~2h waiting
-  on AFK operator.
+- The web summaries list had live loading/error states and explicit list refresh controls.
+- If loading the selected parsed summary detail failed, the detail pane showed only an error message.
+- Operators had to change selection, refresh the whole summaries view, or reload the page to retry the failed detail request.
 
 ## After state
 
-- `caco choices present --notify-mode <mode>` flag.
-- Allowed values (validated client-side): `speak`,
-  `direct-message`, `broadcast`, `escalate`, `timeout-fallback`.
-- `ActiveChoice.notify_mode: Option<String>` field (serde
-  default + skip_serializing_if).
-- `PresentChoicesRequest` and `PresentChoiceRequest` both gain
-  `notify_mode` field with serde default.
-- Both `/api/v1/choices/present` handlers thread
-  `req.notify_mode` into the new ActiveChoice.
-- All ActiveChoice literals (2 handlers + 10 test fixtures)
-  updated; tests pass.
+- Detail-load errors now render as an alert with a `Retry detail` button.
+- Retrying clears the selected detail error/cache entry, calls the existing detail loader for the selected key, and re-renders the pane.
+- The action is scoped to the selected summary, so the rest of the loaded list remains stable.
 
 ## Diff summary
 
-- Commit: `9c02b37b`.
-- Files (4): caco-cli lib.rs, caco-daemon choices.rs + lib.rs +
-  operator_inbox.rs.
-- 17 caco-daemon::choices tests pass; clippy clean.
+- Commits: current `bd-b784ed` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: failed selected-detail fetches in web summaries now have an inline recovery path.
 
 ## Operator-takeaway
 
-Agents can now declare how a choice should be surfaced. Slice 2
-(supervisor reads `notify_mode` at present time and routes:
-direct-message via `caco msg send`, broadcast via the broadcast
-verb, escalate via external hook, timeout-fallback paired with
-bd-ab376b's `afk_fallback_index`) is the next-step bead when
-demand surfaces.
+The web summaries detail pane is less of a dead end during transient daemon/API errors: operators can retry just the failed detail load while preserving list context.
