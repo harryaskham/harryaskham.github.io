@@ -1,32 +1,32 @@
-# Session summary — macOS agent detail handoff polish
+# Session summary — macOS choice resolution confidence polish
 
 ## Goal
 
-Improve the native macOS agent detail view so operators can quickly copy useful context into CLI follow-up, chat handoffs, or peer debugging without manually gathering metadata from multiple cards.
+Improve pending-choice cards in the native macOS Controls pane so operator decisions are easier to scan and safer to resolve.
 
 ## Bead(s)
 
-- `bd-c9de87` — `[macOS excellence] Agent detail copy handoff polish`
+- `bd-6892ed` — `[macOS excellence] Choice resolution confidence polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline was 53 checks.
-- Context: Agent details exposed useful fields, but handoff required manually selecting individual rows and missing branch context had no explanatory fallback.
+- Context: Choice cards listed options, but option scanability, missing-summary warnings, and reissue-vs-resolve semantics were terse.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with `CacophonyKitSmoke: OK (53 checks)`.
-- Context: Agent details now include Copy Handoff, a handoff summary card, copyable consolidated metadata, and branch guidance even when no branch is reported.
+- Context: Choice cards now show decision hints, numbered options, missing-summary warnings, bordered resolve buttons, and clearer reissue guidance.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-c9de87`.
-- Files touched: `companion/macos/Sources/Cacophony/Views/AgentsPane.swift`.
+- Commits: current branch commit for `bd-6892ed`.
+- Files touched: `companion/macos/Sources/Cacophony/Views/OperatorControlsPane.swift`.
 - Tests: no smoke-count change; app build and smoke suite passed.
-- Behavioural delta: handoff/debug workflows are faster because agent ID, state, project, node, bead, branch, profile, and checkout are copyable in one action.
+- Behavioural delta: operators can distinguish resolving from reissuing and can scan option summaries more confidently.
 
 ## Operator-takeaway
 
-Agent detail is now a better bridge between native UI and operational handoff: one button produces the context a peer or CLI session needs.
+Pending choices now feel more like deliberate native decision cards instead of raw button lists, reducing the chance of accidental or under-informed resolution.
