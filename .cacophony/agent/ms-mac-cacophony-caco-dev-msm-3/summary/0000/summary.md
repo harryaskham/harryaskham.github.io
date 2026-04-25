@@ -1,32 +1,32 @@
-# Session summary — scp missing-argument wording
+# Session summary — foreach node missing-command wording
 
 ## Goal
 
-This session polished the `caco scp` empty-argument error so it matches the newer CLI missing-argument style and helps operators discover valid node-qualified paths.
+This session polished the `caco foreach node` no-command error so it follows the required-argument wording pattern instead of an old usage block.
 
 ## Bead(s)
 
-- `bd-983589` — [CLI polish] scp missing-argument discoverability wording
+- `bd-c1908f` — [CLI polish] foreach node missing-command discoverability wording
 
 ## Before state
 
-- Failing tests: no exact regression covered `caco scp` with no source/destination.
-- Relevant metrics: `caco scp` emitted an old multi-line `usage: caco scp ...` block.
-- Context: recent burn-down work aligned outbox, ssh, and mosh missing-argument errors to required-argument wording with discovery pointers.
+- Failing tests: no exact regression covered `caco foreach node` with no command.
+- Relevant metrics: the command emitted a multi-line `usage: caco foreach node <command...>` message.
+- Context: recent CLI polish beads aligned several missing-argument surfaces to direct, discoverable guidance.
 
 ## After state
 
 - Failing tests: none in scoped validation before replay.
-- Relevant metrics: `cargo test -p caco-cli scp_missing_args_error_uses_discoverability_pointer --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; focused regression is rerun after replay.
-- Context: `caco scp` now names the missing source/destination, documents the `<node>:<path>` form inline, and points to `caco node list`.
+- Relevant metrics: `cargo test -p caco-cli foreach_node_missing_command_uses_discoverability_pointer --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; focused regression is rerun after replay.
+- Context: the error now names the missing command positional, includes examples, and points to `caco --help`.
 
 ## Diff summary
 
-- Commits: `8776bc3b6`
+- Commits: `522be7c0c`
 - Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added exact regression `scp_missing_args_error_uses_discoverability_pointer` through the public `run(caco scp)` path.
-- Behavioural delta: empty `caco scp` invocations now provide a discoverable correction path rather than only a usage block.
+- Tests: added exact regression `foreach_node_missing_command_uses_discoverability_pointer`.
+- Behavioural delta: empty `caco foreach node` invocations now provide actionable required-argument guidance.
 
 ## Operator-takeaway
 
-The remote-copy helper now tells users what arguments are missing and how to discover node names, matching the polish applied to ssh and mosh.
+The fan-out helper now explains the missing command and where to find valid commands, instead of showing only a usage block.
