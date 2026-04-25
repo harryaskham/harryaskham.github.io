@@ -1,29 +1,28 @@
-# Session summary — bd-5bfb2c (slice 18)
+# Session summary — bd-5bfb2c (slice 19)
 
 ## Goal
-Line numbers, bead tags/deps, nav badge, welcome experience.
+Layout undo, right-click context menu, chat sender color hashing.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Source viewer had no line numbers
-- Bead detail didn't show tags or dependencies
-- No indicator on sidebar when choices pending
-- First-time users got empty single pane
+- No way to undo layout changes (must reset entirely)
+- No right-click affordance on pane tabs
+- All chat senders rendered in same color — hard to scan
 
 ## After state
-- Source: synced line number gutter
-- Bead detail: tags as pills, depends_on + linked_beads as code links
-- Nav badge: red pill with count, pop animation
-- Welcome: first-run gets Mission Control preset
-- 245/245 tests (4 new)
+- Cmd/Ctrl+Z undoes last layout change (20-step history)
+- Right-click pane tab opens context menu with full set of pane ops
+- Each agent gets stable hashed color in chat (9-color nord palette)
+- 248/248 tests, clippy clean (3 new tests)
 
 ## Diff summary
-- workspace-panes.js: line number gutter, bead tags/deps rendering
-- workspace-integrated.js: nav badge update, welcome first-run logic
-- style.css: gutter, tags, deps, badge CSS
-- tests.rs: 4 new tests
+- workspace-integrated.js: undoStack + undoLayout + Cmd+Z handler;
+  showPaneContextMenu + oncontextmenu wiring; senderToColor + chat
+  inline color application
+- style.css: ws-context-menu styles + animations
+- tests.rs: 3 new tests
 
 ## Operator-takeaway
-Source viewer now has line numbers. Bead detail shows tags + dependencies. Red badge appears on sidebar when choices need attention. First-time visitors land on Mission Control.
+You can finally undo layout mistakes. Right-click any pane tab for instant ops. Chat is way easier to scan with each agent in their own color.
