@@ -1,32 +1,33 @@
-# Session summary — TUI diagnostic command naming
+# Session summary — relay-mode transient launch handoff
 
 ## Goal
 
-Make the TUI command surface harder to misuse during visual audits by clearly separating the live dashboard, the real-dashboard benchmark harness, and the isolated graphics testbed. The immediate operator pain was an agent launching the isolated graphics testbed when the expected target was the real dashboard/audit surface.
+Implement the provider-neutral safety core for relay-mode transient workers: a dynamic relay node should be able to claim exactly one signed launch spec for its assigned job, reject mismatched IDs/nonces/signatures, and report terminal state without requiring inbound peer connectivity.
 
 ## Bead(s)
 
-- `bd-8dfaa5` — Rename TUI diagnostic/testbed commands so agents pick the intended audit target
+- `bd-69a28f` — Implement relay-mode transient worker spawn handoff
+- parent/design: `bd-2869ea` — Azure transient-agent compute wrappers
 
 ## Before state
 
-- Failing tests: none known at start.
-- Relevant metrics: TUI help exposed `caco tui benchmark`, `caco tui fps-benchmark`, and `caco tui graphics-testbed`, but the old names/summaries did not strongly distinguish real-dashboard vs isolated chrome-only targets.
-- Context: docs and operator guidance still recommended `graphics-testbed` directly, making it easy for agents to pick the wrong surface.
+- Failing tests: none known for this slice.
+- Relevant metrics: relay-mode dynamic nodes already had registry entries and active relay-peer metadata, but no reusable launch-spec handoff primitive for one-job transient workers.
+- Context: the transient-agent design requires a signed, single-use handoff before cloud/provider implementations such as Container Apps Jobs can safely start ordinary managed-agent wrappers.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
-- Relevant metrics: `caco tui dashboard-benchmark` now names the real dashboard benchmark path; `caco tui isolated-graphics-testbed` names the chrome-only harness; `graphics-testbed` and `benchmark` remain compatibility aliases with explicit disambiguating help.
-- Context: README, SPEC, AGENTS, docs, just recipes, and CLI metadata now all use the clearer names.
+- Relevant metrics: added `TransientHandoffState`, signed launch specs, single-use claim enforcement, relay-node registry checks, terminal reports, and rejection paths for bad signatures, wrong job IDs, wrong nonces, direct-mesh nodes, expired/missing nodes, and duplicate claims.
+- Context: `SPEC.md` now defines the transient worker launch handoff contract under relay-mode transport.
 
 ## Diff summary
 
-- Commits: `a664254fc`
-- Files touched: `crates/caco-cli/src/lib.rs`, `README.md`, `SPEC.md`, `AGENTS.md`, `docs/cli.html`, `docs/tui.html`, `justfile`
-- Tests: `cargo fmt --all -- --check`; `git diff --check`; `cargo test -p caco-cli tui_ --lib`; `cargo check -p caco-cli --tests`; `cargo run -q -p caco -- help tui`; `cargo run -q -p caco -- help tui isolated-graphics-testbed`; `cargo run -q -p caco -- help tui dashboard-benchmark`; `docs/validate-pages.sh`
-- Behavioural delta: no existing command is removed; clearer aliases and help text steer agents toward the real dashboard when that is the audit target and toward the isolated harness only for border/effect experiments.
+- Commits: `a5aa5538e`
+- Files touched: `crates/caco-daemon/src/transient_handoff.rs`, `crates/caco-daemon/src/lib.rs`, `SPEC.md`
+- Tests: `cargo test -p caco-daemon transient_handoff --lib`; `cargo fmt --all -- --check`; `git diff --check`; `cargo check -p caco-daemon --tests`
+- Behavioural delta: this adds an internal/provider-neutral daemon primitive and tests; it does not yet submit cloud jobs or expose operator CLI surfaces. Follow-up provider and artifact-import beads can build on the same signed handoff invariants.
 
 ## Operator-takeaway
 
-The old commands still work, but future agents should see unambiguous help: use `caco tui` for the live dashboard, `caco tui dashboard-benchmark` for the real-dashboard benchmark, and `caco tui isolated-graphics-testbed` only for chrome-only graphics experiments.
+The risky part of transient relay workers now has a tested kernel: only the expected relay-mode dynamic node can claim a valid single-use launch spec, and completion reporting must echo the same job/node/nonce identity.
