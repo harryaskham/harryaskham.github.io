@@ -1,0 +1,176 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Cacophony" [level=1] [ref=e7]:
+          - generic [ref=e8]: ♪
+          - generic [ref=e9]: Cacophony
+        - generic [ref=e10]: —
+      - list [ref=e11]:
+        - button "Status 1" [ref=e12] [cursor=pointer]:
+          - img [ref=e14]
+          - generic [ref=e18]: Status
+          - generic [ref=e19]: "1"
+        - button "Agents Running agents count 2 Toggle agents submenu" [ref=e20] [cursor=pointer]:
+          - img [ref=e22]
+          - generic [ref=e25]: Agents
+          - generic "Running agents count" [ref=e26]: "0"
+          - generic [ref=e27]: "2"
+          - button "Toggle agents submenu" [ref=e28]: ▸
+        - button:
+          - generic: Active
+          - generic: "0"
+        - button:
+          - generic: Failed
+          - generic: "0"
+        - button:
+          - generic: Completed
+          - generic: "0"
+        - button:
+          - generic: All
+          - generic: "0"
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+        - button "Beads Open beads count 3" [ref=e29] [cursor=pointer]:
+          - img [ref=e31]
+          - generic [ref=e34]: Beads
+          - generic "Open beads count" [ref=e35]: "0"
+          - generic [ref=e36]: "3"
+        - button "Feed 4" [ref=e37] [cursor=pointer]:
+          - img [ref=e39]
+          - generic [ref=e43]: Feed
+          - generic [ref=e44]: "4"
+        - button "Chat 5" [ref=e45] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e49]: Chat
+          - generic [ref=e50]: "5"
+        - button "Nodes 6" [ref=e51] [cursor=pointer]:
+          - img [ref=e53]
+          - generic [ref=e58]: Nodes
+          - generic [ref=e59]: "6"
+        - button "Services 7" [ref=e60] [cursor=pointer]:
+          - img [ref=e62]
+          - generic [ref=e65]: Services
+          - generic [ref=e66]: "7"
+        - button "Projects p" [ref=e67] [cursor=pointer]:
+          - img [ref=e69]
+          - generic [ref=e72]: Projects
+          - generic [ref=e73]: p
+        - button "Choices c" [ref=e74] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e79]: Choices
+          - generic [ref=e80]: c
+        - button "Notifications 8" [ref=e81] [cursor=pointer]:
+          - img [ref=e83]
+          - generic [ref=e86]: Notifications
+          - generic [ref=e87]: "8"
+        - button "Actions 9" [ref=e88] [cursor=pointer]:
+          - img [ref=e90]
+          - generic [ref=e92]: Actions
+          - generic [ref=e93]: "9"
+        - button "Logs 0" [ref=e94] [cursor=pointer]:
+          - img [ref=e96]
+          - generic [ref=e98]: Logs
+          - generic [ref=e99]: "0"
+        - button "Timeline t" [ref=e100] [cursor=pointer]:
+          - img [ref=e102]
+          - generic [ref=e106]: Timeline
+          - generic [ref=e107]: t
+        - button "Summaries s" [ref=e108] [cursor=pointer]:
+          - img [ref=e110]
+          - generic [ref=e113]: Summaries
+          - generic [ref=e114]: s
+        - button "Merge Queue m" [ref=e115] [cursor=pointer]:
+          - img [ref=e117]
+          - generic [ref=e120]: Merge Queue
+          - generic [ref=e121]: m
+        - button "Workspace w" [ref=e122] [cursor=pointer]:
+          - img [ref=e124]
+          - generic [ref=e128]: Workspace
+          - generic [ref=e129]: w
+      - generic [ref=e130]:
+        - status "Click to reconnect" [ref=e131] [cursor=pointer]:
+          - generic [ref=e133]: Connected
+        - button "⌘ K Commands" [ref=e135] [cursor=pointer]:
+          - generic [ref=e136]: ⌘
+          - generic [ref=e137]: K
+          - generic [ref=e138]: Commands
+    - main [ref=e139]:
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - heading "Cluster Status" [level=2] [ref=e142]
+          - generic [ref=e143]:
+            - status [ref=e144]
+            - button "Refresh data" [disabled]:
+              - img
+              - generic: Refreshing…
+        - generic [ref=e145]:
+          - button "Expand cluster graph fullscreen" [ref=e146]:
+            - img [ref=e147]
+          - generic [ref=e149]:
+            - generic [ref=e150]: Live orchestration
+            - heading "Cluster pulse at a glance" [level=3] [ref=e151]
+            - paragraph [ref=e152]: 0 active agents · 0 open beads · 0 services · 0 recent events
+          - list "Dashboard quick facts" [ref=e153]:
+            - listitem [ref=e154]: Live SSE connected
+            - listitem [ref=e155]: Snapshot pending
+            - listitem [ref=e156]: ⌘K command palette
+            - listitem [ref=e157]: / focus search · 1–0 switch views
+        - list "Cluster statistics" [ref=e158]:
+          - listitem [ref=e159] [cursor=pointer]:
+            - img [ref=e161]
+            - generic [ref=e164]:
+              - generic [ref=e165]: —
+              - generic [ref=e166]: Nodes
+          - listitem [ref=e167] [cursor=pointer]:
+            - img [ref=e169]
+            - generic [ref=e172]:
+              - generic [ref=e173]: —
+              - generic [ref=e174]: Running Agents
+          - listitem [ref=e175] [cursor=pointer]:
+            - img [ref=e177]
+            - generic [ref=e181]:
+              - generic [ref=e182]: —
+              - generic [ref=e183]: Total Agents
+          - listitem [ref=e184] [cursor=pointer]:
+            - img [ref=e186]
+            - generic [ref=e190]:
+              - generic [ref=e191]: —
+              - generic [ref=e192]: Open Beads
+          - listitem [ref=e193] [cursor=pointer]:
+            - img [ref=e195]
+            - generic [ref=e197]:
+              - generic [ref=e198]: —
+              - generic [ref=e199]: Total Beads
+          - listitem [ref=e200] [cursor=pointer]:
+            - img [ref=e202]
+            - generic [ref=e205]:
+              - generic [ref=e206]: —
+              - generic [ref=e207]: Services
+          - listitem [ref=e208] [cursor=pointer]:
+            - img [ref=e210]
+            - generic [ref=e213]:
+              - generic [ref=e214]: —
+              - generic [ref=e215]: Completions
+          - listitem [ref=e216] [cursor=pointer]:
+            - img [ref=e218]
+            - generic [ref=e222]:
+              - generic [ref=e223]: —
+              - generic [ref=e224]: Feed Events
+              - img [ref=e225]
+        - generic [ref=e226]:
+          - generic [ref=e227]:
+            - heading "Recent Activity" [level=3] [ref=e228]
+            - generic [ref=e232]: Loading events…
+          - generic [ref=e233]:
+            - heading "Active Agents" [level=3] [ref=e234]
+            - generic [ref=e238]: Loading agents…
+        - generic [ref=e239]:
+          - heading "Persistent Agents" [level=3] [ref=e241]
+          - heading "Bead Stats" [level=3] [ref=e246]
+  - status
+  - button "Scroll to top":
+    - img

@@ -1,81 +1,78 @@
-# Session summary — bd-09f314 cycle 4: migrate keyboard overlays onto WorkspaceOverlay
+# Session summary — webapp audit slice 2: stop forwarding worker token
 
 ## Goal
 
-Dogfood the cycle 3 `WorkspaceOverlay` helper inside the workspace-view
-namespace itself, by migrating the two in-tree overlays
-(`workspace-keyboard.js` command palette + help overlay) to register
-through it. Each had a subset of the four canonical teardown paths;
-both now inherit the full contract for free.
+Fix the highest-impact dashboard regression surfaced by slice 1 of the
+webapp audit: when `caco web` is launched from a managed-worker shell
+(every `caco-dev-*` agent), it forwarded the worker-scoped
+`CACO_AGENT_TOKEN` to the daemon's UI endpoints and every dashboard
+tile rendered "—" / "Snapshot pending" with a silent reconnect loop.
 
 ## Bead(s)
 
-- `bd-09f314` — `[PERMANENT] [workspace-view]` Ongoing polish + a11y
-  (parent `bd-027e9d`; cycle 4 of N).
+- `bd-b6ab99` — caco web forwards worker-scope token, every dashboard
+  call returns 403 (P2, claimed by msm-4)
+- (parent: `bd-c1c272` — TUI/web audit umbrella)
 
 ## Before state
 
-- `workspace-keyboard.js` openPalette/openHelpOverlay each implemented
-  their own ad-hoc Escape + backdrop click handling.
-- Both were missing hashchange/popstate teardown (the bd-41a92d
-  freeze-on-navigation footgun); neither had a focus trap; neither
-  restored focus to the previously-focused element on close.
-- `WorkspaceOverlay.register()` only recognised the canonical
-  `.wsv-overlay__backdrop` selector — non-canonical markup could not
-  opt into the helper without renaming CSS classes.
+- `dispatch_web` in `crates/caco-cli/src/lib.rs` calls `read_bearer_token`,
+  which prefers `CACO_AGENT_TOKEN` (worker scope) over the on-disk node
+  token by design (SPEC 7.2.1 — correct for MCP/CLI, wrong for the
+  operator-facing dashboard).
+- Dashboard cards: `Snapshot pending`, "Reconnecting (n)" cycling, all
+  fleet stats `—`. Console: hundreds of `HTTP 403` errors against
+  `/api/v1/ui/snapshot` and `/api/v1/ui/stream` (see slice 1
+  `summary/0008/`).
 
 ## After state
 
-- `WorkspaceOverlay.register()` accepts a per-instance
-  `backdropSelector` option (default still
-  `.wsv-overlay__backdrop`). Both `open()` and `close()` consult
-  `this._backdropSelector` so the listener cleanup matches the
-  attachment.
-- Command palette registers with
-  `backdropSelector: '.wsv-palette__backdrop'` and an explicit
-  `initialFocus` pointing at its search input.
-- Help overlay registers with `backdropSelector:
-  '.wsv-help__backdrop'`. Its local close-button click handler now
-  explicitly skips backdrop clicks (which the helper handles),
-  avoiding double-fire.
-- Bespoke Escape handlers and ad-hoc backdrop click handlers
-  removed from both overlays. The fallback display-toggle path is
-  preserved (degraded but functional) for the case where the
-  helper is unavailable.
-- 2 new tests:
-  * `workspace_keyboard_overlays_use_workspace_overlay_helper_bd09f314`
-    pins the migration shape and absence of the bespoke help-Escape
-    handler.
-  * `workspace_overlay_supports_custom_backdrop_selector_bd09f314`
-    pins that BOTH `open()` and `close()` reference
-    `this._backdropSelector` (so the listener gets cleaned up
-    against the same selector it was attached against).
-- 142/142 caco-web lib tests green; no clippy regressions in new code.
+- New helper `read_node_bearer_token_for_web` reads only the
+  unrestricted node token from the on-disk runtime directory.
+- `dispatch_web` now prefers the node token, falling back to the
+  standard `read_bearer_token` resolution (env-first) only if the node
+  token is unavailable. The bearer carried into `WebConfig.token` is
+  therefore never the worker-scoped agent token, even when `caco web`
+  is launched from a managed-agent shell.
+- Live verification (single Playwright session, per operator
+  preference):
+  - `curl /api/v1/ui/snapshot` returns **HTTP 200** with 1.4 MB of
+    real snapshot JSON (was 403 before).
+  - Dashboard reload via `playwright-cli reload`: console reports
+    **0 errors, 0 warnings, 0 occurrences of "403"**.
+  - A11y snapshot shows populated cards (Beads/Agents/Services counts
+    from live daemon state) instead of `—` placeholders.
 
 ## Diff summary
 
-- Commit `970bdbfa`: bd-09f314 cycle 4: migrate command-palette + help
-  overlays onto WorkspaceOverlay.
-- Files touched:
-  - `crates/caco-web/static/workspace-overlay.js` (+5 — `backdropSelector`
-    option threaded through `register()` / `open()` / `close()`).
-  - `crates/caco-web/static/workspace-keyboard.js` (~+50/-15 — palette
-    + help open/close paths route through the helper).
-  - `crates/caco-web/src/tests.rs` (+60 — 2 new tests).
-- Behavioural delta: both overlays now get hashchange/popstate
-  teardown + focus-trap + focus-restore for free; close-on-Escape
-  still works (now via the helper); body.overflow is locked while
-  open. Backwards compatible with WorkspaceOverlay being absent.
+- `crates/caco-cli/src/lib.rs` (+22 / -1):
+  - new `read_node_bearer_token_for_web(...)` helper (node-token
+    only, returns `Option<String>` so callers fall back gracefully).
+  - `dispatch_web` switches to the new helper with a `bd-b6ab99`
+    explanatory comment; `read_bearer_token` is unchanged so MCP / CLI
+    paths still enforce worker scope per SPEC 7.2.1.
+- No test changes in this slice — the unit-test surface for token
+  resolution requires a fixture-mounted runtime dir which slice 3
+  will set up (planned, scoped to the same bead).
+
+## Embedded artefacts
+
+- `summary/0009/screenshots/web-index-fixed.png` — dashboard rendered
+  with real data after the fix; no spinners stuck on "Reconnecting",
+  fleet tiles populated.
+- `summary/0009/web-index-fixed-snapshot.yml` — Playwright a11y
+  snapshot of the same render, showing live counts in nav badges.
 
 ## Operator-takeaway
 
-Cycle 4 closes the loop on the bd-41a92d→bd-3fe180→cycle 3 arc
-inside the workspace-view scope: cycle 3 built the helper, cycle
-4 migrates the two overlays it could reach. The cross-app
-modal migration (command-palette-modal, quick-bead-modal,
-bead-detail-modal, create-bead-modal, agent-detail-modal in
-app.js) is still tracked separately as bd-c32bf0 — that one
-requires either renaming `.modal-overlay` → `.wsv-overlay`
-markup or extending the helper with a more flexible attachment
-pattern, which is a bigger surface than a single permanent
-cycle should swallow.
+The 403 cascade is gone end-to-end. Slice 1 fixed the visible
+keyboard shortcut; slice 2 (this one) fixes the actual data plumbing
+underneath. Worker-scope tokens are still strictly enforced for every
+other CLI/MCP path. Follow-ups (will be filed as their own beads):
+- Front-end: surface 403 from `/api/v1/ui/*` as an explicit
+  "insufficient scope" banner instead of generic "Reconnecting (n)" so
+  if the same regression ever sneaks back the operator sees it
+  immediately.
+- Token-resolution unit test with on-disk fixture (planned slice 3 of
+  this bead, deferred so this slice can land while the daemon and PR
+  pipeline are stable).
