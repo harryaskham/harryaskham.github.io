@@ -1,32 +1,32 @@
-# Session summary — Fail closed on caco update typos
+# Session summary — Codespaces container hosting
 
 ## Goal
 
-This session fixed a state-mutating CLI safety regression where `caco update bogus` or a typo like `caco update statuus` silently fell through to the default update path instead of reporting an unknown subcommand.
+This session added a repo-owned Docker container hosting path for GitHub Codespaces while preserving the operator constraint that Cacophony images are built remotely in Azure, not locally inside Codespaces.
 
 ## Bead(s)
 
-- `bd-079021` — caco update bogus silently swallows unknown subcommand and runs default update
+- `bd-dce8ed` — Set up Docker container hosting in Codespaces
 
 ## Before state
 
 - Failing tests: none known for this scope.
-- Relevant metrics: the bead repro showed `caco update bogus` exited 0 after performing the normal update check.
-- Context: sister command families already emitted canonical `unknown subcommand ... Allowed: ...` errors, but `update` had a default action and did not reject extra positional subcommands first.
+- Relevant metrics: no `deploy/codespaces/` runtime path existed; Codespaces documentation covered native devcontainer enrollment but not running the canonical Cacophony OCI image inside a Codespace.
+- Context: `.devcontainer/devcontainer.json` installed Rust and sshd but did not explicitly enable a Docker runtime for nested container hosting.
 
 ## After state
 
 - Failing tests: none in scoped validation.
-- Relevant metrics: targeted regression `update_unknown_subcommand_errors_with_allowed_list` passed; existing `update_status_subcommand_advertises_stable_only_flag` passed; `cargo check -p caco-cli --lib` passed; `cargo test-small` passed with 256 tests before replay.
-- Context: the `update` dispatcher now checks for unexpected positionals before entering the network/self-update flow.
+- Relevant metrics: `just codespaces-container-validate` passed with 25 checks, 0 warnings, 0 failures; `cargo test-small` passed with 256 tests before replay.
+- Context: Codespaces now has Docker-in-Docker devcontainer support plus a compose runtime path that consumes a prebuilt `CACO_CODESPACE_IMAGE`, mounts config/state/secrets externally, and refuses local image builds.
 
 ## Diff summary
 
-- Commits: `2fb3556b4`
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added a regression asserting `caco update statuus` returns `unknown subcommand 'statuus' for 'caco update'. Allowed: status`.
-- Behavioural delta: typoed `caco update` subcommands fail closed instead of starting the updater.
+- Commits: `0caa58f35`
+- Files touched: `.devcontainer/devcontainer.json`, `deploy/codespaces/*`, `README.md`, `AGENTS.md`, `SPEC.md`, `docs/codespaces.md`, `justfile`
+- Tests: added `deploy/codespaces/validate.sh` and `just codespaces-container-validate` for static contract validation.
+- Behavioural delta: a Codespace can now host the canonical Cacophony container image produced by Azure remote build, with mounted config and file-projected secrets, without running `docker build` locally.
 
 ## Operator-takeaway
 
-A typo on the sensitive update command can no longer trigger network/self-update behavior. The command now matches the canonical fail-closed UX used by sister subtrees.
+Codespaces container hosting is now a first-party repo-owned path: Docker is available in the devcontainer, but the Cacophony service uses only remote-built images and canonical external config/secret mounts.
