@@ -1,44 +1,37 @@
-# Session summary 0023 — bd-fcc343: doctor agent_cargo_targets thresholds
+# Session summary — TUI summaries filter guidance
 
 ## Goal
 
-Make worker-checkout cargo target/ disk pressure visible in
-`caco doctor` before the host-disk threshold trips, addressing the
-bd-fcc343 incident where total cargo bytes hit ~50–90 GiB.
+Continue polishing the TUI summaries viewer after list filtering landed by making active-filter counts and no-match states clear enough that operators know what happened and how to recover.
 
 ## Bead(s)
 
-- `bd-fcc343` slice 1 — observability threshold.
+- `bd-583969` — TUI summaries: show active filter match count and empty filter guidance
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `disk_breakdown` already split cargo target/ dirs into
-  `agent_cargo_targets` per-category (bd-f9419a), but doctor
-  emitted all categories as `ok` regardless of magnitude.
-- Operators saw cargo bytes only inside the global host-disk
-  warning, by which time burndown had nearly tripped cluster-ctrl.
+- The TUI summaries view supported `/` filtering over title, agent, project, and bead IDs.
+- The active filter appeared in the title, but an empty filter result collapsed to a generic no-selection state.
+- Operators could not immediately tell whether there were no summaries at all or no summaries matching the current filter.
 
 ## After state
 
-- `agent_cargo_targets ≥ 30 GiB` → check status `warning` + hint:
-  "approaching cluster-ctrl disk-warning threshold; run
-  `caco prune --target` for stopped agents."
-- `agent_cargo_targets ≥ 60 GiB` → check status `error` + hint
-  citing bd-fcc343 for the shared-target-dir design options.
-- Other categories unchanged (delta-since-sample provides rate).
+- Active filters now reuse trimmed query text consistently in the outer title and list title.
+- Filtered list titles explicitly say when the view is filtered and show selected/matched counts.
+- Empty filtered results now render a dedicated guidance state in both list/detail space: the query, number of loaded summaries searched, match fields, and how to clear/refine/refresh.
+- The generic no-summary state remains unchanged for truly empty datasets.
 
 ## Diff summary
 
-- Commit: `4d8798b0`.
-- Files (1): `crates/caco-cli/src/lib.rs`.
-- `cargo build -p caco-cli` + clippy: clean.
+- Commits: current `bd-583969` implementation commit
+- Files touched:
+  - `crates/caco-tui/src/views/summaries.rs`
+- Tests:
+  - `cargo test -p caco-tui summaries --lib` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: no API change; TUI filter UX now distinguishes no records from no filter matches and gives explicit recovery guidance.
 
 ## Operator-takeaway
 
-Run `caco doctor` after a burndown — if it flags
-`storage / disk: agent_cargo_targets` as warning/error, run
-`caco prune --target` or `cargo clean` in idle worker checkouts.
-The structural fix (shared CARGO_TARGET_DIR / sccache / btrfs
-reflink clones) is bd-fcc343 follow-up territory and needs
-operator design — the warning at least makes the threshold
-crossable without waiting for the global host-disk alarm.
+The TUI summaries filter now feels less like a hidden debug shortcut: when a search returns nothing, the terminal explains what was searched and how to clear or adjust it.
