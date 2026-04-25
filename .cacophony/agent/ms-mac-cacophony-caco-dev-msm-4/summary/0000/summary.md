@@ -1,33 +1,32 @@
-# Session summary — bd-787804 macOS audio notification explainability
+# Session summary — bd-6f7685 TUI summaries detail retry guidance
 
 ## Goal
 
-Improve the native macOS Audio & Notifications pane so operators can understand why notifications need attention, why speech may or may not play, and what empty capability lists mean.
+Improve the TUI session summaries view so a selected summary whose detail fails to load shows the actual failure and a clear retry path instead of falling back to generic selection copy.
 
 ## Bead(s)
 
-- `bd-787804` — [macOS excellence] Audio notification pane explainability polish
+- `bd-6f7685` — TUI summaries: show retry guidance on failed detail loads
 
 ## Before state
 
-- The pane exposed Notifications, Speech, and Capabilities, but offered little inline guidance about how to interpret each tab.
-- Empty notification, speech-log, or capability lists could look like blank data rather than a recoverable state.
-- The speech-ready/muted indicator did not explain what the state implied for playback.
+- The summaries list could load successfully while the selected detail request failed.
+- In that state, the detail pane did not surface the per-detail error path clearly; operators could see generic body-loading guidance rather than the actionable failure.
+- Acceptance requested `cargo test -p caco-tui summaries --lib` and `cargo test-small`.
 
 ## After state
 
-- Added a per-tab guidance card for notification triage, speech playback explanation, and capability discovery.
-- Added help text to the speech indicator so muted vs ready state explains queue and playback implications.
-- Added tailored empty-state copy for notification filters, speech log, muted speech, and empty capability lists.
-- Preserved existing ack, filter, refresh, and list behavior.
+- The detail pane now checks `summary_detail_error` when the selected detail is not loading and no matching detail body is present.
+- Failed detail loads render a red failure heading, the daemon error text, `r` refresh/retry guidance, and a follow-up filing hint if the failure persists.
+- Added a regression test rendering the summaries view with a detail-load error and asserting the error plus retry guidance appear.
 
 ## Diff summary
 
-- Commit: `bc366f840` after replay onto the remote agent branch.
-- Files touched: `companion/macos/Sources/Cacophony/Views/AudioNotificationsPane.swift`.
-- Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
-- Behavioural delta: no API behavior changed; audio/notification status surfaces now explain the operator next step instead of presenting blank panes.
+- Commit: `bda54d47f` after replay onto the remote agent branch.
+- Files touched: `crates/caco-tui/src/views/summaries.rs`.
+- Tests: `cargo test -p caco-tui summaries --lib`; `cargo test-small`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: the TUI summaries detail pane now makes per-summary load failures explicit and recoverable.
 
 ## Operator-takeaway
 
-The macOS audio pane now answers “why didn’t I hear that?” more directly: muted state, queue state, missing speech logs, and empty capability discovery each have visible guidance.
+A summaries list/detail partial failure is no longer ambiguous: the TUI now tells the operator the selected detail failed, shows the underlying error, and points them to refresh/retry before filing follow-up.
