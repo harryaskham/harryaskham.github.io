@@ -1,27 +1,30 @@
-# Session summary — bd-5bfb2c (slice 7)
+# Session summary — bd-5bfb2c (slice 8)
 
 ## Goal
-Real source browser inside workspace — file tree + syntax-highlighted viewer.
+Discoverability + power-user features: project context filter, custom layouts, keyboard help.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Source pane was placeholder text
+- No project filter (panes showed all projects)
+- No way to save custom layouts
+- Shortcuts undiscoverable (no help)
 
 ## After state
-- Two-column source pane: tree | viewer
-- Agent picker + path breadcrumb
-- Navigates /files/tree, reads /files/read
-- Prism lazy-loaded with autoloader, 12+ languages
-- 200KB truncation banner for huge files
-- 223/223 tests green (3 new)
+- ws-project-filter dropdown in toolbar scopes all panes globally
+- Save Layout button → prompts for name → persists to localStorage
+- Layout preset dropdown surfaces saved custom layouts under separator
+- Press ? or click ?-button: full keyboard help overlay (kbd-styled,
+  blur backdrop, lists all shortcuts + 19 pane types + 6 presets +
+  selection-broadcast pattern)
+- 226/226 tests green (3 new)
 
 ## Diff summary
-- workspace-panes.js: +200 lines for source pane + Prism
-- workspace-integrated.js: source pane wires renderPaneSource
-- style.css: +90 lines for tree/viewer
+- workspace-integrated.js: project filter wiring, custom layout save/load, showKeyboardHelp()
+- index.html: project filter select, save-layout + help buttons
+- style.css: +70 lines for help overlay
 - tests.rs: 3 new tests
 
 ## Operator-takeaway
-The Source pane now browses any running agent's checkout with syntax highlighting. Adds bd-b61382 capability that was previously stuck on the agent branch.
+Discoverable now: press `?` for full help. Save your favorite pane setups by name. Filter every pane to one project at once.
