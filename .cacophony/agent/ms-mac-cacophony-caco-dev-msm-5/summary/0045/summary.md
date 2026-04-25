@@ -1,46 +1,36 @@
-# Session summary 0045 — bd-b7e47e: bead_attachments schema (slice 1)
+# Session summary — TUI summaries detail scroll position
 
 ## Goal
 
-Structured storage for bead-attached artefacts (screenshots,
-screen recordings, files, links) so bd-d7fb98's text-only
-attachment markdown can graduate to a real table with retention.
+Continue TUI summaries long-detail usability polish by making detail-pane scroll state visible when a recorded summary is longer than the viewport.
 
 ## Bead(s)
 
-- `bd-b7e47e` slice 1 — schema + CRUD only.
+- `bd-e51e62` — TUI summaries: show detail scroll position
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- bd-d7fb98 slice 1 records attachment paths inside the bead
-  description as a markdown bullet list. No mime/size/captured_by
-  metadata, no janitor-friendly retention.
+- TUI summaries supported independent detail scrolling with `Ctrl-U` and `Ctrl-D`.
+- A scrollbar appeared for overflowing detail content, but the text help always used a generic tip.
+- Keyboard users could scroll long details but did not get an explicit numeric sense of progress through the detail body.
 
 ## After state
 
-- New `bead_attachments` SQL table:
-  `id, issue_id, kind, path, url, mime_type, size_bytes,
-   captured_by, captured_at, description`.
-- Indexes on `issue_id` and `captured_at`.
-- Idempotent `migrate_add_bead_attachments` for legacy DBs.
-- `caco_beads::model::BeadAttachment` struct with serde defaults.
-- `BeadsStore::insert_bead_attachment`,
-  `list_bead_attachments(issue_id)` newest-first,
-  `prune_bead_attachments_older_than(cutoff) -> count` retention
-  helper (janitor wiring is slice 2).
+- Overflowing detail panes now show a footer hint like `Detail scroll X/Y`.
+- The same footer advertises `Ctrl-U/D scroll detail` and clarifies that `j/k` still moves the list.
+- Non-overflowing detail panes keep a shorter generic tip.
 
 ## Diff summary
 
-- Commit: `9d8e81d1`.
-- Files (2): caco-beads model.rs + store.rs (+170 lines).
-- 212 caco-beads tests pass; downstream caco-cli/caco-daemon
-  build; clippy clean.
+- Commits: current `bd-e51e62` implementation commit
+- Files touched:
+  - `crates/caco-tui/src/views/summaries.rs`
+- Tests:
+  - `cargo test -p caco-tui summaries --lib` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: long TUI summary details now communicate scroll position and available detail-scroll controls directly in the pane.
 
 ## Operator-takeaway
 
-Slice 1 lands the persistence floor. Slice 2 (filed under
-bd-b7e47e too): `caco surface capture` command, `test-user`
-profile `capture_artifacts: true` frontmatter, `bd create`
-auto-capture when frontmatter set, inline rendering in
-bd info / web / TUI, and janitor schedule that calls
-`prune_bead_attachments_older_than`.
+The TUI summaries detail pane now gives keyboard users a clearer sense of where they are inside long recorded summaries, making the detail-scroll controls feel intentional rather than hidden.
