@@ -1,32 +1,33 @@
-# Session summary — bd-a04b65 auto-claim queue hygiene
+# Session summary — bd-bea0d0 macOS feedback banner polish
 
 ## Goal
 
-Fix the board bug discovered during burn-down where bead-id-less `caco bd claim` could assign permanent reference/umbrella beads to workers, leaving them with non-implementation work in the dispatch path.
+Improve the native macOS global feedback banner so command successes and errors are calmer, easier to interpret, and easier to act on without leaving the current pane.
 
 ## Bead(s)
 
-- `bd-a04b65` — caco bd claim must not assign permanent beads
+- `bd-bea0d0` — [macOS excellence] Native feedback banner affordance polish
 
 ## Before state
 
-- Running `caco bd claim` with no bead id assigned `bd-5bfb2c`, even though it was `status: permanent` and meant to be a tracking umbrella.
-- `claim_next_ready` skipped epics but allowed permanent beads returned by `list_ready` to flow into the auto-claim path.
-- Explicit permanent bead claim/unclaim behavior existed and needed to remain intact.
+- Feedback appeared as a simple top banner with generic “Done” and “Needs attention” titles.
+- Operators could dismiss the banner, but there was no direct copy affordance for handoffs or debugging.
+- Success/error styling relied mostly on icon color and border, with little guidance about next action.
 
 ## After state
 
-- `BeadsStore::claim_next_ready` now skips `BeadStatus::Permanent` candidates before attempting claim.
-- Explicit permanent claim/unclaim semantics are unchanged.
-- Regression coverage verifies a P0 permanent bead is skipped in favor of a lower-priority open implementation bead and remains unassigned.
+- Success banners now say “Command completed”; error banners say “Command needs attention”.
+- Added dedicated copy buttons with distinct accessibility labels for confirmations and errors.
+- Added short guidance text telling operators when to copy details and when to dismiss.
+- Banner styling now uses stronger success/error tinted backgrounds, borders, shadows, text selection, and calmer wording.
 
 ## Diff summary
 
-- Commits: `6257de276` after replay onto the remote agent branch.
-- Files touched: `crates/caco-beads/src/store.rs`.
-- Tests: `cargo test -p caco-beads claim_next_ready_skips_permanent_beads --lib`; `cargo test -p caco-beads claim_permanent_bead_stays_permanent --lib`; `cargo fmt --all -- --check`; `git diff --check`.
-- Behavioural delta: auto-claim drains only implementable open work and no longer strands permanent tracking beads on workers.
+- Commit: `b3b30116e` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`.
+- Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
+- Behavioural delta: command feedback is now more actionable and self-explanatory, with one-click copy and explicit dismiss affordances.
 
 ## Operator-takeaway
 
-Permanent beads can still exist as visible reference/umbrella records, but they will not be handed to workers by the no-id burn-down claim path.
+The macOS app’s global command feedback should now feel less like a transient toast and more like a small actionable receipt: copy if needed, dismiss when acknowledged.
