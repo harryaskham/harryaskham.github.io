@@ -1,33 +1,32 @@
-# Session summary — bd-54e9ef Codespaces mesh peer rekey
+# Session summary — bd-ff7ff2 permanent auto-claim rollback
 
 ## Goal
-Add the first-party rekey primitive that higher-level Codespaces identity-rotation workflows can depend on, building on the dynamic mesh peer removal path just added for revocation.
+
+Prevent a no-bead-id `caco bd claim` from leaving a worker falsely assigned to a permanent tracker if any stale or routed beads daemon still returns one despite the store-level skip added in `bd-a04b65`.
 
 ## Bead(s)
 
-- `bd-54e9ef` — Implement first-party mesh peer rekey primitive for Codespaces
+- `bd-ff7ff2` — caco bd claim still assigns permanent beads after bd-a04b65
 
 ## Before state
 
-- `caco codespace rekey` was documented as a future command but not registered or dispatchable.
-- The daemon had a dynamic peer revocation path, but no `/api/v1/mesh/peers/<node>/rekey` endpoint.
-- Operators had no in-repo primitive to clear stale Codespaces mesh state and guide re-enrollment with a fresh identity.
+- `BeadsStore::claim_next_ready` on current `origin/main` already skipped `BeadStatus::Permanent` and had a regression test.
+- In the live cluster, beadless `caco bd claim` still returned permanent tracker `bd-5bfb2c`, assigning it to this worker.
+- The worker had to manually unclaim the permanent umbrella to avoid false implementation ownership.
 
 ## After state
 
-- Added `POST /api/v1/mesh/peers/{node}/rekey` on both daemon routers.
-- Refactored dynamic peer removal so revoke and rekey share registry removal, replication peer cleanup, reachability cleanup, sync-freshness cleanup, and `NodeLeft` feed convergence.
-- Rekey responses include an explicit next step: run `caco codespace enroll --reinit --reissue-token --rendezvous <rendezvous-url>` inside the codespace.
-- Added `caco codespace rekey` CLI metadata and dispatch, sharing node/name resolution with revoke and calling the daemon rekey endpoint.
-- Updated Codespaces docs/design text to describe the implemented rekey semantics.
+- The caco-cli no-id claim path now defensively inspects a successful daemon response.
+- If the daemon returns a `status: permanent` bead for a no-id claim, the CLI immediately calls the unclaim endpoint to roll back that accidental assignment and returns a `no_ready_beads` style error explaining that permanent trackers require explicit `--bead-id` claiming.
+- Explicit permanent claims remain supported; the guard only fires when `bd claim` omitted a bead id.
 
 ## Diff summary
 
-- Commits: `dc5d42263`.
-- Files touched: `crates/caco-daemon/src/lib.rs`, `crates/caco-cli/src/lib.rs`, `docs/codespaces.md`, `docs/epics/bd-f32dda-codespaces-key-distribution.md`.
-- Tests: added daemon rekey endpoint coverage and expanded CLI mesh-mutation envelope coverage to include rekey.
-- Validation: `cargo test -p caco-daemon mesh_peer_rekey_removes_dynamic_node_and_returns_next_step_bd_54e9ef --lib`; `cargo test -p caco-cli codespace_mesh_mutation --lib`; caco-daemon clippy; caco-cli clippy; `cargo check --workspace --tests`.
+- Commits: pending reintegration commit for `bd-ff7ff2`.
+- Files touched: `crates/caco-cli/src/lib.rs`.
+- Tests: `cargo test -p caco-cli --lib auto_claimed_permanent_bead_message_treats_as_no_ready_work`; `cargo check -p caco-cli --tests`; `cargo test -p caco-beads claim_next_ready_skips_permanent_beads --lib`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: stale server-side permanent auto-claim responses no longer strand permanent trackers on workers.
 
 ## Operator-takeaway
 
-Codespaces now have both sides of the mesh identity cleanup primitive: revoke removes a peer outright, while rekey removes stale mesh state and gives the operator a concrete re-enroll command path for installing a fresh Codespaces identity.
+Even if an old or routed beads daemon regresses the server-side permanent skip, the CLI now fails safe: it rolls the accidental permanent assignment back and tells the worker there is no implementation work to claim.
