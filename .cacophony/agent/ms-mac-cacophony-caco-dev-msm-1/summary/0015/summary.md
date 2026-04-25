@@ -1,31 +1,33 @@
-# Session 0015 — bd-5993ed: Vague-bead audit + cleanup
+# Session summary — macOS live stream updates
 
 ## Goal
-Audit existing beads, categorise problematic ones, and take action
-(clarify / restructure / dedupe / unblock).
 
-## Approach
-- Pulled all 163 open/in_progress/blocked beads via parallel
-  `caco bd show --json`
-- Ran 4 heuristics: `<UNKNOWN>` deps, non-bd-id string deps,
-  run-on titles + empty descs, duplicate titles
-- For string-literal deps, fuzzy-matched against real bead titles
-  to find the intended target
+Make the macOS app feel live rather than purely poll-driven by connecting to the daemon UI SSE stream, surfacing stream state in the chrome, and retaining a slower polling fallback.
 
-## Outcomes
-- 9 beads with bad deps fixed (13 bad refs resolved or dropped)
-- 1 duplicate pair collapsed (bd-d4d907 → bd-8299cc)
-- 1 run-on-title bead restructured (bd-a7168d) without reassigning
-- 2 beads unblocked end-to-end (bd-d21634, bd-96d69d)
-- 5 short-title beads verified clean (false positives)
-- Full report: `audit-report.md` in this session dir
+## Bead(s)
 
-## Constraints honored
-- No code changes; pure bead metadata via `caco bd update`
-- Only one claim at a time; bd-5993ed claimed before any updates
-- Did not reassign in-progress beads; only metadata cleanup
+- `bd-89047d` — `[macOS gap] Streaming updates instead of polling`
+- Parent context: `bd-d6f18a` — macOS native app feature parity umbrella
 
-## Next
-Standing by. Will pick from unclaimed P1 list (bd-c2cb8b AKS audit,
-bd-fc60ff git SIGBUS, bd-44acfb Azure-build, etc.) per overnight
-dispatch. macOS-native cluster on deck after current waves drain.
+## Before state
+
+- Failing tests: none observed for this slice.
+- Relevant metrics: `CacophonyKitSmoke` had 49 checks from the previous agent-actions slice.
+- Context: `DaemonState` refreshed all panes every 5 seconds, with no operator-visible indication of whether the app was connected to a live update path.
+
+## After state
+
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: `nix build .#cacophony-macos-app -L` passed; `CacophonyKitSmoke` remains 49 checks.
+- Context: the app starts an authenticated `/api/v1/ui/stream` SSE listener after connect, refreshes from stream events with throttling, shows live/reconnecting/degraded state in the sidebar and header, and falls back to slower polling if streaming degrades.
+
+## Diff summary
+
+- Commits: current branch commit for `bd-89047d`.
+- Files touched: `DaemonState.swift`, `GlassChrome.swift`, `RootView.swift`.
+- Tests: no smoke-count change; the existing Nix package smoke suite passed.
+- Behavioural delta: state updates are now driven by realtime SSE where available, with visible stream health and a non-spammy polling fallback.
+
+## Operator-takeaway
+
+The macOS app now has a clear live-update path and visible connection quality, making it feel more like a native operator console than a periodically refreshed dashboard.
