@@ -1,32 +1,32 @@
-# Session summary — macOS diagnostics guidance polish
+# Session summary — macOS audio notification explainability polish
 
 ## Goal
 
-Improve the Diagnostics pane so operators can understand logs and performance telemetry faster, especially when results are empty or filtered.
+Improve the Audio & Notifications pane so operators can understand notification filters, speech mute/readiness, queue state, and missing capability data without source-diving.
 
 ## Bead(s)
 
-- `bd-5d6538` — `[macOS excellence] Diagnostics empty-state guidance polish`
+- `bd-787804` — `[macOS excellence] Audio notification pane explainability polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: Diagnostics had useful copy/share/filter controls, but sparse or filtered results produced blank lists and the pane lacked top-level handoff guidance.
+- Context: The pane exposed notifications, speech logs, and capabilities but had sparse top-level guidance and basic empty states, especially around why speech may not have played.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: Diagnostics now includes usage microcopy plus tailored empty states for no loaded logs, no log matches, no perf events, and no perf matches.
+- Context: The pane now explains its purpose, provides richer empty states for notifications/speech/capabilities, and summarizes speech mute state, queue depth, voice, and output route.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-5d6538`.
-- Files touched: `DiagnosticsPane.swift`.
+- Commits: current branch commit for `bd-787804`.
+- Files touched: `AudioNotificationsPane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: diagnostics inspection is less ambiguous and easier to package into copy/share handoffs.
+- Behavioural delta: operators get clearer answers about alert visibility and audio delivery readiness directly in the native app.
 
 ## Operator-takeaway
 
-The diagnostics pane now explains what quiet or filtered telemetry means, reducing uncertainty during daemon-health investigations.
+Audio and notification state is now more self-explanatory, reducing uncertainty around whether messages were silent because of mute/configuration or simply because nothing spoke recently.
