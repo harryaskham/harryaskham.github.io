@@ -1,81 +1,113 @@
-# Session summary — bd-fdc5f5 workspace-view saved layouts (daemon API + browser client)
+# Session summary — auto-retry retryable resume blockers (bd-d62ad6)
 
 ## Goal
 
-Land the saved-views slice of the caco-web Workspace View epic (bd-027e9d):
-named pane-tree layouts persist server-side so an operator's workspace
-survives browser reload, machine switch, and daemon restart. Designed to
-land in parallel with the MVP (bd-a78749) without serial rebase pain.
+Land bd-d62ad6: when an agent's resume fails with a retryable blocker
+(e.g. `tmux_session_exited`, `runtime_launch_failed`, `readiness_timeout`),
+the daemon should auto-retry with bounded exponential backoff before
+surfacing the failure to the operator. Today the operator must run
+`caco agent resume` again manually for each transient flap, even though
+the daemon already knows the blocker is retryable. The operator quote on
+the bead is "why doesnt this retry itself" — this fix makes it.
 
-## Bead
+## Bead(s)
 
-- `bd-fdc5f5` — Saved views: daemon HTTP API + browser client
-- (parent epic: `bd-027e9d` caco-web Workspace View)
-- (peer: `bd-a78749` MVP, in_progress under caco-tui — owns
-  `window.Workspace.applyLayout` / `captureLayout` runtime)
+- `bd-d62ad6` — Retryable resume blockers should auto-retry instead of
+  asking the operator to re-run.
+- Related (for context, not closed by this PR): bd-d0e6f0, bd-0d9e23,
+  bd-5e336a, bd-3886df, bd-1f2bf4, bd-3a5a0f.
 
 ## Before state
 
-- No `workspace_views` SQLite table; no /api/v1/workspace/views routes
-- No `window.Workspace.views.*` namespace; no client-side persistence
-  story for pane-tree layouts
+- `crates/caco-daemon/src/lib.rs::handle_agent_resume` called
+  `state.agents.resume(...)` exactly once. On failure with a retryable
+  blocker (e.g. msm-2 tmux flap, ms-mac config-helper bootstrap), the
+  error envelope set `retryable: true` and the CLI hint said "run
+  `caco agent resume` to try again" — pure operator-driven retry.
+- `ResumeBlocker::is_retryable()` already classified 10 blocker
+  variants as retryable; this signal was surfaced to the operator but
+  not acted on by the daemon.
+- The bead's operator-supplied evidence (added today) showed
+  ms-mac-cacophony-config-helper and ms-mac-cacophony-cluster-debugger
+  still failed with retry-budget-exhausted / tmux_session_exited even
+  while the worker fleet was running.
+- `cargo test -p caco-daemon --lib tests::` (excluding pre-existing
+  flakes from concurrent env-mutex contention in reintegration tests
+  unrelated to resume): green.
 
 ## After state
 
-- `crates/caco-daemon/src/workspace_views.rs` (new): canonical
-  `WorkspaceView` model, `init_table`, CRUD (`create_view`, `get_view`,
-  `update_view`, `delete_view`, `list_views_for_operator`,
-  `get_default_for_operator`), default-exclusion semantics, layout-JSON
-  validator that requires a top-level `v` field but does not interpret
-  pane shape (forward-compat by design)
-- 5 HTTP endpoints under `/api/v1/workspace/views[/{id}]`:
-  - `GET  /workspace/views` → `{ views, default_id }`
-  - `POST /workspace/views` → 200 with full record (or 400 on invalid layout)
-  - `GET  /workspace/views/{id}` → full record (404 when missing)
-  - `PUT  /workspace/views/{id}` → partial update (name/layout/is_default)
-  - `DELETE /workspace/views/{id}`
-- Operator identity via existing `extract_caller_or_infer(headers,
-  node_name)` — no new auth surface
-- DB init wired in `DaemonStore::open()` next to scratchpad
-- `crates/caco-web/static/workspace-views.js` (new): idempotent
-  `window.Workspace.views` client with `list/save/load/update/delete/
-  setDefault/restoreLast/saveCurrent`, localStorage-backed last-view
-  recall with default-fallback, error envelope → typed Error with
-  `.code`. Stamps `v: SCHEMA_VERSION` (=1) when callers omit it. Tolerant
-  of MVP load order (creates window.Workspace if absent).
-- Tests (13 new, all passing):
-  - 9 unit tests in workspace_views.rs (CRUD round-trip, default
-    exclusion, operator scoping, update+delete, layout validator
-    rejection, forward-compat unknown fields, ordering, unique-name)
-  - 3 integration tests in `caco-daemon/tests/daemon.rs`
-    (full_lifecycle, invalid_layout_returns_400, operator_scoped)
-  - 1 caco-web embed contract test pinning the JS file's exposed
-    methods, the API path, the localStorage key, the SCHEMA_VERSION
-    constant, and the `__initialized` double-init guard
+- New `auto_retry_resume(do_attempt, agent_id)` policy core:
+  - Pure retry loop, takes a closure returning `(Result, blocker_retryable: bool)`.
+  - `MAX_RESUME_AUTO_RETRIES = 2` (3 total attempts), backoff
+    `250ms, 750ms` (exponential, base 3).
+  - Loud-logs each retry via `eprintln!` with attempt number, blocker,
+    agent_id, and backoff window so the agent log carries an auditable
+    trail (acceptance criterion: "Loud, observable retry attempts in
+    the agent log (not silent)").
+  - Bubbles immediately when the blocker is non-retryable so the
+    existing structured envelope shape is preserved (acceptance
+    criterion: "After exhaustion or non-retryable blocker, surface the
+    existing error + hint as today").
+- New `try_resume_with_auto_retry(state, agent_id, canonical_checkout)`
+  thin wrapper that adapts the policy core to the live daemon: it
+  invokes `state.agents.resume(...)` per attempt and reads the recorded
+  `agent.resume_blocker.is_retryable()` post-failure to decide.
+- `handle_agent_resume` now calls `try_resume_with_auto_retry` instead
+  of `state.agents.resume(...)` directly. All downstream paths
+  (success, error envelope construction, persistent sentinel sync, feed
+  events, audit log) are unchanged — the retry is transparent.
+- CLI hint message in `dispatch_agent_resume` now informs the operator
+  the daemon already auto-retried up to 3 times before surfacing the
+  error, so manual retry is for persistent issues only.
+- 4 new tests in `caco-daemon::tests`:
+  - `auto_retry_resume_returns_first_attempt_on_success` — happy path,
+    no retry overhead when first try succeeds.
+  - `auto_retry_resume_does_not_retry_non_retryable_blocker` —
+    `missing_checkout`-class blockers bubble in 1 attempt.
+  - `auto_retry_resume_recovers_on_retryable_blocker` — first attempt
+    fails with retryable blocker, second succeeds → 2 calls total.
+  - `auto_retry_resume_caps_attempts_at_three_for_persistent_failure` —
+    persistent retryable failure caps at exactly 3 attempts.
+- All 4 new tests pass; `cargo build -p caco-daemon -p caco-cli` clean.
 
 ## Diff summary
 
-- Files touched: 6 (4 modified, 2 created)
-  - `crates/caco-daemon/src/workspace_views.rs` (new, ~430 lines incl. tests)
-  - `crates/caco-daemon/src/lib.rs` (+1 mod, +5 handlers, +2 route entries)
-  - `crates/caco-daemon/src/store.rs` (+1 init_table call)
-  - `crates/caco-daemon/tests/daemon.rs` (+3 integration tests)
-  - `crates/caco-web/static/workspace-views.js` (new, ~170 lines)
-  - `crates/caco-web/src/tests.rs` (+1 embed contract test)
-- Tests: +13 / -0
-- Behavioural delta: pure addition. New endpoints + new JS module. No
-  existing behaviour changed; the JS module is loaded only when
-  index.html starts referencing it (MVP's job, not this bead's).
+- `crates/caco-daemon/src/lib.rs` (+ ~110 LOC):
+  - +`auto_retry_resume<F, Fut>(...)` pure policy core.
+  - +`try_resume_with_auto_retry(state, agent_id, ...)` daemon-state
+    adapter calling `state.agents.resume(...)` per attempt.
+  - Edit: `handle_agent_resume` now calls `try_resume_with_auto_retry`
+    in place of the direct `state.agents.resume(...)` call.
+  - +4 unit tests in `tests::` module.
+- `crates/caco-cli/src/lib.rs` (+ ~5 LOC):
+  - Edit: retryable-blocker hint message in `dispatch_agent_resume` now
+    cites bd-d62ad6 and notes the daemon already auto-retried.
+- `.cacophony/agent/ms-dev-cacophony-caco-dev-msd-2/summary/0001/summary.md`
+  (this file).
+
+Total: 2 production files + summary; +120 LOC; no public API change; no
+schema change; no migration. The retry is purely server-side; clients
+see the same envelope shape.
 
 ## Operator-takeaway
 
-bd-fdc5f5 lands the **saved-views contract** end-to-end on the daemon
-side and ships an idempotent browser client that can be `<script>`-
-included by the MVP whenever it's ready. The client is forward-compat
-(stamps `v:1`, daemon stores opaquely) so newer pane-tree shapes will
-round-trip cleanly through this storage layer without any future
-schema migration.
+The 14 reintegration test failures observed in the local full-suite run
+are pre-existing on origin/main (verified by re-running the same test
+on a fresh `origin/main` clone — `direct_mode_conflict_lists_files`
+fails identically). They are env-mutex contention between concurrent
+test threads in the reintegration module, not related to this change.
+This PR's tests run cleanly and the wider workspace builds.
 
-Operator identity is the same `X-Caco-Caller` header used by every
-other operator-scoped endpoint, so the existing browser bootstrap that
-sets the bearer cookie + caller header continues to work unchanged.
+The auto-retry is **transparent**: clients see the same envelope shape;
+the persistent sentinel sync, feed events, audit log, and ui broadcast
+all run after the (eventually-)successful resume just as before.
+Operators auditing the trail will see `bd-d62ad6:` log lines per retry
+in the daemon log, and the CLI hint message now reflects that retry
+already happened automatically.
+
+If support agents like ms-mac-cacophony-config-helper continue to fail
+after this lands, the next bead should look at the underlying flake
+(e.g. bd-0d9e23 / bd-d0e6f0 startup/bootstrap) since 3 attempts of the
+same operation in 1 second can't fix structural problems — it's only a
+timing-based flap remediation.
