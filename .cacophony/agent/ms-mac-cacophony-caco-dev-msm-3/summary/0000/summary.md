@@ -1,32 +1,32 @@
-# Session summary — scratch content missing wording
+# Session summary — scratch link-argument wording
 
 ## Goal
 
-This session improved `caco scratch write` and `caco scratch append` missing-content errors so they include concise usage examples for the required content flags.
+This session improved `caco scratch connect` and `caco scratch disconnect` missing `--scope` / `--target` errors so they show the expected link shape.
 
 ## Bead(s)
 
-- `bd-a9f6dc` — [CLI polish] scratch write/append missing-content discoverability wording
+- `bd-c9d121` — [CLI polish] scratch connect/disconnect missing-link-argument wording
 
 ## Before state
 
-- Failing tests: no exact regression covered missing `--body` for scratch write or missing `--text` for scratch append.
-- Relevant metrics: both commands emitted bare required-argument errors after the note-id validation passed.
+- Failing tests: no exact regression covered missing scope/target for scratch connect or disconnect after a note id was supplied.
+- Relevant metrics: those errors were terse required-argument strings, unlike the recent note-id/content improvements.
 - Context: this was a narrow scratch-family CLI polish slice taken while the normal implementation queue contained only permanent trackers.
 
 ## After state
 
 - Failing tests: none in scoped validation before replay.
-- Relevant metrics: `cargo test -p caco-cli scratch_write_append_missing_content_show_usage_examples --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; focused regression is rerun after replay.
-- Context: scratch write/append content errors now include command examples showing the note id and content flag shape.
+- Relevant metrics: `cargo test -p caco-cli scratch_connect_disconnect_missing_link_args_show_usage_examples --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before replay; focused regression is rerun after replay.
+- Context: scratch connect/disconnect now state allowed scopes and show the full note/scope/target command shape.
 
 ## Diff summary
 
-- Commits: `37b6a320c`
+- Commits: `f817e4ca4`
 - Files touched: `crates/caco-cli/src/scratch_cmd.rs`, `crates/caco-cli/src/lib.rs`
-- Tests: added exact regression `scratch_write_append_missing_content_show_usage_examples`.
-- Behavioural delta: two scratch content-required errors now include actionable usage examples.
+- Tests: added exact regression `scratch_connect_disconnect_missing_link_args_show_usage_examples`.
+- Behavioural delta: four scratch link-argument errors now include actionable usage examples.
 
 ## Operator-takeaway
 
-Scratch note content commands now explain how to supply the missing body/text rather than stopping at a bare required-argument error.
+Scratch note connection commands now explain the complete scope/target form when an argument is missing, making the workflow self-discoverable from errors.
