@@ -1,32 +1,32 @@
-# Session summary — Canonical node show missing-name error
+# Session summary — Serialized direct merge queue slice
 
 ## Goal
 
-This session aligned `caco node show` with the post-bd-45d1f7 canonical missing-required-argument error style used by sister CLI surfaces.
+This session implemented the first daemon-side merge-queue execution slice for `bd-2c399b`: direct reintegration can now be opt-in serialized per project with durable state-transition records, while unconfigured projects retain the existing direct fallback.
 
 ## Bead(s)
 
-- `bd-c3fcdd` — caco node show no-arg error wording drift
+- `bd-2c399b` — merge queue daemon service: serialized reintegration submissions with canonical runner
 
 ## Before state
 
-- Failing tests: no test existed for `caco node show` without a target.
-- Relevant metrics: the command emitted `usage: caco node show <node> (or --node/--name)` instead of the required-name plus discoverability pointer wording.
-- Context: `--name ''` and unknown-node paths already had better discoverability; only the missing-target path used the old usage hint.
+- Failing tests: none specific; existing merge-queue surfaces were viewer stubs over audit logs.
+- Relevant metrics: `caco agent merge-queue list` and `/api/v1/merge-queue` could show approximate in-flight/recent reintegration activity but no durable queue records existed.
+- Context: the merge-queue profile promised serialized submissions; actual direct reintegration still executed immediately without a queue gate.
 
 ## After state
 
-- Failing tests: none in scoped validation.
-- Relevant metrics: targeted regression `node_show_missing_target_uses_required_name_error` passed; `cargo check -p caco-cli --lib` passed; `cargo test-small` passed with 256 tests before replay.
-- Context: missing target now says `--name is required for node show ... Run caco node list ...`.
+- Failing tests: none in scoped validation before recovery replay.
+- Relevant metrics: `cargo test -p caco-daemon merge_queue --lib`, `cargo check -p caco-cli --lib`, and `cargo test-small` passed before reintegration recovery; targeted validation is rerun after replay.
+- Context: projects can opt in with `CACO_MERGE_QUEUE_ENABLED_PROJECTS` or `CACO_MERGE_QUEUE_DIR`; queued direct reintegration appends `pending`, `running`, and terminal `accepted`/`rejected` records to `daemon/merge-queue/<project>/queue.jsonl` and runs under a per-project lock.
 
 ## Diff summary
 
-- Commits: `5aa666130`
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: added exact error-message regression coverage.
-- Behavioural delta: no-arg `caco node show` now matches the canonical missing-argument/discoverability template.
+- Commits: `e0262337a`
+- Files touched: `SPEC.md`, `crates/caco-daemon/src/merge_queue.rs`, `crates/caco-daemon/src/reintegration.rs`, `crates/caco-daemon/src/lib.rs`, `crates/caco-cli/src/lib.rs`
+- Tests: added durable merge-queue record/report regression coverage; existing report shape tests retained.
+- Behavioural delta: enabled projects get synchronous serialized direct reintegration with durable queue state; daemon HTTP and local CLI list paths include durable queue records plus legacy audit-derived activity.
 
 ## Operator-takeaway
 
-A small CLI consistency miss from the required-argument sweep is fixed and pinned with an exact regression.
+The merge queue is no longer only a viewer fiction: there is now a conservative opt-in execution gate and durable ledger for direct reintegration, with the old path preserved for projects that have not enabled it.
