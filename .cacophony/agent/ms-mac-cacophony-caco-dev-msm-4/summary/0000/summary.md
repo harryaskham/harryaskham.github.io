@@ -1,32 +1,31 @@
-# Session summary — bd-6cbaf2 caco-web action feedback
+# Session summary — bd-000afe caco-web metrics
 
 ## Goal
-Make important caco-web bead actions feel native and non-blocking by adding visible progress, clear result toasts, and safe recovery/copy affordances instead of relying on silent refreshes or terse error text.
+Add a bounded observability slice to caco-web so operators can inspect request volume, failure shape, and latency counters without introducing a full tracing stack or daemon schema dependency.
 
 ## Bead(s)
 
-- `bd-6cbaf2` — [macOS gap] Action/result toasts, undo, and non-blocking progress feedback
+- `bd-000afe` — Add telemetry/observability to caco web service
 
 ## Before state
 
-- Bead detail actions such as claim, unclaim, close, and dispatch issued requests with no per-button busy state.
-- Success feedback was present but mostly fire-and-refresh, and failure toasts did not provide a copyable error affordance.
-- Workspace pane action buttons called global handlers without passing their clicked button, so inline progress could not render inside panes.
+- caco-web already emitted structured per-request logs from `bd-b4f748`, but it had no scrapeable metrics surface.
+- `bd-000afe` was blocked on a stale dependency label for per-request logs; that dependency was already closed as `bd-b4f748`, so I cleared the stale dependency before claiming.
 
 ## After state
 
-- Added a shared `setInlineActionBusy` helper that disables the clicked action button, marks it `aria-busy`, and shows a spinner plus action-specific label while the request is in flight.
-- Claim, unclaim, close, and dispatch now refresh snapshots silently after success, keeping feedback focused in the toast layer.
-- Claim/unclaim success toasts include safe undo actions; failure toasts include a Copy error action.
-- Workspace bead detail pane action wiring passes `ev.currentTarget` into the global action handlers so pane buttons get the same progress treatment.
+- Added process-local request counters for total requests, 4xx responses, 5xx responses, aggregate request duration, and max observed request duration.
+- The existing request middleware records metrics even when request logging is disabled by `CACO_WEB_REQUEST_LOG=0`.
+- Added `/metrics`, returning Prometheus-style text for the new counters/gauge.
+- Added unit coverage for request metric recording and rendered metric names.
 
 ## Diff summary
 
-- Commits: `5843f5ae7`.
-- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/static/workspace-panes.js`, `crates/caco-web/src/tests.rs`.
-- Tests: added `bd_6cbaf2_app_actions_have_busy_toast_undo_and_copy_error_feedback`; extended workspace bead-detail affordance coverage.
-- Validation: `cargo test -p caco-web bd_6cbaf2 --lib`; `cargo test -p caco-web workspace_bead_detail_pane_has_action_affordances --lib`; `cargo clippy -p caco-web --all-targets -- -D warnings`; `cargo check --workspace --tests`.
+- Commits: `63b57b2c9`.
+- Files touched: `crates/caco-web/src/server.rs`.
+- Tests: added `bd_000afe_web_metrics_track_request_failures_and_durations`.
+- Validation: `cargo test -p caco-web bd_000afe --lib`; `cargo clippy -p caco-web --all-targets -- -D warnings`; `cargo check --workspace --tests`.
 
 ## Operator-takeaway
 
-The web UI now gives immediate, visible feedback for high-value bead actions and provides safe undo/copy affordances, closing a concrete macOS-native polish gap without broad redesign work.
+caco-web now has a simple first-party `/metrics` surface that explains whether the service is receiving traffic, returning client/server errors, or seeing slow requests, complementing the existing request log stream with machine-readable counters.
