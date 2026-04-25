@@ -1,33 +1,33 @@
-# Session summary — Container-safe AKS config projection
+# Session summary — AKS deployment hardening follow-up
 
 ## Goal
 
-This session fixed the direct AKS rollout blocker discovered while deploying the cloud stack: the Kubernetes ConfigMap was carrying host-local template imports and source-only YAML tags that the Cacophony container could not parse.
+This session continued the cloud-stack deployment after the container-safe AKS ConfigMap fix landed, then captured the next concrete blocker without falsely closing the overall deployment bead.
 
 ## Bead(s)
 
-- `bd-a47abb` — AKS Helm deploy needs container-safe materialized config projection
-- Blocks/unblocks: `bd-40cb10` — Deploy current system stack to cloud as self-contained setup
+- `bd-40cb10` — Deploy current system stack to cloud as self-contained setup
+- Follow-up blocker filed: `bd-86907a` — AKS bootstrap authority endpoint is unreachable from cluster
 
 ## Before state
 
-- Failing tests: AKS rollout failed; `cacophony-aks-0` crashed on `/var/lib/cacophony/daemon/checkouts/cacophony/.cacophony/config.yaml` missing, then on `modes.burndown.rules[0].when` YAML tag parsing when a generic materialized config was tried.
-- Relevant metrics: Helm rollout timed out and pod readiness was `0/1`.
-- Context: the live ConfigMap was not container-safe, omitted usable dynamic node templates, and applying a large generated ConfigMap with `kubectl apply` hit annotation-size limits.
+- Failing tests: AKS rollout previously failed on container config parsing.
+- Relevant metrics: `bd-a47abb` had just proved the rendered ConfigMap could make the StatefulSet ready once; deployment completion still required rerunning/validating the cloud stack.
+- Context: the container prelude emitted git dubious-ownership warnings when daemon validation touched the PVC-backed runtime repo.
 
 ## After state
 
-- Failing tests: none in scoped validation.
-- Relevant metrics: `just aks-validate` passed with 48 checks; `cargo test-small` passed with 256 tests before replay; live AKS StatefulSet `cacophony-aks` reached `1/1` ready after replacing the ConfigMap and restarting rollout.
-- Context: `deploy/aks/render-config.sh` renders a container-safe runtime config from first-party `caco config show`, strips host SSH paths and source-only modes tags, includes dynamic nodes, and docs use `kubectl replace` for the large ConfigMap.
+- Failing tests: full deployment remains blocked by bootstrap authority reachability, not repo config parsing.
+- Relevant metrics: `just compose-validate` passed with 38 checks; `just aks-validate` passed with 48 checks; AKS pod progressed to bootstrap join and failed with timeout to `https://caco-aca-ca.bluemeadow-ae4cbf9d.eastus.azurecontainerapps.io:8443/v1/bootstrap/join`.
+- Context: the AKS StatefulSet was scaled back to zero to stop CrashLoopBackOff, and `bd-40cb10` was unclaimed with dependency `bd-86907a`.
 
 ## Diff summary
 
-- Commits: `210a72913`
-- Files touched: `.cacophony/config.yaml`, `deploy/aks/render-config.sh`, `deploy/aks/validate.sh`, `deploy/aks/README.md`
-- Tests: expanded `just aks-validate` to cover the renderer; ran `cargo test-small` before replay.
-- Behavioural delta: AKS pods can now consume a parse-valid Cacophony config and start successfully instead of depending on host-local imports.
+- Commits: `8e7ded7af`
+- Files touched: `deploy/compose/container-prelude.sh`
+- Tests: `bash -n deploy/compose/container-prelude.sh`, `just compose-validate`, `just aks-validate` before replay.
+- Behavioural delta: the container prelude now marks the runtime directory as a Git safe.directory after ownership repair, avoiding config-VCS dubious-ownership failures on mounted runtime volumes.
 
 ## Operator-takeaway
 
-The AKS deployment path now has a repeatable config-render/push step, and the live `cacophony-aks` StatefulSet was proven ready with the rendered ConfigMap.
+The repo-side AKS config/projection blockers are resolved; the remaining cloud deployment blocker is live bootstrap authority/network reachability from AKS to ACA, now tracked as `bd-86907a`.
