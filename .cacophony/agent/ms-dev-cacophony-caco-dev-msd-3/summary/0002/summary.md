@@ -1,32 +1,33 @@
-# Session summary — msg broadcast/reply validation
+# Session summary — TUI Beads label/status polish
 
 ## Goal
 
-Close the sister validation gap reported after `bd-00102d`: `caco msg broadcast --body ''` and `caco msg reply --body ''` should fail before mutating state, and msg write surfaces should refuse unknown flags instead of warning and proceeding.
+Improve TUI Beads readability with a focused designer pass: reduce label-column jank, make bead detail status copy operator-facing, and keep the change scoped away from Android/web Beads owners.
 
 ## Bead(s)
 
-- `bd-dfe473` — Reject empty msg broadcast/reply bodies
+- `bd-23ecea` — TUI Beads surfaces need UX/designer visual polish
+- Related coordination: `bd-cee357` Android Beads polish, `bd-5c0367` web Beads polish, `bd-1afb2e` cross-surface Beads UX language contract
 
 ## Before state
 
-- Failing tests: the user/test disclosure reported an accidental empty broadcast created by `caco msg broadcast --body ''`.
-- Relevant metrics: `bd-00102d` had already made `msg send` reject empty bodies and invalid targets, but broadcast/reply still needed parity.
-- Context: `caco msg snapshot --agent ''` already had a validator, and `msg reply --message-id bogus` already preflighted parent message lookup; the remaining state-mutating drift was empty body handling plus non-strict unknown-flag metadata for msg write commands.
+- Failing tests: none pre-existing for this slice.
+- Relevant metrics: TUI Beads tables rendered raw comma-separated labels in both project/global views, duplicating logic and letting large label sets consume visual width; bead detail showed wire status values such as `in_progress`.
+- Context: there was a brief ownership race with msd-1 on `bd-23ecea`; after board verification and direct coordination, ownership remained on msd-3 and msd-1 backed off.
 
 ## After state
 
 - Failing tests: none observed.
-- Relevant metrics: focused daemon broadcast validation test passed; focused CLI body-validator and non-idempotent command-spec tests passed; `cargo clippy -p caco-cli -p caco-daemon --all-targets -- -D warnings` passed; `cargo test-small` passed.
-- Context: CLI and daemon now reject blank broadcast bodies before persistence or fan-out; CLI reply rejects blank bodies and empty message IDs before lookup/send; msg send/broadcast/speak/reply are marked non-idempotent so unknown flags are refused by the bd-4c8fdd guard before state mutation.
+- Relevant metrics: `cargo test -p caco-tui bead -- --nocapture` passed; `cargo clippy -p caco-tui --all-targets -- -D warnings` passed; `cargo test-small` passed.
+- Context: project and global Beads tables now share a compact label-chip renderer with `+N` overflow summaries, while bead detail uses the same bounded chip style and humanized status labels such as `In progress`.
 
 ## Diff summary
 
-- Commits: `ce3f278f7` (code), plus this recorded-summary commit
-- Files touched: `crates/caco-cli/src/lib.rs`, `crates/caco-cli/src/msg_cmd.rs`, `crates/caco-daemon/src/lib.rs`
-- Tests: +1 daemon regression test for empty project/global broadcast bodies; +1 CLI unit test for shared body validation; extended non-idempotent command-spec test to include msg write surfaces.
-- Behavioural delta: empty msg broadcasts/replies now fail with explicit `--body must not be empty...` messages, and unknown flags on msg write commands no longer warn-and-mutate.
+- Commits: `86e6ec1ee` (code), plus this recorded-summary commit
+- Files touched: `crates/caco-tui/src/views/common.rs`, `crates/caco-tui/src/views/beads.rs`, `crates/caco-tui/src/views/global_beads.rs`, `crates/caco-tui/src/views/bead_detail.rs`
+- Tests: added common renderer tests for label overflow/empty labels and humanized status labels; updated bead-detail expectations from raw to human labels.
+- Behavioural delta: Beads labels now behave like compact triage chips rather than noisy comma strings, and detail status copy no longer exposes raw wire names.
 
 ## Operator-takeaway
 
-The accidental empty broadcast class is now blocked at both the CLI and daemon layers, and the broader msg write namespace is safer against typoed state-mutating invocations.
+This is a narrow but visible TUI polish pass: labels should stop dominating Beads rows, and the detail pane now reads more like an operator UI instead of an API dump.
