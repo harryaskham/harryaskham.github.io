@@ -1,32 +1,32 @@
-# Session summary — macOS audio notification explainability polish
+# Session summary — macOS operations queue clarity polish
 
 ## Goal
 
-Improve the Audio & Notifications pane so operators can understand notification filters, speech mute/readiness, queue state, and missing capability data without source-diving.
+Improve the Operations pane so operators can queue builds/tests/release syncs and interpret merge/build/test/release job state with clearer risk and action guidance.
 
 ## Bead(s)
 
-- `bd-787804` — `[macOS excellence] Audio notification pane explainability polish`
+- `bd-f4749c` — `[macOS excellence] Operations queue action clarity polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: The pane exposed notifications, speech logs, and capabilities but had sparse top-level guidance and basic empty states, especially around why speech may not have played.
+- Context: Operations exposed queue/job data and actions, but empty states and job rows were terse and did not clearly explain when actions were safe or duplicate-risky.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: The pane now explains its purpose, provides richer empty states for notifications/speech/capabilities, and summarizes speech mute state, queue depth, voice, and output route.
+- Context: Operations now includes tab-specific guidance, stronger empty states, more accurate merge status colors, selectable command text, and status hints on job rows.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-787804`.
-- Files touched: `AudioNotificationsPane.swift`.
+- Commits: current branch commit for `bd-f4749c`.
+- Files touched: `OperationsPane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: operators get clearer answers about alert visibility and audio delivery readiness directly in the native app.
+- Behavioural delta: queue actions and job state are easier to understand without leaving the native app.
 
 ## Operator-takeaway
 
-Audio and notification state is now more self-explanatory, reducing uncertainty around whether messages were silent because of mute/configuration or simply because nothing spoke recently.
+The Operations pane is now safer for power use: it explains what each action does and warns when active jobs make duplicate queue submissions risky.
