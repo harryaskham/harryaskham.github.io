@@ -1,0 +1,5 @@
+{
+  "apk_debug_signer_sha256": "7bb11bd1daf6330c418e625c6ffd3a4fe9ade2ed53c5e07248544a20ba8aab00",
+  "keystore_debug_signer_sha256": "7BB11BD1DAF6330C418E625C6FFD3A4FE9ADE2ED53C5E07248544A20BA8AAB00",
+  "device_install_note": "Did not reinstall on Harry's phone for this slice; validation avoids taking over sgu24 after token was configured."
+}
