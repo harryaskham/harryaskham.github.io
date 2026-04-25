@@ -1,33 +1,33 @@
-# Session summary — Operator-actions limit wording canonicalization
+# Session summary — Stable kitty tab-pill moves
 
 ## Goal
 
-This session fixed a small but user-visible CLI consistency defect: `caco operator-actions list --limit` had adopted the empty-string canonical error wording but still used drifted messages for zero, negative, and non-numeric values. The goal was to align that surface with the fleet-wide limit validator wording without touching broader command behaviour.
+This session fixed the TUI kitty graphics flicker reported when many tabs are open. The likely visible artifact was not unstable logical IDs, but the resize/move path deleting an existing kitty image before the replacement placement was uploaded whenever header/tab pill rectangles shifted.
 
 ## Bead(s)
 
-- `bd-729d0e` — caco operator-actions list --limit 0/-1/bogus drifted from fleet-wide canonical
+- `bd-972c76` — Fix TUI kitty borders flickering with many tabs
 
 ## Before state
 
-- Failing tests: none for this bead at start.
-- Relevant metrics: repro from the bead showed `--limit 0` lacked the `use --limit 1` hint, while `--limit -1` and `--limit bogus` used `must be a positive integer, got ...` instead of `invalid --limit value: ...`.
-- Context: the parser lived in `crates/caco-cli/src/lib.rs::parse_operator_actions_limit`, with tests that only asserted substrings rather than the full canonical messages.
+- Failing tests: none at start.
+- Relevant metrics: prior investigation pointed at tab-bar graphics registration and kitty surface churn; moving a same-key enhancement to a new rect used the normal `reserve` path, which eagerly queued a delete for the displayed image.
+- Context: workspace/header tab pills can shift horizontally as tab count changes or as the centered tab group is recalculated. With several visible tabs, deleting before replacement upload can flash as blank/recreate flicker.
 
 ## After state
 
 - Failing tests: none in scoped validation.
-- Relevant metrics: `cargo test -p caco-cli parse_operator_actions_limit_handles_default_empty_zero_and_garbage --lib` passed; `cargo check -p caco-cli --lib` passed; `cargo test-small` passed with 256 tests.
-- Context: `--limit 0`, negative, and bogus values now match the fleet canonical phrasing exactly, while the already-canonical empty-string default disclosure remains unchanged.
+- Relevant metrics: `cargo test -p caco-tui movable_enhancement_rect_shift_does_not_queue_delete_bd_972c76 --lib` passed; `cargo clippy -p caco-tui --lib -- -D warnings` passed; `cargo test-small` passed with 256 tests before recovery replay, and the targeted test passed again after replay.
+- Context: span pill graphics now use a movable enhancement registration path. Rect changes keep the same surface ID, mark the surface for replacement upload, and do not queue an eager delete.
 
 ## Diff summary
 
-- Commits: `d3c33e69f`
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: strengthened the operator-actions limit parser regression to assert exact canonical messages for zero, bogus, and negative values.
-- Behavioural delta: `caco operator-actions list --limit 0/-1/bogus` now renders the same class of error messages as sibling list surfaces.
-- Validation: targeted caco-cli parser test; caco-cli lib check; cargo test-small.
+- Commits: `2c64ea99b`
+- Files touched: `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/kitty.rs`
+- Tests: added a kitty surface-manager regression proving moved tab-pill surfaces keep a stable ID, become upload-pending, and queue no deletes.
+- Behavioural delta: header/workspace tab pill movements should update in place instead of blanking the old placement before the new one lands, reducing flicker when 5+ tabs are open or tab geometry shifts.
+- Validation: targeted caco-tui kitty test; caco-tui clippy; cargo test-small.
 
 ## Operator-takeaway
 
-This was a tiny consistency fix, but it closes another partial-adoption edge in the CLI error contract so operator muscle memory works across list surfaces.
+The fix targets the visual flicker mechanism directly: for move-heavy decorative tab surfaces, keep the old kitty placement alive until the replacement upload supersedes it, rather than deleting first and hoping the upload arrives in the same frame.
