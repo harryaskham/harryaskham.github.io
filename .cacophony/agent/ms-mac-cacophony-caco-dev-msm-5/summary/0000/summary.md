@@ -1,55 +1,88 @@
-# Session summary — workspace-view bead-detail pane (bd-1328dd)
+# Session summary — caco-summary backend (daemon API + CLI)
 
 ## Goal
 
-Implement the Workspace View bead-detail pane: a pane type that follows
-the bead-selected event across the new caco-web workspace, fetches and
-renders the full bead record (with markdown description, parent/children,
-recent activity), and exposes claim/unclaim/status/assign/priority
-actions — while letting the operator pin it off the follow stream.
+Build the shared backend that the three planned session-summary viewer
+UIs (TUI / caco-web / Android) consume so they don't each reimplement
+markdown parsing, bead-ID extraction, and artefact scanning. Operator
+(Harry) reported that summaries authored by the session-recording mixin
+were effectively write-only — durable artefacts on disk with no surface
+to browse them.
 
 ## Bead(s)
 
-- `bd-1328dd` — [workspace-view] Bead detail pane with cross-pane follow-selection
-- parent epic: `bd-027e9d` — caco-web Workspace View
+- `bd-41b916` — caco summary CLI + daemon API: enumerate session summaries
+- parent epic `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
+- siblings (still open): `bd-ba7239` (TUI), `bd-a0503e` (web), `bd-806014` (Android)
 
 ## Before state
 
-- Failing tests: none in caco-web
-- No bead-detail pane existed; the only workspace-visible scaffolding
-  was the MVP contracts (bd-a78749) and the pane-tree (bd-232e03) —
-  both already landed.
-- caco-web static bundle had no Workspace.panes registry consumer yet.
+- `.cacophony/agent/<id>/summary/<idx>/summary.md` artefacts existed on
+  disk (3 examples already committed) with no daemon endpoint or CLI to
+  enumerate or read them.
+- The session-recording mixin's seven-section schema (Goal / Bead(s) /
+  Before / After / Diff / Embedded artefacts / Operator-takeaway) was
+  documented in profile prose only — no parser shared the contract.
+- Reintegration validation (`reintegration::validate_recorded_summary`)
+  was the only consumer of the schema, and it only checked existence
+  and section presence, not parsed content.
+- `cargo test -p caco-daemon --lib summary::`: no such tests.
 
 ## After state
 
-- Failing tests: none. `cargo test -p caco-web --lib` = 72 passed
-  (+11 new tests pinning the bead-detail contract). `cargo clippy -p
-  caco-web --tests` clean.
-- New assets embedded in the caco-web static bundle:
-  `workspace-bead-detail.js`, `workspace-bead-detail.css`.
-- Pane registers itself as `window.Workspace.panes['bead-detail']` so
-  the pane-tree can instantiate it from saved layouts.
+- New module `crates/caco-daemon/src/summary.rs` (≈540 lines incl.
+  tests) with:
+  * `SummaryRecord` (list-view projection: agent_id, project, index,
+    timestamp, title, bead_ids, artefacts, summary_path, bytes)
+  * `ArtefactSummary` (has_cast / has_data_json / screenshots[])
+  * `ParsedSummary` (record + full body + `SummarySections` strongly-
+    typed view of all seven canonical sections plus `extra_sections`
+    catch-all)
+  * `enumerate_summaries(checkout, filter)` — walks every agent dir,
+    tolerates missing/malformed indices, sorts most-recent-first with
+    a deterministic tiebreak.
+  * `read_parsed_summary(checkout, project, agent, index)` — returns
+    a fully-parsed structured summary or None.
+  * Hand-rolled `extract_bead_ids` (regex-free) that respects identifier
+    boundaries — rejects `xxbd-123456`, `bd-1234567`, `bd-ABCDEF`, etc.
+- New routes in `caco-daemon/src/lib.rs`:
+  * `GET /api/v1/summaries` (project / agent_id / bead_id filters,
+    limit + offset paging, returns `{items, total, limit, offset}`)
+  * `GET /api/v1/summaries/{agent_id}/{index}` (project disambiguation
+    via query string, walks every configured project on omission)
+  * Both registered in `check_agent_scope` as read-only so workers
+    can call them.
+- New CLI surface in `crates/caco-cli/src/summary_cmd.rs` + lib.rs:
+  * `caco summaries list` (paginated, filterable, text + --json)
+  * `caco summaries show --agent <id> --index <n>` (full parsed render
+    including seven canonical sections, bead refs, artefact summary)
+  * `summaries` is a CommandSpec branch with full ArgSpecs so bd-b76723
+    unknown-flag warnings stay silent.
+- Tests: `cargo test -p caco-daemon --lib summary::` — 9/9 passing.
+- Lints: `cargo clippy -p caco-daemon -p caco-cli --no-deps` clean.
 
 ## Diff summary
 
-- Commit: `ba5ce55d`
-- Files touched:
-  - `crates/caco-web/static/workspace-bead-detail.js` (new, 16 KB)
-  - `crates/caco-web/static/workspace-bead-detail.css` (new, 2.7 KB)
-  - `crates/caco-web/src/tests.rs` (+11 tests)
-- Tests: +11 / -0 / flipped 0
-- Behavioural delta: none for existing routes. The pane is a new
-  embedded asset available for the pane-tree to mount when a layout
-  references `type: 'bead-detail'`.
+- Commit: `3de87e6b8`
+- Files touched (all additive):
+  * `crates/caco-daemon/src/summary.rs` (new, +540 lines)
+  * `crates/caco-daemon/src/lib.rs` (+~180 lines: routes, handlers,
+    scope allow, mod decl)
+  * `crates/caco-cli/src/summary_cmd.rs` (new, +290 lines)
+  * `crates/caco-cli/src/lib.rs` (+~85 lines: mod decl, ARG specs,
+    SUMMARIES_SUBCOMMANDS, dispatch arms, top-level branch)
+- Tests: +9 / -0 / flipped 0
+- Behavioural delta: a new read-only API namespace and CLI subcommand
+  exposing structured session summaries; no existing surfaces changed.
 
 ## Operator-takeaway
 
-The detail pane is designed to be loaded into an already-landed pane
-tree without any coupling to the still-in-flight MVP route. It shims a
-minimal Workspace.bus if none exists, so it boots clean standalone and
-composes cleanly once MVP lands. All acceptance-criteria invariants are
-covered by Rust tests that inspect the embedded JS string — no headless
-browser needed for CI, but the `_renderCount` instrumentation is there
-for a future Playwright/jsdom test to assert the three-selections /
-three-renders AC #7 end-to-end.
+The session-recording mixin's seven-section schema is now a first-class
+parsed type (`SummarySections`) rather than profile prose. Future UIs
+should consume `GET /api/v1/summaries{,/<id>/<idx>}` and never reparse
+markdown themselves — both endpoints share the same `SummaryRecord`
+projection so list and detail views can render with one data path.
+The bead-ID extractor is hand-rolled (no regex dep churn) and
+identifier-boundary aware; if the canonical bead-ID format ever widens
+beyond `bd-[0-9a-f]{6}` we update one function instead of grepping
+every UI.
