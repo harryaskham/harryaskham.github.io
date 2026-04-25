@@ -1,48 +1,37 @@
-# Session summary 0030 — bd-fd0ed4: caco msg status (slice 1)
+# Session summary — TUI summaries page navigation
 
 ## Goal
 
-Give `caco msg send` callers a way to confirm whether a message
-was actually received. Previously the send response only confirmed
-"queued for delivery" — no way to know if the target inbox has
-seen or read it.
+Continue TUI summaries polish for long histories by adding faster keyboard movement beyond single-row `j`/`k` navigation.
 
 ## Bead(s)
 
-- `bd-fd0ed4` slice 1 — read-only status query.
+- `bd-cbb04d` — TUI summaries: add page and boundary keyboard navigation
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `caco msg send` returns "sent message msg-XXX to ... in project
-  cacophony" but that's only *queued*, not delivered + read.
-- No public endpoint to look up a single message by id.
-- Operators had to scrape the recipient's inbox to find out
-  whether a message landed.
+- The TUI summaries list supported up/down row navigation and slash filtering.
+- Long histories still required repeated single-row movement to move through many summaries.
+- Home/End and PageUp/PageDown were handled by other list surfaces but not the summaries list.
 
 ## After state
 
-- New `MessageStore::get_message(conn, id) -> Result<Option<Message>>`.
-- `GET /api/v1/messages/{id}/status` returns
-  `{id, project, sender, target, kind, ts, read_at, expires_at, state}`
-  where `state` ∈ `{delivered, read, expired}` derived from the
-  existing `read_at` / `expires_at` columns.
-- `caco msg status <id>` CLI command (positional, with `--id` /
-  `--message-id` aliases). Pretty-prints state, sender, target,
-  ts, read_at, expires_at; `--json` returns the full envelope.
+- `PageUp` and `PageDown` now move the Global Summaries selection by ten filtered rows.
+- `g`/`G` continue to jump to first/last filtered summary.
+- `Home`/`0` and `End` now jump to first/last filtered summary through the shared boundary-key path.
+- Changing the selected summary through these shortcuts resets detail scroll to the top.
 
 ## Diff summary
 
-- Commit: `a47e0f7f`.
-- Files (3): caco-daemon messaging.rs, caco-daemon lib.rs,
-  caco-cli lib.rs.
-- `cargo build` and `cargo clippy` for caco-daemon + caco-cli: clean.
+- Commits: current `bd-cbb04d` implementation commit
+- Files touched:
+  - `crates/caco-tui/src/app.rs`
+- Tests:
+  - `cargo test -p caco-tui summaries --lib` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: TUI summaries long-list navigation now matches the faster movement expectations of other terminal list views.
 
 ## Operator-takeaway
 
-Run `caco msg status <msg-id>` after `caco msg send` to confirm
-whether the message was received and read. State is derived from
-existing schema — no new columns needed. The richer
-state-machine (queued → delivered → read → acted-on, distinct
-`delivered_at` from `read_at`, `--require-ack` send mode, `--cc`
-operator forwarding, and SSE delivery events) is filed as
-bd-fd0ed4 slice 2.
+TUI summaries are easier to skim at scale: operators can page through filtered summary history and jump to the top or bottom without repetitive key presses.
