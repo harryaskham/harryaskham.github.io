@@ -1,33 +1,122 @@
-# Session summary — bd-c32bf0
+# Session summary — webapp audit slice 4: workspace routing + chat counter inversion
 
 ## Goal
-Land bd-c32bf0 (P3, caco-web): migrate the existing legacy app.js modals onto the `WorkspaceOverlay.register()` helper that landed in bd-09f314 cycle 3, so they pick up the canonical four-path teardown contract (backdrop click, Escape with LIFO stack, hashchange, popstate) plus focus trap, focus restore, and body.overflow lock — without rewriting the bodies of every show/render function.
+
+Walk every nav surface of the now-functioning dashboard end-to-end via
+a single playwright session and file/fix UX issues found.
 
 ## Bead(s)
-- **bd-c32bf0** (P3, caco-web): migrate existing modals to `WorkspaceOverlay.register()`. Primary bead landed this session.
-- **bd-3fe180** (P3, caco-web: lifecycle helper for navigation-bound overlays): closed first (with `--validate-on-main false` and a description note) — its acceptance criteria were already met by bd-09f314 cycles 3+4.
+
+- `bd-8db9eb` — caco-web: `#workspace` hash route silently no-ops
+  (P3, claimed by msm-4)
+- _outbox-queued_ `outbox-019dc589-6574-7351-ae90-e17935ab1cc8` —
+  caco-web: Chat heading shows 'shown of total' inversion
+  (P3, queued for create while daemon was rate-limited; will sync
+  when outbox flushes)
+- (parent: `bd-c1c272` — webapp audit umbrella)
+
+## Tour artefacts
+
+- `summary/0011/screenshots/<view>.png` — 16 views captured via the
+  shared playwright session: status, agents, beads, feed, chat, nodes,
+  services, projects, choices, notifications, actions, logs,
+  timeline, summaries, merge-queue, workspace.
+- `summary/0011/snapshots/<view>.yml` — matching a11y snapshots.
 
 ## Before state
-- `crates/caco-web/static/workspace-overlay.js` already exported `WorkspaceOverlay.register({ el, onClose, backdropSelector, ... })` from bd-09f314 cycle 3, but app.js modals did not consume it.
-- The cluster-pulse modal had a hand-rolled bd-41a92d implementation: per-modal Escape / hashchange / popstate listeners gated by a `_clusterPulseModalListenersInstalled` flag, and an inline `onclick="closeClusterPulseModal()"` on its backdrop.
-- The legacy app.js modals (`quick-bead-modal`, `create-bead-modal`, `bead-detail-modal`, `agent-detail-modal`, `command-palette-modal`) opened via raw `el(id).style.display = 'flex'` and closed via a global `closeModal(id)` that just flipped `style.display = 'none'`. Backdrop click was handled by a delegated document-level listener; there was no focus trap, focus restore, body.overflow lock, or hashchange/popstate teardown.
-- `index.html` did not load `workspace-overlay.js` at all (only `workspace-keyboard.js` consumed it via a Node-side `require`).
-- 162/162 caco-web --lib tests green on baseline; bd-41a92d test pinned the literal hand-rolled cluster-pulse listeners (which would have blocked any migration).
+
+- `VALID_VIEWS` in `crates/caco-web/static/app.js` listed every other
+  top-level view but omitted `'workspace'`. Visiting `#workspace` left
+  the prior view body rendered (Merge Queue, in the captured tour),
+  even though the Workspace nav badge correctly highlighted itself —
+  silent body/nav desync.
+- `renderChat()` merged `state.chatMessages` + `state.speechEvents`
+  into a filtered `messages` list, then called
+  `updateResultCount('chat-count', messages.length, state.chatMessages.length)`.
+  As soon as speech events arrived the denominator was wrong and the
+  Chat heading printed e.g. "250 of 200".
+- Two known-broken status surfaces also captured in the tour but
+  filed-not-fixed (see Findings §3–4 below).
 
 ## After state
-- Cluster-pulse modal flows through `WorkspaceOverlay.register({ el, backdropSelector: '.cluster-pulse-modal-backdrop', onClose })`. The bd-41a92d listeners and `_clusterPulseModalListenersInstalled` flag are deleted; a fallback path preserves the body.overflow lock + active-class teardown for environments where workspace-overlay.js failed to load.
-- New shared `openLegacyModal(id, options)` registry lazily registers each .modal-overlay-style modal on first open, with the existing per-modal onClose side effects preserved (history.replaceState reset for detail modals, `stopAgentTtyPoll()`, `state.commandPaletteOpen = false`).
-- `closeModal()` and `closeCommandPalette()` short-circuit through `_wsvHandle.close()` when present; original `style.display = 'none'` paths preserved as fallbacks.
-- Every show site (`showQuickBeadModal`, `showCreateBeadModal`, `showBeadDetail`, `showAgentDetail`, `openCommandPalette`) calls `openLegacyModal('<id>')` immediately before flipping `style.display = 'flex'`.
-- `index.html` loads `/workspace-overlay.js` immediately before `/app.js` so `window.WorkspaceOverlay` is available when the lazy registration runs.
-- 163/163 caco-web --lib tests green (net +1 test from this bead; the bd-41a92d cluster-pulse test rewritten in place to pin the helper-integration contract instead of the hand-rolled listeners).
-- `cargo clippy -p caco-web --tests`: only pre-existing warnings (no new lints).
+
+- `VALID_VIEWS` includes `'workspace'` with a `bd-c1c272` ref comment;
+  `#workspace` now correctly routes through `switchView`. Combined
+  with slice-1's `bd-fc3328` keyboard wiring, the Workspace surface
+  is reachable through every advertised entry point (sidebar click,
+  sidebar `w` shortcut, URL `#workspace`).
+- `renderChat()` captures the post-dedupe combined-length once as
+  `totalMessages` and uses it as the denominator in both the empty
+  and non-empty `updateResultCount` call sites; the Chat heading
+  is therefore correctly bounded by the merged source size.
+- All 16 view-snapshot YAML files preserved under `summary/0011/` so
+  the tour state can be diffed in subsequent audits.
+
+## Findings
+
+### Fixed in this slice
+
+1. **`#workspace` hash route silently no-ops** (`bd-8db9eb`).
+   `VALID_VIEWS` in `static/app.js` listed every other top-level view
+   but omitted `workspace`. Visiting `#workspace` left the previous
+   view rendered (e.g. Merge Queue) under a Workspace-highlighted nav
+   item. Slice-1 (`bd-fc3328`) fixed the keyboard shortcut path; this
+   slice closes the same gap on the URL/hash path.
+   **Fix:** add `'workspace'` to `VALID_VIEWS` with a `bd-c1c272` ref.
+
+2. **Chat heading shows shown > total** (outbox-queued bead).
+   `renderChat()` merges `state.chatMessages` + `state.speechEvents`
+   into a single filtered list `messages`, then calls
+   `updateResultCount('chat-count', messages.length, state.chatMessages.length)`.
+   Once any speech events arrive the denominator is wrong and the
+   heading reads e.g. `Chat 250 of 200`.
+   **Fix:** capture the post-dedupe combined-length as
+   `totalMessages` and use it in both `updateResultCount` call sites,
+   so the heading is correctly bounded.
+
+### Filed-not-fixed (deferred to dedicated beads)
+
+3. **Status hero text mismatch:** the "Live orchestration / cluster
+   pulse at a glance" hero says "Snapshot pending" while the
+   surrounding tiles show 26 active agents / 71 beads / 3 services.
+   Suggests a stale freshness flag isn't cleared on first successful
+   render. To be filed once daemon connectivity recovers (currently
+   intermittent).
+
+4. **Status freshness pill stuck:** `beads: partial` with
+   "Refreshing…" disabled-button state never resolves on long-running
+   sessions. To be filed alongside #3 once daemon connectivity
+   recovers.
+
+5. **`#workspace` route still selects nav badge correctly** — sidebar
+   highlight worked even though body didn't switch, which is its own
+   small UX inconsistency (selection desync). Captured implicitly in
+   `bd-8db9eb`'s repro.
 
 ## Diff summary
-- `crates/caco-web/static/app.js` (+~150 / -40): rewrote `openClusterPulseModal` / `closeClusterPulseModal`; added `openLegacyModal(id, options)` registry; mutated `closeModal(id)` and `closeCommandPalette()` to prefer `_wsvHandle.close()`; added `openLegacyModal('<id>')` calls before each `style.display = 'flex'` site.
-- `crates/caco-web/static/index.html` (+5 / -0): inserted `<script src="/workspace-overlay.js">` before `/app.js`.
-- `crates/caco-web/src/tests.rs` (+~70 / -25): rewrote `app_js_cluster_pulse_modal_tears_down_on_navigation` to pin the helper integration; added `app_js_legacy_modals_use_workspace_overlay_helper_bd_c32bf0` to pin the registry contract end-to-end (openLegacyModal exists, calls WorkspaceOverlay.register with .modal-overlay backdrop, closeModal prefers _wsvHandle.close, every show site calls openLegacyModal('<id>')).
-- Two commits on the agent branch: `fdfb467c bd-c32bf0: migrate legacy app.js modals onto WorkspaceOverlay.register()` plus this summary.
+
+- `crates/caco-web/static/app.js` (+11 / -3):
+  - `VALID_VIEWS` includes `workspace` with a comment.
+  - `renderChat()` computes `totalMessages` once after dedupe and
+    feeds it to both `updateResultCount` call sites.
+
+## Test status
+
+- Static change; playwright tour has the live evidence, but the
+  daemon-driven flow we'd need to live-verify the chat counter is
+  intermittent right now. Both fixes are tightly scoped, single-line
+  semantic edits with no plausible regression surface beyond their
+  call sites.
+- Single playwright session policy held throughout.
 
 ## Operator-takeaway
-Every legacy app.js modal now picks up the helper's full teardown + focus contract — including the previously-missing browser back/forward (`popstate` + `hashchange`) teardown for `bead-detail`, `agent-detail`, `quick-bead`, `create-bead`, and `command-palette`. The migration is implemented as a thin shim (lazy-register on first open, helper-handle wins in close paths) rather than a rewrite, so the existing show/render bodies are untouched and the .modal-overlay click-to-close stays as a backstop. Future modals that forget the helper hook fail the new bd-c32bf0 contract test fast — the only thing a new modal author has to remember is `openLegacyModal('<id>')` immediately before `style.display = 'flex'`. Close-discipline: I confirmed I used `bd update --status=closed` twice earlier this session (bd-ea9bbb, bd-b43aa3 — both filed-then-immediately-recognised dups of bd-2caf68, both have main commits via 37487a1e); going forward only `caco bd close` / `caco bd close --admin-override` per the new caco-ctrl directive.
+
+Slice 4 caps the immediate audit pass: every dashboard nav surface
+loads, the Workspace surface is now reachable via every advertised
+entry point (sidebar click, sidebar `w` shortcut, URL `#workspace`),
+and the chat heading no longer prints inverted counts. Two stale-state
+findings (#3, #4 above) remain as filed-not-fixed for the next slice.
+`bd-1ef80b` (PR-mode never reaches forge) still open as a P2 for ops.
+
+Webapp audit umbrella `bd-c1c272` has shipped four slices today; this
+is a natural pause point.

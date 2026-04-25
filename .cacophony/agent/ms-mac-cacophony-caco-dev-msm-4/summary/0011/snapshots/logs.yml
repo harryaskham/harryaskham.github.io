@@ -1,0 +1,166 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Cacophony" [level=1] [ref=e7]:
+          - generic [ref=e8]: ♪
+          - generic [ref=e9]: Cacophony
+        - generic "ms-mac — click to copy" [ref=e10] [cursor=pointer]: ms-mac
+        - generic "Cacophony v1.2.550 — click to copy" [ref=e11] [cursor=pointer]: v1.2.550
+      - list [ref=e12]:
+        - button "Status 1" [ref=e13] [cursor=pointer]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+        - button "Agents Running agents count 2 Toggle agents submenu" [ref=e21] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "Running agents count" [ref=e27]: "26"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29]: ▸
+        - button:
+          - generic: Active
+          - generic: "26"
+        - button:
+          - generic: Failed
+          - generic: "6"
+        - button:
+          - generic: Completed
+          - generic: "0"
+        - button:
+          - generic: All
+          - generic: "35"
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+        - button "Beads Open beads count 3" [ref=e30] [cursor=pointer]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "Open beads count" [ref=e36]
+          - generic [ref=e37]: "3"
+        - button "Feed 4" [ref=e38] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+        - button "Chat 5" [ref=e46] [cursor=pointer]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+        - button "Nodes 6" [ref=e52] [cursor=pointer]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+        - button "Services 7" [ref=e61] [cursor=pointer]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+        - button "Projects p" [ref=e68] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+        - button "Choices c" [ref=e75] [cursor=pointer]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic [ref=e81]: c
+        - button "Notifications Unread notifications 8" [ref=e82] [cursor=pointer]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "Unread notifications" [ref=e88]: "2"
+          - generic [ref=e89]: "8"
+        - button "Actions 9" [ref=e90] [cursor=pointer]:
+          - img [ref=e92]
+          - generic [ref=e94]: Actions
+          - generic [ref=e95]: "9"
+        - button "Logs 0" [ref=e96] [cursor=pointer]:
+          - img [ref=e98]
+          - generic [ref=e100]: Logs
+          - generic [ref=e101]: "0"
+        - button "Timeline t" [ref=e102] [cursor=pointer]:
+          - img [ref=e104]
+          - generic [ref=e108]: Timeline
+          - generic [ref=e109]: t
+        - button "Summaries s" [ref=e110] [cursor=pointer]:
+          - img [ref=e112]
+          - generic [ref=e115]: Summaries
+          - generic [ref=e116]: s
+        - button "Merge Queue m" [ref=e117] [cursor=pointer]:
+          - img [ref=e119]
+          - generic [ref=e122]: Merge Queue
+          - generic [ref=e123]: m
+        - button "Workspace w" [ref=e124] [cursor=pointer]:
+          - img [ref=e126]
+          - generic [ref=e130]: Workspace
+          - generic [ref=e131]: w
+      - generic [ref=e132]:
+        - status "Click to reconnect" [ref=e133] [cursor=pointer]:
+          - generic [ref=e135]: Disconnected
+        - button "⌘ K Commands" [ref=e137] [cursor=pointer]:
+          - generic [ref=e138]: ⌘
+          - generic [ref=e139]: K
+          - generic [ref=e140]: Commands
+    - main [ref=e141]:
+      - generic [ref=e6617]:
+        - generic [ref=e6618]:
+          - heading "Logs" [level=2] [ref=e6619]
+          - generic [ref=e6620]:
+            - generic [ref=e6621] [cursor=pointer]:
+              - checkbox "Auto-scroll" [checked] [ref=e6622]
+              - text: Auto-scroll
+            - generic [ref=e6623]:
+              - img
+              - searchbox "Filter logs" [ref=e6624]
+            - button "Clear" [ref=e6625] [cursor=pointer]
+        - log "Application logs" [ref=e6626]:
+          - generic "Click to copy" [ref=e6627]: "bd-f769bb: replication merge from ms-dev: total=252 redundant=250 merged=2 hit_rate=99.2%"
+          - generic "Click to copy" [ref=e6628]: "bd-c60465: incremental pull merged inline state from ms-dev(100.66.53.117:12100)"
+          - generic "Click to copy" [ref=e6629]: "bd-9e8b9e: received SIGTERM, reason=restart — shutting down gracefully"
+          - generic "Click to copy" [ref=e6630]: "2026-04-25T15:17:28.447Z INFO [daemon] daemon stopped: restart {\"reason\":\"restart\"}"
+          - generic "Click to copy" [ref=e6631]: "2026-04-25T15:17:28.511Z WARN [tts-daemon] stream error: error decoding response body"
+          - generic "Click to copy" [ref=e6632]: "bd-299775: cleaned up stale agent ms-mac-cacophony-caco-doctor-msm for persistent declaration persistent-c0165a67"
+          - generic "Click to copy" [ref=e6633]: "bd-299775: cleaned up stale managed agent ms-mac-cacophony-caco-doctor-msm for persistent declaration persistent-c0165a67 before replacement"
+          - generic "Click to copy" [ref=e6634]: 2026-04-25T15:17:28.763Z INFO [tts-daemon] connecting to http://127.0.0.1:11100/api/v1/feed/stream
+          - generic "Click to copy" [ref=e6635]: "2026-04-25T15:17:28.764Z WARN [tts-daemon] connection failed: error sending request for url (http://127.0.0.1:11100/api/v1/feed/stream), retrying in 500ms"
+          - generic "Click to copy" [ref=e6636]: 2026-04-25T15:17:29.266Z INFO [tts-daemon] connecting to http://127.0.0.1:11100/api/v1/feed/stream
+          - generic "Click to copy" [ref=e6637]: "2026-04-25T15:17:29.267Z WARN [tts-daemon] connection failed: error sending request for url (http://127.0.0.1:11100/api/v1/feed/stream), retrying in 1000ms"
+          - generic "Click to copy" [ref=e6638]: 2026-04-25T15:17:30.269Z INFO [tts-daemon] connecting to http://127.0.0.1:11100/api/v1/feed/stream
+          - generic "Click to copy" [ref=e6639]: "2026-04-25T15:17:30.271Z WARN [tts-daemon] connection failed: error sending request for url (http://127.0.0.1:11100/api/v1/feed/stream), retrying in 2000ms"
+          - generic "Click to copy" [ref=e6640]: "bd-7e2934: tmux set-environment -g PATH failed on socket 'caco-agent-cacophony-ms-mac-cacophony-caco-doctor-msm': error connecting to /private/tmp/tmux-501/caco-agent-cacophony-ms-mac-cacophony-caco-doctor-msm (No such file or directory)"
+          - generic "Click to copy" [ref=e6641]
+          - generic "Click to copy" [ref=e6642]: "----- END LAST CRASH -----"
+          - generic "Click to copy" [ref=e6643]: "2026-04-25T15:18:11.186Z INFO [daemon] daemon started (v1.2.550) {\"version\":\"1.2.550\"}"
+          - generic "Click to copy" [ref=e6644]: "2026-04-25T15:23:37.507Z ERROR [tts-daemon] [project:cacophony] speech API error: 500 Internal Server Error {\"event_id\":\"evt-019dc53d-2abd-7493-b3da-e93689ad3a53\",\"fatal\":false,\"process_id\":\"tts-daemon\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6645]: "2026-04-25T15:24:01.261Z ERROR [agent] [project:a.skh.am] Persistent agent router failed during startup {\"event_id\":\"evt-019dc53d-970e-7a13-b4b3-debb41274d9c\",\"fatal\":false,\"process_id\":\"router\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6646]: "2026-04-25T15:24:05.933Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-2 failed during startup {\"event_id\":\"evt-019dc53d-a8cc-76a0-9d68-5880c3e24697\",\"fatal\":false,\"process_id\":\"caco-dev-msm-2\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6647]: "2026-04-25T15:24:07.859Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-1 failed during startup {\"event_id\":\"evt-019dc53d-b106-7aa0-a6c8-8702554e4290\",\"fatal\":false,\"process_id\":\"caco-dev-msm-1\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6648]: "2026-04-25T15:24:23.201Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-3 failed during startup {\"event_id\":\"evt-019dc53d-ecd8-7701-9ffd-b987d5202b6c\",\"fatal\":false,\"process_id\":\"caco-dev-msm-3\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6649]: "2026-04-25T15:24:26.819Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-5 failed during startup {\"event_id\":\"evt-019dc53d-fb2e-7e13-bc58-11c5b9fe514a\",\"fatal\":false,\"process_id\":\"caco-dev-msm-5\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6650]: "2026-04-25T15:27:24.931Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-2 failed during periodic reconcile {\"event_id\":\"evt-019dc540-b2fb-71a0-8689-811653cab718\",\"fatal\":false,\"process_id\":\"caco-dev-msm-2\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6651]: "2026-04-25T15:30:04.839Z ERROR [agent] [project:cacophony] Persistent agent caco-log-monitor-msm failed during startup {\"event_id\":\"evt-019dc543-2393-7750-a2b7-bbb957495146\",\"fatal\":false,\"process_id\":\"caco-log-monitor-msm\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6652]: "2026-04-25T15:30:13.759Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-2 failed during startup (suppressed 2 similar in last 300s) {\"event_id\":\"evt-019dc543-4651-7ab0-aeab-4857b8e080c5\",\"fatal\":false,\"process_id\":\"caco-dev-msm-2\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6653]: "2026-04-25T15:30:13.951Z ERROR [agent] [project:cacophony] Persistent agent caco-doctor-msm failed during periodic reconcile {\"event_id\":\"evt-019dc543-4738-7f03-ad58-a3529ab28248\",\"fatal\":false,\"process_id\":\"caco-doctor-msm\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6654]: "2026-04-25T15:35:19.785Z INFO [agent] agent discarded: ms-mac-cacophony-caco-dev-msm-2 (files_deleted=true) {\"agent_id\":\"ms-mac-cacophony-caco-dev-msm-2\",\"delete_files\":true,\"project\":\"cacophony\"}"
+          - generic "Click to copy" [ref=e6655]: "2026-04-25T15:35:41.256Z ERROR [agent] [project:cacophony] Persistent agent caco-dev-msm-2 failed during startup (suppressed 3 similar in last 300s) {\"event_id\":\"evt-019dc548-45be-7c80-88ec-2ec362214e74\",\"fatal\":false,\"process_id\":\"caco-dev-msm-2\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6656]: "2026-04-25T15:39:21.251Z ERROR [daemon:http] [project:cacophony] GET /api/v1/projects/cacophony/beads/bd-fc3328 -> 502 {\"event_id\":\"evt-019dc54b-9e65-7bf2-97e5-944605b8d680\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6657]: "2026-04-25T15:46:53.549Z ERROR [agent] [project:cacophony] Persistent agent caco-doctor-msm failed during periodic reconcile {\"event_id\":\"evt-019dc552-87db-7863-af9c-09164d373a0a\",\"fatal\":false,\"process_id\":\"caco-doctor-msm\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6658]: "2026-04-25T15:52:11.889Z ERROR [daemon:http] [project:cacophony] GET /api/v1/beads/all -> 502 {\"event_id\":\"evt-019dc557-6323-70a0-9c80-05a2e85ce008\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6659]: "2026-04-25T15:53:58.125Z ERROR [agent] [project:cacophony] Persistent agent caco-doctor-msm failed during periodic reconcile {\"event_id\":\"evt-019dc559-0256-70f1-8762-92a67598592d\",\"fatal\":false,\"process_id\":\"caco-doctor-msm\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6660]: "2026-04-25T15:57:46.319Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/tendril/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc4-7733-a7d2-0977308a4092\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6661]: "2026-04-25T15:57:46.343Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/cacophony/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc4-7733-a7d2-099876cfae55\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6662]: "2026-04-25T15:57:46.357Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/a.skh.am/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc4-7733-a7d2-09a2ae615648\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}2026-04-25T15:57:46.352Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/collective/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc4-7733-a7d2-098aa07162c7\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6663]: "2026-04-25T15:57:46.369Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/pr-topology-smoke/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc8-7081-bd18-cec8fc2af09e\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}2026-04-25T15:57:46.360Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/gfx-replacer/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc5-77f3-b7ec-33d6f6785b89\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6664]: "2026-04-25T15:57:46.388Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/picasso-health/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc9-7c50-8cdd-85a845dc5cbe\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6665]: "2026-04-25T15:57:46.404Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/life/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc9-7c50-8cdd-85cd6013810e\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6666]: "2026-04-25T15:57:46.434Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/mono/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc9-7c50-8cdd-85d8cfdb1656\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6667]: "2026-04-25T15:57:46.441Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/midi2hid/beads/sync -> 502 {\"event_id\":\"evt-019dc55c-7dc9-7c50-8cdd-85e706a40b20\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6668]: "2026-04-25T15:57:57.780Z ERROR [daemon:http] [project:cacophony] GET /api/v1/beads/all -> 502 (suppressed 1 similar in last 300s) {\"event_id\":\"evt-019dc55c-aa85-7421-925b-07acfb975769\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6669]: "2026-04-25T16:02:35.402Z ERROR [agent] [project:cacophony] Persistent agent caco-doctor-msm failed during periodic reconcile (suppressed 1 similar in last 300s) {\"event_id\":\"evt-019dc560-e6d7-71a1-bb54-7dd55e1a8eec\",\"fatal\":false,\"process_id\":\"caco-doctor-msm\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6670]: "2026-04-25T16:10:23.439Z ERROR [daemon:http] [project:cacophony] GET /api/v1/beads/all -> 502 (suppressed 2 similar in last 300s) {\"event_id\":\"evt-019dc568-0b27-7fb1-8e2c-a63f77de18ba\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6671]: "2026-04-25T16:11:29.645Z ERROR [daemon:http] [project:cacophony] GET /api/v1/projects/cacophony/beads -> 502 {\"event_id\":\"evt-019dc569-0dd9-7e82-9716-843dd737f314\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6672]: "2026-04-25T16:11:52.755Z ERROR [agent] [project:cacophony] Persistent agent caco-doctor-msm failed during periodic reconcile {\"event_id\":\"evt-019dc569-6817-7af1-9bbd-44ae4f652745\",\"fatal\":false,\"process_id\":\"caco-doctor-msm\",\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6673]: "2026-04-25T16:25:24.393Z ERROR [daemon:http] [project:cacophony] POST /api/v1/projects/cacophony/beads/bd-834dd5/close -> 502 {\"event_id\":\"evt-019dc575-c95c-7113-a8f3-9c0cd5c88c5d\",\"fatal\":false,\"process_id\":null,\"severity\":\"error\"}"
+          - generic "Click to copy" [ref=e6674]: "2026-04-25T16:31:11.530Z ERROR [agent] [project:cacophony] Persistent agent caco-doctor-msm failed during periodic reconcile {\"event_id\":\"evt-019dc57b-1665-7902-b536-c5a4b3e10662\",\"fatal\":false,\"process_id\":\"caco-doctor-msm\",\"severity\":\"error\"}"
+  - status
+  - button "Scroll to top":
+    - img
