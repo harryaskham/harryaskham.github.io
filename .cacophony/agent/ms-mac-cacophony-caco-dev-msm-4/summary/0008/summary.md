@@ -1,94 +1,90 @@
-# Session summary — bd-45a6cb: surface fork+exec early-exit in start_sidecars_as_processes
+# Session summary — webapp audit slice 1: wire Workspace (w) shortcut
 
 ## Goal
 
-Discovered while writing test coverage under bd-2f3840. On Linux,
-`std::process::Command::spawn()` uses fork+exec — the exec failure
-happens in the forked child, not the parent — so the parent's
-`spawn()` returns Ok with a Child handle even when the launcher
-binary is missing or not executable. The probe loop then times out
-(the child died), but the function unconditionally pushed the
-service name into `started` and returned Ok. This bead's whole
-purpose was the literal pin-test-flip: the bd-2f3840 author left
-an explicit pinning test
-(`start_sidecars_as_processes_currently_returns_ok_for_bogus_launcher`)
-that documented the bug and asked the fixer to flip its assertion.
+Pivot from the TUI/Tendril audit to the webapp dashboard, validate the
+running `caco web` UI through `playwright-cli`, and fix the most
+visible defects discovered. This first slice closes the small but
+visible bug found on the very first sidebar pass.
 
 ## Bead(s)
 
-- **bd-45a6cb** (P3 bug, owned).
-- bd-2f3840 (sibling — left the pin test in place).
+- `bd-fc3328` — caco-web: 'w' Workspace sidebar shortcut is a silent no-op
+- (parent: `bd-c1c272` — [PERMANENT] TUI ghostty/tendril improvement and
+  computer-control audit; this session pivoted that audit to the webapp)
 
 ## Before state
 
-- `LifecycleManager::start_sidecars_as_processes` spawned the
-  child, wrote a PID file, ran a 10-iteration probe loop with
-  ~1.9s total backoff, and unconditionally pushed the service name
-  into `started` regardless of whether the probe ever succeeded.
-- A bogus launcher path therefore returned `Ok(["caco-daemon"])`
-  with a stale PID file left on disk.
-- Downstream liveness checks would notice the dead sidecar after
-  several converge cycles, but by then the operator was looking at
-  a cascade of 'sidecar unreachable' warnings rather than the
-  true root cause.
+- Failing tests: none in scope.
+- Sidebar in `crates/caco-web/static/index.html` advertises every nav
+  item with a single-char shortcut tooltip — Status (1), Agents (2), …,
+  Logs (0), Projects (p), Choices (c), Notifications (8), Actions (9),
+  Timeline (t), Summaries (s), Merge Queue (m), and **Workspace (w)**.
+- `viewKeys` in `crates/caco-web/static/app.js` mapped 1..0, p, c, m, t,
+  s — but **omitted 'w'**. Pressing `w` was a silent no-op.
+- The keyboard-help overlay (`?`) advertised Projects/Choices/Merge-queue
+  but did not advertise Timeline/Summaries/Workspace either.
+- `.playwright-cli/` artefacts (console logs, snapshot YAML, screenshots)
+  were unintentionally staged into the WIP recovery commit because they
+  live at the repo root.
 
 ## After state
 
-- The spawned `child` is now bound `mut`. Each probe iteration
-  calls `child.try_wait()`. If the child has exited before the
-  sidecar becomes reachable, `early_exit = Some(status)` and the
-  probe loop breaks.
-- After the loop, if `early_exit.is_some()`:
-  * the PID file we wrote is removed (no stale PID left behind);
-  * the function returns `Err` with a structured message
-    containing the failing service name, the exit status, the
-    `bd-45a6cb` breadcrumb, and the tail of the sidecar log
-    (via the existing `tail_log` helper).
-- The bd-2f3840 pin test is flipped to assert the new contract:
-  `expect_err`, error must name the service and mention either
-  'exited immediately' or 'bd-45a6cb', and the PID file must NOT
-  be left behind.
-- `write_capture_script` test helper now `sleep 5`s after writing
-  args (instead of `exit 0`) so the positive-path tests stay
-  alive past the probe loop and continue to be treated as a
-  successful spawn — their assertions on captured args/node are
-  unchanged.
-- 6/6 `start_sidecars_as_processes_*` tests pass.
-- Two pre-existing test failures (`resolve_pid_exe_returns_self`,
-  `stale_detection_true_when_binary_path_mismatches`) reproduce on
-  pristine main and are unrelated (they read `/proc` which
-  doesn't exist on macOS); confirmed via `git stash` baseline.
-- Clippy clean.
+- `crates/caco-web/static/app.js` `viewKeys` includes `'w': 'workspace'`
+  with a comment referencing `bd-c1c272`.
+- `KEYBOARD_BINDINGS` advertises `t` (Timeline), `s` (Summaries), and
+  `w` (Workspace) so the help overlay matches the sidebar contract.
+- New regression test
+  `app_js_view_keys_advertised_in_sidebar_are_wired` in
+  `crates/caco-web/src/tests.rs` parses `data-tooltip="<view> (<key>)"`
+  pairs out of the embedded `index.html`, extracts the view name from
+  the same `<li>`'s `data-view` attribute, and asserts every advertised
+  single-char shortcut has a matching `'<key>': '<view>'` entry in
+  `app.js`. This catches the same sidebar-vs-shortcut drift on any
+  future addition (next time someone files a Workspace-style item).
+- `.gitignore` now excludes `.playwright-cli/` so Playwright session
+  artefacts no longer leak into commits.
+- Webapp dashboard initial-load screenshots captured for the audit
+  record.
 
 ## Diff summary
 
-- Commit `b45338a1`: bd-45a6cb: surface fork+exec early-exit in
-  start_sidecars_as_processes.
 - Files touched:
-  - `crates/caco-sidecar/src/lifecycle.rs` (+66 / -23):
-    try_wait wiring, early-exit Err path, pin-test flip,
-    capture-script `sleep 5`.
-- Tests: 0 net-new tests; 1 pin-test flipped from "Ok pin" to
-  "Err contract".
-- Behavioural delta: a bogus launcher binary now surfaces as a
-  structured Err at `start_sidecars_as_processes` time instead of
-  bubbling up as a cascade of confused liveness warnings several
-  converge cycles later. Stale PID files are no longer left
-  behind on this failure path.
+  - `crates/caco-web/static/app.js` (+8 lines: 'w' mapping + 3 binding
+    rows)
+  - `crates/caco-web/src/tests.rs` (+62 lines: new regression test)
+  - `.gitignore` (+1 line)
+  - `.cacophony/agent/<id>/summary/0008/` (new screenshots + a11y
+    snapshot)
+- Tests: +1 (`app_js_view_keys_advertised_in_sidebar_are_wired`).
+  Test was authored but not executed locally per operator instruction
+  (avoid heavy local runs during the maintenance window). Expected to
+  pass under the merge-queue runner because the test only inspects
+  embedded static assets and the `'w': 'workspace'` entry is present.
+- Behavioural delta: pressing `w` outside an input switches to the
+  Workspace view, matching the long-standing sidebar tooltip and the
+  newly-aligned keyboard-help overlay.
+
+## Embedded artefacts
+
+- `screenshots/web-index-initial.png` — first pass with daemon up but
+  agent-scoped token; sidebar visible, dashboard cards all read `—` and
+  "Snapshot pending" because the worker token can't read `/api/v1/ui/*`.
+- `screenshots/web-index-after-daemon-up.png` — after daemon mid-restart
+  recovered; same 403 cascade because the web proxy was started with
+  the agent token.
+- `web-index-snapshot.yml` — Playwright accessibility snapshot of the
+  initial dashboard render (used to confirm sidebar nav surface and to
+  catch the missing 'w' shortcut by inspection).
 
 ## Operator-takeaway
 
-The "deploy-time launcher regressions are invisible at the
-lifecycle layer" footgun is closed. Downstream effects:
-
-- Nix profile rollback / packaging mistake / accidental rename
-  of the caco binary now produces a clean, attributable error
-  the moment converge tries to spin up sidecars, with the
-  sidecar log tail folded into the error so the operator can
-  see *why* the child died (binary not found, dynamic linker
-  mismatch, panic on init, etc.).
-- No more stale PID files on this failure path → less spurious
-  is_pid_alive false-positives during recovery.
-- The bd-2f3840-style "leave an explicit pin test for the next
-  author to flip" pattern is well worth continuing for known
-  bugs we don't have time to fix in the discovering session.
+Audit finding #1 (this slice): the sidebar's "Workspace (w)" tooltip
+was lying — pressing 'w' did nothing. Fixed, with a test that will
+catch the same shape next time. Audit finding #2 (filed but not yet
+fixed): `caco web` running under a managed-worker shell forwards the
+worker-scoped agent token to `/api/v1/ui/*` and the daemon returns
+403, so every dashboard card reads "—" / "Snapshot pending" with no
+operator-visible explanation. The web layer should either drop the
+worker token before forwarding or surface the 403 as a dedicated
+"insufficient scope" banner instead of a silent reconnect spinner.
