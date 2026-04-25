@@ -1,30 +1,28 @@
-# Session summary — bd-5bfb2c (slice 8)
+# Session summary — bd-5bfb2c (slice 9)
 
 ## Goal
-Discoverability + power-user features: project context filter, custom layouts, keyboard help.
+IDE-class pane manipulation: drag tabs to rearrange, double-click handles to even-split.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- No project filter (panes showed all projects)
-- No way to save custom layouts
-- Shortcuts undiscoverable (no help)
+- Pane layout fixed once split — could close but not move
+- Split ratios drift over time, no quick reset
 
 ## After state
-- ws-project-filter dropdown in toolbar scopes all panes globally
-- Save Layout button → prompts for name → persists to localStorage
-- Layout preset dropdown surfaces saved custom layouts under separator
-- Press ? or click ?-button: full keyboard help overlay (kbd-styled,
-  blur backdrop, lists all shortcuts + 19 pane types + 6 presets +
-  selection-broadcast pattern)
-- 226/226 tests green (3 new)
+- Drag any pane tab to:
+  - Center of another pane → swap
+  - Left/right/top/bottom 25% edge → split with dragged on that side
+- Live drop-zone preview with clip-path overlay
+- Double-click split handle to reset to 50/50
+- Source pane fades while dragging (0.5 opacity)
+- 228/228 tests green (2 new)
 
 ## Diff summary
-- workspace-integrated.js: project filter wiring, custom layout save/load, showKeyboardHelp()
-- index.html: project filter select, save-layout + help buttons
-- style.css: +70 lines for help overlay
-- tests.rs: 3 new tests
+- workspace-integrated.js: drag/drop wiring on tabs, handlePaneDrop, detachLeaf, dblclick on handle
+- style.css: drop-zone visualization
+- tests.rs: 2 new tests
 
 ## Operator-takeaway
-Discoverable now: press `?` for full help. Save your favorite pane setups by name. Filter every pane to one project at once.
+Layout feels native now. Drag tabs around to rearrange like VSCode; drop on any 25% edge to split, drop on center to swap. Double-click any split handle to reset 50/50.
