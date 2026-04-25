@@ -1,32 +1,32 @@
-# Session summary — helsinki daemon inbox transient audit
+# Session summary — macOS companion copy density
 
 ## Goal
 
-Audit the two reported `caco msg inbox` / daemon-reachability transients on helsinki and determine whether they were unexplained daemon stalls or explainable lifecycle windows.
+Reduce explanatory chrome in the native macOS companion so steady-state panes feel more like a polished Apple-native dashboard and less like embedded documentation, while preserving useful error and empty-state guidance.
 
 ## Bead(s)
 
-- `bd-7cd0fc` — helsinki daemon: intermittent connection-refused on `/api/v1/projects/cacophony/messages/inbox`
+- `bd-86ff04` — [macOS visual polish] Reduce explanatory chrome and tighten native copy density
 
 ## Before state
 
-- Failing tests: none; this was an operational log-audit bead.
-- Relevant metrics: two reported transient failures, one around 21:00 BST and one around 22:50 BST on 2026-04-25. Symptoms recovered without restart intervention.
-- Context: the bead asked for log/metric audit on helsinki and escalation to P2 only if the pattern looked recurrent outside expected restart behavior.
+- Failing tests: none known for this bead.
+- Relevant metrics: recent Tendril QA captures reported dense explanatory text, wrapped labels, and footer shortcut hints competing with content. Examples included long sidebar taglines, verbose offline/empty-state guidance, command palette help, notification/audio help text, and multi-clause lifecycle/action descriptions.
+- Context: operator feedback asked for a more minimalistic native macOS surface, similar in direction to the Android copy pass but focused on SwiftUI panes.
 
 ## After state
 
-- Failing tests: none observed.
-- Relevant metrics: helsinki daemon logs showed restart windows at `20:47:00Z -> 20:48:12Z` and `21:47:03Z -> 21:48:13Z`, plus post-restart startup reconciliation churn. A live `caco node status --node helsinki --json` showed `caco-daemon` running on version `1.2.552` after the audit.
-- Context: the audit concluded the reported connection-refused windows align with daemon restart/grace windows rather than a standalone accept-loop stall or DB lock.
+- Failing tests: none observed in lightweight validation.
+- Relevant metrics: 14 SwiftUI view files touched; copy-only diff was 132 insertions and 132 deletions. No strings over the audit threshold remained for `Text(...)`, `message:`, `subtitle:`, or `accessibilityHint(...)` in `companion/macos/Sources/Cacophony/Views` after the pass.
+- Context: sidebar taglines, project-scope hints, command palette help, offline guidance, feedback banners, Messages, Audio, Status, Settings, Agents, Agent Controls, Operations, Diagnostics, Inspector, Workspace, and Operator Controls copy are now shorter and less instructional.
 
 ## Diff summary
 
-- Commits: `b52edc220`
-- Files touched: `docs/audits/bd-7cd0fc-helsinki-daemon-inbox-transient.md`
-- Tests: no code tests; validation was `git diff --check` plus direct helsinki log/status inspection.
-- Behavioural delta: no runtime behavior changed; the repo now has a durable audit note with evidence, conclusion, and escalation triggers.
+- Commits: `650143cd5`
+- Files touched: `companion/macos/Sources/Cacophony/Views/*.swift` across core dashboard panes.
+- Tests: no Swift build run on this Linux worker. Validation performed: `git diff --check`, `bash -n scripts/macos-app-swift-syntax.sh`, `just --dry-run macos-app-swift-syntax`, `just --dry-run macos-app-validate`, and a long-string audit over macOS SwiftUI views.
+- Behavioural delta: no model, navigation, or daemon behavior changed; visible and accessibility-helper copy is denser and more native-feeling.
 
 ## Operator-takeaway
 
-No P2 escalation is warranted from the current evidence: both observed helsinki inbox failures line up with daemon restart windows. Escalate only if connection-refused recurs without nearby `daemon stopped` / `daemon started` log pairs, or if endpoints stay unavailable while status reports the daemon running outside restart grace.
+The macOS app now says less by default: steady-state panes keep actionable labels and empty/error guidance, but remove much of the documentation-like prose that was causing wrapping and visual clutter in recent captures.
