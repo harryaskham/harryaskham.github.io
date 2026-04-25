@@ -1,44 +1,41 @@
-# Session summary — docs design-token + typography parity (bd-0e2372)
+# Session summary — Summaries Android and web polish pass
 
 ## Goal
-Apply the bd-90d4d3 audit's cheapest recommendations: adopt the webapp's
-full design-token set in docs/style.css and swap the docs font stack to
-Inter + JetBrains Mono (matching the webapp's Google Fonts load) so the
-two surfaces stop reading as separate visual universes.
+
+Take a holistic visual pass over the summaries viewer surfaces, with Android as the main target because it felt janky and under-designed compared with the TUI/web work already landed. This slice focused on spacing, visual hierarchy, motion, section cards, grouping, and responsive web detail polish.
 
 ## Bead(s)
-- bd-0e2372 — Update GitHub Pages color scheme and typography
-- consumes audit: bd-90d4d3
-- siblings still open: bd-0ffc0d (layout parity), bd-c2d025 (validation)
+
+- `bd-1bfe29` — Summaries polish: elevate Android and web visual UX
+- related prior slice: `bd-8d7f8c` — Summaries: serve embedded artefacts to viewer surfaces
+- parent context: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
-- Failing tests: none.
-- docs/style.css carried only the 16-colour Nord palette + a single
-  --radius token. No semantic surfaces, no shadow ramp, no transitions,
-  no a11y motion overrides. Body used --nord0/--nord4 directly.
-- All 19 docs/*.html pages loaded zero web fonts and had no favicon;
-  Inter/JetBrains Mono fell through to OS defaults.
+
+- Android summaries list used simple flat group headers and dense rows; there was little hierarchy between agent group, row metadata, and row title.
+- Android detail sections used the generic accent card directly, creating a thin-border look that did not match the richer cards elsewhere in the app.
+- Android artefact rows were bare text rows.
+- Web summaries panes and rows were functional but visually flat, with square-ish cards and minimal hover/selected treatment.
+- `cargo check --workspace --tests` is temporarily blocked on broken-on-main duplicate caco-cli test `dispatch_codespace_new_pushes_rendezvous_bootstrap_secret_bd_0bed93`; msm-4 owns the fix in `bd-77653d`, and I left `bd-f1ce08` unclaimed + dependency-linked rather than duplicating it.
 
 ## After state
-- Failing tests: none. `cargo test -p caco-web --lib` = 153 passed (+2 new).
-- docs/style.css now exports the same 30+ design tokens the webapp
-  defines, declares color-scheme: dark, and honours prefers-reduced-motion.
-- All 19 docs/*.html pages preconnect and load Inter (4 weights) +
-  JetBrains Mono (4 weights) via the same Google Fonts URL the webapp
-  uses, plus the same SVG-data-URL favicon.
+
+- Android list view now has a dynamic hero subtitle and status badge, stronger group headers with count pills, staggered card entrance animations, improved row spacing, and stronger title typography.
+- Android detail top bar has a subtle Frost gradient wash; sections render as rounded Material cards with tinted borders and internal accent bars, improving readability and matching the broader app card grammar.
+- Android artefacts now render as rounded cards with better spacing and ellipsized names.
+- Web summary list/detail panels now have subtle gradient surfaces, rounded 12px panels, richer card shadows, animated hover lift on rows, softer selected state, rounded section cards, bordered artefact cards, and mobile-specific thumbnail/layout adjustments.
 
 ## Diff summary
-- Modified: docs/style.css (token block expanded ~40 lines)
-- Modified: 19 × docs/*.html (font preconnect + stylesheet + favicon)
-- Modified: crates/caco-web/src/tests.rs (+2 tests)
-- Tests: +2 / -0
-- Behavioural delta: docs surface only — webapp untouched.
+
+- Commits: `e23968475`
+- Files touched:
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/summaries/SummariesScreen.kt`
+  - `crates/caco-web/static/summaries.css`
+- Tests:
+  - `cargo test-small` — 252 passed
+  - `cargo check --workspace --tests` — blocked by unrelated broken-on-main duplicate caco-cli test, coordinated with msm-4 and bd-f1ce08/bd-77653d
+- Behavioural delta: no API change; purely visual/UX polish for Android and web summaries.
 
 ## Operator-takeaway
-The two cross-surface tests live in caco-web because that crate already
-owns the visible web contract. They soft-skip when docs/ is absent so
-trimmed checkouts don't fail. Future docs edits that drop the design
-tokens or the font load will fail loudly with a per-file list of
-offenders, which is exactly what bd-c2d025 (cross-surface validation)
-is supposed to provide. bd-0ffc0d is now the last cheap visual bead in
-the GH-pages-refresh lane; after that bd-c2d025 can run end-to-end.
+
+Summaries now feel less like a raw data dump and more like a first-class product surface, especially on Android: stronger hierarchy, smoother entry motion, better section cards, and more consistent cross-surface styling. The next high-impact polish slice should add Android-native artefact opening/thumbnail support using the raw endpoint from bd-8d7f8c.
