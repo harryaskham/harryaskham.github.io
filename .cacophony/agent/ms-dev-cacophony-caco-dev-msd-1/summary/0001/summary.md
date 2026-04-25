@@ -1,59 +1,32 @@
-# Session summary — bd-c19193 agent_summary tests stack overflow
+# Session summary — Beads search focus affordance
 
 ## Goal
 
-Fix the broken-on-main test failure
-`agent_summary_exclude_routine_node_health_hides_mismatch_and_advisory`
-in `crates/caco-cli/src/lib.rs`, which SIGABRTed with a stack overflow
-under `cargo test` from a clean checkout.
+Fix the macOS native app visual-QA report that typing into the Beads search field did not visibly enter text or filter the list. The goal was to make the search target unmistakably focusable, keyboard-accessible, and visibly stateful from Tendril captures.
 
 ## Bead(s)
 
-- `bd-c19193` — [broken-on-main] agent_summary_exclude_routine_node_health_hides_mismatch_and_advisory stack overflow.
-  - Originally announced by msd-4 (broken-on-main observation), then
-    handed off to me when msd-4 chose to focus on bd-f49a71 reintegration.
+- `bd-20cee2` — [macOS visual QA] Beads search field does not visibly accept typed filter text
 
 ## Before state
 
-- `cargo test -p caco-cli --lib agent_summary_exclude_routine_node_health`
-  reliably aborted with `thread '...' has overflowed its stack`.
-- Investigation showed the sibling test
-  `agent_summary_text_separates_actionable_and_advisory_node_health`
-  has the identical failure mode — both call into the same
-  `dispatch_agent_summary` path whose monomorphisations overflow the
-  default 2 MB test-thread stack.
-- Confirmed root cause by passing under
-  `RUST_MIN_STACK=33554432 cargo test ...` — pure stack-budget issue.
+- Failing tests: none known for this bead; the failure was a visual QA report from the installed app.
+- Relevant metrics: Tendril evidence said clicking the Beads search field and typing `agent` or `zzz-no-match` left the field/list visually unchanged.
+- Context: Beads search used a compact rounded-border `TextField` with no explicit `FocusState`, no dedicated focus button, and no visible focused container around the input.
 
 ## After state
 
-- Both agent_summary tests wrapped in the existing
-  `run_help_test_with_large_stack` helper (16 MB stack via
-  `RUN_DISPATCH_STACK_SIZE` — same budget production gets in
-  `pub fn run()`, established by bd-e4f3e3 / bd-a7441a).
-- `cargo test -p caco-cli --lib agent_summary` — both tests pass.
-- `cargo test-small` workspace-wide green; `cargo clippy -p caco-cli
-  --lib --tests` clean.
-- No production code changes — purely a test-runner stack fix.
+- Failing tests: none observed in the Rust fast preflight; Swift syntax/build validation was unavailable on this Linux worker because `swift` is not installed.
+- Relevant metrics: `cargo test-small` passed with 2949 `caco-tui` tests and 264 `caco-web` tests; static checks confirmed the new focus state, `Cmd+F` focus shortcut, and README shortcut docs are present.
+- Context: Beads search is now a larger custom search box with explicit focus binding, visible focused border/background, clear button, `Cmd+F` focus action, and accessibility value exposing the current query.
 
 ## Diff summary
 
-- Commit: `bf75e1a4` (bd-c19193: agent_summary tests overflow default
-  2MB stack — wrap in run_help_test_with_large_stack).
-- Files touched: `crates/caco-cli/src/lib.rs` (test wrapping only).
-- Tests: +0 / -0 / flipped 2 (both moved from `#[test] fn body` to
-  `#[test] fn run_help_test_with_large_stack(|| body)`).
-- Behavioural delta: zero. Production dispatch path is unchanged.
+- Commits: `beca29bb0` (code/docs), plus the recorded-summary commit containing this file.
+- Files touched: `companion/macos/Sources/Cacophony/Views/BeadsPane.swift`, `companion/macos/README.md`, `.cacophony/agent/ms-dev-cacophony-caco-dev-msd-1/summary/0001/summary.md`.
+- Tests: +0 / -0 / flipped 0.
+- Behavioural delta: clicking or `Cmd+F` should move focus into a clearly highlighted Beads search box; typed text remains visible, filters immediately, and can be cleared without losing focus.
 
 ## Operator-takeaway
 
-The 16 MB `run_help_test_with_large_stack` helper has now absorbed
-its 11th caller in this file. The recurring pattern is: any test that
-re-enters the CLI dispatch tree (`run`, `dispatch_agent_summary`,
-choices/MCP dispatch helpers) needs the larger stack because the
-release path uses 16 MB. The default `#[test]` 2 MB budget is too
-small for this monomorphisation tree, and it's worth treating
-"new test calls into dispatch" as a coding rule that mandates the
-helper. A future polish task could extract this into a custom
-`#[caco_dispatch_test]` attribute macro so the helper is invoked
-automatically.
+This is a UI affordance hardening rather than a daemon fix: the search binding already existed, but the installed app offered too little visual/focus feedback for reliable Tendril-driven QA. The new search box should make both focus and entered query obvious in screenshots.
