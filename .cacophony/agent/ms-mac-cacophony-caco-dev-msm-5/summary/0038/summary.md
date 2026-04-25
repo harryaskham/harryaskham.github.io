@@ -1,51 +1,36 @@
-# Session summary 0038 — bd-8b59a1: caco msg inbox --mute (slice 1)
+# Session summary — TUI summaries Ctrl-U help
 
 ## Goal
 
-Give non-dev persistents and operators a way to suppress routine
-broadcasts they don't care about (e.g. the 14+ `caco-dev-* notes`
-operator nudges per session observed tonight).
+Continue TUI summaries polish by making the recently-added `Ctrl-U` filter clearing shortcut discoverable in the view itself.
 
 ## Bead(s)
 
-- `bd-8b59a1` slice 1 — CLI flag + profile schema field.
+- `bd-2046b5` — TUI summaries: document Ctrl-U filter clear
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- All persistents received every broadcast; no opt-out
-  mechanism. Each irrelevant broadcast cost an
-  acknowledgement cycle.
+- The summaries slash filter supported `Ctrl-U` to clear the current query.
+- The visible footer/help copy only mentioned `/`, `Esc`, and refresh, so users had to infer or already know the terminal-style clear shortcut.
+- The no-match guidance told users how to refine or clear the whole filter but not how to clear just the query while staying in filter mode.
 
 ## After state
 
-- `caco msg inbox --mute <pattern[,pattern...]>` drops messages
-  whose body contains any pattern (case-insensitive substring).
-  Operator-runnable today.
-- `ProfileComms.mute_broadcasts: Vec<String>` frontmatter field
-  added (with `#[serde(default, skip_serializing_if =
-  "Vec::is_empty")]`). Profile authors can declare a stable
-  opt-out for their persistents.
-- `apply_inbox_client_filters` extended with `mute_patterns: &[String]`
-  parameter; existing 4 unit tests updated to pass `&[]`.
-- compose.rs `ProfileComms { scope }` literal updated to
-  include the new field.
+- The TUI summaries footer now includes `Ctrl-U clear query` next to the existing filter and refresh controls.
+- The filtered empty-state guidance now explicitly mentions `Ctrl-U`, `Esc`, and `r` with distinct meanings.
+- Behaviour remains unchanged; this is discoverability polish.
 
 ## Diff summary
 
-- Commit: `d7fc92ef`.
-- Files (3): caco-cli lib.rs, caco-profile model.rs + compose.rs.
-- `cargo build` and `cargo clippy` for caco-cli + caco-profile +
-  caco-daemon: clean. caco-cli inbox-filter tests pass.
+- Commits: current `bd-2046b5` implementation commit
+- Files touched:
+  - `crates/caco-tui/src/views/summaries.rs`
+- Tests:
+  - `cargo test -p caco-tui summaries --lib` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: operators can now discover the TUI summaries query-clear shortcut without prior knowledge.
 
 ## Operator-takeaway
 
-Persistents (or operators) can now run e.g.
-`caco msg inbox --mute 'caco-dev-* notes'`
-to suppress routine broadcasts. The profile-frontmatter
-`comms.mute_broadcasts: [...]` field is plumbed through but
-auto-applied opt-out at CLI invocation time (caller-id → profile
-resolution) is bd-8b59a1 slice 2.
-
-Trade-off honoured: filtering is opt-in by recipient, never
-enforced by sender. Broadcasts remain promiscuous on the wire so
-the operator can still reach everyone with a non-mutable message.
+The TUI summaries filter now teaches both levels of recovery: `Ctrl-U` to clear the typed query and `Esc` to clear/leave the filter.
