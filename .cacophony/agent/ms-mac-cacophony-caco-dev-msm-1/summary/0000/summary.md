@@ -1,32 +1,32 @@
-# Session summary — macOS project inventory workload cues
+# Session summary — macOS config restart confidence polish
 
 ## Goal
 
-Improve Admin project inventory cards so operators can quickly distinguish active projects, quiet projects, queued work without workers, draft-only queues, and missing remote metadata.
+Improve the Admin config hash view so operators can understand loaded-versus-disk drift and restart implications before taking operational action.
 
 ## Bead(s)
 
-- `bd-64d505` — `[macOS excellence] Project inventory workload cues polish`
+- `bd-05a346` — `[macOS excellence] Config hash restart confidence polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline was 53 checks.
-- Context: Project cards showed status, remote, and counts, but did not interpret workload shape or explain when quiet/empty states were expected versus actionable.
+- Context: Config hashes were visible, but the view did not summarize drift pairs, provide a copyable audit, or explain restart safety steps in enough detail.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with `CacophonyKitSmoke: OK (53 checks)`.
-- Context: Project cards now include workload labels, guidance copy, queue quiet/no-active/remote-missing badges, and stronger remote-missing styling.
+- Context: The config view now includes restart confidence guidance, drift pair counts, a copy-audit action, and explicit restart checklist copy.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-64d505`.
+- Commits: current branch commit for `bd-05a346`.
 - Files touched: `companion/macos/Sources/Cacophony/Views/AdminInspectorPane.swift`.
 - Tests: no smoke-count change; app build and smoke suite passed.
-- Behavioural delta: Admin project scan now surfaces whether a project needs pickup, is active, is quiet, or needs config inspection.
+- Behavioural delta: config drift now reads as an operator decision surface rather than raw hash values.
 
 ## Operator-takeaway
 
-The native Admin project inventory now interprets workload health instead of making operators infer it from raw counts.
+Restart-needed states are safer and more explainable: operators can copy an audit, confirm expected drift, and avoid unnecessary daemon disruption.
