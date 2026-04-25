@@ -1,50 +1,68 @@
-# Session summary — workspace-tree structural fuzz (bd-4431dc)
+# Session summary — caco-web /summaries route
 
 ## Goal
 
-Cycle the workspace-view testing permanent. Add a missing piece of
-coverage: a structural fuzz that drives the WorkspaceTree through
-1000 random split/close/swap/setRatio operations and asserts tree
-invariants after each step. Goal is to catch corruption regressions
-in the pane-tree implementation that targeted unit tests would miss.
+Add the web-dashboard surface for the session-summary viewers epic so
+operators can browse summaries from any browser — including mobile
+devices over Tailnet — with the same NORD-themed two-pane design as
+the TUI viewer.
 
 ## Bead(s)
 
-- `bd-4431dc` — [PERMANENT] workspace-view testing
-- parent epic: `bd-027e9d`
+- `bd-a0503e` — caco-web: /summaries route with asciinema playback
+- parent epic `bd-a5e2fa`
+- depends on `bd-41b916` (closed), `bd-ba7239` (closed)
 
 ## Before state
 
-- Failing tests: none
-- workspace-tree had unit tests for individual ops (split, close, swap,
-  serialize round-trip in workspace_tree_js_tree_ops_behave_correctly)
-  but no stress-test exercising op composition over many iterations.
-- Six invariants the tree should satisfy after every op were implicit
-  in the implementation, not asserted as a contract.
+- caco-web had no `summaries` view or any awareness of the
+  `/api/v1/summaries` endpoints.
+- VALID_VIEWS had 14 entries, viewKeys lacked an `s` binding.
+- No `.summaries-*` CSS classes or JS module existed.
 
 ## After state
 
-- Failing tests: none. `cargo test -p caco-web --lib` = 107 passed.
-- New fuzz harness covers 5 seeds × 1000 ops = 5000 random op runs
-  per `cargo test`, asserting six invariants after every step.
-- ~4.6s wall for the new test on a warm cache.
+- New sidebar entry **Summaries** (📒 icon, key `s`) between
+  Timeline and Merge Queue.
+- `summaries.js` (~430 lines, self-contained IIFE):
+  * Lazy fetch on view-open, filter controls for project / agent /
+    bead-ID.
+  * Agent-grouped list with sticky headers, relative timestamps,
+    bead-ID chips, artefact icons (🎬📸{}).
+  * Detail pane renders all seven canonical sections with NORD
+    accent-colored left borders.
+  * Bead chips link to `#beads?q=<id>` for cross-view navigation.
+  * Asciinema affordance: shows CLI command to play + copy-path;
+    inline CDN playback deferred to future raw-file endpoint.
+- `summaries.css` (~260 lines): fully scoped under `#view-summaries`,
+  responsive grid (stacks on <900px), sticky agent group headers.
+- `index.html`: new sidebar `<li>`, `<div class="view"
+  id="view-summaries">`, CSS + JS link tags.
+- `app.js`: `summaries` added to VALID_VIEWS, `s` key shortcut,
+  `renderSummaries()` hook in switchView.
+- `cargo test -p caco-web --lib`: 239 passed.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-web/tests/workspace_tree_fuzz.js` (new)
-  - `crates/caco-web/src/tests.rs` (+1 test)
-- Tests: +1 / -0
-- Behavioural delta: none in production; new test enforces tree
-  invariants under heavy op composition.
+- Files touched: 5
+  * `crates/caco-web/static/summaries.js` (new, ~430 lines)
+  * `crates/caco-web/static/summaries.css` (new, ~260 lines)
+  * `crates/caco-web/static/index.html` (+sidebar entry, +view div,
+    +CSS/JS links)
+  * `crates/caco-web/static/app.js` (+VALID_VIEWS entry, +key
+    shortcut, +switchView hook)
+- Tests: +0 / -0 (JS view is integration-tested via browser; no
+  server-side changes)
+- Behavioural delta: new operator-facing view accessible at
+  `http://<host>:11180/#summaries`.
 
 ## Operator-takeaway
 
-The fuzz uses a seeded RNG so failures are reproducible — when a
-seed fails, the harness prints the seed + last 10 ops so the next
-agent can replay the exact sequence. This is the right shape for
-this kind of test: cheap to add new seeds, cheap to bisect, and the
-invariant set is documented in one place (`checkInvariants` in the
-harness). Future cycles of bd-4431dc can extend the same harness with
-new invariants (e.g. focusNeighbor reachability) rather than spawning
-a new node process per assertion.
+The web viewer is 100% client-side — it proxies to the daemon's
+`/api/v1/summaries` endpoints through caco-web's existing
+`/api/{*rest}` reverse proxy. No new server routes were needed. The
+`.summaries-*` CSS namespace avoids style collisions with the rest of
+the SPA. If you want inline asciinema playback, a future bead should
+add a `GET /api/v1/summaries/<agent>/<idx>/raw/<file>` endpoint to
+stream terminal.cast / screenshots / data.json through the proxy;
+the JS already has a `playCast()` hook ready to consume it.
