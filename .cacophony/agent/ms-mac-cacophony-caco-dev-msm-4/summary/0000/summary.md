@@ -1,24 +1,32 @@
-# Session summary — bd-5bfb2c (slice 12b: inline style cleanup)
+# Session summary — bd-5bfb2c (slice 13: visual polish + animation)
 
 ## Goal
-Replace inline styles with CSS utility classes for maintainability + visual consistency.
+Make workspace feel alive and cohesive — animations, hover states, zero inline styles.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- ~15 inline style.cssText assignments with duplicated layout values across JS files
+- No animations, hover states missing in many places
+- ~20 inline style.cssText assignments scattered across JS
+- Pane type selector was raw unstyled select
+- No visual feedback on focus/drag/entry
 
 ## After state
-- 5 CSS utility classes: ws-pane-column, ws-pane-scroll, ws-pane-scroll--compact, ws-pane-search-bar, ws-pane-search-input
-- Search inputs now have focus glow (accent-soft ring) — was impossible with inline styles
-- Single source of truth for common layout patterns
+- Entry animation on pane mount (scale + fade)
+- Chat message slide-in, empty state icon pulse
+- Drag opacity/scale, split handle glow + expansion
+- Hover highlights on log lines, feed rows, source tree
+- Focused tab: accent gradient underline + accent label
+- All inline styles eliminated → CSS utility classes
+- Priority badges match canonical design
+- Status bar has frosted glass effect
 - 231/231 tests green
 
 ## Diff summary
-- style.css: +18 lines (utility classes)
-- workspace-integrated.js: ~8 inline styles → className
-- workspace-panes.js: ~7 inline styles → className
+- style.css: +130 lines (animations, hover states, utility classes)
+- workspace-integrated.js: 3 inline styles → className
+- workspace-panes.js: 4 inline styles → className / style.prop
 
 ## Operator-takeaway
-Cleaner code, consistent spacing, search inputs now glow on focus like the rest of the app.
+Workspace now feels alive — panes fade in, chat messages slide up, empty states breathe. Every interactive element has hover/focus feedback. Zero inline styles for maintainability.
