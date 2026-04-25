@@ -1,69 +1,33 @@
-# Session 0009 — bd-2e2338 triage scoping flags
+# Session summary — macOS slice 7 admin inspector
 
-## Outcome
-Added `--creator` and `--label` scoping flags to `caco bd triage`
-(both `--next` and `--interactive` paths). Closed bd-2e2338. Filed
-bd-c236da as a follow-up draft for the title-similarity dedup
-heuristic.
+## Goal
 
-## Context
-Investigation revealed the interactive triage loop (filed under
-bd-eef036) already implements all 7 user-facing actions from
-bd-2e2338's spec (promote, discard, merge-into, defer, label, skip,
-quit) plus the `--max` session cap. Only two scoping inputs were
-missing:
+Deliver the seventh macOS parity slice by adding a native read-only admin inspector for configuration health, profiles, presets, modes, nodes, and projects.
 
-- `--creator` — useful for draining a specific agent's backlog (e.g.
-  bead-dreamer's drafts).
-- `--label` — useful for processing a label-tagged subset.
+## Bead(s)
 
-Both leverage existing daemon-side query plumbing (`creator=`,
-`label=`); `--label` further benefits from the bd-9006a6 multi-value
-parser landed in session 0008 (comma-separated values match ANY).
+- `bd-12fdf4` — `[macOS-parity slice 7] Configuration + profiles + presets + modes + nodes + projects`
+- Parent: `bd-d6f18a` — macOS native app feature parity umbrella
 
-## Commit
-- `d6de3aba` — bd-2e2338: --creator and --label scoping for caco bd
-  triage (crates/caco-cli/src/lib.rs; +38 lines).
+## Before state
 
-## What changed
-- BD_TRIAGE_ARGS gains two ArgSpec entries:
-  - `--creator`: Filter drafts by creator (e.g. an agent ID).
-  - `--label`: Filter drafts by label (comma-separated match ANY).
-- Both flags forwarded onto the draft listing URL in:
-  - `dispatch_bd_triage` (the `--next` path).
-  - `dispatch_bd_triage_interactive` (the loop path).
-- `bd_triage_args_includes_interactive_and_max` test extended to
-  assert the two new flag names are declared.
+- Failing tests: unrelated broken-on-main failures reported by peers; not part of this slice.
+- Relevant metrics: `CacophonyKitSmoke` had 34 checks after Workspace.
+- Context: operators still needed CLI/TUI for configuration, profile, mode, and node discovery.
 
-## Tests
-- `cargo test -p caco-cli -- bd_triage_args` passes.
-- `cargo test-small` green across the workspace (231+109+753+1+
-  297+18+2830+59).
-- `cargo clippy -p caco-cli -p caco-daemon` clean. (Pre-existing
-  unrelated clippy warning in caco-beads `unnecessary_cast`.)
+## After state
 
-## Friction beads filed this session
-- bd-c236da (draft, feature, p3) — Triage dedup heuristic:
-  title-similarity detection for `caco bd triage --interactive`.
-  The remaining substantial piece of bd-2e2338's spec ("auto-detect
-  dups by title-similarity, suggest merge-into"). Substantial on
-  its own: similarity-index design (Jaro-Winkler vs Levenshtein),
-  threshold tuning (e.g. >0.8), cache strategy across loop
-  iterations to keep latency tolerable for 1000+ beads.
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: `swift build` passed; `CacophonyKitSmoke` now runs 38 checks with config/profile/mode/node sample decoding.
+- Context: a new Admin pane provides Config, Modes, Profiles/Presets, Nodes, and Projects tabs with native search/filtering, glass metric cards, config hash/restart state, and selectable raw config-info text.
 
-## Decisions
-- **Scope cut**: deferred title-similarity dedup heuristic to
-  bd-c236da. The bd-2e2338 spec called for it but it's a separate
-  problem (similarity scoring, indexing, perf tuning) from triage
-  workflow ergonomics. The 988-draft pool drain unblocks
-  immediately with `--creator` / `--label` scoping; the dup
-  heuristic is a productivity multiplier on top.
-- **No new daemon code**: leveraged existing `creator=` and
-  `label=` query params + the bd-9006a6 multi-value parser. Pure
-  CLI plumbing change.
+## Diff summary
 
-## Open / next
-- Continue claiming after reintegration per the ongoing
-  `caco-dev-*` notes. Likely candidates: bd-c236da follow-up,
-  or top of the ready queue (bd-6ff0a0 build.rs auto-include,
-  bd-ce32fa caco bootstrap dev, etc.).
+- Commits: current branch commit for `bd-12fdf4`.
+- Files touched: `companion/macos/PARITY.md`, `DaemonState.swift`, `RootView.swift`, `AdminInspectorPane.swift`, `DaemonClient.swift`, `AdminInspector.swift`, `CacophonyKitSmoke/main.swift`.
+- Tests: +4 smoke assertions for admin/config decoding; no tests removed.
+- Behavioural delta: the native app now exposes a read-only control-room inspector for cluster configuration and node/project metadata.
+
+## Operator-takeaway
+
+The macOS app now gives Harry a native way to answer “what config/mode/profile/node state am I looking at?” without dropping into terminal commands or raw JSON dumps.
