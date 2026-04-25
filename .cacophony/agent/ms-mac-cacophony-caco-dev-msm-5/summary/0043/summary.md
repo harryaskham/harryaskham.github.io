@@ -1,42 +1,36 @@
-# Session summary 0043 — bd-2188ce: self_nudge_interval_secs field
+# Session summary — Web summaries detail focus visibility
 
 ## Goal
 
-Schema slice for the periodic self-nudge cadence so persistent
-agents whose natural idle exceeds the restart-watchdog window
-don't die just from being idle.
+Continue web summaries keyboard/accessibility polish by making the focusable selected-detail pane visibly obvious after Enter moves keyboard focus into it.
 
 ## Bead(s)
 
-- `bd-2188ce` slice 1 — schema + compose only.
+- `bd-a661a6` — Web summaries: improve detail focus visibility
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- caco-ctrl naturally idles 30+ min between bead-filing cycles.
-- 1800s restart watchdog kills it before the next cycle.
-- No declarative way to say "I'm slow but alive — nudge me."
+- The web summaries detail pane was keyboard-focusable after the previous selected-detail flow slice.
+- Focus on list rows was visually styled, but focus on the detail pane reused the browser default and was easy to miss against the NORD panel styling.
+- Keyboard users could move into detail with Enter, but the active focus target was not as clear as the selected row.
 
 ## After state
 
-- `ProfileFrontmatter.self_nudge_interval_secs: Option<u64>`
-  field with `#[serde(default)]`.
-- `compose_profiles` takes `min` of the non-None values from
-  constituent profiles (most-frequent-wins; safe because
-  nudging more often than required is harmless).
-- 295 caco-profile tests pass.
+- The selected summary detail pane now has an explicit NORD-accent focus ring.
+- Detail focus also strengthens the border and shadow so the focused pane stands out from the list pane.
+- The Enter-to-detail and Escape-to-row loop now has visible focus feedback on both sides.
 
 ## Diff summary
 
-- Commit: `5ee5787a`.
-- Files (4): caco-profile model.rs + compose.rs (+ test fixture)
-  + bridge.rs + lib.rs (Profile literals updated).
-- `cargo build` and `cargo test`: clean.
+- Commits: current `bd-a661a6` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.css`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: keyboard focus in the web summaries detail pane is now visually discoverable and consistent with row focus styling.
 
 ## Operator-takeaway
 
-Profile authors can declare `self_nudge_interval_secs: 300` in
-frontmatter today. The supervisor doesn't yet honour the field
-— slice 2 reads it at agent-start and registers a periodic wake
-that fires a no-op nudge to keep the watchdog satisfied.
-Composition uses smallest-interval-wins, so a stricter mixin can
-tighten cadence without weakening anything.
+The web summaries keyboard loop now feels more intentional: when Enter moves focus into detail, the focused pane is visibly highlighted instead of silently relying on default browser focus rendering.
