@@ -1,33 +1,32 @@
-# Session summary — macOS grouped sidebar UX
+# Session summary — caco-web profile direct fallback
 
 ## Goal
 
-Improve the macOS app's information architecture after the ten-slice parity sweep by replacing the long flat sidebar with grouped native sections, pane search, and keyboard-accessible navigation cues.
+Ensure the controller-assigned caco-web persistent profile actually lands on main after the prior PR auto-merge path left bd-801682 pending.
 
 ## Bead(s)
 
-- `bd-f099d6` — `[macOS gap] Polish information architecture and sidebar density`
-- Parent context: `bd-d6f18a` — macOS native app feature parity umbrella
+- `bd-801682` — Encode caco-web persistent profile (<repo>/.cacophony/profiles/caco-web.md) — webapp improvement via playwright-cli
 
 ## Before state
 
-- Failing tests: none observed for this slice.
-- Relevant metrics: `CacophonyKitSmoke` had 47 checks after the final parity slice.
-- Context: the app had many panes in one flat sidebar, making the surface feel endpoint-heavy rather than app-like.
+- Failing tests: unrelated broken-on-main failures owned by other agents.
+- Relevant metrics: the previous PR auto-merge reintegration had not produced a main commit containing `bd-801682`.
+- Context: Harry directed keeping work moving and ms-mac healthy; leaving the profile stranded would violate the bead acceptance criteria.
 
 ## After state
 
-- Failing tests: none observed in targeted validation.
-- Relevant metrics: `swift build` passed.
-- Context: the sidebar now groups panes into Overview, Communication, Operations, Diagnostics, and Administration; adds pane search; keeps the connection badge; and shows keyboard shortcut hints for common panes.
+- Failing tests: none run beyond documentation/profile inspection; this is a profile-only change.
+- Relevant metrics: `.cacophony/profiles/caco-web.md` exists with no-autoclaim endless Playwright workflow and exemplar links.
+- Context: The profile is recommitted on top of current main for direct recorded fallback.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-f099d6`.
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`.
-- Tests: no smoke-count change; no tests removed.
-- Behavioural delta: no daemon/API change; navigation is denser, more discoverable, and closer to native macOS sidebar conventions.
+- Commits: `2374cd97e`
+- Files touched: `.cacophony/profiles/caco-web.md`
+- Tests: +0 / -0 / flipped 0
+- Behavioural delta: Future caco-web persistent workers get an explicit Playwright-driven improvement workflow with PR-backed reintegration and direct fallback.
 
 ## Operator-takeaway
 
-The app should now feel less like a long list of daemon endpoints and more like a structured macOS operator console, while preserving every pane landed in the parity sweep.
+The caco-web profile should not remain stranded behind pending forge integration; this direct fallback lands the reusable workflow so web-dashboard improvement can continue.
