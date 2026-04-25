@@ -1,33 +1,33 @@
-# Session summary — project integration policy defaults
+# Session summary — harden PR branch flow topology
 
 ## Goal
 
-Add the first compatibility-safe slice of project-policy integration configuration so future PR-backed workflows can be selected per project without breaking existing direct/local integrations.
+Harden the existing direct-branch/PR workflow so it reuses project-declared git topology and the configured `gh` wrapper instead of assuming a single origin remote or invoking raw `gh` without the auth multiplexing setup.
 
 ## Bead(s)
 
-- `bd-2c6e5f` — [integration] Add project-policy reintegration intent/backend resolution
+- `bd-e5e1bd` — [pr-integration] Harden existing pr_auto_merge/pr_review around existing git topology
 - Parent: `bd-bea9dc` — [EPIC] Harden direct reintegration and add project-policy PR-backed integration
 
 ## Before state
 
 - Failing tests: none known for this scope.
-- Relevant metrics: config already supported `projects[].remote`, `default_branch`, `identity`, `remotes`, `integration.reintegrate_target`, and `integration.pr_base`, but had no explicit additive policy fields for intent/backend.
-- Context: operator clarified PR-backed integration must reuse existing git topology and `gh_command_override` rather than creating duplicate GitHub-specific settings.
+- Relevant metrics: direct-branch reintegration had existing push tests, but the CLI passed an empty allowed-push-remote list, required explicit `--create-pr`, and daemon PR creation invoked `gh` directly.
+- Context: project config already carries `remote`, `default_branch`, `identity`, `remotes`, `integration.pr_base`, and checkout bootstrap snippets containing `gh_command_override`.
 
 ## After state
 
 - Failing tests: none observed.
-- Relevant metrics: `timeout 180 cargo test -p caco-config project_integration_policy -- --nocapture`, `project_reintegrate_target_forbidden_push_rejected`, `project_remotes_block_accepted`, and `timeout 240 cargo test-small` passed.
-- Context: `ProjectIntegrationConfig` now has optional `default_intent` and `backend`; missing fields resolve to `direct` + `local_merge`, preserving current behavior for existing projects and agents.
+- Relevant metrics: `timeout 180 cargo test -p caco-cli --lib 'bd_e5e1bd' -- --nocapture` passed; `timeout 180 cargo test -p caco-daemon --lib direct_branch -- --nocapture` passed; `timeout 420 cargo test-small` passed after an earlier 240s timeout.
+- Context: direct-branch PR flow now derives allowed push remotes from `projects[].remotes`, defaults PR base from `projects[].integration.pr_base`, and can run PR `gh` commands through a project-specific/global env override or the existing checkout bootstrap `gh()` snippet.
 
 ## Diff summary
 
-- Commits: 4a6af7b6c
-- Files touched: `crates/caco-config/src/model.rs`, `crates/caco-config/src/validate.rs`
-- Tests: added policy default and PR-backend acceptance tests; retained existing remotes/integration validation tests.
-- Behavioural delta: additive schema only. Existing config remains valid and defaults to local direct reintegration. PR backend can be configured without duplicating remote/default-branch/identity topology.
+- Commits: 59072e441
+- Files touched: `crates/caco-cli/src/lib.rs`, `crates/caco-daemon/src/reintegration.rs`
+- Tests: added CLI regressions for allowed remotes, project-specific gh override, and checkout-bootstrap gh override; updated daemon direct-branch request fixtures for the new gh override field.
+- Behavioural delta: no change for existing single-origin direct-branch usage; multi-remote projects now get first-class push safety and PR-base defaults from existing project topology.
 
 ## Operator-takeaway
 
-The PR-backed migration now has a backwards-compatible config foothold: projects can opt into a policy backend later, but old nodes and profiles continue resolving to direct local merge unless explicitly changed.
+This keeps the PR migration aligned with your constraint: Cacophony does not grow a parallel GitHub config surface. The PR path now consumes the project git topology and `gh` auth wrapper operators already maintain.
