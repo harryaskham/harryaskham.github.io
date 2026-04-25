@@ -1,33 +1,32 @@
-# Session summary — bd-571194 Codespaces mesh peer revocation
+# Session summary — bd-45c709 filtered unknown-subcommand Allowed lists
 
 ## Goal
-Implement the first-party primitive needed to revoke a Codespaces/dynamic mesh peer without relying on doc-only assumptions or ad hoc cleanup code.
+
+Stop agent-context CLI typo errors from leaking operator-only subcommand names through the inline `Allowed:` list while preserving the existing discoverability wording for visible subcommands.
 
 ## Bead(s)
 
-- `bd-571194` — Implement first-party mesh peer revocation primitive for Codespaces
+- `bd-45c709` — Unknown-subcommand `Allowed:` error list leaks hidden-in-agent-context operator-only subcommands
 
 ## Before state
 
-- The docs described `caco codespace revoke cs-<hash>` and `DELETE /api/v1/mesh/peers/<id>`, but the daemon had no peer-revocation endpoint.
-- Dynamic node lifecycle handled join, renew, and expiry; voluntary/removal `NodeLeft` convergence was not wired into feed ingestion.
-- `caco codespace` exposed `new`, `ls`, `stop`, `resume`, and `enroll`, but no revoke command.
+- Text help already hid `agent_safe: false` subcommands in agent context and appended the explicit hidden-count footer.
+- The unknown-subcommand dispatcher path ignored that same visibility filter and listed every static subcommand in `Allowed:`.
+- Repro families included `tts daemon`, all `codespace` lifecycle verbs, `checkout regenerate`, and `choices tui` / `serve-ttyd`.
 
 ## After state
 
-- Added `DELETE /api/v1/mesh/peers/{node}` to local and cluster daemon routers for dynamic peer revocation.
-- The handler removes the dynamic-node registry entry, drops replication/reachability/sync-freshness state, emits a `NodeLeft` feed event, fans it out, and publishes it to UI subscribers.
-- Feed ingestion now treats replicated `NodeLeft` events as dynamic-peer removals while preserving stale-expiry protection via the carried lease timestamp.
-- Added `caco codespace revoke` to CLI metadata and dispatch, resolving a `cs-<hash>` node directly or mapping a GitHub codespace name through `caco codespace ls` before calling the daemon endpoint.
-- Updated Codespaces docs/design text to match the implemented dynamic-registry revocation semantics.
+- Added a shared `visible_subcommand_names_for_errors` helper that reuses the same agent-context visibility path as text help.
+- Unknown-subcommand errors now list only visible subcommands, or `Allowed: none in this context` when a branch has no agent-visible children.
+- Added a regression test covering `tts`, `codespace`, `checkout`, and `choices` under an explicit agent-context environment.
 
 ## Diff summary
 
-- Commits: `0155bf969`, `485c2075e`.
-- Files touched: `crates/caco-daemon/src/lib.rs`, `crates/caco-daemon/src/dynamic_registry.rs`, `crates/caco-cli/src/lib.rs`, `docs/codespaces.md`, `docs/epics/bd-f32dda-codespaces-key-distribution.md`.
-- Tests: added daemon coverage for endpoint revocation and replicated `NodeLeft`; added CLI JSON-envelope coverage for revoke.
-- Validation: `cargo test -p caco-daemon mesh_peer_revoke_removes_dynamic_node_bd_571194 --lib`; `cargo test -p caco-daemon feed_ingest_endpoint_applies_dynamic_node_left_bd_571194 --lib`; `cargo test -p caco-cli codespace_revoke --lib`; `cargo clippy -p caco-daemon --all-targets -- -D warnings`; `cargo clippy -p caco-cli --all-targets -- -D warnings`; `cargo check --workspace --tests`.
+- Commits: pending reintegration commit for `bd-45c709`.
+- Files touched: `crates/caco-cli/src/lib.rs`.
+- Tests: `cargo test -p caco-cli --lib unknown_subcommand_allowed_list_hides_agent_unsafe_subcommands`; existing unknown-subcommand tests for choices, mcp, and update; `cargo check -p caco-cli --tests`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: typo guidance is now consistent with help visibility and no longer exposes hidden agent-unsafe command names.
 
 ## Operator-takeaway
 
-Codespaces now have a real in-repo mesh revocation primitive: `caco codespace revoke cs-<hash>` removes the dynamic peer from daemon routing state and converges that removal through the feed instead of being only a design-document promise.
+Agent-mode `Allowed:` errors now agree with `--help`: hidden operator-only verbs stay hidden, while visible subcommands still get inline typo guidance.
