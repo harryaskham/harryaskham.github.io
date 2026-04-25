@@ -1,26 +1,32 @@
-# Session summary — bd-fa707d GitHub Pages header images
+# Session summary — bd-532f61 Codespaces remove and revoke
 
 ## Goal
-Create optimized header images for the GitHub Pages documentation site and wire them into visible docs pages using the project's existing design language.
+Finish the Codespaces teardown slice by adding the high-level `caco codespace remove` command now that first-party mesh revocation exists.
 
 ## Bead(s)
-- `bd-fa707d` — Create header images for GitHub Pages documentation
+
+- `bd-532f61` — Implement caco codespace remove and revoke
 
 ## Before state
-- The docs site had a TUI screenshot on the overview page but no reusable visual header assets for documentation sections.
-- Key docs pages opened with text-only headers.
+
+- `caco codespace revoke` existed from the lower-level mesh revocation bead.
+- `caco codespace remove` was still documented but not implemented.
+- Operators had no single command that both detached mesh state and deleted the underlying GitHub Codespace.
 
 ## After state
-- Added five pure SVG header images in `docs/images/`: overview, architecture, operations, interfaces, and codespaces.
-- Wired headers into `index.html`, `architecture.html`, `agents.html`, `beads.html`, `api.html`, and `codespaces.md`.
-- Added responsive `.hero-image--header` styling for consistent 10:3 header presentation.
-- Validation: `./docs/validate-pages.sh` passed 146/146 checks.
+
+- Added `caco codespace remove` to CLI metadata and dispatch.
+- The command resolves `cs-<hash>` ids or GitHub codespace names, calls the daemon mesh revoke path first, then runs `gh codespace delete --force` for the matching GitHub Codespace.
+- Added a JSON envelope helper and human-readable output for the remove flow.
+- Updated `docs/codespaces.md` cleanup semantics so remove is documented as first-party mesh revoke plus GitHub delete.
 
 ## Diff summary
-- Commits: `f49176ff5`, `ecbdcca3f`.
-- Files touched: docs pages, `docs/style.css`, five new SVG assets.
-- Tests: docs QA unchanged but passing; no Rust tests required for docs-only image assets.
-- Behavioural delta: docs pages now have consistent, optimized visual headers aligned with the Cacophony palette.
+
+- Commits: `5c81fc0e9`, `70f69e72f`.
+- Files touched: `crates/caco-cli/src/lib.rs`, `docs/codespaces.md`.
+- Tests: added CLI JSON-envelope coverage for remove and kept mesh mutation coverage passing.
+- Validation: `cargo test -p caco-cli codespace_remove --lib`; `cargo test -p caco-cli codespace_mesh_mutation --lib`; `cargo clippy -p caco-cli --all-targets -- -D warnings`; `cargo check --workspace --tests`.
 
 ## Operator-takeaway
-The GitHub Pages docs now have lightweight, repo-owned SVG headers that look like Cacophony rather than generic text pages, without adding external image dependencies.
+
+Codespaces teardown is now split cleanly: `revoke` leaves the GitHub Codespace alive for inspection, while `remove` first revokes mesh participation and then deletes the Codespace through GitHub.
