@@ -1,42 +1,36 @@
-# Session summary 0039 — bd-2b702a: peer-flap log dedup (slice 1)
+# Session summary — Web summaries slash filter shortcut
 
 ## Goal
 
-Stop the ms-mac ↔ ms-dev peer-reachability flap from drowning
-the daemon log in repetitive `health transitioned mismatch ->
-unreachable` lines (250+/8h observed by log-monitor).
+Continue web summaries keyboard polish by making the browser viewer match the TUI habit of using `/` to jump into filtering.
 
 ## Bead(s)
 
-- `bd-2b702a` slice 1 — log dedup only (acceptance criterion 3).
+- `bd-424496` — Web summaries: add slash shortcut to focus filters
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- Every probe cycle that caught the peer in a transient
-  timeout logged the same `mismatch -> unreachable -> mismatch`
-  pair, masking real signals.
-- Bursts up to 60+/sweep (15 min) accelerating in cadence.
+- The web summaries view supported keyboard row navigation, refresh, and load-more shortcuts.
+- Filtering required tabbing or clicking into one of the filter fields.
+- The shortcut strip did not advertise a filter-focus action.
 
 ## After state
 
-- New `peer_health_log_dedup(node, after) -> bool` helper.
-- Always logs transitions back to a non-unreachable state so
-  recovery is visible immediately.
-- Suppresses repeat `-> unreachable` transitions per peer for
-  5 minutes via a `OnceLock<Mutex<HashMap<String, Instant>>>`.
+- Pressing `/` from the summaries view focuses and selects the bead filter input, while typing inside existing inputs remains untouched.
+- The visible shortcut strip now advertises `/ filter` alongside navigation, refresh, and load-more shortcuts.
+- The shortcut preserves the existing debounce/live filter behaviour once the input is edited.
 
 ## Diff summary
 
-- Commit: `8ea1cd49`.
-- Files (1): caco-daemon replication.rs.
-- `cargo build` and `cargo clippy`: clean.
+- Commits: current `bd-424496` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: keyboard users can jump directly to summaries filtering with `/`.
 
 ## Operator-takeaway
 
-Pure noise-reduction fix; does not address the underlying
-network instability between ms-mac (100.83.90.42) and ms-dev
-(100.66.53.117). Recommended OPERATOR ACTION remains: check
-ms-dev daemon health, redeploy config if hash drift. But the
-log storm that was masking other signals is now bounded to one
-ERROR per peer per 5 min on the unreachable side, with
-unrestricted recovery messages.
+The web summaries viewer now shares the TUI muscle memory for filtering: press `/`, type a bead/title/project/agent fragment, and the live filter applies.
