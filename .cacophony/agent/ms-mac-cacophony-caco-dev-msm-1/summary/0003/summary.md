@@ -1,67 +1,33 @@
-# Session summary — caco prune list/run filter validation
+# Session summary — macOS slice 2 operator controls
 
 ## Goal
 
-Close bd-cd2ec9 — sibling miss of the bd-bc52ef silent-no-op-on-unknown
-family. `caco prune list/run` was returning a friendly "no prunable
-agents" / "nothing to prune" line on garbage filter values
-(`--state notreal`, `--node notarealnode`, `--project nonexistent`,
-`--id nonexistent_id`) instead of erroring with a useful suggestion.
+Deliver the second macOS parity slice as another independently-landable operator UX improvement: add native surfaces for choices, actions, and cron controls so the app can move from read-only fleet awareness toward usable daemon/fleet operation.
 
 ## Bead(s)
 
-- `bd-cd2ec9` — [CLI honesty] caco prune list/run silently return 'no
-  prunable / nothing to prune' for unknown --state, --node, --project,
-  --id (sibling of bd-bc52ef family)
+- `bd-3e0c74` — `[macOS-parity slice 2] Choices + actions + cron run/list`
+- Parent: `bd-d6f18a` — macOS native app feature parity umbrella
 
 ## Before state
 
-All five reproduction cases from the bead silently returned the empty
-result with exit 0. Operators discovered typos only by manually
-diffing against `caco agent list` / `caco config show projects` /
-`caco config show nodes`.
+- Failing tests: msm-2 reported unrelated broken-on-main daemon tests; this slice did not run the full suite under merge-queue guidance.
+- Relevant metrics: slice 1 had 15 Swift smoke checks and live Status / Agents / Beads panes.
+- Context: choices and actions already had daemon HTTP APIs, while cron only exposed run/log endpoints; there was no daemon HTTP cron list endpoint for the native app to consume.
 
 ## After state
 
-```
-$ caco prune list --state notreal
-error: unknown --state value 'notreal'. Allowed: pending, starting,
-running, waiting, blocked, recovering, retrying, stale, stalled,
-paused, completed, failed, stopped, discarded
-$ caco prune list --node notarealnode
-error: unknown node: notarealnode. Defined: ms-mac, ms-dev, helsinki, …
-$ caco prune list --project nonexistent
-error: unknown project: nonexistent. Defined: a.skh.am, cacophony, …
-$ caco prune run --dry-run --id nonexistent_id
-error: no agent with id 'nonexistent_id' (use `caco agent list` to enumerate known agents)
-$ caco prune run --dry-run --project nonexistent
-error: unknown project: nonexistent. Defined: …
-```
-
-Happy path unchanged (`caco prune list`, `caco prune list --state
-completed`, `caco prune list --state stopped,completed` all work).
-
-`cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
-clean. Three new unit tests on the shared validator.
+- Failing tests: none observed in targeted validation.
+- Relevant metrics: `swift build` passed; `CacophonyKitSmoke` now runs 21 checks; `cargo check -p caco-daemon --lib` passed; `nix build .#cacophony-macos-app -L` passed.
+- Context: the native app has a new Controls pane with segmented Choices / Actions / Cron tabs. It can list pending and recent choices, resolve/reissue choices, list/run actions, list/run crons, and show action/cron output. The daemon now exposes `GET /api/v1/cron` for cron list parity.
 
 ## Diff summary
 
-- Commit: 0aba4bd5
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: +3 / -0
-- Behavioural delta: filter validation at the top of `dispatch_prune_list`
-  / `dispatch_prune_run` via a shared `validate_prune_filters` helper.
+- Commits: current branch commit for `bd-3e0c74`.
+- Files touched: `crates/caco-daemon/src/lib.rs`, `companion/macos/PARITY.md`, `companion/macos/Sources/Cacophony/App/DaemonState.swift`, `companion/macos/Sources/Cacophony/Views/RootView.swift`, `companion/macos/Sources/Cacophony/Views/OperatorControlsPane.swift`, `companion/macos/Sources/CacophonyKit/Connection/DaemonClient.swift`, `companion/macos/Sources/CacophonyKit/Models/OperatorControls.swift`, `companion/macos/Sources/CacophonyKitSmoke/main.swift`.
+- Tests: +6 smoke assertions for choices/actions/cron sample envelopes; no tests removed.
+- Behavioural delta: macOS operators can now make decisions and trigger configured automation from the app, instead of switching to CLI/TUI for choices, actions, or cron dispatch.
 
 ## Operator-takeaway
 
-Same shape as the existing bd-bc52ef family. The validator is a single
-function so when the next sibling-miss surfaces (and it will — the
-unrelated nudge in the bead points at the `--state` default for
-`prune list` arguably hiding most reclaimable disk in `stopped` agents),
-we can extend the same helper rather than re-implementing per-dispatch.
-
-The unrelated nudge from the test-user (default `--state completed` may
-be hiding the heavier `stopped`-state reclaimable rows) is NOT addressed
-here — it's a default-behaviour question, not a silent-on-bad-input
-bug, and the bead explicitly flagged it as a separate observation.
-File a follow-up if an operator confirms that's a problem in practice.
+This slice makes the app meaningfully operational: after connecting once, Controls gives a compact native surface for decision resolution and safe automation dispatch, with command output visible in-app.
