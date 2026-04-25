@@ -1,31 +1,33 @@
-# Session summary — bd-9a8433 canonical --since errors
+# Session summary — bd-310e83 macOS first-run onboarding
 
 ## Goal
-Fix cross-surface CLI wording drift so `caco summary`, `caco agent audit-reintegration`, and `caco agent merge-queue list` report empty and invalid `--since` values with the same quoted-value format hint used by timeline/event-log/msg inbox.
+Make the native macOS app's disconnected Settings state self-explanatory for first-time users by documenting the local daemon token path and providing a safe helper to populate local daemon defaults.
 
 ## Bead(s)
 
-- `bd-9a8433` — caco summary + audit/merge-queue `--since` phrasing drift
+- `bd-310e83` — [macOS excellence] First-run onboarding and token discovery helper
 
 ## Before state
 
-- Family-A surfaces emitted terse empty-value errors such as `--since value cannot be empty` with no duration/RFC3339 hint.
-- Non-empty invalid values used an older colon format: `invalid --since value: bogus (...)`.
-- Family-B surfaces already used `invalid --since value 'bogus' (expected e.g. 3h, 30m, 1d or RFC 3339 timestamp)`.
+- Settings supported named daemon profiles and Keychain persistence, but first-run guidance only said to save profiles.
+- Users had to already know where the local daemon token lived and manually paste it without in-app path/copy guidance.
+- The smoke runner did not cover token-path constants.
 
 ## After state
 
-- `parse_since_duration` now emits the canonical quoted-value message for empty strings, bad units, and non-numeric values.
-- The three repro surfaces are pinned by a regression test for both `--since ''` and `--since bogus`.
-- Existing duration/RFC3339 acceptance and negative-duration guidance are preserved.
+- Added a First-run setup card to Settings explaining `~/.cacophony/tokens/node.token`.
+- Added controls to use local daemon defaults, copy the expanded token path, and show the token folder in Finder.
+- Added `DaemonConfig.defaultTokenPath`, `expandedDefaultTokenPath`, and `discoverLocalNodeToken()` so token discovery is centralized and testable.
+- Extended the macOS smoke runner to verify token path guidance, raising the check count to 51.
 
 ## Diff summary
 
-- Commit: `dde33c90d` after stale-branch replay.
-- Files touched: `crates/caco-cli/src/lib.rs`.
-- Tests: added `bd_9a8433_since_empty_and_bogus_use_canonical_format_hint`; tightened `parse_since_duration_rejects_*` assertions.
-- Validation: `cargo test -p caco-cli bd_9a8433 --lib`; `cargo test -p caco-cli parse_since_duration_rejects --lib`; `cargo clippy -p caco-cli --all-targets -- -D warnings`; `cargo check --workspace --tests`.
+- Commit: `1294cce22` after stale-branch replay.
+- Files touched: `companion/macos/Sources/Cacophony/Views/SettingsView.swift`, `companion/macos/Sources/CacophonyKit/Models/DaemonConfig.swift`, `companion/macos/Sources/CacophonyKitSmoke/main.swift`.
+- Tests: +2 smoke checks for token path docs/expansion.
+- Validation: `just macos-app-test`; `just --list`; `./docs/validate-pages.sh`.
+- Behavioural delta: disconnected Settings now guides local-token discovery without requiring secrets in source or assuming remote profiles.
 
 ## Operator-takeaway
 
-The CLI now gives the same useful `--since` format hint on the summary and agent audit/merge-queue surfaces as it already did on timeline, event log, and message inbox.
+A fresh macOS app install now tells the operator where the local node token is, can load it when present, and can copy/open the path for manual setup.
