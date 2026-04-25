@@ -1,33 +1,33 @@
-# Session summary — bd-3f31f8 lifecycle-paused agents
+# Session summary — bd-190284 macOS bead decision context
 
 ## Goal
 
-Take a safe first slice of the Termux/phone sleep phantom-unreachable issue by making agent summaries distinguish nodes with an active lifecycle outage from genuinely stranded agents on actionable-unreachable nodes.
+Improve the native macOS Beads detail pane so claim/close decisions carry clearer status, priority, dependency, and risk context at the point where operators act.
 
 ## Bead(s)
 
-- `bd-3f31f8` — sgu24/Termux silent stretches create phantom Unreachable and stranded-agent noise
+- `bd-190284` — [macOS excellence] Bead detail decision context polish
 
 ## Before state
 
-- `agents/summary` treated active agents on unreachable nodes as stranded when the peer health status was actionable-unreachable.
-- Planned lifecycle outage state from `caco daemon lifecycle sleep/shutdown/update` was visible on node APIs but not used by agent-summary stranded accounting.
-- CLI summary text had only Potentially Stuck, Stranded, and Stranded Agents sections; there was no lifecycle-paused bucket.
+- Bead detail showed status/priority chips, metadata, dependencies, and guarded close action.
+- It did not summarize decision implications such as “claimable”, “coordinate”, “blocked”, high-priority caution, or downstream unblock impact.
+- Dependency chips were present but lacked explanatory copy for why a blocker/dependent matters.
 
 ## After state
 
-- `agents/summary` now builds an active planned-outage map and excludes those nodes from unreachable/stranded accounting while keeping their agents visible.
-- Potentially stuck entries now include a `node_lifecycle` object when the hosting node announced sleep/shutdown/update.
-- `caco agent summary` renders those rows under `Lifecycle-Paused`, using `idle=?` to show the activity counter is last-known rather than proof of a wedged worker.
-- Added daemon and CLI regression coverage for lifecycle-paused handling.
+- Added a “Decision context” card with status, priority, and dependency chips plus concise action guidance.
+- Dependency sections now explain blocked-by and downstream-unblock counts before the chips.
+- Close action now includes explicit risk copy: close only after work lands on main and validation is recorded; blocked/claimed work should not be closed.
+- Copy/share export now includes a one-line decision summary.
 
 ## Diff summary
 
-- Commit: `81bf79ef3` after replay onto the remote agent branch.
-- Files touched: `crates/caco-daemon/src/lib.rs`, `crates/caco-cli/src/lib.rs`.
-- Tests: `cargo test -p caco-daemon agents_summary_marks_lifecycle_paused_nodes_without_stranding_agents --lib`; `cargo test -p caco-cli agent_summary_text_separates_actionable_and_advisory_node_health --lib`; `cargo check -p caco-daemon --tests`; `cargo fmt --all -- --check`; `git diff --check`.
-- Behavioural delta: sleeping/updating nodes no longer create misleading stranded-agent counts when they have an active lifecycle announcement.
+- Commit: `548a25385` after replay onto the remote agent branch.
+- Files touched: `companion/macos/Sources/Cacophony/Views/BeadsPane.swift`.
+- Tests: `just macos-app-test`; `./docs/validate-pages.sh`; `git diff --check`.
+- Behavioural delta: the macOS bead detail view now communicates decision risk and dependency context before operators claim, unclaim, copy/share, or close.
 
 ## Operator-takeaway
 
-This does not fully solve phone sleep detection, but it wires the existing lifecycle signal into the summary path so planned/device sleep stops looking like an actionable stranded-agent incident.
+The macOS Beads pane is now safer for live board operations: the UI nudges operators away from false closes and makes dependency/downstream consequences visible before action.
