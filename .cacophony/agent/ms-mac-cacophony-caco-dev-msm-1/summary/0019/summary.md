@@ -1,99 +1,33 @@
-# Session 0019 — bd-4b2a82 (caco agent introspect --show hooks)
+# Session summary — macOS release tracker closeout
 
 ## Goal
 
-bd-5d2d83 slice 1 wired `--show profile` only. This slice ships
-`--show hooks`: re-walks each loaded profile's `hooks` block and
-renders `event <- source-mixin` attribution so an operator can ask
-"why isn't `on_revival` firing?" and immediately see whether (and
-where) the hook is composed.
-
-Self-filed follow-up.
+Close out the macOS release-process tracker by updating the app and developer documentation to reflect the packaging, release, test, and parity work that has now landed.
 
 ## Bead(s)
 
-- **bd-4b2a82** — primary (self-filed bd-5d2d83 follow-up).
+- `bd-5cded9` — Add macOS to release process and artifacts
+- Parent context: `bd-6d67e0` — Implement native macOS app with liquid glass design
 
 ## Before state
 
-- `caco agent introspect --show profile` worked (bd-5d2d83 slice 1).
-- `--show hooks` returned `not yet implemented` error.
-- `load_composed_profile_for_agent_id` returned only the composed
-  Profile + chain + dir, dropping the per-profile list. Source-mixin
-  attribution was therefore impossible from the call site.
+- Failing tests: none observed for this doc/audit slice.
+- Relevant metrics: `just macos-app-package` had already validated zip, DMG, and metadata generation under `bd-e952b0`.
+- Context: docs still described several macOS sub-beads as future scaffold work even though implementation, CI, release packaging, and tests had landed.
 
 ## After state
 
-- Refactor: `load_composed_profile_for_agent_id` now returns a
-  4-tuple `(composed, chain, profiles_dir, individual_profiles)`.
-  Both existing callers updated (the auto-mute helper destructures
-  with `_profiles`).
-- New `derive_hooks_attribution(profiles)` helper: walks the same
-  phase set / order as `compose_hooks` in caco-profile, returns
-  `Vec<(event, Vec<source_mixin>)>` for events with at least one
-  entry. Phases with no entries are omitted from output.
-- `dispatch_agent_introspect`: now accepts `profile` (default) and
-  `hooks`. Other `--show` values still error explicitly with the
-  list of supported sections (helpful for operator typo).
-- `--show hooks` text mode: padded "event <- source-mixin[, ...]"
-  alignment so eyes parse quickly.
-- `--show hooks` JSON: `{ agent_id, profile_chain, hooks: { event:
-  [source-mixin, ...] } }` for jq filtering.
-- Known gap (filed implicitly via bead description): doesn't honour
-  `disable_hooks` yet, so introspect can over-report a hook the
-  runtime would actually skip. Follow-up if it bites.
-
-## Tests
-
-- New: `derive_hooks_attribution_attributes_phases_to_source_mixins`
-  — locks the per-event source-mixin attribution + ordering across
-  3 fake profiles.
-- New: `derive_hooks_attribution_empty_profiles_returns_empty`
-  — locks the trivial path.
-- All pre-existing introspect / load_composed_profile / derive_mute
-  tests still pass.
-
-## Validation
-
-- `cargo test -p caco-cli --lib derive_hooks_attribution`: 2/2 PASS.
-- `cargo test-small`: 4257+ tests across 8 binaries, 0 failures.
-- `cargo clippy -p caco-cli -p caco-daemon -p caco-beads -p caco-web
-  -p caco-profile --all-targets -- -D warnings`: clean.
+- Failing tests: none observed; `just --summary` passed to validate Justfile syntax.
+- Relevant metrics: documentation now points to `just macos-app-test`, `just macos-app-package`, tag/manual-gated macOS CI, and the landed parity/release/test state.
+- Context: `companion/macos/README.md`, `companion/macos/PARITY.md`, and `docs/macos-development.md` now present the macOS app as a native operator app with landed release artifacts rather than a scaffold.
 
 ## Diff summary
 
-```
-crates/caco-cli/src/lib.rs                       | ~+200 / -10
-.cacophony/agent/.../summary/0019                | (new)
-```
+- Commits: current branch commit for `bd-5cded9`.
+- Files touched: `companion/macos/README.md`, `companion/macos/PARITY.md`, `docs/macos-development.md`.
+- Tests: no code tests needed; Justfile syntax checked.
+- Behavioural delta: no runtime change; operator/developer docs now match the release pipeline and packaging behavior.
 
 ## Operator-takeaway
 
-```bash
-caco agent introspect --id <id>                # composed profile (slice 1)
-caco agent introspect --id <id> --show hooks   # event <- source-mixin
-caco agent introspect --id <id> --show hooks --json | \
-  jq '.hooks | to_entries | map(select(.value | length > 1))'
-  # find phases composed from multiple mixins (likely override hotspot)
-```
-
-If `--show hooks` shows a phase you expected but it's not firing, the
-next likely culprit is a `disable_hooks: ["mixin:phase"]` entry in
-one of the profile chain — diff that against the introspect output.
-(introspect doesn't yet honour disable_hooks; future slice).
-
-## Coordination
-
-- Spoke claim with planned scope (self-filed bd-4b2a82 explaining
-  hand-off from bd-5d2d83).
-- Will speak completion + reintegrate.
-
-## Notes for next time
-
-- The `Default::default() + field assignment` clippy lint
-  (`field-assignment outside of initializer for an instance created
-  with Default::default()`) has bitten me twice now. Default to
-  struct-update syntax (`..Default::default()`) on first write.
-- `disable_hooks` honouring would close the symmetry between
-  introspect output and runtime composition. Tag onto the next
-  introspect-related bead if I take one.
+The macOS release tracker can close truthfully: the app builds, tests, packages into zip/DMG/checksum assets, and release workflows attach those artifacts on version tags without adding per-push macOS runner pressure.
