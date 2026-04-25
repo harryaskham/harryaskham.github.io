@@ -1,33 +1,33 @@
-# Session summary — AKS multi-role Helm topology
+# Session summary — AKS in-cluster PKI and bootstrap
 
 ## Goal
 
-This session implemented the next AKS cluster slice: the Helm chart can now materialize the self-contained role topology from the AKS config foundation while preserving the historical single-StatefulSet chart path for existing deployments.
+This session made the self-contained AKS cluster use an in-cluster Cacophony PKI authority rather than depending on local `ms-mac`/`helsinki` certificate paths. The CA role now runs the first-party `caco cert serve` foreground service, non-CA roles bootstrap with `CACO_BOOTSTRAP_TOKEN`, and the rendered config can target arbitrary namespaces/headless service names for local Kubernetes validation or future materializers.
 
 ## Bead(s)
 
-- `bd-2af278` — AKS multi-role Helm topology
+- `bd-0ddccd` — AKS in-cluster PKI and bootstrap
 - parent: `bd-07f7a2` — AKS self-contained Cacophony cluster topology
 
 ## Before state
 
-- Failing tests: none known for this bead; Helm validation only covered the homogeneous StatefulSet path.
-- Relevant metrics: the chart rendered one StatefulSet and derived `CACO_NODE` only from `nodeNamePrefix` plus ordinal.
-- Context: `bd-0095d3` had already landed a six-node AKS config foundation, but the chart could not yet deploy matching distinct CA, relay, master, and worker identities.
+- Failing tests: none known statically, but live local Kubernetes validation had not been attempted.
+- Relevant metrics: the chart rendered all roles as `caco up` and applied `caco status` probes to CA-only roles; the topology lacked `bind_host: 0.0.0.0` for static DNS-hosted AKS nodes.
+- Context: Docker Desktop Kubernetes became available locally, and a refreshed ACR Linux image was pulled for real container validation under amd64 emulation.
 
 ## After state
 
-- Failing tests: none in scoped validation.
-- Relevant metrics: `deploy/helm/validate.sh` passed with 81 checks; `deploy/aks/validate.sh` passed with 63 checks; `CACO_BIN="cargo run -q -p caco --" deploy/aks/validate-self-contained-config.sh` passed before and after replay.
-- Context: with `roles.enabled=true`, Helm renders four StatefulSets and projects all six expected node identities: `caco-aks-ca-0`, `caco-aks-relay-0`, `caco-aks-master-0`, and `caco-aks-0..2`.
+- Failing tests: no scoped static validation failures. Live local Docker Desktop relay reached PKI issuance but exposed that the already-pulled image lacked the newly committed safe-directory prelude fix, so steady-state daemon validation should be rerun after the next remote image build.
+- Relevant metrics: `deploy/helm/validate.sh` passed with 86 checks; `deploy/aks/validate.sh` passed with 65 checks; `CACO_BIN="cargo run -q -p caco --" deploy/aks/validate-self-contained-config.sh` passed; `CACO_CONFIG_PATH= deploy/compose/validate.sh` passed with 38 checks and one expected optional-render warning.
+- Context: local Docker Desktop namespace `caco-validate-bd-0ddccd` successfully ran `caco-aks-ca-0` as `caco cert serve`; the CA PVC contained `ca.pem`, `ca.key`, and the CA node cert/key. Enabling `caco-aks-relay-0` produced CA-issued relay cert material, proving non-CA bootstrap issuance.
 
 ## Diff summary
 
-- Commits: `026817a01`
-- Files touched: `deploy/helm/cacophony/templates/statefulset.yaml`, `deploy/helm/cacophony/templates/headless-service.yaml`, `deploy/helm/cacophony/templates/NOTES.txt`, `deploy/helm/cacophony/values.yaml`, `deploy/helm/validate.sh`, `deploy/helm/README.md`, `deploy/aks/README.md`
-- Tests: extended Helm validation to check legacy rendering, role rendering, all AKS node identities, and `helm lint`.
-- Behavioural delta: chart users keep the old single StatefulSet by default; AKS can opt into explicit role StatefulSets with stable `CACO_NODE` values matching the AKS config overlay.
+- Commits: `34d870013`
+- Files touched: `deploy/aks/config/topology.yaml`, `deploy/aks/render-config.sh`, `deploy/aks/validate-self-contained-config.sh`, `deploy/aks/validate.sh`, `deploy/aks/README.md`, `deploy/helm/cacophony/templates/statefulset.yaml`, `deploy/helm/cacophony/templates/headless-service.yaml`, `deploy/helm/cacophony/values.yaml`, `deploy/helm/validate.sh`, `deploy/helm/README.md`, `deploy/compose/container-prelude.sh`, `deploy/compose/validate.sh`
+- Tests: Helm render/lint, AKS config validation, compose/prelude safe-directory validation, and local Docker Desktop Kubernetes install/dry-run checks.
+- Behavioural delta: the CA role now runs `caco cert serve` with bootstrap port 8443 and probes disabled; non-CA roles keep `caco up`; AKS static nodes bind on `0.0.0.0`; the renderer rewrites AKS DNS for namespace/headless overrides; the container prelude marks the runtime root as a Git safe directory before non-root exec.
 
 ## Operator-takeaway
 
-The AKS chart now has the deployment shape required by the self-contained cluster plan: a CA role, relay role, master role, and three workers can be deployed by flipping `roles.enabled=true`, without breaking current single-node/single-StatefulSet deployments.
+The self-contained AKS cluster now has a portable PKI/bootstrap role contract: durable CA state lives with the CA role, joining nodes obtain AKS-issued mTLS material through the in-cluster bootstrap URL, and the same stable identity/config/secrets/state shape can be reused later for micro-VM or Azure dynamic-compute materializers.
