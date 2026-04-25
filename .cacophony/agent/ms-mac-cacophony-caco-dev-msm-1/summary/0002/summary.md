@@ -1,65 +1,32 @@
-# Session summary — CI for the macOS app (bd-ff6982)
+# Session summary — responsive macOS header
 
 ## Goal
 
-Wire the new `cacophony-macos-app` Nix package into the CI workflow
-so every push to main and every PR exercises the macOS app build
-on a self-hosted macOS runner.
+Fix the most obvious visual regression found by the Tendril watcher: the macOS pane header collapsed into unreadable fragments at narrow window widths.
 
 ## Bead(s)
 
-- `bd-ff6982` — Integrate macOS build into CI/CD pipeline.
-- (parent: `bd-6d67e0`.)
-- (depends on landed `bd-aa8a1a` Nix package, `bd-35352b` scaffold.)
+- `bd-eefb8d` — [macOS polish] Header truncates badly in narrow windows
 
 ## Before state
 
-- `.github/workflows/ci.yml` had three jobs (`check`, `test-fast`,
-  `test-full`), all on `[self-hosted, linux]`. No macOS coverage.
-- `dev.yml`, `release.yml`, and `hourly.yml` already use
-  `[self-hosted, macos]` for the existing `aarch64-apple-darwin`
-  binary build, so a macOS runner pool exists.
+- Failing tests: none known for this macOS slice.
+- Relevant metrics: `swift build --jobs 1` had passed on the prior slice; installed capture `sidebar-polish-installed.png` showed the header title rendering as `S...` with badges squeezed into unreadable vertical fragments.
+- Context: The existing header was a single horizontal row with title, badges, actions, and stream state competing for width.
 
 ## After state
 
-- `ci.yml` gains a `build-macos-app` job:
-  - `runs-on: [self-hosted, macos]`, 30-minute timeout.
-  - Builds via `nix build .#cacophony-macos-app
-    --print-build-logs`. The package's `checkPhase` runs the
-    `CacophonyKitSmoke` executable, so a successful build implies
-    a passing smoke test.
-  - Verifies output structure: `result/bin/Cacophony`,
-    `result/bin/CacophonyKitSmoke`,
-    `result/Applications/Cacophony.app/Contents/Info.plist`,
-    `result/Applications/Cacophony.app/Contents/MacOS/Cacophony`.
-  - Re-runs `result/bin/CacophonyKitSmoke` outside the sandbox as
-    an extra sanity check.
-- Linux jobs unchanged; the macOS job is independent and can fail
-  without affecting Linux gating decisions.
+- Failing tests: none observed in targeted macOS validation.
+- Relevant metrics: `swift build --jobs 1` passed; `CacophonyKitSmoke: OK (53 checks)` passed via the previously built result binary.
+- Context: `HeaderView` now uses `ViewThatFits` with a regular horizontal layout and a compact stacked fallback that keeps the title/tagline readable and moves badges/actions into a second row.
 
 ## Diff summary
 
-- Files touched:
-  - `.github/workflows/ci.yml` — new `build-macos-app` job.
-  - `companion/macos/README.md` — bd-ff6982 marked landed.
-- Tests: no Rust changes; YAML validated via `python3 -c
-  "import yaml; yaml.safe_load(...)"`. Smoke binary executed
-  locally (5 checks green).
-- Behavioural delta: every push/PR now exercises the macOS app
-  build on the macOS runner pool; failures surface in the standard
-  CI required-checks UI.
+- Commits: `608273de1`
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`
+- Tests: +0 / -0 / flipped 0
+- Behavioural delta: Narrow windows now get a responsive header instead of truncating the pane title and crushing status badges.
 
 ## Operator-takeaway
 
-This job uses the **same self-hosted macOS runner pool** as
-`dev.yml`/`release.yml`/`hourly.yml`, so it inherits whatever
-capacity those have. If the macOS pool is single-runner and
-saturated, this CI job will queue. If queue depth becomes a
-concern, the trivial mitigation is to gate the new job on a
-`paths:` filter that only fires when `companion/macos/**` or
-`flake.nix` changes — but I deliberately did not add that gate up
-front, so the first few PRs flush out any runner-pool issues.
-
-## Embedded artefacts
-
-- (none.)
+The first follow-up from the visual QA loop is fixed: the app should feel less brittle and more native when resized, with header controls adapting instead of becoming visual noise.

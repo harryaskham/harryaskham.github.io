@@ -1,33 +1,38 @@
-# Session summary — macOS slice 1 live daemon panes
+# Session summary — macOS visual QA sidebar polish
 
 ## Goal
 
-Deliver the first macOS parity slice as a landable unit: replace the placeholder native app shell with a real daemon connection workflow and live read-only Status, Agents, and Beads panes backed by local daemon REST endpoints.
+Continue the Tendril-driven native macOS app UX loop, keeping captures small and visible through the watcher while improving obvious visual consistency issues found in the running app.
 
 ## Bead(s)
 
-- `bd-9d7a00` — `[macOS-parity slice 1] Settings + daemon connect + Status / Agents / Beads panes`
-- Parent: `bd-d6f18a` — macOS native app feature parity umbrella
+- `bd-6cc4a9` — [macOS visual QA] Full surface post-restart Tendril pass
 
 ## Before state
 
-- Failing tests: none known for this scope.
-- Relevant metrics: `CacophonyKitSmoke` covered 5 checks; `Cacophony.app` rendered placeholder panes only.
-- Context: `/api/v1/ui/snapshot`, `/api/v1/agents`, and `/api/v1/beads/all` were reachable with the local node token, but the macOS app had no typed models or settings flow for them.
+- Failing tests: none known for the macOS slice.
+- Relevant metrics: Swift debug build passed; prior unthrottled Nix app builds could starve the local daemon.
+- Context: Tendril captures showed the app was functional but visually inconsistent, especially the sidebar hierarchy and dense rows.
 
 ## After state
 
-- Failing tests: none observed.
-- Relevant metrics: `CacophonyKitSmoke` now runs 15 checks, including sample envelope decoding for snapshot, agents, and beads. `nix build .#cacophony-macos-app -L` passed, including the derivation check phase.
-- Context: the app has Keychain-backed daemon settings, a shared `DaemonState`, typed daemon helper calls, five-second polling, and live Status / Agents / Beads panes.
+- Failing tests: none observed in targeted macOS validation.
+- Relevant metrics: `swift build --jobs 1` passed; resource-limited `nix build .#cacophony-macos-app -L` passed with `CacophonyKitSmoke: OK (53 checks)`.
+- Context: Sidebar navigation rows now use consistent icon chips, stronger labels, secondary taglines, and shortcut pills; group headers use uppercase dividers for a cleaner native hierarchy. The macOS app build path now defaults SwiftPM to one job and the just recipe constrains Nix to avoid starving the daemon.
 
 ## Diff summary
 
-- Commits: `5c33629a6`
-- Files touched: `companion/macos/PARITY.md`, `companion/macos/README.md`, `companion/macos/Sources/Cacophony/App/*`, `companion/macos/Sources/Cacophony/Views/*`, `companion/macos/Sources/CacophonyKit/Connection/*`, `companion/macos/Sources/CacophonyKit/Models/APIModels.swift`, `companion/macos/Sources/CacophonyKitSmoke/main.swift`.
-- Tests: +10 smoke assertions; no tests removed.
-- Behavioural delta: `just macos-app-run` now launches an app that can connect to the local daemon, persist credentials in Keychain, and show live read-only operator data for status, agents, and beads instead of dummy panes.
+- Commits: `9df98efd4`
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `flake.nix`, `justfile`, `.cacophony/agent/ms-mac-cacophony-caco-dev-msm-1/summary/0000/screenshots/*.png`
+- Tests: +0 / -0 / flipped 0
+- Behavioural delta: Sidebar visual hierarchy is more consistent and the macOS build/install path is safer for daemon cohabitation.
+
+## Embedded artefacts
+
+- `screenshots/sidebar-polish-installed.png` — Installed app after sidebar polish, also showing newly filed responsive header follow-ups.
+- `screenshots/loop-status-polish-baseline.png` — Baseline visual capture before the polish slice.
+- `screenshots/tiny-*.png` — Tiny Tendril loop captures used by the watcher.
 
 ## Operator-takeaway
 
-Slice one is now a working foundation for full macOS/TUI parity: the native app can authenticate to the daemon, decode live fleet state, and refresh the core read-only surfaces that later control-heavy slices will build on.
+The app is moving from functional toward coherent: this slice improves global navigation consistency, but the capture also exposed the next high-impact polish target — the header collapses badly in narrow windows and should be made responsive next.
