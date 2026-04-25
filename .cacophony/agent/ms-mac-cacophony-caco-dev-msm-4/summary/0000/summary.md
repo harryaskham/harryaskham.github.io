@@ -1,32 +1,30 @@
-# Session summary — bd-430482 macOS pane state persistence
+# Session summary — bd-b27a45 macOS terminal preview
 
 ## Goal
-Improve native macOS continuity by restoring operator workspace context across app relaunches, starting with the bead-required Beads and Diagnostics filters plus the selected app section.
+Add a guarded native macOS surface for agent terminal/attach context without taking on full PTY/WebSocket integration in this slice.
 
 ## Bead(s)
 
-- `bd-430482` — [macOS excellence] Saved pane filters and workspace state
+- `bd-b27a45` — [macOS excellence] Embedded agent terminal preview
 
 ## Before state
 
-- Beads pane search and status filters were plain `@State`, reset on app relaunch.
-- Diagnostics tab, text filter, and severity filter were plain `@State`, reset on app relaunch.
-- The root selected section defaulted back to Status every launch.
+- Agent Controls had an Attach card that only displayed and copied the attach command.
+- The app explicitly did not open terminals, and there was no nearby preview of recent agent output.
 
 ## After state
 
-- Beads search text and status filter persist through `@AppStorage` keys under `macos.beads.*`.
-- Diagnostics selected tab, text filter, and severity filter persist through `@AppStorage` keys under `macos.diagnostics.*`.
-- `AppNavigation` restores and saves the last selected `AppSection` through `UserDefaults` key `macos.workspace.selection`.
+- The Attach card is now a Terminal preview card that shows attach metadata, the exact command, a copy action, an explicit user-initiated Open in Terminal action, and a recent log preview.
+- Launching Terminal is guarded behind the button; the app still does not steal focus or attach automatically.
 
 ## Diff summary
 
-- Commit: `830a10c21` after stale-branch replay.
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `companion/macos/Sources/Cacophony/Views/BeadsPane.swift`, `companion/macos/Sources/Cacophony/Views/DiagnosticsPane.swift`.
-- Tests: no dedicated XCTest available in this checkout; native smoke build validates Swift compile/runtime sample path.
+- Commit: `083f33ff3` after stale-branch replay.
+- Files touched: `companion/macos/Sources/Cacophony/Views/AgentControlPane.swift`.
+- Tests: no dedicated XCTest; native smoke build validates Swift compile/runtime sample path.
 - Validation: `just macos-app-test`; `./docs/validate-pages.sh`.
-- Behavioural delta: relaunching the macOS app preserves the required Beads and Diagnostics filter state and returns to the last chosen workspace section.
+- Behavioural delta: selected agents now have richer terminal context and a one-click launch path from inside the native app.
 
 ## Operator-takeaway
 
-Mac operators now keep their working context when reopening the native app, with the required Beads and Diagnostics filters restored instead of being reset.
+The macOS app now gives operators a safe terminal preview and explicit launch affordance for selected agents, stopping short of risky automatic PTY attachment.
