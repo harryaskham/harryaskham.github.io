@@ -1,49 +1,39 @@
-# Session summary 0021 — bd-1d90aa: --reason on non-override bd close
+# Session summary — Web summary artefact actions
 
 ## Goal
 
-Make `caco bd close --reason <text>` valid without `--admin-override`
-so routine closes carry an audit reason, addressing operator
-complaint that closes "go silent into history."
+Continue the summaries-view burn-down on the web surface while another worker owns the unrelated TUI clippy signature fix, focusing on making embedded summary artefacts easier to use and share.
 
 ## Bead(s)
 
-- `bd-1d90aa` — close audit trail.
+- `bd-a03b10` — Web summaries: add artefact copy-url affordances and richer previews
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- `--reason` only valid with `--admin-override`; CLI rejected
-  bare `--reason` with "is only valid with --admin-override".
-- BeadClosed feed event lacked any reason field; only the
-  separate BeadAdminClosed event (override-only) carried one.
-- Audit log entry for non-override closes was just
-  `bd close` with no annotation.
+- Web summaries showed artefacts and screenshots, with download/open actions for terminal casts, screenshots, and data.json.
+- Artefact URLs were copyable only by using browser link context menus, and screenshot rows mixed link semantics with the whole card.
+- Mobile artefact cards had less explicit action layout for multiple controls.
 
 ## After state
 
-- CLI: `--reason <text>` is accepted on any close. Empty/whitespace
-  values are still treated as no reason. `--admin-override` still
-  requires `--reason` (unchanged).
-- Daemon: BeadClosed feed event payload gains `reason` field
-  (string when supplied, null otherwise). Existing consumers
-  ignore unknown fields → forward-compatible.
-- Daemon: audit_command renders `bd close --reason "..."` when
-  reason is present on a non-override close.
+- Every raw artefact row now has an explicit `Copy URL` button using the existing clipboard fallback path.
+- `terminal.cast` rows now show a description plus Download, Play hint, and Copy URL actions.
+- Screenshot rows have a dedicated thumbnail preview link, Open action, and Copy URL action.
+- `data.json` rows now describe their role and expose both Open JSON and Copy URL actions.
+- Artefact card CSS now supports richer metadata, grouped action buttons, steadier thumbnails, and stacked mobile controls.
 
 ## Diff summary
 
-- Commit: `704a4e58`.
-- Files (2): `crates/caco-cli/src/lib.rs`,
-  `crates/caco-daemon/src/beads.rs`.
-- `cargo build -p caco-daemon -p caco-cli` + clippy: clean.
+- Commits: current `bd-a03b10` implementation commit
+- Files touched:
+  - `crates/caco-web/static/summaries.js`
+  - `crates/caco-web/static/summaries.css`
+- Tests:
+  - `node --check crates/caco-web/static/summaries.js` — passed
+  - `cargo test-small` — 252 passed
+- Behavioural delta: no daemon/API change; web artefacts are more actionable and shareable from the existing raw artefact endpoint.
 
 ## Operator-takeaway
 
-Use `caco bd close --bead-id bd-XXXX --reason "fixed in <sha>"`
-or `--reason "duplicate-of bd-YYYY"` for routine closes.
-The reason now appears in the BeadClosed feed event and audit
-log so postmortems can answer "why did this close?" without
-grepping git history.
-
-Persisting reason on the bead row itself (so `bd info` shows it
-inline) is deferred — to be filed once the daemon outbox drains.
+The web summaries viewer now treats embedded artefacts as first-class objects: screenshots, casts, and data blobs have clear previews/actions and copyable raw URLs instead of relying on hidden browser affordances.
