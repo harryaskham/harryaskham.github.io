@@ -1,44 +1,36 @@
-# Session summary 0036 — bd-16de2f: bd list EFFORT column + --sort effort (slice 1, redo)
+# Session summary — Android summaries explicit refresh
 
 ## Goal
 
-Surface bd-fb9318's `estimated_effort` field in `caco bd list` and
-add a sortable axis. (Original attempt landed in summary 0035 but
-was lost in a cherry-pick conflict during reintegrate; this is the
-clean re-application on top of the latest agent branch.)
+Continue Android summaries usability polish by making refresh discoverable without requiring users to know the pull-to-refresh gesture.
 
 ## Bead(s)
 
-- `bd-16de2f` slice 1 — list column + sort axis only.
+- `bd-d55d71` — Android summaries: add explicit refresh action
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- bd-fb9318 slice 1 had landed estimated_effort field, --effort
-  flag, and bd info rendering.
-- caco bd list did not show effort and had no sort axis using it.
+- The Android summaries list supported pull-to-refresh through `PullToRefreshBox`.
+- The visible header only showed sync/count status; there was no explicit refresh control.
+- Users who did not discover the gesture had no obvious way to reload summaries.
 
 ## After state
 
-- `caco bd list` auto-shows EFFORT column when any bead has an
-  estimate (matches WORKER_AGE auto-detect convention).
-- `BeadSortField::EstimatedEffort` variant; parse_bead_sort
-  accepts `estimated_effort` / `effort`.
-- ORDER BY pushes NULL estimates last; in-memory
-  sort_beads_in_place / sort_global_beads_in_place arms use
-  effort_sort_key for canonical T-shirt → numeric mapping
-  (XS=1, S=2, M=4, L=8, XL=16; free-form numerics parsed via
-  f64; None/unparseable → u32::MAX).
+- The summaries hero header now includes a visible `REFRESH` action chip next to the status badge.
+- While loading, the chip changes to `SYNCING`, dims, and is disabled to avoid duplicate refreshes.
+- The refresh chip has an explicit content description and button role semantics via the shared summary action chip helper.
 
 ## Diff summary
 
-- Commit: `748e919e`.
-- Files (3): caco-beads store.rs, caco-daemon beads.rs,
-  caco-cli lib.rs.
-- `cargo build` for caco-beads + caco-daemon + caco-cli: clean.
+- Commits: current `bd-d55d71` implementation commit
+- Files touched:
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/summaries/SummariesScreen.kt`
+- Tests:
+  - `nix develop .#android --command bash -lc 'cd companion/android && gradle :app:compileDebugKotlin --no-daemon'` — passed
+  - `cargo test-small` — 256 passed
+- Behavioural delta: Android users can refresh summaries from an explicit, accessible header control as well as pull-to-refresh.
 
 ## Operator-takeaway
 
-`caco bd list --status open --sort effort` now orders smallest
-beads first; `--reverse` for biggest first. EFFORT column appears
-automatically once any bead in the slice has an estimate.
-`caco fleet eta` aggregation deferred to bd-16de2f slice 2.
+Android summaries now has a visible refresh affordance, making the mobile surface feel less gesture-hidden and more self-explanatory.
