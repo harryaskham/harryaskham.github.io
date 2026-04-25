@@ -1,45 +1,37 @@
-# Session summary 0020 — bd-b69cf3: TUI tmux scrollback display
+# Session summary — Android summaries list jank reduction
 
 ## Goal
 
-Surface tmux scrollback usage (history-size / history-limit) in the
-TUI agent detail view so operators can see how close a long-running
-agent is to its 100k-line cap (raised by bd-87f5bf).
+Continue polishing the session-summary viewers by addressing Android long-list jank in the summaries screen, especially when many recorded runs are loaded and the user searches or scrolls.
 
 ## Bead(s)
 
-- `bd-b69cf3` — TUI surface of tmux_history_limit + tmux_history_size.
+- `bd-0db031` — Android summaries: reduce list jank with stable lazy keys and memoized filtering
+- related: `bd-a5e2fa` — Session-summary viewers across TUI, caco-web, and Android
 
 ## Before state
 
-- bd-87f5bf raised the limit and bd-7ef076 exposed the data in
-  agents/summary JSON. The TUI had no display.
+- Android summaries already supported search, paging, section copy/collapse, and native artefact actions.
+- The loaded list grouped rows inside the LazyColumn composition block and emitted rows without stable lazy keys.
+- Long histories could therefore lose row identity during search/load-more changes and do unnecessary grouping work while composing list content.
 
 ## After state
 
-- Daemon `AgentSnapshot` (ui_stream.rs) carries
-  `tmux_history_limit: Option<u32>` and `tmux_history_size: Option<u32>`.
-  Local agents populate both (limit = `AGENT_TMUX_HISTORY_LIMIT`,
-  size via `query_tmux_history_size`); remote/queued set None.
-- TUI `AgentDisplayState` mirrors the fields.
-- Agent detail renders `Scroll: <size>/<limit> lines` after the
-  tmux Target row (or `?/<limit>` when size unknown).
-- 7 struct-init sites across state/mod.rs, app.rs,
-  benchmark_support.rs updated with `None` defaults.
+- Search normalization is remembered separately from the raw input.
+- Filtered rows and agent grouping are memoized from stable inputs.
+- Summary rows use stable LazyColumn keys derived from project, agent, and reintegration index.
+- Hero, empty-state, and load-more rows also use explicit keys, preserving list identity around paging/search transitions.
 
 ## Diff summary
 
-- Commit: `5d0dd431`.
-- Files (5): `crates/caco-daemon/src/ui_stream.rs`,
-  `crates/caco-tui/src/state/mod.rs`,
-  `crates/caco-tui/src/views/agent_detail.rs`,
-  `crates/caco-tui/src/app.rs`,
-  `crates/caco-tui/src/app/benchmark_support.rs`.
-- `cargo build -p caco-daemon -p caco-tui` + clippy: clean.
+- Commits: current `bd-0db031` implementation commit
+- Files touched:
+  - `companion/android/app/src/main/java/com/cacophony/companion/ui/summaries/SummariesScreen.kt`
+- Tests:
+  - `nix develop .#android --command bash -lc 'cd companion/android && gradle :app:compileDebugKotlin --no-daemon'` — passed
+  - `cargo test-small` — 252 passed
+- Behavioural delta: no API or visual contract change; the Android list is more stable and does less recomposition work for long loaded histories.
 
 ## Operator-takeaway
 
-Open the TUI agent detail for any local agent and look at the
-`Scroll:` line in the attach metadata section. It shows
-`<current_lines>/100000 lines` — when current_lines approaches
-100000, the agent's oldest scrollback is being discarded.
+The Android summaries screen should now feel steadier under the two high-churn interactions Harry called out: scrolling long histories and narrowing them with search while additional pages are loaded.
