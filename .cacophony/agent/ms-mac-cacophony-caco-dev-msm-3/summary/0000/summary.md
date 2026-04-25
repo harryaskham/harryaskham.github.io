@@ -1,33 +1,34 @@
-# Session summary — Bead journal SIGBUS hardening
+# Session summary — Realtime audio model turn support
 
 ## Goal
 
-This session continued the bead burn-down with the reopened git SIGBUS bug in the beads store. The goal was to finish the remaining hardening after the earlier atomic-write slice: make the reconcile rewrite and git staging path a single locked critical section and avoid the `git add` mmap path for `.beads/issues.jsonl` entirely.
+This session added the first bounded implementation slice for `gpt-realtime-1.5`: make it visible as an audio capability, provide a daemon-side credential boundary for a single realtime text-to-audio turn, and expose that through the CLI. During validation, a pre-existing caco-beads clippy lint blocked scoped clippy, so I also fixed and claimed that broken-on-main bead.
 
 ## Bead(s)
 
-- `bd-fc60ff` — git SIGBUS in libz-ng adler32 during `git add .beads/issues.jsonl`
+- `bd-2506fe` — Add gpt-realtime-1.5 as an available LLM with turn-based audio-to-audio conversation support
+- `bd-028f7e` — [broken-on-main] clippy empty_line_after_doc_comments in caco-beads validation
 
 ## Before state
 
-- Failing tests: none in scoped validation.
-- Relevant metrics: caco-beads tests were passing before this slice; the reopened bead documented remaining ACs for a single-writer reconcile lock, hash-object stdin fallback, and doctor sensor coverage.
-- Context: atomic replacement for reconcile rewrites and the coredump doctor sensor already existed on main. Normal `commit_pending` held a mutation lock around git operations, but reconcile's export rewrite was still outside that lock, and staging `.beads/issues.jsonl` still used `git add`, which can mmap large regular files.
+- Failing tests: scoped clippy was blocked by a pre-existing `clippy::empty_line_after_doc_comments` in `crates/caco-beads/src/validation.rs`; `caco-cli` clippy also saw a separate TUI `needless_lifetimes` issue already owned by msm-4.
+- Relevant metrics: audio capabilities exposed TTS/STT models but no realtime model list or realtime availability flag.
+- Context: `docs/research/bd-fbc9e9-gpt-realtime-integration-patterns.md` documented the OpenAI-compatible realtime WebSocket handshake, but no daemon endpoint or CLI surface implemented it.
 
 ## After state
 
-- Failing tests: none in scoped validation.
-- Relevant metrics: `cargo test -p caco-beads --lib` passed with 278 tests; `cargo clippy -p caco-beads --all-targets -- -D warnings` passed; `cargo test-small` passed with 252 tests.
-- Context: first-party git-backed `BeadsStore` instances now remember their branch so reconcile can use the optimized locked path. Reconcile holds the mutation lock across atomic write plus staging/commit, and `.beads/issues.jsonl` is staged by `git hash-object -w --stdin` plus `git update-index --cacheinfo`, avoiding `git add`'s mmap path for the journal payload.
+- Failing tests: none in the scoped validation owned by this work; the TUI needless-lifetimes clippy issue was already handled by another agent on main during the recovery window.
+- Relevant metrics: daemon audio tests passed 127 tests; `cargo check -p caco-cli --lib` passed; `cargo clippy -p caco-daemon --all-targets -- -D warnings` passed; `cargo clippy -p caco-beads --all-targets -- -D warnings` passed; `cargo test-small` passed with 255 tests after replay onto current main.
+- Context: capabilities now include `realtime_available` and `realtime_models`, with `gpt-realtime-1.5`; the CLI declares `caco audio realtime-turn`; and the daemon has `/api/v1/audio/realtime/turn` for one text turn returning base64 WAV plus transcript.
 
 ## Diff summary
 
-- Commits: `f4523e247`
-- Files touched: `crates/caco-beads/src/store.rs`
-- Tests: added 1 regression covering hash-object/update-index journal staging; no tests removed or ignored.
-- Behavioural delta: the beads reconciler no longer exposes an unlocked window between rewriting `issues.jsonl` and staging it, and the critical journal file is staged through stdin instead of via mmap-based `git add`.
-- Validation: `cargo test -p caco-beads --lib`; `cargo clippy -p caco-beads --all-targets -- -D warnings`; `cargo test-small`.
+- Commits: `df57ebaac`
+- Files touched: `README.md`, `SPEC.md`, `crates/caco-beads/src/validation.rs`, `crates/caco-cli/src/audio_cmd.rs`, `crates/caco-cli/src/lib.rs`, `crates/caco-daemon/src/audio.rs`, `crates/caco-daemon/src/lib.rs`
+- Tests: added daemon realtime helper coverage and CLI command metadata coverage; no tests removed or ignored.
+- Behavioural delta: Cacophony can now route one bounded realtime audio conversation turn through daemon-held OpenAI-compatible credentials and exposes the realtime model in audio capabilities. The caco-beads validation lint no longer blocks clippy.
+- Validation: `cargo test -p caco-daemon audio::tests --lib`; `cargo test -p caco-cli audio_realtime_turn_command_declared --lib`; `cargo check -p caco-cli --lib`; `cargo clippy -p caco-daemon --all-targets -- -D warnings`; `cargo clippy -p caco-beads --all-targets -- -D warnings`; `cargo test-small`.
 
 ## Operator-takeaway
 
-This completes the practical SIGBUS mitigation stack for bead journal commits: atomic rename preserves old inodes for readers, the reconcile critical section is serialized, and the journal staging path no longer relies on git mmaping the file at all.
+`gpt-realtime-1.5` is now represented in the product contract and exposed through a real daemon/CLI path for a single generated audio turn. This is intentionally a safe thin slice rather than the full continuous microphone loop; it unblocks UI and workflow follow-ups from a concrete backend contract.
