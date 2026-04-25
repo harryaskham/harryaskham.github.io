@@ -1,32 +1,32 @@
-# Session summary — macOS beads list scanability polish
+# Session summary — macOS messages inbox scanability polish
 
 ## Goal
 
-Improve the native Beads pane so operators can triage work faster with clearer filters, empty-state explanations, keyboard-friendly refresh, and high-signal row cues.
+Improve the native Messages pane so operators can understand feed, inbox, chat, and compose context faster, especially when communication streams are quiet.
 
 ## Bead(s)
 
-- `bd-7addf3` — `[macOS excellence] Beads list keyboard scan polish`
+- `bd-797985` — `[macOS excellence] Messages inbox scanability polish`
 
 ## Before state
 
 - Failing tests: none known in the targeted macOS app lane.
 - Relevant metrics: `CacophonyKitSmoke` baseline remained 53 checks.
-- Context: The Beads pane had rich detail/actions, but the list itself gave limited guidance about active filters, empty results, and scan priorities.
+- Context: Messages supported feed/inbox/chat/compose, but sparse states and row urgency cues were minimal.
 
 ## After state
 
 - Failing tests: none observed in targeted validation.
 - Relevant metrics: `swift build` passed; `nix build .#cacophony-macos-app -L` passed with 53 smoke checks.
-- Context: The list now explains triage mode, active filters, refresh shortcut, row action hints, ownership state, and high-priority cues.
+- Context: Messages now explains each tab, provides actionable quiet-state empty views, and adds row cues for speech, direct messages, hidden bodies, operator inbox status, projects, nodes, and targets.
 
 ## Diff summary
 
-- Commits: current branch commit for `bd-7addf3`.
-- Files touched: `BeadsPane.swift`.
+- Commits: current branch commit for `bd-797985`.
+- Files touched: `MessagesPane.swift`.
 - Tests: no smoke-count change; app build/smoke suite passed.
-- Behavioural delta: bead triage is faster to scan and empty/filter states explain what is happening instead of looking blank.
+- Behavioural delta: communication triage is faster, quieter states are less ambiguous, and operator-facing speech/direct-message rows stand out.
 
 ## Operator-takeaway
 
-The Beads pane now behaves more like a native operator workboard: it tells you why the queue looks the way it does and highlights what deserves attention.
+The Messages pane now acts like a native communications console rather than raw lists: it tells operators what each stream means and why quietness may be healthy.
