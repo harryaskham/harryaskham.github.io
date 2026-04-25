@@ -1,103 +1,49 @@
-# Session summary — bd-98acfe: persist test_queue + build_queue across daemon restarts
+# Session summary — TUI Tendril audit metric slice
 
 ## Goal
 
-Direct follow-on to bd-7b19c1 (CLI-side stop-the-bleeding for
-workers wedging on cargo test/build after daemon restart). bd-7b19c1
-made the CLI escape after 3 consecutive HTTP 404s. This bead fixes
-the underlying root cause: TestQueueManager and BuildQueueManager
-were entirely in-memory; daemon restart wiped them and the orphaned
-child cargo processes had no recovery path.
+Continue the Ghostty/Tendril TUI audit under the persistent TUI driver loop, using the real `caco tui benchmark` target and saving captures into this recorded summary so Harry can watch them via `/tmp/watch-captures.sh`.
 
 ## Bead(s)
 
-- **bd-98acfe** (P2 feature, owned).
-- bd-7b19c1 (sibling — CLI half landed in earlier session).
-- Drive-by: caco-tui-reported compile break in
-  `crates/caco-sidecar/src/lifecycle.rs` (missing
-  `peer_consult_timeout_ms` field on a `TopLevelBeadsConfig` struct
-  literal). Fixed inline because I was already touching the
-  workspace.
+- `bd-cace41` — TUI Ghostty border drawing artefacts visible in manual preview
+- parent: `bd-c1c272` — [PERMANENT] TUI ghostty/tendril improvement and computer-control audit
+- follow-up filed: `bd-8dfaa5` — Rename TUI diagnostic/testbed commands so agents pick the intended audit target
 
 ## Before state
 
-- `TestQueueManager` / `BuildQueueManager` held all state in
-  `Arc<Mutex<...Inner>>` with three `HashMap`s; zero on-disk
-  persistence.
-- Child cargo processes spawned with `kill_on_drop(true)` —
-  reaped only on clean shutdown; SIGKILL/crash leaves orphans.
-- Daemon restart → empty maps → every previously-known job ID
-  returns HTTP 404 → CLI either silently loops (pre-bd-7b19c1)
-  or fails fast with the "job lost" error (post-bd-7b19c1).
-- `crates/caco-sidecar/src/lifecycle.rs:3491` had a
-  `TopLevelBeadsConfig {...}` struct literal missing the new
-  `peer_consult_timeout_ms` field, breaking workspace compile.
+- Real target clarification: operator corrected that `caco tui benchmark` is the real dashboard benchmark target; `graphics-testbed` is the isolated border testbed and was the wrong target for this audit slice.
+- Baseline real benchmark from the dedicated Ghostty window produced about 47 FPS at a 60 FPS target, 1,787 successful graphics uploads, 0 upload failures, about 1.91 uploads/frame, and about 30.6 MB of kitty wire bytes.
+- Benchmark JSON exposed upload and renderer-cache counters, but did not expose retained kitty image redisplays, making it hard to distinguish full PNG uploads from cheap retained image placement redisplays during Ghostty flicker audits.
+- Tendril captures were already being stored under `summary/0006/screenshots/`, and the temporary watcher was updated to show each image path once across sibling ms-mac agent checkouts.
 
 ## After state
 
-- New `PersistedQueueState { schema, jobs, counter }` /
-  `PersistedBuildQueueState { ... }` written atomically
-  (write-temp + rename) to `<artifacts_dir>/queue.json` and
-  `<artifacts_dir>/build_queue.json` after every state transition
-  (enqueue, cancel, drain Queued→Running, terminal).
-- `TestQueueManager::new` / `BuildQueueManager::new` call
-  `load_or_init`, which:
-  * reads the snapshot, validates schema (current = 1),
-  * marks every previously-`Running` job as `Error` with a clear
-    `error_message` carrying the bead-id breadcrumb,
-  * re-enqueues every previously-`Queued` job into the per-project
-    pending FIFO so `drain_pending` picks it up on the next tick.
-- Persist failures are logged but never propagated — the in-memory
-  state stays authoritative while the daemon is alive.
-- Corrupt JSON / schema mismatch on the on-disk snapshot are
-  logged and ignored; the queue starts empty rather than
-  wedging the daemon on startup.
-- 5 new tests covering: queued-survives-as-queued,
-  running-recovers-as-error, corrupt-ignored, schema-mismatch-
-  ignored (test queue), running-recovers-as-error and
-  corrupt-ignored (build queue).
-- 33/33 test_queue tests + 27/27 build_queue tests pass; clippy
-  clean on touched code.
-- Workspace compile unblocked (TopLevelBeadsConfig field added).
+- `caco_tui::RealTuiBenchmarkResult` now includes `retained_redisplays` and `retained_redisplays_per_frame`, sourced from the existing `GraphicsCounters::upload_dedupe_hit_count` that the benchmark upload path already records when it reuses retained kitty images.
+- Added focused unit coverage proving the real benchmark result reports retained redisplays and per-frame rate.
+- Latest Tendril checkout was used through `nix run /Users/harryaskham/.cacophony/daemon/checkouts/tendril` for capture/control probes; captures are saved in this summary's screenshots directory.
+- The latest Tendril run path typed into the correct Ghostty terminal but did not submit the command with the `return` key tap during a focus-contention moment; this was reported to `tndl-ctrl` with screenshot evidence.
 
 ## Diff summary
 
-- Commit `e710eb7b`: bd-98acfe: persist test_queue + build_queue
-  across daemon restarts.
-- Files touched:
-  - `crates/caco-daemon/src/test_queue.rs` (~+250: persist/load
-    helpers, hook calls, 4 new tests).
-  - `crates/caco-daemon/src/build_queue.rs` (~+200: mirrored
-    persist/load, hook calls, 2 new tests).
-  - `crates/caco-sidecar/src/lifecycle.rs` (+1: missing field).
-- Tests: +6 / 0 flipped / 0 ignored. Pre-existing
-  `discover_available_profile_names_includes_checked_in_canonical_profiles_without_checkouts`
-  stack-overflows on the full lib test run; reproduced on
-  pristine main and confirmed unrelated to this change.
-- Behavioural delta:
-  * Workers polling for a previously-running job after restart see
-    `state=error, error_message=daemon restarted...` instead of
-    HTTP 404 / silent timeout.
-  * Workers polling for a previously-queued job see it still
-    pending and it drains naturally on the next tick.
-  * Together with bd-7b19c1's CLI-side `NOT_FOUND_THRESHOLD`
-    fallback, the wedge mode is closed from both sides.
+- Files touched: `crates/caco-tui/src/app/benchmark_support.rs`, `.cacophony/agent/ms-mac-cacophony-caco-dev-msm-4/summary/0006/*`.
+- Tests added: 1 unit test, `real_benchmark_result_reports_retained_redisplays_bd_cace41`.
+- Validation: `cargo test -p caco-tui real_benchmark_result_reports_retained_redisplays_bd_cace41 --lib -- --test-threads=1`; `cargo test -p caco-tui benchmark_support --lib -- --test-threads=1`; `cargo fmt --all -- --check`; `git diff --check`.
+- Behavioural delta: the real TUI benchmark JSON now contains retained-image reuse metrics needed to audit kitty graphics efficiency and Ghostty flicker without guessing from upload counts alone.
+
+## Embedded artefacts
+
+- `screenshots/audit-current-after-resume.png` — capture of the dedicated Ghostty audit window after resuming the session.
+- `screenshots/before-retained-metric-benchmark.png` and `screenshots/after-retained-metric-benchmark.png` — capture pair around the attempted real benchmark rerun through Tendril.
+- `screenshots/latest-tendril-capture.png` — capture made through latest Tendril via `nix run`.
+- `screenshots/latest-tendril-return-probe.png` — evidence for the latest Tendril return-key probe.
+- `data.json` — compact benchmark/audit metrics and Tendril notes for this slice.
+
+- `screenshots/capture-only-58582-current.png` — capture-only Tendril screenshot of dedicated Ghostty window 58582, avoiding agent-side command spawning.
+- `screenshots/capture-only-58582-top-zoom.png`, `screenshots/capture-only-58582-left-join-zoom.png`, and `screenshots/capture-only-58582-center-join-zoom.png` — bounded zoom crops for border/join inspection from the live 58582 window.
+
+- `screenshots/load-aware-capture-58582.png` and `screenshots/load-aware-capture-58582-bottom-zoom.png` — capture-only check under ms-mac load, confirming the audit window state without spawning new commands.
 
 ## Operator-takeaway
 
-The bd-7b19c1 / bd-98acfe pair completes the daemon-restart-
-robustness fix for queued cargo work. bd-7b19c1 stopped the
-bleed (CLI escapes silent 404 loop); bd-98acfe removes the wound
-(daemon now persists queue state and surfaces recovery transitions
-explicitly to polling clients).
-
-Future enhancement candidates intentionally NOT in this slice
-(deliberately scoped to land cleanly):
-- per-job PID file for orphan-cargo cleanup on startup
-  (kill -0 detection, optional re-attach via stdout.log tail);
-- debounced persistence for queues with high transition rates;
-- structured `daemon_restart_recovered_at` / `recovery_reason`
-  fields on the JSON envelope so the TUI can render a recovered-
-  job indicator instead of just a generic Error.
-
-Each of those wants its own bead.
+This slice did not tune the borders yet; it made the real TUI benchmark more useful for the ongoing audit by exposing retained kitty image reuse, while preserving screenshot evidence in the summary stream. The next visual fix should use these metrics to separate true bitmap reuploads from retained redisplays when chasing Ghostty flicker and noisy border artefacts.
