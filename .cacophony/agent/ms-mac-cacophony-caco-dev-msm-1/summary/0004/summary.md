@@ -1,83 +1,33 @@
-# Session summary — caco bd graph honesty fixes
+# Session summary — macOS liquid-glass native polish
 
 ## Goal
 
-Close bd-e2f1dd — four sibling misses of the bd-bc52ef / bd-a08f85
-silent-no-op-on-unknown-input sweeps, all in `caco bd graph`.
+Make the app visibly more native and more aligned with the requested liquid-glass direction, focusing on first impressions, connection affordances, dashboard hierarchy, spacing, and reusable glass primitives before continuing deeper backend parity work.
 
 ## Bead(s)
 
-- `bd-e2f1dd` — caco bd graph drops the root bead when it has zero
-  dependencies; --root <id> --include-closed returns '0 nodes' for valid
-  IDs; --root <bogus> silently returns 0 nodes; --depth 0 / --status
-  bogus also silent (CLI honesty sweep miss)
+- `bd-0422de` — Perform full spec audit and match design standards
+- Parent: `bd-6d67e0` — native macOS app epic
 
 ## Before state
 
-```
-$ caco bd graph --project cacophony --root bd-fa6f8b --format ascii --include-closed
-# 0 node(s) shown                                  ✗ closed-root drop
-
-$ caco bd graph --project cacophony --root bd-nosuchx --format ascii
-# 0 node(s) shown                                  ✗ unknown id silent
-
-$ caco bd graph --project cacophony --root bd-fa6f8b --depth 0 --include-closed
-# 0 node(s) shown                                  ✗ depth 0 silent
-
-$ caco bd graph --project cacophony --status bogus
-# 0 node(s) shown                                  ✗ status enum silent
-```
+- Failing tests: none observed for this slice.
+- Relevant metrics: slice 2 had `CacophonyKitSmoke` at 21 checks and the native app had functional but plain sidebar/detail surfaces.
+- Context: the app worked but looked too much like a default SwiftUI utility: plain GroupBoxes, simple disconnected state, and limited visual depth.
 
 ## After state
 
-```
-$ caco bd graph --project cacophony --root bd-fa6f8b --format ascii --include-closed
-# 1 node(s) shown
-(bd-fa6f8b closed) caco bd status per-project breakdown ...
-
-$ caco bd graph --project cacophony --root bd-nosuchx --format ascii
-error: unknown bead id: bd-nosuchx
-
-$ caco bd graph --project cacophony --root bd-fa6f8b --depth 0 --include-closed
-error: --depth must be >= 1 (use --depth 1 for the root + immediate
-neighbours, or omit --depth for the full graph)
-
-$ caco bd graph --project cacophony --status bogus
-error: unknown --status value 'bogus'. Allowed: open, in_progress,
-closed, deleted, draft, permanent, blocked
-```
-
-Happy path (open root with no deps + --include-closed) unchanged.
-
-`cargo test-small` 57/57 PASS, `cargo clippy -p caco-cli --lib --tests`
-clean. Two new unit tests
-(`graph_validate_status_enum_rejects_typo`,
-`graph_validate_depth_zero_rejects_with_friendly_msg`).
+- Failing tests: none observed.
+- Relevant metrics: `swift build` passed; `just macos-app-run` rebuilt, installed, ad-hoc signed, and launched `/Applications/Cacophony.app`.
+- Context: the app now has an aurora-style glass backdrop, reusable glass metric cards, a connected/offline sidebar badge, a richer header panel per section, a glass-card Status dashboard, and a more native Keychain/settings onboarding flow.
 
 ## Diff summary
 
-- Commit: 4548b207
-- Files touched: `crates/caco-cli/src/lib.rs`
-- Tests: +2
-- Behavioural delta: bd graph rejects `--depth 0`, `--status` typos,
-  `--root` typos with friendly errors; closed-root + `--include-closed`
-  now renders the root; corpus-cap miss is patched by an explicit GET
-  /beads/<id> when --root is missing from the listing.
+- Commits: `3b5cb6b88`
+- Files touched: `companion/macos/Sources/Cacophony/Design/GlassChrome.swift`, `RootView.swift`, `StatusPane.swift`, `SettingsView.swift`, `NotConnectedView.swift`, `companion/macos/PARITY.md`.
+- Tests: no test count change; visual-only Swift app slice.
+- Behavioural delta: no daemon contract change; visual and interaction polish only. The app now looks substantially more like a native macOS control surface rather than a placeholder table shell.
 
 ## Operator-takeaway
 
-The corpus fetch URL still uses `limit=2000` (and the cacophony corpus
-is currently 2135). The fetch-cap issue is patched specifically for the
---root case (we GET the missing bead directly), but a broader graph
-that happens to include neighbours older than the most-recent 2000
-will still drop edges silently. File a follow-up if this becomes a
-visible problem — the right fix is server-side pagination of the
-listing, not client-side cap bumping (which loses correctness once the
-corpus crosses any chosen ceiling).
-
-The root-bypass-filters logic intentionally extends to `--status`
-(not just `--include-closed`): if the operator explicitly --root'd to
-a bead, they want to see it, full stop. A different read would be to
-error "root excluded by --status filter" and let the operator drop the
-filter — that's strictly more chatty and easier to add later if anyone
-prefers it.
+The native app should now feel much closer to the requested direction: glassy, spatial, dashboard-first, and connection-aware. Future slices can keep reusing these components so functionality does not regress into plain utility UI.
