@@ -1,27 +1,26 @@
-# Session summary — bd-5bfb2c (slice 20)
+# Session summary — bd-5bfb2c (slice 21)
 
 ## Goal
-Make the agents pane more useful as a fleet-driving surface by adding quick visual state, usage summaries, and one-click actions.
+Turn the beads pane into a fast triage surface with inline claim/dispatch/copy controls and visible dependency/tag signals.
 
 ## Bead(s)
 - **bd-5bfb2c** (P0 PERMANENT): workspace-view DO-OVER
 
 ## Before state
-- Agent rows showed only plain text state/runtime and required extra clicks for terminal/detail/copy operations.
-- Transitional/failing agents were not visually prominent beyond a status badge.
+- Bead rows were mostly passive: click for detail, but claim/dispatch required opening the detail pane.
+- Dependencies, linked beads, tags, and claimed state were not visible at row-scanning speed.
 
 ## After state
-- Agent rows include health dots: green running, pulsing warning for starting/waiting, red failed, muted idle.
-- Usage column shows token/cost summaries when available.
-- Inline actions open terminal, open detail, and copy agent ID without leaving the pane.
-- Terminal quick action converts the focused pane or splits in a terminal pane for that agent.
-- Validation: 250/250 caco-web lib tests, clippy clean.
+- Beads table includes a Signals column with compact chips for deps, links, tags, and claimed state.
+- Each row has quick actions for detail, claim, dispatch, and copy ID.
+- Title cells truncate cleanly so operational columns stay visible.
+- Validation: 252/252 caco-web lib tests, clippy clean.
 
 ## Diff summary
-- Commits: pending squash for slice 20.
+- Commits: pending squash for slice 21.
 - Files touched: `workspace-integrated.js`, `style.css`, `tests.rs`.
 - Tests: +2 / -0 / flipped 0.
-- Behavioural delta: the agents pane now works more like a command surface instead of a passive table.
+- Behavioural delta: the beads pane now supports direct triage actions without leaving the fleet layout.
 
 ## Operator-takeaway
-The workspace agents pane is now a faster fleet driver: scan health at a glance, see usage, and jump directly into an agent terminal from the row.
+Bead triage is now much closer to the TUI: scan deps/tags/claimed state, then claim, dispatch, inspect, or copy from the row itself.
