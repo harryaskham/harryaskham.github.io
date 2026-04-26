@@ -1,32 +1,32 @@
-# Session summary — macOS RootView ShapeStyle build fix
+# Session summary — CLI integration test repair
 
 ## Goal
 
-Fix the broken-on-main macOS app build failure in `RootView.swift` where a sidebar search foreground-style conditional mixed incompatible `ShapeStyle` branch types.
+Fix `bd-2d85a1`, a broken-on-main report where `cargo test -p caco --test cli` failed after the implementation contracts for JSON help, certificate status JSON, and MCP metadata had moved forward while the integration assertions still expected older shapes.
 
 ## Bead(s)
 
-- `bd-b11f34` — [broken-on-main] macOS app build fails in RootView ShapeStyle conditional
+- `bd-2d85a1` — [broken-on-main] cargo test -p caco --test cli failures
 
 ## Before state
 
-- Failing tests: macOS app build failed on fresh main with `type any ShapeStyle cannot conform to ShapeStyle` at `.foregroundStyle(query.isEmpty ? .secondary : .blue)`.
-- Relevant metrics: the failing command reported in the bead was `CACO_NIX_MAX_JOBS=1 CACO_NIX_CORES=2 nix build .#cacophony-macos-app -L`.
-- Context: this Linux worker cannot run the heavy native macOS build, so validation stayed source-level and targeted the known failing expression.
+- Failing tests: `cert_status_json_reports_missing`, `cert_status_json_reports_present`, `agent_context_filters_unsafe_commands`, and `mcp_command_generates_tool_metadata` failed under `cargo test -p caco --test cli -- --nocapture`.
+- Relevant metrics: reproduction showed 98 passed / 4 failed in the CLI integration test binary.
+- Context: the failures matched intentional current contracts: certificate status JSON is under the standard `{ok, data}` envelope, JSON help remains a full discovery surface in agent context, and MCP metadata reports the live crate version instead of the stale `1.2.3` literal.
 
 ## After state
 
-- Failing tests: none in lightweight validation.
-- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `just --dry-run macos-app-validate`, `git diff --check`, and a grep confirming the bad RootView expression is absent passed.
-- Context: the conditional now uses concrete `Color.secondary` / `Color.blue` branches.
+- Failing tests: none in the targeted CLI integration lane.
+- Relevant metrics: `cargo test -p caco --test cli -- --nocapture` passed 102/102; `cargo test -p caco-cli mcp_metadata_command_produces_valid_json -- --nocapture`, `cargo check -p caco`, `cargo clippy -p caco --test cli -- -D warnings`, `cargo fmt --all -- --check`, `cargo test-small`, and `git diff --check` passed.
+- Context: the tests now assert the current operator/API contracts instead of stale pre-envelope and hardcoded-version expectations.
 
 ## Diff summary
 
-- Commits: `79fd760cf`
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
-- Tests: strengthened the pane-navigation smoke to assert the sidebar search foreground style uses concrete `Color` branches.
-- Behavioural delta: no UI behaviour change intended; this is a Swift type-check fix for the native app build.
+- Commits: `e3a2333c8`
+- Files touched: `crates/caco/tests/cli.rs`, `crates/caco-cli/src/lib.rs`
+- Tests: updated 4 stale assertions and refreshed one caco-cli unit assertion for MCP metadata versioning.
+- Behavioural delta: no production behaviour changed; this is a test-suite repair aligning broken-on-main tests with existing implementation contracts.
 
 ## Operator-takeaway
 
-The macOS app build break was a narrow Swift type-inference issue from the sidebar search feedback polish; the source now uses concrete `Color` values and the lightweight smoke guard checks against the regression.
+The reported CLI failures were stale tests, not a runtime regression. The suite now validates the live contracts for cert JSON envelopes, JSON-help discovery, and MCP metadata versions.
