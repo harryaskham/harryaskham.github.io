@@ -1,33 +1,32 @@
-# Session summary — quick-file delete affordances
+# Session summary — daemon stack budget for Helsinki crash loop
 
 ## Goal
 
-Add a fast escape hatch for accidental quick-file bead creation: every surface that immediately persists quick-file results should show an inline X/delete control so the operator can discard a mistaken bead without navigating away.
+Fix the P0 regression where deploying v1.2.562 on Helsinki caused the authoritative daemon to abort with `tokio-rt-worker has overflowed its stack`, taking bead authority and cluster status surfaces down. The immediate goal was to make the daemon runtime resilient enough for the large UI/status futures that run on busy authority nodes.
 
 ## Bead(s)
 
-- `bd-4d2034` — Add X button for fast delete of newly created beads
-- `bd-e55176` — [broken-on-main] FullAppNavigationTest.navigateAllTabsSequentially failing
+- `bd-9bb0b2` — v1.2.562 daemon stack overflow on tokio-rt-worker thread causing crash loop
 
 ## Before state
 
-- Failing tests: Android companion gate failed in `FullAppNavigationTest.navigateAllTabsSequentially` because the test still expected `bottomTab_Timeline` even though current `MainActivity` keeps Timeline under More.
-- Relevant metrics: quick-file AI expansion in web / TUI / Android showed created beads but had no immediate delete action; direct web quick-file closed the modal immediately after filing.
-- Context: the daemon already exposes `DELETE /api/v1/projects/<project>/beads/<bead_id>`, so the missing work was frontend/client affordances and tests.
+- Failing tests: none known locally at start of this slice; live Helsinki had repeated daemon aborts after v1.2.562 startup.
+- Relevant metrics: Helsinki crash evidence showed repeated `tokio-rt-worker has overflowed its stack` within seconds of startup, followed by daemon unreachable / beads authority unavailable. Helsinki was rolled back to v1.2.561 to keep the board reachable.
+- Context: the code used `tokio::runtime::Runtime::new()` for the main daemon and standalone beads daemon, leaving worker-thread stack size at Tokio/platform defaults while large monomorphized UI/status snapshot futures continued to grow.
 
 ## After state
 
-- Failing tests: none in the validation run.
-- Relevant metrics: web quick-file result cards now include a delete X; Android quick-file result cards include a red X and deletion progress; TUI quick-file keeps created results visible and allows `x`/Delete on the selected result; Android navigation test now matches Timeline-under-More behavior while preserving the newly landed Web App More route coverage.
-- Context: mistaken quick-file results can be removed in place via the canonical bead DELETE endpoint across browser, TUI, Android companion, and Android widget (shared dialog).
+- Failing tests: none in the focused validation run.
+- Relevant metrics: `cargo test-small` passed; focused `cargo test -p caco-cli daemon_tokio_runtime_uses_explicit_large_stack_budget_bd_9bb0b2 --lib`, `cargo check -p caco-cli`, `cargo fmt --all -- --check`, and `git diff --check` passed before commit.
+- Context: daemon runtime creation now uses a shared builder with explicit 16 MiB Tokio worker stacks for both `caco daemon` and `caco bd daemon serve`, matching the existing CLI dispatch stack budget.
 
 ## Diff summary
 
-- Commits: `f63f020d6`
-- Files touched: `SPEC.md`, `crates/caco-web/static/app.js`, `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`, `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/client.rs`, `crates/caco-tui/src/event.rs`, `crates/caco-tui/src/state/mod.rs`, `companion/android/app/src/main/java/com/cacophony/companion/connection/ConnectionManager.kt`, `companion/android/app/src/main/java/com/cacophony/companion/ui/quickfile/QuickFileBeadDialog.kt`, `companion/android/app/src/test/java/com/cacophony/companion/BeadsScreenTest.kt`, `companion/android/app/src/test/java/com/cacophony/companion/FullAppNavigationTest.kt`, `companion/android/app/src/test/java/com/cacophony/companion/TestDaemonServer.kt`
-- Tests: `cargo fmt --all -- --check`; `cargo test -p caco-web app_js_quick_file_created_beads_have_delete_affordance --lib`; `cargo test -p caco-tui quick_file --lib`; `cd companion/android && nix develop -c gradle :app:testDebugUnitTest --no-daemon`; `git diff --check`
-- Behavioural delta: quick-file results remain inspectable after creation and expose immediate deletion; the Android full-app navigation smoke test no longer expects a Timeline bottom-tab that the app does not render.
+- Commits: the `bd-9bb0b2: increase daemon tokio worker stack` commit containing this summary (final SHA assigned by reintegration)
+- Files touched: `crates/caco-cli/src/lib.rs`, `SPEC.md`, `README.md`, `AGENTS.md`, `docs/daemon.html`
+- Tests: +1 focused unit test / -0 / flipped 0
+- Behavioural delta: the daemon and standalone beads daemon no longer rely on default Tokio worker stack sizing, reducing the chance that large authority-node UI/status futures abort the entire daemon with a worker stack overflow. Operator/developer docs now record the explicit worker-stack contract.
 
 ## Operator-takeaway
 
-Quick-file mistakes are now reversible at the point of creation across the main quick-file surfaces, and the Android gate is green again with Timeline covered through More rather than as a bottom-navigation item.
+The suspected Helsinki v1.2.562 crash path was not a data corruption issue; it was a daemon runtime stack-budget issue exposed by large async handlers on the authority node. This change makes the stack budget explicit and documented, but the fixed binary still needs to be deployed to Helsinki before `bd-a6b8aa` can be retried safely.
