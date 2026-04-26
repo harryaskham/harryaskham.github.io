@@ -1,40 +1,81 @@
 ## Goal
 
-Fix broken-on-main `just docs-build` (rc=3) caused by caco-docs-gen
-requiring AUTOGEN sentinels in docs/profiles.html when the file still
-uses legacy sentinels from `scripts/render-profiles-docs.py`.
+Stop `caco up`/`caco restart` from flapping when a stale `caco web`
+process is still holding the dashboard bind port (e.g. 11180). Per the
+bead: each managed service should "take over configured service ports
+decisively, killing stale old web processes or other stale service
+processes for that service before starting the managed instance."
 
 ## Bead(s)
 
-- `bd-167bd6` — follow-up hotfix for graceful no-op on missing sentinels.
+- `bd-f23bd6` — Harden caco up/restart to take over stale service ports.
+
+Related context: ms-mac caco-web (msm-2) shared duty-cycle evidence
+that the managed dashboard was still serving the old build because
+the new spawn could not take over the port.
 
 ## Before state
 
-`caco-docs-gen` returned exit code 3 (MissingSentinel) when run
-against the on-disk `docs/profiles.html` which uses legacy
-`BEGIN GENERATED SHIPPED PROFILES` markers. This broke `just docs-build`
-for any agent rebasing onto main.
+`caco-web` was registered as a `pid_only: true` service whose
+`service_addr` pointed at the **daemon** port (parent liveness probe),
+so neither converge nor stop ever swept the actual web bind port. A
+stale `caco web` process from a prior crash, build, or manual launch
+would keep holding port 11180; the next spawn raced into EADDRINUSE
+and the supervisor flapped.
+
+`caco-tts-daemon` shares the same shape (pid_only, service_addr =
+daemon address) but binds a separate runtime-allocated port that's
+already swept via its own port-file machinery. Only caco-web had a
+configured fixed external port with no sweep.
 
 ## After state
 
-Binary now treats MissingSentinel as a graceful no-op (rc=0) with an
-informational stderr message explaining that `scripts/render-profiles-docs.py`
-remains the canonical generator. Also reverted the legacy-sentinel
-auto-detection in `apply_shipped_profiles_section` that would have
-silently rewritten the file with an incompatible layout. 1 new test
-covers the error-variant contract the binary depends on.
+- New `external_port: Option<u16>` field on `ManagedService`.
+  Documented as: "Configured external listen port for pid-only services
+  whose `service_addr` points at the parent daemon (e.g. caco-web);
+  convergence and stop both ensure this port is free before
+  spawning / after stopping, so stale processes from prior builds or
+  crashed instances cannot block startup with EADDRINUSE."
+- Caco-web registration sets `external_port: Some(web.port)`. All
+  other ManagedService constructions (daemon, tts variants, beads-host,
+  test fixtures) carry `external_port: None`.
+- `converge` (deferred-pid-only branch): before spawning, calls
+  `ensure_port_free(ext_port)`. On `Ok(Some(stale_pid))` the kill is
+  reported via the service's `failure_target` (warnings for
+  non-critical, failed for critical) so operators can audit the
+  takeover. On `Err` the spawn is **refused** rather than allowed to
+  flap — surfaced with a `bd-f23bd6: cannot free … refusing spawn to
+  avoid EADDRINUSE flap` reason.
+- `stop_services` (paired stop branch): after the PID-file kill,
+  pid_only services with `external_port` get the same sweep so
+  `caco down`/`caco restart` leaves the port free for the next `caco
+  up`. Reuses the same `bd-c638be`/`bd-4db921` reporting pattern.
 
 ## Diff summary
 
-- `crates/caco-profile/src/bin/caco-docs-gen.rs`: MissingSentinel
-  match arm returns rc=0 with informational message instead of rc=3.
-- `crates/caco-profile/src/docs_gen.rs`: reverted legacy-sentinel
-  auto-detect in `apply_shipped_profiles_section`; replaced with test
-  `apply_shipped_profiles_section_errors_with_autogen_name_on_legacy_only_input`
-  documenting the contract.
+- `crates/caco-sidecar/src/lifecycle.rs`:
+  - `ManagedService` gained `external_port: Option<u16>` (8 sites
+    updated to set `None`, caco-web sets `Some(web.port)`).
+  - `converge()` deferred-pid-only branch: pre-spawn `ensure_port_free`
+    sweep on the external port, with critical/non-critical-aware
+    failure routing.
+  - `stop_services` paired stop branch: post-kill external-port sweep
+    for pid_only services.
+  - 2 new tests:
+    - `caco_web_managed_service_carries_external_port` — proves
+      `external_port = Some(web.port)` is wired from `NodeWebConfig`.
+    - `non_web_services_have_no_external_port` — guards against
+      accidentally setting `external_port` on services where it would
+      double-sweep their primary listener.
+- `cargo test-small` 268 passed; `cargo clippy -p caco-sidecar
+  --all-targets -- -D warnings` clean.
 
 ## Operator-takeaway
 
-`just docs-build` no longer breaks on main. The Rust generator
-gracefully defers to the python script when AUTOGEN sentinels are
-absent. Full sentinel migration remains a future step.
+A stale `caco web` from a crash or prior build will no longer block
+the next `caco up`. Convergence sweeps the configured web port before
+respawning and reports the kill as a warning for non-critical
+services. If the port cannot be freed (e.g. permissions), spawn is
+refused with an explicit `bd-f23bd6` message rather than silently
+EADDRINUSE-flapping. Same path covers `caco restart` since it
+composes stop + converge.
