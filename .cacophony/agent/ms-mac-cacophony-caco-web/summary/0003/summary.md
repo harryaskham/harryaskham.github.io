@@ -1,37 +1,37 @@
-# Session summary — caco-web snapshot freshness hero alignment
+# Session summary — caco-web inactive workspace route fix
 
 ## Goal
 
-Fix an operator-trust inconsistency found by the proactive caco-web Playwright duty cycle: the status page top freshness indicator warned that snapshot data was partial/stale while the prominent hero quick-facts pill still called the snapshot fresh.
+Fix a Playwright-observed caco-web layout regression where the Workspace route remained visible below the active Status route, causing workspace pane controls to leak into the operator-facing Status page.
 
 ## Bead(s)
 
-- `bd-f7a201` — Show partial snapshot state in caco-web hero freshness pill
+- `bd-457975` — caco-web inactive workspace view remains visible below active route
 
 ## Before state
 
-- Failing tests: none known.
-- Relevant metrics: Playwright snapshot against managed caco-web on port 11180 showed top freshness text `beads: partial, agents: stale` alongside hero text `Fresh snapshot · 13s ago`; console had 0 errors and network requests returned 200 for the observed route.
-- Context: `renderStatusHero()` only used `lastSnapshotTime` and SSE age for the hero freshness pill, while `applySnapshot()` used the daemon `snap.freshness` domain statuses for the top indicator.
+- Failing tests: none known at session start.
+- Relevant metrics: active duty cycle found no assigned or ready caco-web bead, then Playwright observation against current assets showed `#view-workspace` had `display: flex` and a non-zero `1200x500` rect while Status was the active route.
+- Context: the generic `.view { display: none; }` rule was overridden by a base `#view-workspace { display: flex; }` rule, so Workspace was visible even when it was not the active view.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: patched browser repro on port 49333 showed top freshness text `beads: partial, agents: stale` and hero text `Snapshot degraded · 12s ago` with tooltip naming `beads: partial, agents: stale`; console had 0 errors and observed network requests returned 200.
-- Context: `applySnapshot()` now stores the latest snapshot freshness payload, and `renderStatusHero()` uses it to either show the live-SSE override when SSE is fresh or surface a degraded snapshot state when domains are partial/stale.
+- Failing tests: none in caco-web validation.
+- Relevant metrics: Playwright confirmed inactive `#view-workspace` now has `display: none` and zero rect on `/#status`, and pressing `w` activates Workspace with `display: flex`; `cargo check -p caco-web --all-targets` passed; `cargo test -p caco-web --lib` passed with 281 tests.
+- Context: only the active workspace selector now sets `display: flex`; the base workspace selector keeps layout direction/height without overriding inactive route hiding.
 
 ## Diff summary
 
-- Commits: `10bd1dbca`
-- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
-- Tests: +1 / -0 / flipped 0
-- Behavioural delta: The status hero no longer labels a recent but partial/stale snapshot as fresh; the prominent quick-facts pill now agrees with the top freshness warning and names degraded domains in its tooltip.
+- Commits: `0f76fb23d`
+- Files touched: `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 / flipped 0
+- Behavioural delta: inactive workspace no longer leaks into Status/other routes, while the `w` shortcut still reveals the Workspace route normally.
 
 ## Embedded artefacts
 
-- `screenshots/before-freshness-mismatch.png` — managed caco-web before screenshot showing the hero freshness mismatch.
-- `screenshots/after-degraded-freshness.png` — patched caco-web after screenshot showing `Snapshot degraded` in the hero pill.
+- `.playwright-cli/page-2026-04-26T16-53-14-360Z.png` — before evidence showing the workspace view visible below Status.
+- `.playwright-cli/page-2026-04-26T16-58-33-419Z.png` — after smoke showing Workspace activates only when selected.
 
 ## Operator-takeaway
 
-The first proactive caco-web duty-cycle pass found and fixed a real dashboard trust issue: the UI now avoids giving a false “fresh” signal when the daemon says bead or agent snapshot domains are degraded.
+A single route-specific CSS override made Workspace behave unlike every other dashboard view. The fix restores the shared route visibility contract and adds a regression test so Workspace cannot silently reappear under other pages.
