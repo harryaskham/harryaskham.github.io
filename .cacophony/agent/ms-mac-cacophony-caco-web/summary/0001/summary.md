@@ -1,35 +1,38 @@
-# Session summary — snapshot timeouts are not full backend outages
+# Session summary — caco-web observation helper
 
 ## Goal
 
-Handle the operator-reported caco-web state where the dashboard says “Backend unavailable” even though the daemon and web shell are up, because the heavyweight `/api/v1/ui/snapshot` request is merely timing out. Also tighten the persistent caco-web duty-cycle instructions so future cycles search for unlabeled caco-web-related beads rather than relying only on labels.
+Implement the queued caco-web workflow bead to replace fragile long inline Playwright duty-cycle commands with a repo-owned helper that launches or targets a dashboard, drives standard route checks, and records console/network/screenshot evidence consistently.
 
 ## Bead(s)
 
-- `bd-d78de9` — caco web: shows "dashboard backend unavialble" even tho deamon and caco web are up
+- `bd-1ed859` — Add reusable caco-web Playwright visual-observation helper
 
 ## Before state
 
 - Failing tests: none at implementation start.
-- Relevant metrics: `caco web status` reported healthy on port `11180`; a direct dev-server snapshot probe returned HTTP `200 OK` after about 8.1s with `X-Caco-Upstream-Status: 504` and a handled `daemon_proxy_timeout` sentinel.
-- Context: the browser rendered `Backend unavailable` / `Dashboard backend unavailable…` for a slow bulk snapshot, which made a reachable daemon and live web process look like a full outage.
-- Evidence: bead description cited `[caco-web] GET /api/v1/ui/snapshot -> 200 8002ms` and a dev-console snapshot delay; local validation reproduced the timeout sentinel in `/tmp/caco-web-bd-d78de9-233632-validation.log`.
+- Relevant metrics: prior duty cycles relied on long inline bash plus `npx --yes @playwright/cli` commands, which had already caused quote-related failures during visual observation.
+- Context: `bd-1ed859` was open and unassigned; after `bd-d78de9` landed, it was the next focused caco-web bead surfaced by text/title scans.
 
 ## After state
 
-- Failing tests: none observed after the fix.
-- Relevant metrics: Playwright validation at `390x844` now reports `topConnection: "Snapshot delayed"`, `heroConnection: "Snapshot delayed…"`, `heroConnectionClass: "hero-pill snapshot_degraded"`, console `0` errors / `0` warnings, while the direct snapshot request still returns the bounded timeout sentinel in about 8s.
-- Context: the UI now distinguishes a slow bulk snapshot from a true backend outage. Existing 5xx/authorization/backend-unavailable handling remains tested separately.
-- Evidence: `/tmp/caco-web-bd-d78de9-233632-validation.log`, screenshot `.playwright-cli/page-2026-04-26T22-37-02-266Z.png`.
+- Failing tests: none observed.
+- Relevant metrics: helper validation against managed `http://127.0.0.1:11180` completed successfully, produced console `0` errors / `0` warnings, and saved a final screenshot.
+- Context: caco-web duty cycles can now run `cargo run -p caco-web --bin caco-web-observe -- ...` for the standard Workspace/route/console/network observation pass instead of embedding large JavaScript snippets in shell one-liners.
 
 ## Diff summary
 
-- Commits: `03cfd42d6` (`bd-d78de9: distinguish snapshot timeout state`).
-- Files touched: `.cacophony/profiles/caco-web.md`, `crates/caco-web/static/app.js`, `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`.
-- Tests: added `app_js_labels_snapshot_proxy_timeout_as_degraded_bd_d78de9`; updated existing snapshot timeout/backend-unavailable source assertions to account for the new `snapshot_degraded` branch.
-- Behavioural delta: `/api/v1/ui/snapshot` `daemon_proxy_timeout` sentinels now set a `snapshot_degraded` connection state with “Snapshot delayed” copy and warning styling instead of generic “Backend unavailable”. The profile’s active duty cycle now explicitly requires text/title searches for unlabeled `caco web`, dashboard, browser, workspace, webui, summaries, visual-polish, and Playwright beads.
-- Validation: `node --check crates/caco-web/static/app.js`; `git diff --check`; `cargo fmt --all -- --check`; focused snapshot tests; Playwright reproduction; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` (294 passed); post-rebase focused regression rerun passed.
+- Commits: `fad2c8ae4` (`bd-1ed859: add caco-web observe helper`).
+- Files touched: `crates/caco-web/src/bin/caco-web-observe.rs`, `crates/caco-web/src/tests.rs`, `.cacophony/profiles/caco-web.md`.
+- Tests: added `caco_web_observe_helper_standardizes_playwright_cycle_bd_1ed859`.
+- Behavioural delta: new `caco-web-observe` helper supports launching the current-assets `caco-web-dev-server` or observing an existing `--url`, sets `TMPDIR=/tmp` for `@playwright/cli`, captures narrow and wide route sweeps, Workspace overflow data, help overlay status, console output, network output, screenshots, and cleanup. The caco-web profile now recommends the helper for the standard duty-cycle pass.
+- Validation: `cargo fmt --all -- --check`; `git diff --check`; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --bin caco-web-observe`; focused helper test; helper live validation; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` (295 passed); post-rebase focused helper test passed.
+
+## Embedded artefacts
+
+- `/tmp/caco-web-bd-1ed859-helper-validation.log` — live helper run against managed caco-web, including route sweep, console, and network output.
+- `.playwright-cli/page-2026-04-26T22-48-38-478Z.png` — final screenshot from the helper validation run.
 
 ## Operator-takeaway
 
-A slow or overloaded bulk snapshot no longer makes caco-web look fully down: operators now see “Snapshot delayed” while the dashboard retries, which better matches the real state when the daemon and web shell are alive but the heavyweight snapshot path is slow.
+The caco-web observation loop now has a first-party helper for repeatable Playwright evidence capture, reducing quote-related failures and making future visual duty-cycle reports easier to produce consistently.
