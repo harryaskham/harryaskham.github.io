@@ -1,32 +1,32 @@
-# Session summary — helsinki restart-window recurrence
+# Session summary — macOS sidebar search clear navigation restore
 
 ## Goal
 
-Re-audit reopened `bd-bafc96` after router observed a second short helsinki daemon and beads-primary outage, and determine whether the recurrence was an unexplained failure or another explicit lifecycle restart window.
+Fix `bd-8b329f`, where clearing the native macOS sidebar search field did not restore normal pane routing: after Cmd+A/backspace, sidebar clicks and Cmd+3/Cmd+4 still appeared stuck on Status with stale feedback.
 
 ## Bead(s)
 
-- `bd-bafc96` — Helsinki daemon and beads primary briefly stopped during health pass
+- `bd-8b329f` — [macOS visual QA] Clearing sidebar search does not restore pane navigation
 
 ## Before state
 
-- Failing tests: none; this was an operational audit/doc update.
-- Relevant metrics: router report said helsinki daemon and beads primary were temporarily not running around `2026-04-26T03:18Z`, supervisor stayed active, and bounded rechecks recovered without router remediation.
-- Context: the prior audit already showed an explicit `caco restart` window explaining the first report.
+- Failing tests: no runtime Tendril reproduction was available in this Linux worker session; the bead cited visual-QA screenshots showing cleared search followed by failed Beads/Agents/Messages navigation.
+- Relevant metrics: the search wrapper updated the filter but could leave the NSSearchField editor as first responder after clearing, and sidebar selection did not explicitly restore non-search focus before routing.
+- Context: macOS frontend work on shared agents must use source-only checks and avoid heavy local Swift/Nix builds.
 
 ## After state
 
-- Failing tests: none.
-- Relevant metrics: live `caco status --json`, observer `caco bd status --json`, direct helsinki `caco status --json`, and direct helsinki `caco bd status --json` all showed helsinki serving again; `git diff --check` passed.
-- Context: daemon and supervisor logs show the recurrence aligned with explicit `caco restart` windows, including `Apr 26 03:18:31 ... caco restart — node: helsinki, scope: all` and daemon `SIGTERM, reason=restart` markers.
+- Failing tests: none in lightweight validation.
+- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `just --dry-run macos-app-pane-navigation-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
+- Context: clearing search now drops search focus / first responder, and sidebar click or Return selection clears the search mode before changing panes.
 
 ## Diff summary
 
-- Commits: `12f8e1835`
-- Files touched: `docs/audits/bd-bafc96-daemon-restart-window.md`
-- Tests: no code tests; audit validation was live status/log checks plus markdown diff whitespace check.
-- Behavioural delta: documentation now records the recurrence and clarifies that repeated health-pass outages are restart windows on the authority node, not beads-primary split-brain.
+- Commits: `c06c67cbd`
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
+- Tests: strengthened `macos-app-pane-navigation-smoke.sh` to assert search-clear navigation restoration.
+- Behavioural delta: sidebar search clear, Escape, result selection, and sidebar clicks now restore normal pane navigation focus instead of leaving the app trapped in search-field routing.
 
 ## Operator-takeaway
 
-The second bd-bafc96 report was also explained by first-party restart activity on helsinki. Because helsinki is the sole beads-primary candidate, short daemon restarts still look like daemon plus beads-primary outages until the listener returns.
+The stuck-after-clear symptom was treated as a first-responder/search-mode cleanup bug. The app now explicitly exits search mode when the query clears or the operator navigates, and the lightweight source smoke guards that behaviour.
