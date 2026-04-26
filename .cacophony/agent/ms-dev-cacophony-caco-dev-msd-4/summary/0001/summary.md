@@ -1,32 +1,32 @@
-# Session summary — transient compute guardrails and orphan-safe reaping
+# Session summary — macOS sidebar search click focus hardening
 
 ## Goal
 
-Implement `bd-855c97` by hardening the provider-neutral transient compute scheduler with admission guardrails, explicit launch/runtime metadata, and orphan-safe cleanup semantics without touching provider-specific AKS, ACA, microVM runner, or scheduler-placement lanes.
+Fix `bd-0a1f3b`, where fresh macOS visual-QA relaunch cycles could leave sidebar search visually inert after Status toast/navigation interactions: clicking the search box and typing `status` did not visibly update the field.
 
 ## Bead(s)
 
-- `bd-855c97` — Add transient compute guardrails, quotas, and orphan reaper
+- `bd-0a1f3b` — [macOS visual QA] Sidebar search regresses after fresh relaunch with Status toast active
 
 ## Before state
 
-- Failing tests: none known for this slice.
-- Relevant metrics: the existing fake transient provider enforced active-job and budget admission, but the job record did not carry launch-spec expiry, effective runtime/retry metadata, stable owner tags, or provider reconciliation state for orphan-safe reaping.
-- Context: SPEC 6.5.10 required guardrails for runtime ceilings, retry limits, SKU/workload allow-lists, launch-spec expiry, two-phase reaping, owner-tag validation, orphan quarantine, and no bead close/reclaim before provider and dynamic-node reconciliation.
+- Failing tests: no live Tendril reproduction was available in this Linux worker session; the bead cited visual-QA screenshots from `summary/0090` showing search-click and search-type unchanged with a central `Status pane selected` toast.
+- Relevant metrics: the AppKit `NSSearchField` wrapper cleared stale toast on delegate begin-editing, but mouse clicks relied on AppKit's default first-responder path and did not explicitly synchronize SwiftUI focus or clear stale feedback at click time.
+- Context: shared macOS frontend changes must use lightweight source checks rather than heavy local Swift/Nix builds unless explicitly authorized.
 
 ## After state
 
-- Failing tests: none in the targeted and fast validation run.
-- Relevant metrics: `cargo test -p caco-config transient_compute -- --nocapture` passed 3 tests; `cargo test -p caco-daemon transient_compute -- --nocapture` passed 8 tests; `cargo check -p caco-daemon`, `cargo clippy -p caco-daemon --all-targets -- -D warnings`, `cargo clippy -p caco-config --all-targets -- -D warnings`, `cargo fmt --all -- --check`, `cargo test-small`, and `git diff --check` passed.
-- Context: transient jobs now record effective runtime/TTL/retry controls and owner tags, and the reaper core quarantines live/unknown or owner-mismatched resources as orphaned rather than deleting or reclaiming work blindly.
+- Failing tests: none in lightweight validation.
+- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
+- Context: the native search field now explicitly accepts first responder, makes itself first responder on click, synchronizes the SwiftUI focus binding, and clears stale toast feedback before text entry.
 
 ## Diff summary
 
-- Commits: `a6690ef6e` (implementation) and `18e140286` (recorded summary) in the local agent branch before reintegration.
-- Files touched: `SPEC.md`, `README.md`, `AGENTS.md`, `crates/caco-config/src/model.rs`, `crates/caco-config/src/validate.rs`, `crates/caco-daemon/src/transient_compute.rs`
-- Tests: added/expanded config validation tests for transient compute allow-lists and scheduler tests for TTL/runtime metadata, SKU rejection, expired-running orphan handling, owner-tag quarantine, and two-phase reaping.
-- Behavioural delta: transient compute admission now enforces effective global/provider runtime, launch-spec TTL, retry, SKU, workload-profile, concurrency, and budget constraints; provider reconciliation can now mark jobs failed, reaping, reaped, or orphaned without closing beads prematurely.
+- Commits: `65faf366b` (implementation) plus this recorded-summary commit in the local agent branch before reintegration.
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
+- Tests: strengthened `macos-app-pane-navigation-smoke.sh` to assert click-to-focus behavior and stale-toast clearing for the sidebar search field.
+- Behavioural delta: search clicks no longer depend on the default NSSearchField responder path after a fresh relaunch; the field proactively takes focus and clears stale command feedback.
 
 ## Operator-takeaway
 
-This lands the provider-neutral safety layer that future dynamic-compute providers can plug into: jobs get bounded, tagged, and reconciled, and uncertain cloud/provider state is quarantined visibly instead of silently deleting resources or losing bead ownership.
+This is a narrow hardening on top of the previous search-clear fix: both keyboard pane navigation while search is focused and mouse-driven search activation now have explicit source guards, reducing Tendril/visual-QA flakiness around stale Status toast state.
