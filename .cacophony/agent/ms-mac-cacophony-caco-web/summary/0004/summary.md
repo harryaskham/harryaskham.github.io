@@ -1,32 +1,37 @@
-# Session summary — caco-web Notifications nav accessibility label
+# Session summary — caco-web handled snapshot timeout logging
 
 ## Goal
 
-Run the caco-web active-duty loop, inspect the live dashboard with lightweight Playwright, and fix the focused web defect that evidence warranted: the Notifications sidebar item exposed an ambiguous accessible name that dropped the unread count while leaving the numeric shortcut visible to assistive technology.
+Reduce browser-console noise during caco-web observation by treating snapshot timeout/backend-unavailable failures as handled UI states rather than console errors, while preserving error logging for unexpected snapshot failures.
 
 ## Bead(s)
 
-- `bd-4273ef` — caco-web Notifications nav accessible name drops unread count
+- `bd-d9db5e` — caco-web logs handled snapshot timeouts as console errors
 
 ## Before state
 
 - Failing tests: none known.
-- Relevant metrics: Playwright snapshot on the managed dashboard showed the Notifications nav button accessible name as `Notifications Unread notifications 8` while the visible badge was `11`; console also captured one transient `/api/v1/ui/snapshot` 500 that recovered on the next poll.
-- Context: the badge had `aria-label="Unread notifications"`, so the visible numeric count was replaced by the generic label, and the visible shortcut `8` remained in the parent button name.
+- Relevant metrics: Playwright observation against current assets showed `Backend unavailable` correctly, but browser console contained repeated errors: `Snapshot load failed: AbortError: signal is aborted without reason` from the deliberate snapshot timeout path.
+- Context: `loadSnapshot()` unconditionally called `console.error('Snapshot load failed:', err)` before classifying the error as backend-unavailable.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: patched static browser repro showed the nav button as `Notifications, 11 unread notifications, shortcut 8` and the badge as `11 unread notifications`; `cargo check -p caco-web --all-targets` and `cargo test -p caco-web --lib` passed.
-- Context: `updateNotificationBadge()` now derives a counted unread label, applies an explicit nav-item accessible name that separates unread count from shortcut, and keeps the hidden/empty badge labelled as no unread notifications.
+- Failing tests: none in caco-web validation.
+- Relevant metrics: Playwright against a temporary current-assets dev server still showed `Backend unavailable` for timed-out `/api/v1/ui/snapshot` requests, while console output was `Total messages: 0 (Errors: 0, Warnings: 0)`; `cargo check -p caco-web --all-targets` passed; `cargo test -p caco-web --lib` passed with 282 tests.
+- Context: `loadSnapshot()` now classifies backend-unavailable snapshot errors first and only calls `console.error` for unexpected failures.
 
 ## Diff summary
 
-- Commits: `0c07b25e3`
-- Files touched: `crates/caco-web/static/index.html`, `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
-- Tests: +1 / -0 / flipped 0
-- Behavioural delta: Assistive technology now hears the real Notifications unread count and a distinct `shortcut 8` phrase instead of a countless badge label followed by a bare number.
+- Commits: `1e9be4b36`
+- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 / flipped 0
+- Behavioural delta: handled snapshot aborts/timeouts no longer pollute Playwright/browser console error output, but the UI still presents the degraded backend state and retries snapshots.
+
+## Embedded artefacts
+
+- `/tmp/caco-web-bd-d9db5e-183231-playwright.log` — Playwright after-proof with zero console messages and snapshot abort network evidence.
+- `.playwright-cli/page-2026-04-26T17-33-01-441Z.png` — after screenshot from the current-assets dashboard smoke.
 
 ## Operator-takeaway
 
-The active caco-web duty cycle caught and fixed a small but real sidebar accessibility regression: unread notifications are now scanable and unambiguous for keyboard/screen-reader users.
+The dashboard was behaving correctly but making the expected degraded-backend path look like a web regression. This slice keeps the operator-facing banner while restoring console signal for real frontend failures.
