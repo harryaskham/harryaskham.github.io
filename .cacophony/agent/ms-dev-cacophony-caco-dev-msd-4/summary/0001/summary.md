@@ -1,32 +1,32 @@
-# Session summary — restore native macOS zoom/minimize behaviour
+# Session summary — sidebar titlebar icon feedback
 
 ## Goal
 
-Fix `bd-e8a263`, where macOS visual QA saw the apparent native traffic-light zoom and minimize controls produce no visible window-state change on a fresh app cycle.
+Fix `bd-8dceda`, where macOS visual QA clicked small sidebar/titlebar icons and saw no visible response, leaving the UI looking inert or masked by stale Status feedback.
 
 ## Bead(s)
 
-- `bd-e8a263` — [macOS visual QA] Traffic-light zoom and minimize controls show no visible effect
+- `bd-8dceda` — [macOS visual QA] Sidebar titlebar icons give no visible response
 
 ## Before state
 
-- Failing tests: no live Tendril reproduction was available in this Linux worker session; the bead cited `summary/0096` screenshots showing zoom/minimize clicks with no visible effect.
-- Relevant metrics: the app preserved the standard title bar, but the scene still used `.windowResizability(.contentSize)`, which pins the native window to its content size and can make zoom/minimize visual checks look inert.
+- Failing tests: no live Tendril reproduction was available in this Linux worker session; the bead cited `summary/0097` screenshots for sidebar icon clicks with no visible response.
+- Relevant metrics: the sidebar stream badge was rendered as a passive badge, the density toggle had no operator feedback, and the titlebar refresh copy did not clearly name its sidebar source.
 - Context: shared macOS frontend validation here must stay source-only/lightweight rather than running heavy local Swift/Nix builds.
 
 ## After state
 
 - Failing tests: none in lightweight validation.
-- Relevant metrics: `bash -n scripts/macos-app-window-chrome-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: the main window now uses `.windowResizability(.contentMinSize)`, preserving SwiftUI minimum size constraints while allowing native zoom/minimize to visibly resize or hide the window.
+- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
+- Context: sidebar titlebar icon controls now either perform the action with explicit feedback or expose non-navigation status feedback when clicked.
 
 ## Diff summary
 
-- Commits: `9f021c482` (implementation) plus this recorded-summary commit in the local agent branch before reintegration.
-- Files touched: `companion/macos/Sources/Cacophony/App/CacophonyApp.swift`, `scripts/macos-app-window-chrome-smoke.sh`
-- Tests: updated the window-chrome smoke to require `.contentMinSize` and reject the old `.contentSize` pinning.
-- Behavioural delta: standard traffic-light hit targets remain native, but zoom/minimize are no longer constrained by fixed content-size resizability.
+- Commits: `eee88eec1` (implementation) plus this recorded-summary commit in the local agent branch before reintegration.
+- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
+- Tests: strengthened `macos-app-pane-navigation-smoke.sh` to require visible feedback for sidebar command, refresh, stream, and density controls.
+- Behavioural delta: command and refresh clear stale errors before showing feedback, stream status is an explicit clickable acknowledgement, density toggles report compact/comfortable state, and project switching clears stale errors before its confirmation.
 
 ## Operator-takeaway
 
-The controls were likely hit-testable but visually inert because the SwiftUI scene pinned the window to content size. Switching to content-min-size keeps layout safety while restoring native macOS window-state behaviour.
+The sidebar/titlebar icons were ambiguous because some were passive-looking or produced generic/no feedback. They now make every click visibly attributable without requiring a heavy macOS build to guard the source pattern.
