@@ -1,32 +1,32 @@
-# Session summary — CLI integration test repair
+# Session summary — helsinki restart-window recurrence
 
 ## Goal
 
-Fix `bd-2d85a1`, a broken-on-main report where `cargo test -p caco --test cli` failed after the implementation contracts for JSON help, certificate status JSON, and MCP metadata had moved forward while the integration assertions still expected older shapes.
+Re-audit reopened `bd-bafc96` after router observed a second short helsinki daemon and beads-primary outage, and determine whether the recurrence was an unexplained failure or another explicit lifecycle restart window.
 
 ## Bead(s)
 
-- `bd-2d85a1` — [broken-on-main] cargo test -p caco --test cli failures
+- `bd-bafc96` — Helsinki daemon and beads primary briefly stopped during health pass
 
 ## Before state
 
-- Failing tests: `cert_status_json_reports_missing`, `cert_status_json_reports_present`, `agent_context_filters_unsafe_commands`, and `mcp_command_generates_tool_metadata` failed under `cargo test -p caco --test cli -- --nocapture`.
-- Relevant metrics: reproduction showed 98 passed / 4 failed in the CLI integration test binary.
-- Context: the failures matched intentional current contracts: certificate status JSON is under the standard `{ok, data}` envelope, JSON help remains a full discovery surface in agent context, and MCP metadata reports the live crate version instead of the stale `1.2.3` literal.
+- Failing tests: none; this was an operational audit/doc update.
+- Relevant metrics: router report said helsinki daemon and beads primary were temporarily not running around `2026-04-26T03:18Z`, supervisor stayed active, and bounded rechecks recovered without router remediation.
+- Context: the prior audit already showed an explicit `caco restart` window explaining the first report.
 
 ## After state
 
-- Failing tests: none in the targeted CLI integration lane.
-- Relevant metrics: `cargo test -p caco --test cli -- --nocapture` passed 102/102; `cargo test -p caco-cli mcp_metadata_command_produces_valid_json -- --nocapture`, `cargo check -p caco`, `cargo clippy -p caco --test cli -- -D warnings`, `cargo fmt --all -- --check`, `cargo test-small`, and `git diff --check` passed.
-- Context: the tests now assert the current operator/API contracts instead of stale pre-envelope and hardcoded-version expectations.
+- Failing tests: none.
+- Relevant metrics: live `caco status --json`, observer `caco bd status --json`, direct helsinki `caco status --json`, and direct helsinki `caco bd status --json` all showed helsinki serving again; `git diff --check` passed.
+- Context: daemon and supervisor logs show the recurrence aligned with explicit `caco restart` windows, including `Apr 26 03:18:31 ... caco restart — node: helsinki, scope: all` and daemon `SIGTERM, reason=restart` markers.
 
 ## Diff summary
 
-- Commits: `e3a2333c8`
-- Files touched: `crates/caco/tests/cli.rs`, `crates/caco-cli/src/lib.rs`
-- Tests: updated 4 stale assertions and refreshed one caco-cli unit assertion for MCP metadata versioning.
-- Behavioural delta: no production behaviour changed; this is a test-suite repair aligning broken-on-main tests with existing implementation contracts.
+- Commits: `12f8e1835`
+- Files touched: `docs/audits/bd-bafc96-daemon-restart-window.md`
+- Tests: no code tests; audit validation was live status/log checks plus markdown diff whitespace check.
+- Behavioural delta: documentation now records the recurrence and clarifies that repeated health-pass outages are restart windows on the authority node, not beads-primary split-brain.
 
 ## Operator-takeaway
 
-The reported CLI failures were stale tests, not a runtime regression. The suite now validates the live contracts for cert JSON envelopes, JSON-help discovery, and MCP metadata versions.
+The second bd-bafc96 report was also explained by first-party restart activity on helsinki. Because helsinki is the sole beads-primary candidate, short daemon restarts still look like daemon plus beads-primary outages until the listener returns.
