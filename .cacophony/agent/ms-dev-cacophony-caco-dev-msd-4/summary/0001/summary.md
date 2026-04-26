@@ -1,32 +1,32 @@
-# Session summary — macOS offline action feedback
+# Session summary — helsinki restart-window audit
 
 ## Goal
 
-Fix `bd-4c68c8`, where macOS visual QA showed offline actions such as Retry, Settings, project/health pills, and keyboard refresh as visually unchanged behind the stale `Status pane selected` offline copy. The goal was to make each offline action produce current, visible feedback in the pane itself.
+Determine whether the P1 report of helsinki `caco-daemon` and beads-primary briefly stopping during a health pass represented an unexplained authority failure or a known lifecycle restart window, and leave an operator-readable audit trail.
 
 ## Bead(s)
 
-- `bd-4c68c8` — [macOS visual QA] Offline action failures are masked by stale Status-selected toast
+- `bd-bafc96` — Helsinki daemon and beads primary briefly stopped during health pass
 
 ## Before state
 
-- Failing tests: no runtime visual test was available in this Linux worker session; the bead cited Tendril screenshots where several offline actions remained visually identical with `Status pane selected`.
-- Relevant metrics: the offline context rendered only the selected-pane copy and Retry/Settings buttons, while action-specific feedback lived in transient banner state that could be missed in visual QA captures.
-- Context: shared macOS agents must avoid heavy local Swift/Nix builds, so this fix used source-level checks and the existing lightweight macOS validation recipes.
+- Failing tests: none; this was an operational audit.
+- Relevant metrics: router health saw daemon/beads-primary unavailable around `2026-04-26T02:27Z`, then recovered without remediation.
+- Context: helsinki is the authoritative beads host, so a daemon restart can temporarily make both daemon and beads API checks look like an authority outage.
 
 ## After state
 
-- Failing tests: none in source-level validation.
-- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just --dry-run macos-app-pane-navigation-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: the offline pane now renders the current `lastError` or `lastCommandOutput` inline below the selected-pane copy, and Retry/Settings from the offline context set action-specific messages.
+- Failing tests: none.
+- Relevant metrics: live checks showed helsinki reachable again, `beads_host.reachable: true`, `caco bd status --json` successful, and daemon `started_at: 2026-04-26T02:27:46Z`.
+- Context: daemon and supervisor logs show explicit `caco restart` / graceful SIGTERM restart markers, not a panic or split-brain.
 
 ## Diff summary
 
-- Commits: `25fc1cdb8`
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
-- Tests: strengthened the source-only pane-navigation smoke to assert offline action feedback is present.
-- Behavioural delta: offline action results are no longer only transient top-level banners; they appear in the offline pane itself with a clear action-specific message or error state.
+- Commits: `948b14936`
+- Files touched: `docs/audits/bd-bafc96-helsinki-daemon-restart-window.md`
+- Tests: `git diff --check` passed for the audit document.
+- Behavioural delta: no code changed; the incident is documented as a restart-window explanation with follow-up triggers and capture commands.
 
 ## Operator-takeaway
 
-Fresh macOS visual QA should no longer see identical `Status pane selected` screenshots after offline actions: the offline pane now includes current action feedback so failed or disabled actions are visible and diagnosable.
+The helsinki beads-primary outage was an explicit `caco restart` window: the authority recovered normally, and future escalation should focus on missing restart markers or restart windows long enough to need clearer `maintenance_window` surfacing.
