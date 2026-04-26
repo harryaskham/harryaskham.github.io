@@ -1,78 +1,32 @@
-# Session summary — bd-84c645 persist active mode state
+# Session summary — macOS command-palette shortcut smoke
 
 ## Goal
 
-Make the daemon's active mode selection (global mode + per-project
-overrides) survive `caco restart`, crashes, and auto-restart
-upgrades, so operator-set burndown / triage modes actually keep
-firing rules instead of silently reverting to manual.
+Add a cheap regression check for the native macOS command palette so future Cmd+K / Shift+Cmd+C visual-QA regressions can be caught without running a heavy Swift/Nix frontend build on a shared macOS worker.
 
 ## Bead(s)
 
-- `bd-84c645` — Active mode state (global + per-project overrides)
-  not persisted across daemon restarts.
+- `bd-e5af06` — Add automated macOS command-palette shortcut smoke test
 
 ## Before state
 
-- `ActiveModeState` was constructed via `Default` on every daemon
-  start (`global_mode = "manual"`, empty overrides).
-- The mode-execution loop short-circuits on `manual`, so any
-  burndown / triage mode set via TUI or HTTP was silently lost on
-  restart and no rules fired.
-- No persistence layer existed; no `load`/`save` methods; no path
-  in `RuntimePaths`.
+- Failing tests: none known; this was filed from a prior session where command-palette behaviour had to be verified manually by inspecting SwiftUI state and doing a product build.
+- Relevant metrics: there was no source/static check that the Command Palette menu shortcuts still called the shared palette path or emitted visible `lastCommandOutput` feedback.
+- Context: shared macOS agents must avoid heavy local Swift/Nix builds unless explicitly authorized, so the new check needed to run from Linux and from macOS without building the app.
 
 ## After state
 
-- `RuntimePaths` gains `active_mode_state` =
-  `$CACOPHONY_DIR/daemon/active-mode.json`.
-- `ActiveModeState` gains three methods:
-  - `load(path)` — reads JSON; returns `None` for missing or
-    corrupt files (warns to stderr, never fails daemon startup).
-  - `drop_unknown_modes(available)` — strips persisted mode names
-    no longer in the config's `modes:` map. Global reverts to
-    `manual`; per-project overrides are removed; `"manual"` is
-    always treated as valid even when not explicitly listed.
-  - `save_atomic(path)` — writes `<path>.tmp` then renames into
-    place so `kill -9` mid-write leaves either the old or new
-    version, never partial. Creates parent dir if needed.
-- Canonical `DaemonState` construction calls
-  `ActiveModeState::load(...).unwrap_or_default()`,
-  `drop_unknown_modes(config.available_modes())`, and logs
-  `bd-84c645: restored active mode state: global=X, overrides=...`
-  on startup.
-- All three mutation handlers
-  (`handle_modes_set_global`, `handle_modes_set_project`,
-  `handle_modes_clear_project`) now call `save_atomic` after
-  mutating; a save failure is logged to stderr but does not fail
-  the HTTP request.
+- Failing tests: none observed in lightweight validation.
+- Relevant metrics: `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just macos-app-command-palette-smoke`, `just --dry-run macos-app-command-palette-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
+- Context: `just macos-app-validate` now runs the command-palette smoke before platform-specific macOS validation or cloud dispatch.
 
 ## Diff summary
 
-- Commits: `83dc3057`
-- Files touched:
-  - `crates/caco-config/src/paths.rs` (+1 field, +1 init line)
-  - `crates/caco-daemon/src/modes.rs` (+ load / drop_unknown_modes
-    / save_atomic + 6 unit tests)
-  - `crates/caco-daemon/src/lib.rs` (+ initial_mode_state load +
-    save_atomic on 3 mutation handlers)
-- Tests: +6 / -0 / flipped 0
-- Behavioural delta: setting global mode or per-project override
-  now survives daemon restart; unknown persisted modes log a
-  warning and revert to manual; partial-write corruption is
-  impossible under crash.
-
-## Validation
-
-- `cargo test -p caco-daemon --lib modes::tests::` — 28 passed.
-- `cargo test-small` workspace — all suites green.
+- Commits: `736379e98`
+- Files touched: `scripts/macos-app-command-palette-smoke.sh`, `justfile`, `docs/macos-development.md`, `docs/macos-development.html`, `companion/macos/README.md`, `README.md`, `AGENTS.md`
+- Tests: +1 source-only shell/Python smoke script; no production code paths changed.
+- Behavioural delta: the repo now has a first-party `just macos-app-command-palette-smoke` recipe that verifies Cmd+K, Shift+Cmd+C, shared palette presentation, visible feedback copy, and offline-safe palette text are present in the native macOS source.
 
 ## Operator-takeaway
 
-If burndown stops firing after a restart, check
-`$CACOPHONY_DIR/daemon/active-mode.json` — it should record the
-last operator-set mode. The daemon log will print
-`bd-84c645: restored active mode state: ...` at startup and a
-warning if any persisted mode was dropped because it's no longer
-in `modes:` config. Mode state remains node-local-daemon-state;
-cluster-wide sync is out of scope for this bead.
+Command-palette shortcut regressions now have a fast, safe guardrail that runs before expensive native macOS validation, reducing the need for manual SwiftUI source inspection or heavy local builds on shared worker Macs.
