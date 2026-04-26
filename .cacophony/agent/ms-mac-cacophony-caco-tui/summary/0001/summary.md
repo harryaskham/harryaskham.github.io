@@ -1,34 +1,37 @@
-# Session summary — rich agent summaries in web and TUI
+# Session summary — quick-file bead kitty styling
 
 ## Goal
 
-Add a genuinely useful agent-summary browser to both operator surfaces, not just raw artefact plumbing. This session made agent summaries browsable from the WebApp and upgraded the TUI summary tab so recorded session summaries render with richer markdown semantics and can show summary images inline when terminal graphics support is available.
+Bring the TUI quick-file bead modal visually in line with the full create-bead dialog by using the same modal/input styling hooks and kitty graphics registration path, without changing the quick-file workflow or overlapping adjacent undo/edit/persistence beads.
 
 ## Bead(s)
 
-- `bd-03f48a` — Add rich summary view for Agents in WebApp and TUI
+- `bd-8649c0` — Add kitty styling to quick file bead in TUI
 
 ## Before state
 
-- WebApp agent detail had Info / Logs / Terminal / Diff tabs but no dedicated summary browser.
-- Summary markdown rendering in the web surface did not support loading relative summary-side image assets.
-- The daemon artefact read path returned `summary.md` text, but not image payloads for sibling assets like `screenshots/*.png`.
-- TUI already exposed Summary / Session tabs, but summary rendering was still relatively lightweight and image references degraded to plain text only.
+- Failing tests: none known for this bead.
+- Relevant metrics: no FPS benchmark required; this was a focused modal styling change.
+- Context: the quick-file modal rendered with plain ratatui blocks and did not register modal/input panels with the kitty graphics border pipeline, while the full create-bead dialog already used `graphics_block`, modal overlay registration, input roles, and char-count border gaps.
 
 ## After state
 
-- WebApp agent detail now includes a Summary tab with a browsable summary list, rich-text preview, multi-summary navigation, and inline image hydration for relative summary assets.
-- The daemon summary-artefact read path now resolves safe relative sibling assets and returns image payloads for web/TUI consumers.
-- TUI summary rendering now handles ordered lists more cleanly, shows explicit image placeholders for unsupported terminals, and in kitty-capable terminals reserves inline image regions for PNG summary assets.
-- Web summary state handling now avoids duplicate in-flight fetches and preserves explicit error states instead of collapsing failures into a false empty-state.
+- Failing tests: none in the focused validation set.
+- Relevant metrics: targeted quick-file tests and touched-crate build pass.
+- Context: the quick-file modal now uses the same modal styling conventions as create-bead and registers distinct kitty graphics panels for the modal container, project picker, and text field.
 
 ## Diff summary
 
-- Commits: `b0608801`
-- Files touched: `crates/caco-daemon/src/lib.rs`, `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/client.rs`, `crates/caco-tui/src/views/agent_detail.rs`, `crates/caco-web/src/tests.rs`, `crates/caco-web/static/app.js`, `crates/caco-web/static/index.html`, `crates/caco-web/static/style.css`
-- Tests: targeted daemon/web/TUI coverage plus full `cargo test-small` and `cargo check --workspace --tests` preflight
-- Behavioural delta: operators can now browse recorded agent summaries directly from the WebApp, including embedded images, while the TUI summary view presents richer markdown and upgrades to inline PNG rendering on kitty-capable terminals with graceful fallback elsewhere.
+- Commits: `093d9c51a`
+- Files touched: `crates/caco-tui/src/app.rs`
+- Tests: +3 focused regression tests
+- Behavioural delta: quick-file still opens, edits, submits, and cancels the same way; the visual treatment now includes modal/input styling, focused text coloring, title/bottom gaps, text char count, multiline-preserving text rendering, and kitty graphics panel registration.
+- Validation:
+  - `cargo test -p caco-tui quick_file_overlay_ --lib`
+  - `cargo test -p caco-tui quick_file_ --lib`
+  - `cargo build -p caco-tui`
+  - after rebasing over the quick-file persistence/undo work on main, re-ran `cargo test -p caco-tui quick_file_ --lib` and `cargo build -p caco-tui`
 
 ## Operator-takeaway
 
-This session turned recorded agent summaries into first-class review artefacts instead of opaque markdown files. The important practical change is that both the WebApp and TUI now consume the same underlying summary artefact source, with the web surface handling embedded images directly and the TUI degrading gracefully when terminal graphics are unavailable.
+The quick-file bead path now matches the visual language of the full create-bead dialog in kitty-capable terminals, while staying scoped away from the separate quick-file undo, edit/refine, and post-create persistence workstreams.
