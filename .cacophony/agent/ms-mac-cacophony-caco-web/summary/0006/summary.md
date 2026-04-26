@@ -1,32 +1,37 @@
-# Session summary — caco-web backend-unavailable state for dashboard 503s
+# Session summary — caco-web SSE transient-drop grace
 
 ## Goal
 
-Run the caco-web active duty cycle, convert the Playwright-observed restart-window defect into an authoritative bead, and make the dashboard stop presenting a green Connected state when daemon-backed dashboard APIs are returning HTTP 503.
+Investigate and reduce false disconnected banners in caco-web when the browser sees short-lived Server-Sent Events errors between the dashboard and local daemon.
 
 ## Bead(s)
 
-- `bd-c3521a` — caco-web shows Connected while dashboard APIs return 503
+- `bd-3ffce9` — Investigate SSE connection drops between webui and local daemon
 
 ## Before state
 
 - Failing tests: none known.
-- Relevant metrics: Playwright against the managed dashboard during a daemon restart saw `/health` return 200 while `/api/v1/ui/snapshot`, `/api/v1/merge-queue?since=24h`, `/api/v1/ui/stream`, and `/api/v1/logs/stream?follow=true` returned 503; the UI still exposed `Connected` and `Live SSE connected` with `Snapshot pending`.
-- Context: the web shell could be alive while daemon-backed APIs were unavailable, and SSE open/error handling could overwrite the snapshot failure state with generic connected/disconnected wording.
+- Relevant metrics: code inspection showed the SSE error reporting threshold was effectively zero seconds: `sse.onerror` immediately called `setConnectionStatus(... 'disconnected')`, showed the lost-connection toast, closed the stream, and scheduled exponential reconnect. Backoff started at about 1s plus jitter and capped at 30s; the independent liveness probe waits two 15s ticks, about 30s, before forcing a reconnect.
+- Context: transient EventSource errors could flash a disconnected state even when SSE had just opened or delivered an event and the natural reconnect was likely to recover quickly.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: patched Playwright repro with mocked 503 dashboard APIs shows header `Backend unavailable`, tooltip `Dashboard backend is temporarily unavailable (HTTP 5xx)...`, hero `Dashboard backend unavailable…`, and class `hero-pill backend_unavailable`.
-- Context: snapshot 5xx/fetch failures now set a backend-unavailable flag and connection status; SSE open/error handling preserves that degraded state until a successful snapshot or real UI event proves recovery.
+- Failing tests: none in caco-web validation.
+- Relevant metrics: added a 15s transient-error grace after recent SSE open/activity. Playwright forced a recent SSE error and observed the connection pill remain `Connected` immediately with `graceRemainingMs: 15000` and retry count incremented; console had zero errors/warnings. `cargo check -p caco-web --all-targets` passed; `cargo test -p caco-web --lib` passed with 284 tests.
+- Context: if the stream does not recover before the grace expires, the existing disconnected/backend-unavailable reporting still fires; manual reconnect clears the grace window.
 
 ## Diff summary
 
-- Commits: `d5168d9b4`
-- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`
-- Tests: +1 / -0 / flipped 0
-- Behavioural delta: dashboard restart windows now show an explicit backend-unavailable state instead of a misleading green Connected status when the web shell is up but daemon-backed APIs are returning 5xx.
+- Commits: `84e4d2b6d`
+- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 / flipped 0
+- Behavioural delta: recent healthy SSE sessions now tolerate short EventSource errors without immediately alarming the operator, while longer failures still degrade visibly and continue using the existing backoff/liveness recovery paths.
+
+## Embedded artefacts
+
+- `/tmp/caco-web-bd-3ffce9-grace-185649-playwright.log` — Playwright proof of the forced recent-SSE error, 15s grace, and zero console errors.
+- `.playwright-cli/page-2026-04-26T17-57-16-664Z.png` — screenshot from the caco-web SSE grace smoke.
 
 ## Operator-takeaway
 
-This turns a confusing restart-window trust gap into an explicit degraded dashboard state, so operators can distinguish “the web shell is reachable” from “the dashboard backend is actually usable.”
+The investigation found the dashboard had no debounce at all for SSE errors. A bounded 15s grace now filters brief EventSource churn without hiding real sustained connectivity loss.
