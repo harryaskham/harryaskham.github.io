@@ -1,32 +1,32 @@
-# Session summary — macOS sidebar search feedback fix
+# Session summary — macOS offline action feedback
 
 ## Goal
 
-Fix the native macOS visual-QA symptom where clicking the sidebar Search field and typing appeared to be swallowed while the central Status pane feedback remained visible, so operators get immediate search-specific feedback instead of stale pane-selection state.
+Fix `bd-4c68c8`, where macOS visual QA showed offline actions such as Retry, Settings, project/health pills, and keyboard refresh as visually unchanged behind the stale `Status pane selected` offline copy. The goal was to make each offline action produce current, visible feedback in the pane itself.
 
 ## Bead(s)
 
-- `bd-25294c` — [macOS visual QA] Sidebar search input is swallowed by Status pane toast state
+- `bd-4c68c8` — [macOS visual QA] Offline action failures are masked by stale Status-selected toast
 
 ## Before state
 
-- Failing tests: no runtime visual test was available in this Linux worker session; the bead cited Tendril screenshots from summary 0080 showing `status` typing left the UI visibly unchanged with the Status pane selected toast.
-- Relevant metrics: `scripts/macos-app-pane-navigation-smoke.sh` covered pane selection but did not assert sidebar search clears stale toast feedback or exposes inline search status.
-- Context: shared macOS agents must avoid heavy local Swift/Nix builds, so this fix used source-level checks and existing lightweight macOS validation recipes.
+- Failing tests: no runtime visual test was available in this Linux worker session; the bead cited Tendril screenshots where several offline actions remained visually identical with `Status pane selected`.
+- Relevant metrics: the offline context rendered only the selected-pane copy and Retry/Settings buttons, while action-specific feedback lived in transient banner state that could be missed in visual QA captures.
+- Context: shared macOS agents must avoid heavy local Swift/Nix builds, so this fix used source-level checks and the existing lightweight macOS validation recipes.
 
 ## After state
 
 - Failing tests: none in source-level validation.
 - Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just --dry-run macos-app-pane-navigation-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: sidebar search editing now clears stale command/error feedback and shows an inline search status line with the active query and match count.
+- Context: the offline pane now renders the current `lastError` or `lastCommandOutput` inline below the selected-pane copy, and Retry/Settings from the offline context set action-specific messages.
 
 ## Diff summary
 
-- Commits: `2cdf783ab`
+- Commits: `25fc1cdb8`
 - Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
-- Tests: strengthened the existing pane-navigation smoke script to cover sidebar search feedback and toast clearing.
-- Behavioural delta: beginning or updating sidebar search clears the stale Status toast, and the sidebar itself displays either search guidance or `Searching panes for "query" · N matches`, making successful input visible in Tendril screenshots.
+- Tests: strengthened the source-only pane-navigation smoke to assert offline action feedback is present.
+- Behavioural delta: offline action results are no longer only transient top-level banners; they appear in the offline pane itself with a clear action-specific message or error state.
 
 ## Operator-takeaway
 
-The macOS sidebar search should no longer look inert behind stale Status feedback: search focus and typing now produce local sidebar feedback and explicitly dismiss old pane-selection banners.
+Fresh macOS visual QA should no longer see identical `Status pane selected` screenshots after offline actions: the offline pane now includes current action feedback so failed or disabled actions are visible and diagnosable.
