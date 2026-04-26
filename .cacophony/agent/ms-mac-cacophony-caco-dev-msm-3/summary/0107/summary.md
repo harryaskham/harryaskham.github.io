@@ -22,7 +22,7 @@ Address the recurring `bd-2efa9c` stale-status mismatch where fleet/list surface
 
 ## Diff summary
 
-- Commits: `04b43bce4`
+- Commits: `6ed60057b`
 - Files touched: `crates/caco-daemon/src/agent/lifecycle.rs`, `crates/caco-daemon/src/agent/tests.rs`, `crates/caco-daemon/src/lib.rs`
 - Tests: `cargo fmt --all -- --check`, `cargo test -p caco-daemon disk_refresh -- --nocapture`, and `cargo check -p caco-daemon --tests`.
 - Behavioural delta: direct per-agent status and aggregate list/status surfaces now converge on fresher persisted liveness instead of serving stale in-memory `Stalled` snapshots after a liveness ping has reached disk.
