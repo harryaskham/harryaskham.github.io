@@ -1,32 +1,35 @@
-# Session summary — caco-web lightweight Playwright profile update
+# Session summary — unclipped narrow Status hero
 
 ## Goal
 
-Update the persistent caco-web worker profile so future dashboard observation cycles use the lightweight `playwright-cli` path Harry requested, rather than reaching for the heavier `npx playwright` package or full browser install flow by default.
+Run the caco-web active duty cycle, inspect the rendered dashboard with lightweight Playwright evidence, and fix the focused visual defect found: the Status page hero collapsed into a clipped strip on narrow mobile-width viewports.
 
 ## Bead(s)
 
-- `bd-319bfe` — Document lightweight caco-web playwright-cli workflow
+- `bd-8c4e7e` — caco-web Status hero is clipped on narrow viewports
 
 ## Before state
 
-- Failing tests: none known for this profile-only change.
-- Relevant metrics: `which playwright-cli` returned not found; `npm view @playwright/cli` showed version `0.1.9` with a `playwright-cli` binary; `npx playwright screenshot` attempted to use a missing Playwright browser cache and recommended a full browser install.
-- Context: the caco-web profile only said to use `playwright-cli` and file a setup bead if missing, but did not document the working npm package, the lighter session commands, or the macOS/nix-shell socket-path workaround.
+- Failing tests: none at cycle start.
+- Relevant metrics: no assigned in-progress caco-web beads and no ready open beads for `caco-web`, `dashboard`, `web`, `browser`, `workspace`, `playwright`, `webui`, `summaries`, or `visual-polish`.
+- Context: current-assets Playwright observation against caco-web `v1.2.565` found `.status-hero` at 390x844 rendered as a 49px/53px-tall strip while its `scrollHeight` was 386px/328px and `overflowY` was `hidden`. The live-orchestration copy and quick facts were clipped in the screenshot.
+- Evidence: `/tmp/caco-web-duty-visual-224128-observation.log`, `/tmp/caco-web-status-narrow-224246-observation.log`, `.playwright-cli/page-2026-04-26T21-43-00-909Z.png`.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: `TMPDIR=/tmp npx --yes @playwright/cli --version` returned `0.1.9`; `TMPDIR=/tmp npx --yes @playwright/cli -s=caco-web snapshot --raw` captured a 731-line dashboard snapshot; `caco profile show --name caco-web --json` parsed successfully; `git diff --check -- .cacophony/profiles/caco-web.md` passed.
-- Context: the profile now prefers a PATH `playwright-cli` when available, documents the `@playwright/cli` fallback, sets `TMPDIR=/tmp` for macOS/nix-shell, fixes the local `caco web` launch flags, and tells workers to avoid full browser downloads unless the lightweight CLI says they are actually required.
+- Failing tests: none observed.
+- Relevant metrics: Playwright validation at 390x844 reports `.status-hero` `h=330`, `sh=328`, `flexShrink="0"`, `clipped=false`; `#cluster-pulse-expand-btn` remains `position="absolute"`; console stayed `0` errors and `0` warnings.
+- Context: the Status hero now keeps its mobile content visible and the page scrolls instead of compressing the hero into a hidden-overflow strip.
+- Evidence: `/tmp/caco-web-bd-8c4e7e-final-224828-validation.log`, `.playwright-cli/page-2026-04-26T21-48-44-312Z.png`.
 
 ## Diff summary
 
-- Commits: `93070963b`
-- Files touched: `.cacophony/profiles/caco-web.md`
-- Tests: +0 / -0 / flipped 0
-- Behavioural delta: Future caco-web agents have a concrete, validated lightweight browser-observation recipe and a documented workaround for Playwright daemon socket failures under long nix-shell temp paths.
+- Commits: `c3d7f5126` (`bd-8c4e7e: prevent narrow status hero clipping`).
+- Files touched: `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`.
+- Tests: added `style_css_keeps_status_hero_expand_button_absolute_after_tooltip_rule_bd_8c4e7e`.
+- Behavioural delta: `.status-hero` now has `flex-shrink: 0` so the vertical Status view does not compress it on short/narrow screens, and the tooltip host override keeps the cluster-pulse expand button absolutely positioned after the generic `[data-tooltip]` rule.
+- Validation: `git diff --check`; `cargo fmt --all -- --check`; focused regression test; `CARGO_BUILD_JOBS=2 cargo build -p caco-web --bin caco-web-dev-server`; Playwright proof; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` (292 passed); post-rebase focused regression rerun passed.
 
 ## Operator-takeaway
 
-The caco-web profile now encodes the exact lightweight Playwright workflow Harry asked for, including the package name and `TMPDIR=/tmp` gotcha discovered in-session, so future persistent caco-web loops should stop defaulting to heavyweight Playwright installs.
+The Status dashboard now looks trustworthy on mobile width again: the live-orchestration hero expands to show its copy and backend/snapshot facts instead of clipping almost all of its content into a thin decorative strip.
