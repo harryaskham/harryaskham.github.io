@@ -1,32 +1,32 @@
-# Session summary — macOS Swift syntax tool probe
+# Session summary — caco-audio live transcription MCP controls
 
 ## Goal
 
-Make the lightweight macOS Swift syntax validator fail once with a clear tool-unavailable message when `/usr/bin/swiftc` is only an unavailable `xcrun` shim, instead of reporting every Swift source file as a parse failure.
+Expose first-party, non-blocking live transcription controls through the `caco audio` command tree and a scoped `caco-audio` plugin so agents can start, stop, and inspect live STT capture through generated MCP tools instead of monopolizing a blocking CLI process.
 
 ## Bead(s)
 
-- `bd-e6cd7b` — macos-app-swift-syntax should reject unavailable xcrun swiftc shim before per-file parse loop
+- `bd-929911` — Expose first-party live transcription session control through caco-audio MCP/plugin
 
 ## Before state
 
-- Failing tests: none reproduced on this Linux worker; the bead came from macOS validation where `command -v swiftc` succeeded but `swiftc` itself returned `xcrun: error: tool swiftc not found`.
-- Relevant metrics: the script selected `swiftc` based only on command discovery, then entered the per-file parse loop.
-- Context: the script is intentionally lightweight and must remain safe for shared macOS agents, avoiding heavy local Swift/Nix builds.
+- Failing tests: none for this bead.
+- Relevant metrics: `caco audio transcribe --live` was a blocking foreground capture loop; no scoped `plugins/caco-audio` package existed; generated audio MCP metadata exposed one-shot audio commands but not `live start/stop/status` controls.
+- Context: live transcription already used the daemon transcription endpoint, but agent-facing partial/final transcript markers and non-blocking lifecycle state were missing.
 
 ## After state
 
-- Failing tests: none observed in lightweight validation.
-- Relevant metrics: `bash -n scripts/macos-app-swift-syntax.sh`, `just --dry-run macos-app-swift-syntax`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: after selecting `SWIFTC`, the script now runs `swiftc --version` before scanning files; if the tool is unavailable, it prints the underlying error plus the cloud-build fallback and exits.
+- Failing tests: none in targeted validation.
+- Relevant metrics: `caco audio live start|stop|status` now exist in CLI/help and generated MCP metadata; `live start` spawns `audio transcribe --live --agent-buffer` in the background, persists PID/log/scratch metadata, connects the default scratch note to the current agent when possible, and `stop` sends SIGINT for graceful finalization.
+- Context: live sessions append `[partial transcription] ...` for segments and `[user transcription] ...` at final stop, while preserving the existing daemon `/api/v1/audio/transcription` path and honoring configured live input routing, including named PulseAudio sources such as `source.default`, plus `--input` / `--device` overrides.
 
 ## Diff summary
 
-- Commits: HEAD
-- Files touched: `scripts/macos-app-swift-syntax.sh`
-- Tests: +0 / -0 / flipped 0; shell/dry-run validation only.
-- Behavioural delta: macOS hosts with an unavailable Xcode CLT shim now get a single actionable failure before the parse loop.
+- Commits: `0c3e6922b`
+- Files touched: `crates/caco-cli/src/audio_cmd.rs`, `crates/caco-cli/src/lib.rs`, `plugins/caco-audio/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `crates/caco-profile/src/bridge.rs`, `crates/caco-profile/src/canonical.rs`, `crates/caco-profile/tests/profile.rs`, `crates/caco-daemon/build.rs`, `crates/caco-daemon/src/agent/tests.rs`, `SPEC.md`, `README.md`, `AGENTS.md`
+- Tests: `cargo fmt --all -- --check`; `cargo test -p caco-cli audio_live --lib`; `cargo test -p caco-cli marketplace_json_is_valid --lib`; `cargo test -p caco-cli per_plugin_json_manifests_exist --lib`; `cargo test -p caco-profile canonical_mcp_servers_match_bridge_arms --lib`; `cargo test -p caco-daemon known_mcp_servers_are_in_sync_with_build_rs --lib`; `cargo check -p caco-cli`; `git diff --check`
+- Behavioural delta: agents can now call `caco_audio_live_start`, `caco_audio_live_status`, and `caco_audio_live_stop` via the caco-audio MCP family and receive agent-turn transcript markers through connected scratch context.
 
 ## Operator-takeaway
 
-The parse-only macOS validator now distinguishes missing developer tools from real Swift syntax failures, so future agents should not waste time triaging hundreds of fake per-file parse errors when Xcode CLT is absent.
+The STT live-capture path is now controllable as first-party MCP lifecycle rather than an interactive terminal-only loop, which is the foundation for `/stt`-style voice input that agents can start and stop autonomously without losing transcript context.
