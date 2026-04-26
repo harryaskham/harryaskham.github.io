@@ -1,32 +1,37 @@
-# Session summary — lightweight caco-web static dev server
+# Session summary — bounded caco-web snapshot proxy
 
 ## Goal
 
-Run the caco-web active duty cycle and pick up the focused ready caco-web tooling bead that the earlier Playwright sessions exposed: browser repros for static asset fixes should not require compiling and launching the full `caco` CLI stack.
+Stabilize caco-web after observation showed that a dashboard snapshot request could abort and coincide with the managed web service restarting, leaving the browser shell connected but dashboard data empty.
 
 ## Bead(s)
 
-- `bd-e0c3c5` — Add lightweight caco-web dev server for static-asset repro
+- `bd-fe4889` — caco-web snapshot request restarts managed web service
 
 ## Before state
 
-- Failing tests: none known.
-- Relevant metrics: static browser repros were using ad-hoc `python3 -m http.server` for pure frontend cases or `cargo run -p caco -- web ...` for proxy-backed cases, which pulled in the full CLI/daemon/TUI dependency graph.
-- Context: `caco-web` already supported `CACO_WEB_STATIC_DIR`, but there was no first-party caco-web-only binary that served checked-out assets and proxied real `/api/*` requests.
+- Failing tests: none known at session start.
+- Relevant metrics: Playwright observation in `/tmp/caco-web-duty-191132-observation.log` captured repeated `/api/v1/ui/snapshot` `net::ERR_ABORTED` failures while SSE stayed `200 OK`. A direct managed caco-web probe returned `RemoteDisconnected` after 9.204s for `/api/v1/ui/snapshot`, then `/api/v1/node` immediately got connection refused; `caco web status` later showed a new caco-web PID.
+- Context: `caco web` used the default Tokio runtime stack, unlike the daemon's explicit 16 MiB worker stack, and the web proxy used a broad 300s reqwest client timeout for all proxied requests, including the heavyweight UI snapshot.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: `cargo run -p caco-web --bin caco-web-dev-server -- --help` succeeds; a live smoke test served `/health` and `/` from a unique port; `cargo check -p caco-web --all-targets` and `cargo test -p caco-web --lib` passed.
-- Context: the new dev server defaults to `127.0.0.1` with `--port 0`, serves `crates/caco-web/static` through `CACO_WEB_STATIC_DIR`, reads the node token when available, and proxies `/api/*` to `--daemon-url` / `CACO_WEB_DAEMON_URL`.
+- Failing tests: none in the targeted validation set.
+- Relevant metrics: current-assets dev server direct `/api/v1/ui/snapshot` probe now returns HTTP 504 after about 8.071s, and `/health` remains 200 both immediately after the timeout and after Playwright use. Playwright showed the UI entering `Backend unavailable` instead of leaving an ambiguous connected/empty state.
+- Context: caco-web production and dev entrypoints now use a shared explicit 16 MiB Tokio worker-stack runtime, and the snapshot proxy applies an 8s request timeout so it returns a bounded gateway timeout before the browser's 10s AbortController fires.
 
 ## Diff summary
 
-- Commits: `96b779302`
-- Files touched: `crates/caco-web/src/bin/caco-web-dev-server.rs`, `crates/caco-web/src/tests.rs`, `README.md`, `AGENTS.md`
-- Tests: +1 / -0 / flipped 0
-- Behavioural delta: caco-web workers can now run `cargo run -p caco-web --bin caco-web-dev-server -- --port 0` for browser repros without compiling the full top-level caco binary.
+- Commits: `1713a45df`
+- Files touched: `SPEC.md`, `crates/caco-cli/src/lib.rs`, `crates/caco-web/src/lib.rs`, `crates/caco-web/src/proxy.rs`, `crates/caco-web/src/bin/caco-web-dev-server.rs`, `crates/caco-web/src/tests.rs`
+- Tests: +2 regression tests / -0 / flipped 0
+- Behavioural delta: caco-web no longer relies on platform/Tokio default worker stack for the dashboard proxy path, and slow snapshot upstream calls degrade to explicit 504 responses while the web service remains healthy.
+
+## Embedded artefacts
+
+- `/tmp/caco-web-bd-fe4889-193013-validation.log` — direct snapshot probe and lightweight Playwright validation for the bounded 504/health-stays-up behavior.
+- `.playwright-cli/page-2026-04-26T18-30-45-754Z.png` — screenshot from the after-validation Playwright run.
 
 ## Operator-takeaway
 
-This reduces caco-web iteration cost and avoids extra dashboard-service churn: future static/frontend repros can use a lightweight, parallel-safe, caco-web-only server with real daemon proxying when needed.
+The dashboard snapshot path is now fail-bounded at the caco-web layer: if the daemon snapshot stalls, operators should see backend-unavailable rather than a web-service restart or a browser-level aborted request with stale empty dashboard data.
