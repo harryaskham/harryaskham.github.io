@@ -1,32 +1,32 @@
-# Session summary — remove fresh-launch Status-selected toast
+# Session summary — restore native macOS zoom/minimize behaviour
 
 ## Goal
 
-Fix `bd-f41cb3`, where a fresh macOS visual-QA launch could already show a central `Status pane selected` message before any explicit pane-selection action, making subsequent search input look masked or inert.
+Fix `bd-e8a263`, where macOS visual QA saw the apparent native traffic-light zoom and minimize controls produce no visible window-state change on a fresh app cycle.
 
 ## Bead(s)
 
-- `bd-f41cb3` — [macOS visual QA] Status-selected toast appears immediately on fresh launch
+- `bd-e8a263` — [macOS visual QA] Traffic-light zoom and minimize controls show no visible effect
 
 ## Before state
 
-- Failing tests: no live Tendril reproduction was available in this Linux worker session; the bead cited `summary/0093/screenshots/clean-status-before-actions.png` and `clean-search-type-agent.png`.
-- Relevant metrics: the offline pane title unconditionally rendered `Text("\(section.label) pane selected")`, so the initial default Status pane presented the same selected/toast wording before any user navigation.
-- Context: shared macOS frontend work must use source-only/lightweight validation here rather than heavy local Swift/Nix builds.
+- Failing tests: no live Tendril reproduction was available in this Linux worker session; the bead cited `summary/0096` screenshots showing zoom/minimize clicks with no visible effect.
+- Relevant metrics: the app preserved the standard title bar, but the scene still used `.windowResizability(.contentSize)`, which pins the native window to its content size and can make zoom/minimize visual checks look inert.
+- Context: shared macOS frontend validation here must stay source-only/lightweight rather than running heavy local Swift/Nix builds.
 
 ## After state
 
 - Failing tests: none in lightweight validation.
-- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: the offline pane still names the selected pane, but no longer renders the launch-time `Status pane selected` toast-like phrase.
+- Relevant metrics: `bash -n scripts/macos-app-window-chrome-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
+- Context: the main window now uses `.windowResizability(.contentMinSize)`, preserving SwiftUI minimum size constraints while allowing native zoom/minimize to visibly resize or hide the window.
 
 ## Diff summary
 
-- Commits: `3bce64594` (implementation) plus this recorded-summary commit in the local agent branch before reintegration.
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
-- Tests: strengthened `macos-app-pane-navigation-smoke.sh` to require the selected pane label while rejecting the old `Text("\(section.label) pane selected")` launch-copy pattern.
-- Behavioural delta: fresh offline Status launch now shows `Status` with a subdued `Selected pane` caption instead of the central `Status pane selected` text that visual QA treated as stale navigation feedback.
+- Commits: `9f021c482` (implementation) plus this recorded-summary commit in the local agent branch before reintegration.
+- Files touched: `companion/macos/Sources/Cacophony/App/CacophonyApp.swift`, `scripts/macos-app-window-chrome-smoke.sh`
+- Tests: updated the window-chrome smoke to require `.contentMinSize` and reject the old `.contentSize` pinning.
+- Behavioural delta: standard traffic-light hit targets remain native, but zoom/minimize are no longer constrained by fixed content-size resizability.
 
 ## Operator-takeaway
 
-The bug was launch-copy semantics rather than another search responder failure: initial state was using action-style selected wording. This change keeps pane identity visible while removing the stale-toast-looking phrase before the operator acts.
+The controls were likely hit-testable but visually inert because the SwiftUI scene pinned the window to content size. Switching to content-min-size keeps layout safety while restoring native macOS window-state behaviour.
