@@ -1,32 +1,37 @@
-# Session summary — proactive caco-web profile duties
+# Session summary — snapshot bootstrap timeout
 
 ## Goal
 
-Encode Harry's correction that the persistent caco-web worker must actively improve the browser dashboard: proactively scan caco-web/web-dashboard beads, run lightweight `playwright-cli` observation when no bead is active, and file or claim focused follow-up work from evidence instead of merely checking inbox.
+Run the caco-web active duty cycle, avoid duplicate work by checking inbox/assigned/ready browser-dashboard beads first, then use lightweight Playwright observation to find and land one focused dashboard trust fix if current evidence warranted it.
 
 ## Bead(s)
 
-- `bd-713867` — Strengthen caco-web proactive observation responsibilities
+- `bd-e90e21` — caco-web stays Connected when snapshot bootstrap hangs
 
 ## Before state
 
-- Failing tests: none known for this profile-only change.
-- Relevant metrics: `caco profile show --name caco-web --json` parsed before editing; current profile already mentioned Playwright and an endless observation loop, but the live prompt loop and wording still allowed inbox-only behaviour.
-- Context: the hard policy emphasized no autoclaim but did not clearly distinguish random queue draining from this agent's responsibility to claim unowned, focused caco-web/browser-dashboard beads.
+- Failing tests: none known.
+- Relevant metrics: managed caco-web `11180` was healthy but stale at `v1.2.559`; current-assets dev-server observation used `v1.2.562` on a unique temporary port.
+- Context: HTTP 5xx and fetch failures were already handled by `bd-c3521a`, but a snapshot request that stayed pending could leave the header green `Connected`, hero `Live SSE connected`, and body stuck at `Snapshot pending` / loading placeholders with no console error.
 
 ## After state
 
 - Failing tests: none known.
-- Relevant metrics: `caco profile show --name caco-web --json` passed; `git diff --check -- .cacophony/profiles/caco-web.md` passed; in-session Pi loop was replaced with a 10-minute active-duty prompt covering inbox, web bead scan, Playwright observation, and evidence-backed filing/claiming.
-- Context: the profile now states that quiet inboxes mean "drive the dashboard and look for the next improvement", adds an Active Duty Cycle, and clarifies that claiming unowned focused caco-web/browser-dashboard beads is expected while arbitrary backlog draining remains forbidden.
+- Relevant metrics: mocked hanging `/api/v1/ui/snapshot` now aborts after the bounded timeout and renders `Backend unavailable` plus `Dashboard backend unavailable…`; `cargo check -p caco-web --all-targets` and `cargo test -p caco-web --lib` passed.
+- Context: snapshot bootstrap uses an `AbortController` timeout and treats `AbortError` / abort-like messages as backend-unavailable so SSE open alone cannot keep the dashboard green while the bulk snapshot is wedged.
 
 ## Diff summary
 
-- Commits: `27f258d07`
-- Files touched: `.cacophony/profiles/caco-web.md`
-- Tests: +0 / -0 / flipped 0
-- Behavioural delta: Future caco-web persistent sessions should proactively run lightweight Playwright dashboard observation and claim focused web-dashboard work, instead of idling after an inbox check.
+- Commits: `97aa87fdc`
+- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
+- Tests: +1 / -0 / flipped 0
+- Behavioural delta: a hanging snapshot bootstrap now degrades the operator-facing connection state after a bounded timeout instead of staying indefinitely green and pending.
+
+## Embedded artefacts
+
+- `screenshots/before-snapshot-pending.png` — current-assets dev-server observation showing the pre-fix pending/loading dashboard state.
+- `screenshots/after-backend-unavailable.png` — Playwright repro with mocked hanging snapshot showing the post-fix backend-unavailable state.
 
 ## Operator-takeaway
 
-The caco-web profile now makes the proactive improvement loop explicit: this worker owns the browser dashboard surface and should continuously inspect it with `playwright-cli`, turn evidence into focused beads, and fix one safe web slice at a time.
+The dashboard now distinguishes “SSE opened” from “daemon snapshot is actually usable” even when the failure mode is a hung request rather than an explicit HTTP error, preserving operator trust during daemon/backpressure windows.
