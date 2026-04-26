@@ -1,37 +1,36 @@
-# Session summary — snapshot bootstrap timeout
+# Session summary — caco-web card surface CSS repair
 
 ## Goal
 
-Run the caco-web active duty cycle, avoid duplicate work by checking inbox/assigned/ready browser-dashboard beads first, then use lightweight Playwright observation to find and land one focused dashboard trust fix if current evidence warranted it.
+Repair a focused caco-web visual-polish regression where several card surface declarations in `style.css` had drifted outside their selectors, leaving dashboard cards without intended overflow, backdrop-filter, and inset shadow styling.
 
 ## Bead(s)
 
-- `bd-e90e21` — caco-web stays Connected when snapshot bootstrap hangs
+- `bd-c2b33a` — [docs] caco-web style.css has malformed surface blocks
 
 ## Before state
 
-- Failing tests: none known.
-- Relevant metrics: managed caco-web `11180` was healthy but stale at `v1.2.559`; current-assets dev-server observation used `v1.2.562` on a unique temporary port.
-- Context: HTTP 5xx and fetch failures were already handled by `bd-c3521a`, but a snapshot request that stayed pending could leave the header green `Connected`, hero `Live SSE connected`, and body stuck at `Snapshot pending` / loading placeholders with no console error.
+- Failing tests: none known at session start.
+- Relevant metrics: caco-web active duty cycle found no assigned bead, then found unowned ready `bd-c2b33a` under the `caco-web` label.
+- Context: `crates/caco-web/static/style.css` had orphaned declarations after `@keyframes statCardIn`, after `@keyframes gridCardIn`, and after the `.projects-grid` animation-delay rules; a nearby reduced-motion media block was also missing its closing brace.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: mocked hanging `/api/v1/ui/snapshot` now aborts after the bounded timeout and renders `Backend unavailable` plus `Dashboard backend unavailable…`; `cargo check -p caco-web --all-targets` and `cargo test -p caco-web --lib` passed.
-- Context: snapshot bootstrap uses an `AbortController` timeout and treats `AbortError` / abort-like messages as backend-unavailable so SSE open alone cannot keep the dashboard green while the bulk snapshot is wedged.
+- Failing tests: none in the targeted caco-web validation run.
+- Relevant metrics: `cargo check -p caco-web --all-targets` passed; `cargo test -p caco-web --lib` passed with 279 tests.
+- Context: card surface declarations are now inside `.stat-card`, `.node-card`, and `.project-card`; the reduced-motion media block is explicitly closed; current-assets Playwright smoke loaded the dashboard shell and confirmed `.stat-card` computed `overflow: hidden`, `position: relative`, blur backdrop filter, and box shadow.
 
 ## Diff summary
 
-- Commits: `97aa87fdc`
-- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
-- Tests: +1 / -0 / flipped 0
-- Behavioural delta: a hanging snapshot bootstrap now degrades the operator-facing connection state after a bounded timeout instead of staying indefinitely green and pending.
+- Commits: `8839205d8`
+- Files touched: `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 / flipped 0
+- Behavioural delta: caco-web card surface styling is applied from valid selector blocks instead of orphaned CSS, and a regression test now guards the stat/node/project card declarations plus CSS brace balance.
 
 ## Embedded artefacts
 
-- `screenshots/before-snapshot-pending.png` — current-assets dev-server observation showing the pre-fix pending/loading dashboard state.
-- `screenshots/after-backend-unavailable.png` — Playwright repro with mocked hanging snapshot showing the post-fix backend-unavailable state.
+- `.playwright-cli/page-2026-04-26T16-35-02-756Z.png` — current-assets dashboard smoke screenshot after the CSS repair.
 
 ## Operator-takeaway
 
-The dashboard now distinguishes “SSE opened” from “daemon snapshot is actually usable” even when the failure mode is a hung request rather than an explicit HTTP error, preserving operator trust during daemon/backpressure windows.
+The web dashboard CSS was not just cosmetically untidy: key card surface polish had fallen outside selectors. This slice restores those declarations and adds a lightweight guard so future drive-by CSS edits cannot silently orphan them again.
