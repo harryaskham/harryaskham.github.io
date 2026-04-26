@@ -1,33 +1,33 @@
-# Session summary — Persistent web and Android UX loops
+# Session summary — previous-summary docs leakage guard
 
 ## Goal
 
-Ensure Harry's requested permanent caco-web and caco-android UX/beauty tracks are represented as real endless persistent Cacophony declarations on ms-mac, and clean up the profile-validation drift discovered while proving the config.
+Prevent runtime-local previous-summary context injected into managed agent checkouts from being accidentally committed into stable repository documentation such as `CLAUDE.md` or `AGENTS.md`.
 
 ## Bead(s)
 
-- `bd-9653c3` — [persistent-loops] Ensure caco-web and caco-android profiles run as ENDLESS dev loops on ms-mac
-- `bd-1d4a60` — [broken-on-main] caco-profile shipped profile validation drift
+- `bd-48665f` — [docs] previous-summary injection should not persist stale agent-local block in CLAUDE.md
 
 ## Before state
 
-- Failing tests: `cargo test -p caco-profile --test profile` exposed shipped profile drift: `pi_self_nudge_profile_is_pi_only`, `pi_self_ops_profile_is_pi_only`, generated plugin wrapper comparisons, and stale unknown-MCP expectation. `docs/profiles.html` also drifted after the caco-web profile metadata changed.
-- Relevant metrics: `caco agent list` showed no live `caco-web` or `caco-android` specialist persistent agents on ms-mac. The derived config did not contain `caco-web`/`caco-android` project persistent declarations.
-- Context: multiple peers saw the same docs/profile drift during validation; ownership was coordinated in project chat so the fix lands once with this stream.
+- Failing tests: none known for this bead.
+- Relevant metrics: no reintegration-time guard existed for committed `<!-- BEGIN AUTOGEN: previous-summaries (bd-20d2dc) -->` blocks in tracked docs.
+- Context: A documentation audit had found a stale agent-local previous-summaries block in mainline `CLAUDE.md`, showing that checkout-local startup context could be committed by accident.
 
 ## After state
 
-- Failing tests: none observed in the targeted validation for this work.
-- Relevant metrics: `caco config validate --strict` passes; derived config from the edited `.cacophony/config.yaml` resolves both `caco-web` and `caco-android` persistent declarations on `ms-mac`; `cargo test -p caco-profile --test profile`, `cargo test -p caco-profile --lib`, `cargo test -p caco-config persistent -- --nocapture`, `docs/validate-pages.sh`, and `just docs-check` pass.
-- Context: `caco-web` now has full persistent frontmatter matching `caco-android`/`caco-tui` style, and the checked-in Claude plugin wrappers/docs were regenerated so generated profile checks are stable again.
+- Failing tests: none observed.
+- Relevant metrics: new focused daemon regression tests cover committed-block refusal and uncommitted runtime-block tolerance.
+- Context: `reintegrate(...)` now refuses to proceed if `HEAD:CLAUDE.md` or `HEAD:AGENTS.md` contains the previous-summaries AUTOGEN sentinel, while leaving uncommitted runtime injection to the normal clean-worktree checks.
 
 ## Diff summary
 
-- Commits: `e3827e7d6`, `d895052d8`, plus this recorded-summary commit
-- Files touched: `.cacophony/agents/cacophony_persistent.yaml`, `.cacophony/profiles/caco-web.md`, `.cacophony/profiles/pi-self-nudge.md`, `.cacophony/profiles/pi-self-ops.md`, `README.md`, `AGENTS.md`, `docs/profiles.html`, `crates/caco-profile/tests/profile.rs`, `plugins/caco-agent/agents/{worker,controller,project-controller}.md`
-- Tests: profile and config validation lanes restored; docs profile generation check restored.
-- Behavioural delta: the repo config will reconcile caco-web and caco-android as ms-mac endless persistent specialist loops after landing and daemon config sync, and caco-profile's shipped-profile validation no longer fails on stale metadata or generated wrapper drift.
+- Commits: `14381c351`.
+- Files touched: `crates/caco-daemon/src/reintegration.rs`.
+- Tests: +2 daemon unit tests / -0 / flipped 0.
+- Behavioural delta: Reintegration now checks tracked docs with `git grep` before any merge/PR/artifact path, and reports an actionable `bd-48665f` error instructing the worker to remove the runtime-local AUTOGEN block before retrying.
+- Validation: `cargo fmt --all`; `cargo test -p caco-daemon previous_summaries_guard -- --nocapture`; `cargo clippy -p caco-daemon --all-targets -- -D warnings`; `cargo test-small`.
 
 ## Operator-takeaway
 
-The missing caco-web permanent loop was a declaration/profile-metadata gap, not just a live-process blip: this change makes web and Android UX loops explicit, persistent, endless, and non-autoclaim in the checked-in project config.
+The previous-summary injection can still help agents at runtime, but a worker can no longer land that per-agent startup context into the repository’s canonical docs unnoticed.
