@@ -1,32 +1,36 @@
-# Session summary — caco-web single-owner server coordination
+# Session summary — caco-web CDN-free static pages
 
 ## Goal
 
-Encode the operator-directed coordination rule that the caco-web persistent agent must become the primary owner of browser-dashboard browsing before using or launching local caco-web servers, avoiding duplicate dashboard instances across agents.
+Remove third-party CDN loads from the caco-web dashboard and standalone terminal/source surfaces so the browser dashboard remains offline-capable and privacy-aligned with the docs site posture.
 
 ## Bead(s)
 
-- `bd-cd3ce2` — Document single-owner caco-web server coordination
+- `bd-fe1717` — [docs] caco-web standalone pages still load CDN assets
 
 ## Before state
 
-- Failing tests: none known for this profile-only change.
-- Relevant metrics: Harry identified PID 89135 serving `caco web --port 11181 --bind 127.0.0.1` from `ms-mac-cacophony-caco-dev-msm-4`; `lsof` confirmed the listener and `/private/tmp/caco-web-msm4/web.log` showed live dashboard traffic.
-- Context: the profile said to launch or reuse a local caco-web instance, but did not require checking ownership of existing servers or coordinating handoff before treating them as part of the caco-web observation lane.
+- Failing tests: none known at session start.
+- Relevant metrics: active duty cycle found no assigned bead, then found unowned ready `bd-fe1717` under the `caco-web` label.
+- Context: `index.html` loaded Google Fonts, `terminal.html` loaded xterm assets from jsDelivr, and `workspace-panes.js` dynamically loaded Prism CSS/JS from cdnjs when opening source files.
 
 ## After state
 
-- Failing tests: none known.
-- Relevant metrics: msm-4 confirmed it stopped PID 89135 and handed browser dashboard browsing to caco-web; multiple agents acknowledged coordination; `caco profile show --name caco-web` succeeded; `git diff --check -- .cacophony/profiles/caco-web.md` passed.
-- Context: the profile now requires active listener/process discovery, direct handoff requests for other-agent servers, single-instance reuse/launch, and an explicit single-dashboard-owner hard policy.
+- Failing tests: none in caco-web validation.
+- Relevant metrics: `cargo check -p caco-web --all-targets` passed; `cargo test -p caco-web --lib` passed with 280 tests.
+- Context: dashboard and terminal pages no longer contain external link/script tags for the audited CDN hosts. Terminal uses existing vendored xterm assets, and source panes stay readable as escaped plain text unless a future local Prism bundle is present.
 
 ## Diff summary
 
-- Commits: `77107608c`
-- Files touched: `.cacophony/profiles/caco-web.md`
-- Tests: +0 / -0 / flipped 0
-- Behavioural delta: Future caco-web observation cycles should coordinate ownership before using or starting dashboard servers, preventing duplicate local caco-web processes and clarifying this persistent agent as the browser-dashboard primary.
+- Commits: `cf5c4bb2f`
+- Files touched: `crates/caco-web/static/index.html`, `crates/caco-web/static/terminal.html`, `crates/caco-web/static/workspace-panes.js`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 / flipped 0
+- Behavioural delta: caco-web no longer reaches Google Fonts, jsDelivr, or cdnjs from the audited static pages; the regression test pins the no-third-party-CDN contract and local xterm asset usage.
+
+## Embedded artefacts
+
+- `.playwright-cli/page-2026-04-26T16-45-50-103Z.png` — terminal page smoke after local vendored xterm assets loaded with no external link/script tags.
 
 ## Operator-takeaway
 
-The caco-web worker is now explicitly responsible for coordinating dashboard server ownership: inspect first, ask for handoff when another agent owns a server, and run only one dashboard instance for browser observation unless a bead requires isolation.
+The browser dashboard now follows the same no-third-party-runtime-assets posture as the docs site for these caco-web surfaces: web rendering stays local, auditable, and less dependent on external CDN availability.
