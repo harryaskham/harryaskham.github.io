@@ -1,32 +1,32 @@
-# Session summary — macOS sidebar search clear navigation restore
+# Session summary — transient compute guardrails and orphan-safe reaping
 
 ## Goal
 
-Fix `bd-8b329f`, where clearing the native macOS sidebar search field did not restore normal pane routing: after Cmd+A/backspace, sidebar clicks and Cmd+3/Cmd+4 still appeared stuck on Status with stale feedback.
+Implement `bd-855c97` by hardening the provider-neutral transient compute scheduler with admission guardrails, explicit launch/runtime metadata, and orphan-safe cleanup semantics without touching provider-specific AKS, ACA, microVM runner, or scheduler-placement lanes.
 
 ## Bead(s)
 
-- `bd-8b329f` — [macOS visual QA] Clearing sidebar search does not restore pane navigation
+- `bd-855c97` — Add transient compute guardrails, quotas, and orphan reaper
 
 ## Before state
 
-- Failing tests: no runtime Tendril reproduction was available in this Linux worker session; the bead cited visual-QA screenshots showing cleared search followed by failed Beads/Agents/Messages navigation.
-- Relevant metrics: the search wrapper updated the filter but could leave the NSSearchField editor as first responder after clearing, and sidebar selection did not explicitly restore non-search focus before routing.
-- Context: macOS frontend work on shared agents must use source-only checks and avoid heavy local Swift/Nix builds.
+- Failing tests: none known for this slice.
+- Relevant metrics: the existing fake transient provider enforced active-job and budget admission, but the job record did not carry launch-spec expiry, effective runtime/retry metadata, stable owner tags, or provider reconciliation state for orphan-safe reaping.
+- Context: SPEC 6.5.10 required guardrails for runtime ceilings, retry limits, SKU/workload allow-lists, launch-spec expiry, two-phase reaping, owner-tag validation, orphan quarantine, and no bead close/reclaim before provider and dynamic-node reconciliation.
 
 ## After state
 
-- Failing tests: none in lightweight validation.
-- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `just --dry-run macos-app-pane-navigation-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: clearing search now drops search focus / first responder, and sidebar click or Return selection clears the search mode before changing panes.
+- Failing tests: none in the targeted and fast validation run.
+- Relevant metrics: `cargo test -p caco-config transient_compute -- --nocapture` passed 3 tests; `cargo test -p caco-daemon transient_compute -- --nocapture` passed 8 tests; `cargo check -p caco-daemon`, `cargo clippy -p caco-daemon --all-targets -- -D warnings`, `cargo clippy -p caco-config --all-targets -- -D warnings`, `cargo fmt --all -- --check`, `cargo test-small`, and `git diff --check` passed.
+- Context: transient jobs now record effective runtime/TTL/retry controls and owner tags, and the reaper core quarantines live/unknown or owner-mismatched resources as orphaned rather than deleting or reclaiming work blindly.
 
 ## Diff summary
 
-- Commits: `c06c67cbd`
-- Files touched: `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`
-- Tests: strengthened `macos-app-pane-navigation-smoke.sh` to assert search-clear navigation restoration.
-- Behavioural delta: sidebar search clear, Escape, result selection, and sidebar clicks now restore normal pane navigation focus instead of leaving the app trapped in search-field routing.
+- Commits: `a6690ef6e` (implementation) and `18e140286` (recorded summary) in the local agent branch before reintegration.
+- Files touched: `SPEC.md`, `README.md`, `AGENTS.md`, `crates/caco-config/src/model.rs`, `crates/caco-config/src/validate.rs`, `crates/caco-daemon/src/transient_compute.rs`
+- Tests: added/expanded config validation tests for transient compute allow-lists and scheduler tests for TTL/runtime metadata, SKU rejection, expired-running orphan handling, owner-tag quarantine, and two-phase reaping.
+- Behavioural delta: transient compute admission now enforces effective global/provider runtime, launch-spec TTL, retry, SKU, workload-profile, concurrency, and budget constraints; provider reconciliation can now mark jobs failed, reaping, reaped, or orphaned without closing beads prematurely.
 
 ## Operator-takeaway
 
-The stuck-after-clear symptom was treated as a first-responder/search-mode cleanup bug. The app now explicitly exits search mode when the query clears or the operator navigates, and the lightweight source smoke guards that behaviour.
+This lands the provider-neutral safety layer that future dynamic-compute providers can plug into: jobs get bounded, tagged, and reconciled, and uncertain cloud/provider state is quarantined visibly instead of silently deleting resources or losing bead ownership.
