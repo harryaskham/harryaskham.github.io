@@ -1,32 +1,32 @@
-# Session summary — macOS pane navigation relaunch fix
+# Session summary — Android More nav tap target
 
 ## Goal
 
-Fix the native macOS visual-QA regression where Cmd+2 / Cmd+3 and sidebar navigation could remain visibly stuck on the Status pane after relaunch, and add a lightweight source smoke test so the regression is checked before heavier macOS validation.
+Fix an Android companion navigation regression where tapping the bottom-nav More item on the ms-dev emulator could fall through to the launcher/system gesture region instead of opening the More screen.
 
 ## Bead(s)
 
-- `bd-8e9f42` — [macOS visual QA] Pane navigation remains stuck on Status after relaunch
+- `bd-45fc4e` — Android companion: bottom nav More tap can drop to launcher on ms-dev
 
 ## Before state
 
-- Failing tests: no automated test existed; evidence came from Tendril screenshots where Cmd+2 and Cmd+3 after relaunch still showed Status.
-- Relevant metrics: the existing global shortcut handler depended on `charactersIgnoringModifiers`, and offline/disconnected pane content rendered generic waiting copy, making a successful selection hard to distinguish visually.
-- Context: shared macOS workers must avoid heavy local Swift/Nix builds, so validation needed to be source-level in this Linux worker session.
+- Failing tests: none at bead start.
+- Relevant metrics: QA evidence showed a tap around the More bottom-tab bounds dropping to launcher app labels after Timeline had moved out of the bottom bar.
+- Context: the visible bottom navigation had six items, but the decorative selected-tab rail was still laid out across all `Tab.entries`, including hidden `Timeline`, and the `NavigationBar` did not explicitly apply navigation-bar inset padding.
 
 ## After state
 
-- Failing tests: none observed in lightweight validation.
-- Relevant metrics: `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just --dry-run macos-app-pane-navigation-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
-- Context: `just macos-app-validate` now runs both command-palette and pane-navigation source smoke checks before platform-specific validation/cloud dispatch.
+- Failing tests: none in validation.
+- Relevant metrics: the rail now uses the same visible tab set as the `NavigationBar`, and the nav bar applies `navigationBarsPadding()` so tap targets stay above the system gesture/nav region.
+- Context: Timeline remains available under More, while More’s bottom-nav item gets safer geometry on 1080x2400 emulator layouts.
 
 ## Diff summary
 
-- Commits: `9d96372e1`
-- Files touched: `companion/macos/Sources/Cacophony/App/CacophonyApp.swift`, `companion/macos/Sources/Cacophony/Views/RootView.swift`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `justfile`, `docs/macos-development.md`, `docs/macos-development.html`, `companion/macos/README.md`, `README.md`, `AGENTS.md`
-- Tests: +1 source-only pane-navigation smoke script; updated command-palette smoke to tolerate multiline presentation arguments.
-- Behavioural delta: Cmd+number routing now falls back to standard macOS ANSI key codes when `charactersIgnoringModifiers` is unavailable/layout-dependent, sidebar rows explicitly set selection and visible feedback on tap, and offline panes name the selected section so visual QA can see navigation changes even before daemon data loads.
+- Commits: `fb58f6a5d`
+- Files touched: `companion/android/app/src/main/java/com/cacophony/companion/MainActivity.kt`
+- Tests: `cd companion/android && nix develop -c gradle :app:testDebugUnitTest --tests com.cacophony.companion.FullAppNavigationTest --no-daemon`; `cd companion/android && nix develop -c gradle :app:testDebugUnitTest --no-daemon`; `git diff --check`
+- Behavioural delta: bottom nav no longer lays supporting chrome for hidden Timeline, and More’s hit target avoids the system nav area.
 
 ## Operator-takeaway
 
-The macOS app should no longer look pinned to Status during offline/relaunched visual QA: shortcut/sidebar selection has a more robust fallback and the selected pane is visible even while waiting for daemon connectivity.
+The Android companion More tab should be less likely to trigger the launcher/system gesture area on ms-dev; the full companion unit-test gate is green after the inset and visible-tab-set fix.
