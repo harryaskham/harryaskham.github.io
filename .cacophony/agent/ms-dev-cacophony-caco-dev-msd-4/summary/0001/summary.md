@@ -1,32 +1,32 @@
-# Session summary — helsinki restart-window audit
+# Session summary — macOS native window chrome
 
 ## Goal
 
-Determine whether the P1 report of helsinki `caco-daemon` and beads-primary briefly stopping during a health pass represented an unexplained authority failure or a known lifecycle restart window, and leave an operator-readable audit trail.
+Fix `bd-97da49`, where Tendril visual QA clicks in the apparent macOS traffic-light area did not close, minimize, or zoom the native app window. The goal was to preserve standard macOS window chrome instead of letting the app surface swallow those hit targets.
 
 ## Bead(s)
 
-- `bd-bafc96` — Helsinki daemon and beads primary briefly stopped during health pass
+- `bd-97da49` — [macOS visual QA] Native window chrome clicks are swallowed by app surface
 
 ## Before state
 
-- Failing tests: none; this was an operational audit.
-- Relevant metrics: router health saw daemon/beads-primary unavailable around `2026-04-26T02:27Z`, then recovered without remediation.
-- Context: helsinki is the authoritative beads host, so a daemon restart can temporarily make both daemon and beads API checks look like an authority outage.
+- Failing tests: no runtime visual test was available in this Linux worker session; the bead cited screenshots where traffic-light-area clicks left the app surface unchanged.
+- Relevant metrics: `CacophonyApp` used `.windowStyle(.hiddenTitleBar)`, allowing SwiftUI content to extend into the native titlebar / traffic-light region.
+- Context: shared macOS agents must avoid heavy local Swift/Nix builds, so validation used source-only checks and dry-run recipe validation.
 
 ## After state
 
-- Failing tests: none.
-- Relevant metrics: live checks showed helsinki reachable again, `beads_host.reachable: true`, `caco bd status --json` successful, and daemon `started_at: 2026-04-26T02:27:46Z`.
-- Context: daemon and supervisor logs show explicit `caco restart` / graceful SIGTERM restart markers, not a panic or split-brain.
+- Failing tests: none in source-level validation.
+- Relevant metrics: `bash -n scripts/macos-app-window-chrome-smoke.sh`, `bash -n scripts/macos-app-pane-navigation-smoke.sh`, `bash -n scripts/macos-app-command-palette-smoke.sh`, `scripts/macos-app-window-chrome-smoke.sh`, `scripts/macos-app-pane-navigation-smoke.sh`, `scripts/macos-app-command-palette-smoke.sh`, `just --dry-run macos-app-window-chrome-smoke`, `just --dry-run macos-app-validate`, and `git diff --check` passed.
+- Context: `just macos-app-validate` now includes a source smoke check that rejects reintroducing hidden titlebar chrome.
 
 ## Diff summary
 
-- Commits: `948b14936`
-- Files touched: `docs/audits/bd-bafc96-helsinki-daemon-restart-window.md`
-- Tests: `git diff --check` passed for the audit document.
-- Behavioural delta: no code changed; the incident is documented as a restart-window explanation with follow-up triggers and capture commands.
+- Commits: `feb208512`
+- Files touched: `companion/macos/Sources/Cacophony/App/CacophonyApp.swift`, `scripts/macos-app-window-chrome-smoke.sh`, `justfile`, `docs/macos-development.md`, `docs/macos-development.html`, `companion/macos/README.md`, `README.md`, `AGENTS.md`
+- Tests: added `scripts/macos-app-window-chrome-smoke.sh` and wired it into `just macos-app-validate`.
+- Behavioural delta: the native macOS app no longer applies `.windowStyle(.hiddenTitleBar)`, so standard titlebar / close / minimize / zoom hit targets are preserved.
 
 ## Operator-takeaway
 
-The helsinki beads-primary outage was an explicit `caco restart` window: the authority recovered normally, and future escalation should focus on missing restart markers or restart windows long enough to need clearer `maintenance_window` surfacing.
+The macOS app should again behave like a standard native window: traffic-light controls are not covered by the app surface, and a lightweight smoke test prevents hidden-titlebar regressions.
