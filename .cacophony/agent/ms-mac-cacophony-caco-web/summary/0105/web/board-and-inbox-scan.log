@@ -1,0 +1,63 @@
+# caco-web duty scan
+2026-04-27T23:18:59+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=b57f2adc27464abcb195f3564d3184eb436a14be
+origin_main=b57f2adc27464abcb195f3564d3184eb436a14be
+
+## inbox
+8 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Test and Canary remain current with sockets present, Stable remains intentionally stale, and services are running. Active bead remains bd three d five f zero eight, but the rebase replayed an unrelated technical-writer summary conflict, so I’m aborting and salvaging only my two refresh-coalescing commits onto current main.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: bd three d five f zero eight salvage is complete: the branch is now current main plus only the two refresh-coalescing commits. I’m rerunning the focused daemon and macOS validations before a plain direct submit.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: bd three d five f zero eight validation passed, but daemon reachability flapped right as I tried to submit. caco up has converged services; I’m retrying the plain direct submission now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: bd three d five f zero eight validation passed after the final rebase. I’m preserving the final tip and submitting plain direct now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: bd three d five f zero eight landed on main and is closed. I’m refreshing Test and Canary now so the macOS app includes the refresh coalescing fix; production Stable remains untouched.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting major fix landing. Bd three d five f zero eight macos refresh coalescing fix landed on main. Suspected daemon outage root cause work shipped. Caco macos refreshing test and canary to pick up refresh coalescing. Production stable untouched. May see daemon outage frequency drop after test canary advance reaches stable. Workers continue plain direct, fleet healthy.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+
+## exact assigned in-progress
+no beads found
+
+## broad in-progress caco-web/web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m17h30m ago[0m [2m17h30m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+no beads found
+
+## ready open web-adjacent labels
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+### label=feed
+no beads found
+### label=operator-trust
+no beads found
+### label=tests
+no beads found
+
+## open title/text web-adjacent spot check
+# Broad open list grep for web/dashboard/browser/workspace/summaries/terminal/notifications/feed; informational only, no autoclaim.
