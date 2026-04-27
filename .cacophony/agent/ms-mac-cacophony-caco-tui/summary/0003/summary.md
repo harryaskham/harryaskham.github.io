@@ -1,33 +1,35 @@
-# Session summary — immediate bead visibility after web creation
+# Session summary — Headless kitty lifecycle harness
 
 ## Goal
 
-Fix a web-app UX bug where creating a bead succeeded server-side but the new bead did not appear in the bead table until a later snapshot refresh. The aim was to make bead creation feel immediate and local while preserving the normal snapshot-driven update model for everything else.
+Add a small, reusable headless regression harness for the TUI kitty placement lifecycle so future resize/navigation cleanup fixes can be verified without requiring a live Ghostty/kitty screenshot run.
 
 ## Bead(s)
 
-- `bd-e425b4` — Fix bead creation in web app to immediately appear in table
+- `bd-c88d36` — Add headless regression harness for kitty placement lifecycle cleanup
 
 ## Before state
 
-- Creating a bead from the web UI showed success, but the new bead only appeared after the next `loadSnapshot()` cycle.
-- The create flows (`createBead()` and `quickBeadDirect()`) always depended on a follow-up snapshot reload instead of integrating the just-created server response into local UI state.
-- Under active filters, a just-created bead could still remain invisible even if it had already been returned by the create endpoint.
+- Failing tests: none known for this path.
+- Relevant metrics: no FPS benchmark run; this was targeted regression coverage.
+- Context: `bd-01497a` added render-time geometry cleanup and unscoped resize suppression, but validation still used isolated assertions rather than a reusable app-render harness that can drive the TUI and inspect placement deletes across lifecycle transitions.
 
 ## After state
 
-- The web UI now merges the created bead response directly into `state.beads` as soon as the create request succeeds.
-- Newly created beads temporarily bypass current bead-table filters so they visibly appear immediately in the table instead of waiting for the next server snapshot.
-- Optimistic create no longer fabricates partial `bead_stats` when the page has not yet hydrated snapshot stats; it only patches those counts when real snapshot stats are already present.
-- Static web tests now pin the optimistic create path so the helper and filter-bypass contract do not silently regress.
+- Failing tests: none in targeted validation.
+- Relevant metrics: targeted caco-tui harness test passed with cargo limited to two jobs after rebasing onto current `origin/main`.
+- Context: app tests now include `KittyLifecycleHarness`, which forces kitty capability, seeds uploaded surfaces, renders through a `TestBackend`, and drains queued kitty deletes for assertions.
 
 ## Diff summary
 
-- Commits: `9a639fb8`
-- Files touched: `crates/caco-web/static/app.js`, `crates/caco-web/src/tests.rs`
-- Tests: `cargo test -p caco-web --lib`, `node -c crates/caco-web/static/app.js`, `cargo test-small`, `cargo check --workspace --tests`
-- Behavioural delta: after bead creation succeeds, the bead table updates immediately in-browser using the returned server payload, and the created bead is visible even when current filters would otherwise hide it.
+- Commits: `d332aff8e`
+- Files touched: `crates/caco-tui/src/app.rs`
+- Tests: +1 new lifecycle test and refactored the render-size cleanup test onto the harness.
+- Behavioural delta: no production behaviour change; this is regression infrastructure proving resize and content-swap lifecycle cleanup paths queue deletes for stale kitty placements.
+- Validation:
+  - `CARGO_BUILD_JOBS=2 cargo test -j2 -p caco-tui kitty_lifecycle_harness_records_content_swap_deletes --lib`
+  - pre-rebase validation also reran `render_frame_size_change_queues_kitty_deletes_for_displayed_surfaces --lib`.
 
 ## Operator-takeaway
 
-This was a small but high-leverage web UX fix: bead creation now feels instant instead of eventually consistent. The important detail is that the local optimistic patch respects the existing snapshot model instead of replacing it, so the UI gets faster feedback without inventing a second long-lived source of truth.
+The kitty cleanup work now has a reusable headless app-render harness, so the next stale-border investigation can add lifecycle cases directly instead of hand-rolling SurfaceManager assertions or relying only on visual/manual terminal checks.
