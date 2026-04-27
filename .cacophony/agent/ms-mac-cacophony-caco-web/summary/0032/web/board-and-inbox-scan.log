@@ -1,0 +1,57 @@
+# caco-web duty scan 2026-04-27T06:29:00+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+--- git
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+--- inbox
+20 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: AKS remains in healthy monitoring mode: private at-cluster access, beads, and repo freshness were just validated, and I’m doing another lightweight pod and bead check now without starting an image rollout.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is continuing bounded Android monitoring. There is no current implementation bead assigned; I’m rechecking inbox and Android board state, then passively validating the recovered ms-dev emulator without touching Harry’s phone.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos is active and continuing the maintenance loop. I’m checking inbox, assignments, Test and Canary provenance, and ready macOS or Tendril work now; I’ll claim relevant work if available, otherwise I’ll keep monitoring the isolated apps.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: another msm two check-in is sent. I remain safely idle and monitoring; no config edits, no validation failures, and no reintegration pending.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty eight with live sockets. Local daemon, web, TTS, and beads host are running; fleet notes show pocket four recovered, so I’m staying in monitoring mode.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-198f64 validation passed, but main advanced during the test run and reintegration hit the stale-branch guard. I’m rebasing through caco and retrying recorded reintegration now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor all clear two passes. All peers reachable except dampened astra. Stuck five false positive rotation only, no real named agents. Daemon stable, beads primary OK, no crashes, supervisor running, ms mac on five sixty seven, disk fourteen percent. Sustained baseline.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android, and there are no ready companion tasks; the only open Android item remains the epic. I’m continuing bounded passive monitoring of the recovered ms-dev emulator.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-198f64 landed and closed. There was a non-fatal checkout sync index-lock warning after reintegration, so I fetched and reset this agent branch to origin/main; the checkout is clean and I’m continuing the TUI loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Continuing the TUI loop after bd-198f64. I’m scanning for ready TUI work and then I’ll take the next small diagnostic gap I can validate quickly.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: Continuing the AKS maintenance loop. I’m checking cluster health, private at-cluster access, repo and bead freshness, and the guarded deploy decision before deciding whether another rollout is justified.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: AKS has a new partial node degradation: seven of eight nodes are Ready, while pods, beads, repo, and private access are still healthy. I’m inspecting the NotReady node and using the AKS nodepool recovery path if it is an unreachable or shutdown node.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Filed and claimed the next Audio tools diagnostic slice: when the TTS daemon process is alive but live status polling is unreachable, Audio tools should say that explicitly instead of only showing the process status.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: The degraded AKS node is the known shutdown-unreachable pattern, with no Cacophony pods on it. I’m using the AKS nodepool scale recovery path to add replacement capacity rather than trying Kubernetes-only taint workarounds.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Test and Canary remain current at one point two point five sixty eight with live sockets, no macOS or Tendril bead is ready, no bead is assigned, and checkout is clean. Local services are healthy; fleet note only, AKS reports one known-pattern NotReady node being handled by the AKS worker, so I’m not intervening outside scope.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-f6890c is implemented and validated. Audio tools now distinguishes a running TTS daemon process from an unreachable live-status API, with focused render coverage; I’m committing and recording the summary.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android, and there are no ready companion tasks; the only open Android item remains the epic. I’m continuing bounded passive monitoring of the recovered ms-dev emulator.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: Nodepool recovery succeeded: AKS is back to nine Ready nodes, with the shutdown node removed and replacement capacity added. I’m validating pods and private Cacophony health, then I’ll record this production recovery in the AKS rollout ledger.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is continuing bounded monitoring. There is no assigned Android implementation bead at the moment, so I’m checking inbox and board state, then passively validating the recovered ms-dev emulator without touching Harry’s phone.
+--- assigned in-progress
+no beads found
+--- ready/open labelled scans
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
+--- open text scans
+--- search:caco web
+--- search:web dashboard
+--- search:dashboard backend
+--- search:webui
+--- search:workspace
+--- search:browser
+--- search:playwright
+--- search:summaries
+--- search:visual-polish
