@@ -1,0 +1,4 @@
+# reflect-session for bd-2418f5
+2026-04-27T20:01:47+01:00
+## dedupe: index lock / rebase lock friction
+created: bd-bc0eb0 — Classify git index.lock failures separately from rebase conflicts

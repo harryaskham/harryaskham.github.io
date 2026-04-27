@@ -1,0 +1,65 @@
+# caco-web index.lock inspection after timed-out duty scan
+2026-04-27T19:49:02+01:00
+## lock
+ls: cannot access '.git/index.lock': No such file or directory
+
+## git/rebase status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [behind 1]
+agent/ms-mac/cacophony/ms-mac-cacophony-caco-web
+
+## likely git processes for this checkout
+ 4000     1  s      09:58:44 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/z04f9d28kpzs16m6qyghrzvy9y1c82xi-run-github-runner-collective-ms-mac
+ 4020     1  s      09:58:44 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/2n7ys9c1rmk5z94y089pxxffyz37d5h2-run-github-runner-tendril-ms-mac
+ 4257  4000         09:58:44 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+ 4462  4020         09:58:43 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+30730 30216  s         00:07 /bin/bash -c set -euo pipefail\012PROJECT="${CACO_PROJECT:-${CACOPHONY_PROJECT:-cacophony}}"\012AGENT="${CACO_AGENT_ID:-${CACOPHONY_AGENT:-ms-mac-cacophony-caco-android}}"\012timeout 8 caco msg speak --body "Checking Android inbox and assigned beads. I remain scoped to bd-29ebd0, with direct recorded held and no unrelated claims." >/dev/null 2>&1 || true\012printf '%s\n' '--- inbox latest (bounded) ---'\012timeout 45 caco msg inbox --project "$PROJECT" 2>&1 | tail -n 180 || true\012printf '%s\n' '--- assigned in-progress: cacophony:<agent> ---'\012timeout 60 caco bd list --status in_progress --assignee "cacophony:$AGENT" --limit 120 2>&1 || true\012printf '%s\n' '--- assigned open: cacophony:<agent> ---'\012timeout 60 caco bd list --status open --assignee "cacophony:$AGENT" --limit 120 2>&1 || true\012printf '%s\n' '--- active Android bead detail ---'\012timeout 60 caco bd show --bead-id bd-29ebd0 2>&1 | sed -n '1,110p' || true\012printf '%s\n' '--- git status ---'\012git status --short --branch\012printf '%s\n' '--- last local commit ---'\012git log --oneline -1 || true\012printf '%s\n' '--- latest bd-29ebd0 validation artefact ---'\012ls -lh ".cacophony/agent/$AGENT/summary/0013/screenshots/android-bd29ebd0-seed-verify.png" 2>/dev/null || true\012printf '%s\n' '--- bounded ms-dev Android heartbeat ---'\012ssh -o ConnectTimeout=8 ms-dev 'set -euo pipefail\012SERIAL=emulator-5554\012printf "boot="; timeout 8 adb -s "$SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" || true\012for svc in package activity window input; do timeout 8 adb -s "$SERIAL" shell service check "$svc" 2>/dev/null | tr -d "\r" || true; done\012timeout 8 adb -s "$SERIAL" shell dumpsys package com.cacophony.companion 2>/dev/null | grep -E "versionCode=|versionName=" | head -n 4 | tr -d "\r" || true\012timeout 8 adb -s "$SERIAL" shell dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp" | head -n 8 | tr -d "\r" || true\012timeout 8 adb -s "$SERIAL" shell "run-as com.cacophony.companion cat /data/user/0/com.cacophony.companion/shared_prefs/cacophony_prefs.xml" 2>/dev/null | tr -d "\r" | grep -E "name=.host.|name=.port.|name=.token." | sed -E "s/(<string name=.token.>).*(<\/string>)/\1[redacted]\2/" || true\012timeout 10 adb -s "$SERIAL" shell uiautomator dump /sdcard/window-caco-android-heartbeat.xml >/dev/null 2>&1 || echo dump-failed\012timeout 8 adb -s "$SERIAL" shell cat /sdcard/window-caco-android-heartbeat.xml 2>/dev/null | tr -d "\r" > /tmp/window-caco-android-heartbeat.xml || true\012if grep -E "isn.t responding|Close app|Wait" /tmp/window-caco-android-heartbeat.xml >/dev/null 2>&1; then echo ANR_DIALOG_PRESENT; else echo ANR_DIALOG_ABSENT; fi\012' || true
+33823 44923            00:03 git status --porcelain
+34967 44923            00:03 git status --porcelain
+35513 44923            00:03 git status --porcelain
+35548 44923            00:03 git status --porcelain
+35579 44923            00:03 git status --porcelain
+35613 44923            00:03 git status --porcelain
+35661 44923            00:03 git status --porcelain
+38774 44923            00:02 git status --porcelain
+38876 44923            00:02 git status --porcelain
+38887 44923            00:02 git status --porcelain
+40438 31255  s         00:00 /bin/bash -c set -u\012PROJECT="${CACOPHONY_PROJECT:-${CACO_PROJECT:-cacophony}}"\012timeout 35 caco msg speak --project "$PROJECT" --body "Continuing the caco-web duty cycle after the scan timed out. IM-bM^@M^Ym inspecting the stale git lock from the failed rebase, then IM-bM^@M^Yll sync and retry the board scan before observing." || true\012{\012  echo "# caco-web index.lock inspection after timed-out duty scan"\012  date -Iseconds\012  echo "## lock"\012  ls -l .git/index.lock 2>&1 || true\012  echo\012  echo "## git/rebase status"\012  git status -sb 2>&1 || true\012  git rev-parse --abbrev-ref HEAD 2>&1 || true\012  test -d .git/rebase-merge && find .git/rebase-merge -maxdepth 1 -type f -print -exec sed -n '1,40p' {} \; 2>&1 || true\012  test -d .git/rebase-apply && find .git/rebase-apply -maxdepth 1 -type f -print -exec sed -n '1,40p' {} \; 2>&1 || true\012  echo\012  echo "## likely git processes for this checkout"\012  ps -axo pid,ppid,stat,etime,command | grep -E '[g]it|[c]aco agent rebase|[c]aco agent reintegrate|[c]argo run -p caco-web|[c]aco-web-observe' || true\012  echo\012  echo "## lsof lock"\012  lsof .git/index.lock 2>&1 || true\012} | tee /tmp/caco-web-index-lock-duty-$(date +%Y%m%d-%H%M%S).log
+40805 40438            00:00 /bin/bash -c set -u\012PROJECT="${CACOPHONY_PROJECT:-${CACO_PROJECT:-cacophony}}"\012timeout 35 caco msg speak --project "$PROJECT" --body "Continuing the caco-web duty cycle after the scan timed out. IM-bM^@M^Ym inspecting the stale git lock from the failed rebase, then IM-bM^@M^Yll sync and retry the board scan before observing." || true\012{\012  echo "# caco-web index.lock inspection after timed-out duty scan"\012  date -Iseconds\012  echo "## lock"\012  ls -l .git/index.lock 2>&1 || true\012  echo\012  echo "## git/rebase status"\012  git status -sb 2>&1 || true\012  git rev-parse --abbrev-ref HEAD 2>&1 || true\012  test -d .git/rebase-merge && find .git/rebase-merge -maxdepth 1 -type f -print -exec sed -n '1,40p' {} \; 2>&1 || true\012  test -d .git/rebase-apply && find .git/rebase-apply -maxdepth 1 -type f -print -exec sed -n '1,40p' {} \; 2>&1 || true\012  echo\012  echo "## likely git processes for this checkout"\012  ps -axo pid,ppid,stat,etime,command | grep -E '[g]it|[c]aco agent rebase|[c]aco agent reintegrate|[c]argo run -p caco-web|[c]aco-web-observe' || true\012  echo\012  echo "## lsof lock"\012  lsof .git/index.lock 2>&1 || true\012} | tee /tmp/caco-web-index-lock-duty-$(date +%Y%m%d-%H%M%S).log
+40822 28025            00:00 git status --porcelain
+65097     1  s   05-20:11:11 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/kvss5pvsl8lv3adw7v019dan7pyq4y5x-run-github-runner-cacophony-ms-mac
+65109     1  s   05-20:11:11 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/sx5h7678mclbm3vsq9ikl2fj3piikm25-run-github-runner-midi2hid-ms-mac
+65146 65097      05-20:11:11 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+65276 65109      05-20:11:10 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+65439     1         19:00:28 git ls-remote --heads ssh://git@github.com/harryaskham/gfx-replacer.git refs/heads/cacophony-state
+65474 65439         19:00:28 ssh -F /dev/null -i /Users/harryaskham/.ssh/caco -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o SendEnv=GIT_PROTOCOL git@github.com git-upload-pack '/harryaskham/gfx-replacer.git'
+78240     1      01-02:58:29 git fetch origin main
+78241 78240      01-02:58:29 ssh -F /dev/null -i /Users/harryaskham/.ssh/caco -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o SendEnv=GIT_PROTOCOL git@github.com git-upload-pack '/harryaskham/midi2hid.git'
+29783 29554         17:10:05 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+33379 27905      02-07:39:10 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+21217 21178      05-23:04:57 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+71079 13446         03:04:00 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+94952 94843      02-19:51:49 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+68761 98185      01-09:48:46 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+31890 31677         17:09:57 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+86274 85197            59:04 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+59481 52820      04-16:50:48 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+67476 66188      02-07:55:32 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+33483 33392      03-22:35:24 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+34161 34096      03-22:35:23 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+85797 77304         10:56:18 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+70534 70457         05:01:10 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+97089 96323         06:48:25 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+74323 72503      03-22:32:48 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+22084 22005      03-22:32:10 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+18340 17576         09:16:42 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+89874 86151         10:41:27 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+46261 46227      03-02:08:25 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+50066 50060      03-08:59:43 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+16938 10125         16:58:01 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+ 7023 98806      03-01:58:54 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+73643 70672         07:35:33 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+14830 90078         05:21:24 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+83967 83311         07:05:43 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+
+## lsof lock
+lsof: status error on .git/index.lock: No such file or directory
