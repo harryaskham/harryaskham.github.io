@@ -1,0 +1,57 @@
+# dedupe scan for dashboard loading placeholders during snapshot timeout
+2026-04-27T20:45:27+01:00
+## open/in-progress caco-web/web/dashboard/operator-trust labels
+### status=open label=caco-web
+### status=open label=web
+### status=open label=dashboard
+error: beads primary is in restart maintenance on node 'helsinki' until 2026-04-27T19:54:13.731349357+00:00; failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=open&label=dashboard&limit=200)
+### status=open label=operator-trust
+### status=open label=feed
+error: beads primary is in restart maintenance on node 'helsinki' until 2026-04-27T19:54:13.731349357+00:00; failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=open&label=feed&limit=200)
+### status=in_progress label=caco-web
+### status=in_progress label=web
+### status=in_progress label=dashboard
+error: beads primary is in restart maintenance on node 'helsinki' until 2026-04-27T19:54:13.731349357+00:00; failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=in_progress&label=dashboard&limit=200)
+### status=in_progress label=operator-trust
+### status=in_progress label=feed
+error: beads primary is in restart maintenance on node 'helsinki' until 2026-04-27T19:54:13.731349357+00:00; failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=in_progress&label=feed&limit=200)
+### status=draft label=caco-web
+### status=draft label=web
+### status=draft label=dashboard
+error: beads primary is in restart maintenance on node 'helsinki' until 2026-04-27T19:54:13.731349357+00:00; failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=draft&label=dashboard&limit=200)
+### status=draft label=operator-trust
+### status=draft label=feed
+error: beads primary is in restart maintenance on node 'helsinki' until 2026-04-27T19:54:13.731349357+00:00; failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=draft&label=feed&limit=200)
+## broad open/in-progress grep
+
+# bounded dedupe retry
+2026-04-27T20:47:25+01:00
+### status=open label=caco-web
+### status=open label=web
+### status=open label=dashboard
+### status=open label=operator-trust
+### status=in_progress label=caco-web
+### status=in_progress label=web
+### status=in_progress label=dashboard
+### status=in_progress label=operator-trust
+### status=draft label=caco-web
+### status=draft label=web
+### status=draft label=dashboard
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=draft&label=dashboard&limit=200)]
+### status=draft label=operator-trust
+
+# final authority retry
+2026-04-27T20:50:31+01:00
+## status brief
+{'ok': False, 'daemon': {'configured': True, 'reachable': True, 'port_holder_pid': 34611}, 'beads_host': {'is_host': False, 'reachable': False, 'status': 'not_running'}}
+## assigned
+no beads found
+## open caco-web/web/dashboard/operator-trust
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=dashboard
+no beads found
+### label=operator-trust
+no beads found

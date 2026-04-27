@@ -1,0 +1,35 @@
+error: daemon returned ok=true but no claim payload (likely a restart-window response). No durable ownership change is confirmed; re-run `caco bd show --bead-id bd-8a6877` to confirm actual state before retrying.
+claim retry 1
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads/claim)]
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads/bd-8a6877)]
+claim retry 2
+error: daemon returned ok=true but no claim payload (likely a restart-window response). No durable ownership change is confirmed; re-run `caco bd show --bead-id bd-8a6877` to confirm actual state before retrying.
+[35mbd-8a6877[0m  [1mcaco-web dashboard side cards stay loading during snapshot timeout[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:ms-mac-cacophony-caco-web
+  [34mlabels:[0m       caco-web, dashboard, operator-trust, web
+  [34mcreated:[0m      [2m2026-04-27T19:50:48.011000023Z (3m ago)[0m
+  [34mdescription:[0m  During caco-web duty cycle 0093 on 2026-04-27, current-assets browser observation against daemon http://127.0.0.1:11100 showed the main dashboard status hero correctly labeling the initial snapshot timeout, but dashboard home side sections still present indefinite loading placeholders.
+
+Evidence:
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0093/web/observation.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0093/web/server.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0093/web/screenshots/ (bounded Playwright screenshots copied with the summary)
+
+Observed:
+- Status hero says: Snapshot proxy timed out · no usable data returned before the 8s budget.
+- Feed route says: events unavailable / Feed events unavailable.
+- Workspace status says: agents unavailable / beads unavailable / choices unavailable / snapshot timeout.
+- Dashboard home still says RECENT ACTIVITY Loading events… and ACTIVE AGENTS Loading agents… while no usable initial snapshot data has loaded.
+
+Expected:
+- During initial snapshot timeout/degraded state, dashboard home side sections should use unavailable/degraded copy instead of indefinite healthy loading placeholders.
+- Once real snapshot/SSE data arrives, existing event/agent cards should render normally.
+
+Acceptance criteria:
+1. Add focused static/contract coverage for dashboard home recent activity and active agents copy during initial snapshot timeout.
+2. Update dashboard home rendering so the sections say events/agents are unavailable or delayed during initial snapshot timeout instead of Loading.
+3. Validate with focused caco-web tests and a lightweight browser observation.
+claim confirmed
