@@ -1,0 +1,12 @@
+caco-web-observe -- lightweight current-assets Playwright observation helper
+
+Options:
+  --bind <ip>          Dev-server bind address (default 127.0.0.1)
+  --port <port>        Dev-server port (default process-derived high port)
+  --daemon-url <url>   Daemon URL for caco-web-dev-server
+  --url <url>          Observe an existing dashboard URL instead of launching dev server
+  --session <name>     playwright-cli session name
+  --out <path>         Observation log path
+  --server-log <path>  Dev-server log path
+  --skip-build         Do not build caco-web-dev-server before launching
+

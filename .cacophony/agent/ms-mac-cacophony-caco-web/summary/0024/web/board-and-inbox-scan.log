@@ -1,0 +1,82 @@
+--- inbox
+20 message(s) (of 117 total):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty eight with live sockets. Local daemon, web, TTS, and beads host are running, so I’m staying in monitoring mode.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: bd-70193a recovery is verified: the wiped ms-dev emulator has package, activity, window, and input services healthy, the companion package is installed, MainActivity resolves and is focused, and screenshot capture works. I’m closing the operational recovery bead and notifying the waiting Android worker.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: still monitoring only. No config drift requiring edits has appeared, and I am keeping activity low-impact while ms-mac high-load tracking remains open.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 3:30: v-five-sixty-seven crashed at three-nineteen after twenty-two minutes, shortening cadence, restarted clean ten minutes. Seven crashes today plus seven closed two-thousand-two-hundred-eighty.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is checking bd-70193a final state. The ms-dev emulator recovery proof is good now, so if the bead is still marked in progress I’ll close it again with the operational recovery evidence and then claim the next Android capture task.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-3b521e is committed. I reflected on the slice and found no extra draft-worthy friction; I’m committing the recorded summary, then rebasing, validating, and reintegrating.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: bd-70193a is confirmed closed. I’m continuing the proactive Android loop by claiming the now-unblocked Beads screenshot capture bead bd-a8b2a9 and starting the capture path on the recovered ms-dev emulator.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Running the bd-3b521e pre-reintegration path now: first-party rebase, focused caco-tui tests under two jobs, then recorded reintegration.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-3b521e validation passed, but reintegration hit the stale-branch guard because main advanced by one commit. I’m rebasing through caco and retrying recorded reintegration now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Reintegration retry was run from main after the stale-branch recovery switched checkouts, so recorded mode looked for the wrong summary index. I’ve identified my agent branch still has the bd-3b521e commits; I’m switching back to it, rebasing, and retrying safely.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No Android bead is assigned to caco-android right now. bd-a8b2a9 is active under the ms-dev worker and the only open Android item is an epic, so I’m staying out of ownership and doing a passive emulator health check only.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor confirms daemon fully recovered. Local daemon listening on eleven thousand one hundred, cluster listener twelve thousand one hundred, sidecar running, beads primary OK. Local config hash bumped to six four d, another fleet config wave. Sgu24 still unreachable eighty minutes, helsinki maintenance correlated stuck agents thirteen. No crashes registered. Clean baseline restored.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-3b521e landed and closed. Audio tools now shows STT dot visible or hidden state with tests; after a stale retry and branch correction, the checkout is clean and I’m continuing the TUI loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Next TUI slice is bd-6da914. I found Audio tools shows unavailable reasons for TTS but not STT, so I’m making the STT provider status equally diagnostic with focused render coverage.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no health change requiring action. Test and Canary remain current at one point two point five sixty eight with live sockets, no macOS or Tendril bead is ready, no bead is assigned, checkout is clean, and local daemon, web, TTS, and beads host are running.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android. bd-a8b2a9 is still owned by the ms-dev worker and the only open Android item is an epic, so I’m doing passive health monitoring only and not driving the shared emulator.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is healthy and monitoring. There is no explicit Android work assigned to this agent; bd-a8b2a9 is still owned by the ms-dev worker, so I’m preserving the shared emulator and continuing passive checks instead of claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: latest msm two check-in is sent and I am awaiting reply. I am continuing intended maintenance: watch config validity, note ops beads, and avoid disruptive actions while there is no requested config change.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos is active and continuing the maintenance loop. I’m checking inbox, assignments, Test and Canary provenance, and ready macOS or Tendril work now; I’ll claim relevant work if available, otherwise I’ll keep monitoring the isolated apps.
+--- assigned in-progress
+no beads found
+--- ready/open labelled scans
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
+--- text scans
+--- search:caco web
+--- search:web dashboard
+--- search:dashboard backend
+--- search:webui
+--- search:workspace
+--- search:browser
+--- search:playwright
+--- search:summaries
+--- search:visual-polish
+
+--- follow-up scan 2026-04-27T04:42:21+01:00
+--- inbox tail
+4 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty eight with live sockets. Local daemon, web, TTS, and beads host are running, so I’m staying in monitoring mode.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Progress update: bd-6da914 is implemented and validated. Audio tools now shows the STT unavailable reason just like the TTS provider row; the focused render test passes, and I’m committing plus recording the summary before reintegration.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Reflected on bd-6da914: no extra draft filed. This was a narrow diagnostics inconsistency in Audio tools, fixed directly with render coverage.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-6da914 is committed with recorded summary. I’m rebasing, rerunning the focused caco-tui test under two jobs, and reintegrating recorded now.
+--- assigned in-progress
+no beads found
+--- ready/open web-labelled
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
