@@ -1,0 +1,1004 @@
+# caco-web observation helper
+session: caco-web-observe-1777263814
+output: .cacophony/agent/ms-dev-cacophony-caco-dev-msd-1/summary/0039/web/observation.log
+
+--- cargo build caco-web-dev-server
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.38
+   Compiling rustls-webpki v0.103.12
+   Compiling tokio-rustls v0.26.4
+   Compiling tungstenite v0.29.0
+   Compiling hyper-rustls v0.27.9
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.568 (/home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-dev-msd-1/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.61s
+server: /home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-dev-msd-1/checkout/target/debug/caco-web-dev-server
+target: http://127.0.0.1:62319
+server_log: .cacophony/agent/ms-dev-cacophony-caco-dev-msd-1/summary/0039/web/server.log
+
+--- playwright open http://127.0.0.1:62319/#workspace
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1777263814` opened with pid 1382903.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:62319/#workspace');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#workspace
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-04-27T04-23-42-313Z.yml)
+
+--- playwright resize 390 844
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.setViewportSize({ width: 390, height: 844 });
+```
+
+--- narrow workspace
+
+--- playwright eval () => ({
+  url: location.href,
+  viewport: { w: innerWidth, h: innerHeight },
+  version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+  connection: document.querySelector('#connection-status')?.textContent?.trim(),
+  activeView: document.querySelector('.view.active')?.id,
+  visibleViews: Array.from(document.querySelectorAll('.view'))
+    .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+    .map(v => v.id),
+  overflow: Array.from(document.querySelectorAll('#view-workspace *'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 60), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 90), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 40)
+})
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#workspace",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.568",
+  "connection": "Connected",
+  "activeView": "view-workspace",
+  "visibleViews": [
+    "view-workspace"
+  ],
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "",
+      "cls": "ws-pane-scroll ws-pane-scroll--compact",
+      "text": "AGENT STATE BEAD NODE RUNTIME USAGE hard-pine RUNNING — ms-dev — — bone-oar RUNNING — ms-d",
+      "w": 372,
+      "sw": 551,
+      "h": 446,
+      "sh": 1620,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    },
+    {
+      "tag": "SPAN",
+      "id": "ws-status-choices",
+      "cls": "ws-status-segment ws-status-segment--clickable",
+      "text": "✅ no choices",
+      "w": 97,
+      "sw": 147,
+      "h": 18,
+      "sh": 18,
+      "overflowX": "visible",
+      "overflowY": "visible"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({\n  url: location.href,\n  viewport: { w: innerWidth, h: innerHeight },\n  version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n  connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n  activeView: document.querySelector(\'.view.active\')?.id,\n  visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n    .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n    .map(v => v.id),\n  overflow: Array.from(document.querySelectorAll(\'#view-workspace *\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 60), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 90), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 40)\n})');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-23-55-673Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-23-55-673Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-23-55-673Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key 1
+
+--- playwright press 1
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 1
+await page.keyboard.press('1');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#status
+- Page Title: Cacophony Dashboard
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#status",
+  "activeView": "view-status",
+  "connection": "Connected",
+  "h1": "Cluster Status",
+  "hero": {
+    "h": 330,
+    "sh": 328,
+    "clipped": false
+  },
+  "visibleViews": [
+    "view-status"
+  ],
+  "text": "Cluster Status beads: partial Refresh LIVE ORCHESTRATION Cluster pulse at a glance 38 active agents · 57 open beads · 1 service · 11 unread notifications Live SSE connected Snapshot degraded · 0s ago ⌘K command palette / focus search · 1–0 switch views 8 NODES 38 RUNNING AGENTS 57 OPEN BEADS 1 SERVICES 1 COMPLETIONS 50 FEED EVENTS RECENT ACTIVITY 05:20:14 TTS:FINISHED speech_finished 05:20:20 LOG_ERROR startup reconciliation transitioned agent nd5jhy3tndsqtecn to failed 05:20:23 LOG_ERROR POST /api/v1/projects/android-utils/agents -> 500 05:20:23 BD:UPDATED unclaimed bd-933ec9 nod-term kitty chunk reassembly lacks quota and cancellation 05:20:28 INBOX_READ inbox_read 05:20:30 TTS:REQUESTED s"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-05-959Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-05-959Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-05-959Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key 2
+
+--- playwright press 2
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 2
+await page.keyboard.press('2');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#agents
+- Page Title: Cacophony Dashboard
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#agents",
+  "activeView": "view-agents",
+  "connection": "Connected",
+  "h1": "Agents 38 of 40 ×",
+  "hero": null,
+  "visibleViews": [
+    "view-agents"
+  ],
+  "text": "Agents 38 of 40 × All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer life midi2hid mono picasso-health tendril Active 38 All 40 Running 31 Starting 7 Paused 0 Stopped 1 Failed 0 Completed 1 ID PROJECT NODE STATE BEAD RUNTIME ms-dev-cacophony-caco-dev-msd-3 cacophony ms-dev RUNNING — — ms-dev-cacophony-companion cacophony ms-dev RUNNING — — ms-dev-cacophony-caco-dev-msd-2 cacophony ms-dev RUNNING — — ms-dev-cacophony-caco-dev-msd-1 cacophony ms-dev RUNNING — — ms-dev-cacophony-caco-dev-msd-4 cacophony ms-dev RUNNING — — ms-mac-cacophony-caco-android cacophony ms-mac RUNNING — — ms-mac-cacophony-caco-log-monitor-msm cacophony ms-mac RUNNING — — ms-mac-cacophony-r"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-12-227Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-12-227Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-12-227Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key 3
+
+--- playwright press 3
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 3
+await page.keyboard.press('3');
+```
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#beads",
+  "activeView": "view-beads",
+  "connection": "Connected",
+  "h1": "Beads 87 of 100 ×",
+  "hero": null,
+  "visibleViews": [
+    "view-beads"
+  ],
+  "text": "Beads 87 of 100 × All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer life midi2hid mono picasso-health tendril All Types Task Bug Feature Epic + New Bead Active 87 All 100 Open 70 In Progress 17 Blocked 0 Closed 0 Permanent 13 Draft 0 ID TITLE STATUS PRIORITY TYPE bd-1edd18 add android-utils to default github runners in git.nix collective · task Add-Android OPEN P0 task bd-ec8064 Worker spawns blocked by collective org-cv submodule clone failure collective · bug worker spawn blocked submodule clone OPEN P0 bug bd-a6e4e0 ms-dev collective Pi workers stall in Starting at idle prompt collective · bug ms-dev pi workers stall OPEN P0 bug bd-29b039 Configure automate"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#beads
+- Page Title: Cacophony Dashboard
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-19-003Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-19-003Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-19-003Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key 4
+
+--- playwright press 4
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 4
+await page.keyboard.press('4');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#feed
+- Page Title: Cacophony Dashboard
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#feed",
+  "activeView": "view-feed",
+  "connection": "Connected",
+  "h1": "Feed 50",
+  "hero": null,
+  "visibleViews": [
+    "view-feed"
+  ],
+  "text": "Feed 50 All Types Agent Bead Message Speech Health Last 24h Last 7d Last 30d All Auto-scroll 50 events 05:23:36 [beelink] cacophony MSG:SPEAK Technical-writer docs pass 0066 is landed. I audited the latest TUI Audio tools changes, updated docs/tui.html for explicit voice-rotation and local-device none display, validated GitHub Pages cleanly, and recorded summary 0066. The known recorded-direct warning recurred but origin/main and summaries are updated; I am back to monitoring. 05:23:32 [helsinki] tendril MSG:SPEAK Progress update: the multi-window Firefox workflow passed. Tendril created a second browser window, discovered both windows, captured each targeted window, closed the second one, v"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-25-282Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-25-282Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-25-282Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key 5
+
+--- playwright press 5
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 5
+await page.keyboard.press('5');
+```
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#chat",
+  "activeView": "view-chat",
+  "connection": "Connected",
+  "h1": "Chat 250",
+  "hero": null,
+  "visibleViews": [
+    "view-chat"
+  ],
+  "text": "Chat 250 All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer life midi2hid mono picasso-health tendril All Types Chat Speech Broadcast Last 24h Last 7d Last 30d All M ms-mac/ms-mac-cac SPEAK 04:48:30 Config-helper update: another msm two check-in is out. I am staying within config-helper scope, with no source changes or builds, and will reintegrate promptly only if a validated config edit becomes necessary. M ms-mac/ms-mac-cac SPEAK 04:48:30 Progress update: the last Audio tools STT diagnostics slice is landed and closed. I’m still in the caco-tui loop: scanning for ready TUI beads now, and if none are safe to claim I’ll file the next focused TUI improvement fro"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#chat
+- Page Title: Cacophony Dashboard
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-31-500Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-31-500Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-31-500Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key w
+
+--- playwright press w
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press w
+await page.keyboard.press('w');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#workspace
+- Page Title: Cacophony Dashboard
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#workspace",
+  "activeView": "view-workspace",
+  "connection": "Connected",
+  "h1": "Workspace",
+  "hero": null,
+  "visibleViews": [
+    "view-workspace"
+  ],
+  "text": "Workspace Terminal Agents Beads Chat Logs Feed Source Status Services Nodes Projects Notifications Actions Timeline Choices Merge Queue Speech Bead Detail Agent Detail Hooks Crons All projects Preset… Mission Control Bead Triage Agent Driver Operator Cockpit Fleet Ops Minimal 👥 Agents all running starting idle failed stopped AGENT STATE BEAD NODE RUNTIME USAGE hard-pine RUNNING — ms-dev — — bone-oar RUNNING — ms-dev — — roam-hawk COMPLETED — ms-dev — — slow-eagle RUNNING — ms-dev — — best-dawn RUNNING — ms-dev — — mint-hill RUNNING — ms-dev — — fine-hive STOPPED — ms-dev — — caco-android RUNNING — ms-mac — — monitor-msm RUNNING — ms-mac — — cacophony-router RUNNING — ms-mac — — caco-tui RUN"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-37-573Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-37-573Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-37-573Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- narrow key s
+
+--- playwright press s
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press s
+await page.keyboard.press('s');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#summaries
+- Page Title: Cacophony Dashboard
+
+--- active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#summaries",
+  "activeView": "view-summaries",
+  "connection": "Connected",
+  "h1": "Session Summaries",
+  "hero": null,
+  "visibleViews": [
+    "view-summaries"
+  ],
+  "text": "Session Summaries Refresh Loading… ↑/↓ select Enter open row / filter r refresh l load more Loading summaries… Cold recorded-summary scans can take a few seconds. Select a summary on the left."
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-24-49-719Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-24-49-719Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-24-49-719Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- playwright resize 1440 1000
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.setViewportSize({ width: 1440, height: 1000 });
+```
+
+--- wide key 1
+
+--- playwright press 1
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 1
+await page.keyboard.press('1');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#status
+- Page Title: Cacophony Dashboard
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#status",
+  "activeView": "view-status",
+  "connection": "Snapshot delayed",
+  "h1": "Cluster Status",
+  "hero": {
+    "h": 131,
+    "sh": 129,
+    "clipped": false
+  },
+  "visibleViews": [
+    "view-status"
+  ],
+  "text": "Cluster Status beads: partial Refresh LIVE ORCHESTRATION Cluster pulse at a glance 38 active agents · 57 open beads · 1 service · 11 unread notifications Snapshot delayed… Snapshot degraded · 66s ago ⌘K command palette / focus search · 1–0 switch views 8 NODES 38 RUNNING AGENTS 40 TOTAL AGENTS 57 OPEN BEADS 3871 TOTAL BEADS 1 SERVICES 1 COMPLETIONS 50 FEED EVENTS RECENT ACTIVITY 05:20:14 TTS:FINISHED speech_finished 05:20:20 LOG_ERROR startup reconciliation transitioned agent nd5jhy3tndsqtecn to failed 05:20:23 LOG_ERROR POST /api/v1/projects/android-utils/agents -> 500 05:20:23 BD:UPDATED unclaimed bd-933ec9 nod-term kitty chunk reassembly lacks quota and cancellation 05:20:28 INBOX_READ in"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- wide key 2
+
+--- playwright press 2
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 2
+await page.keyboard.press('2');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#agents
+- Page Title: Cacophony Dashboard
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#agents",
+  "activeView": "view-agents",
+  "connection": "Connected",
+  "h1": "Agents 38 of 40 ×",
+  "hero": null,
+  "visibleViews": [
+    "view-agents"
+  ],
+  "text": "Agents 38 of 40 × All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer life midi2hid mono picasso-health tendril Active 38 All 40 Running 31 Starting 7 Paused 0 Stopped 1 Failed 0 Completed 1 ID PROJECT NODE STATE BEAD RUNTIME PROFILE STARTED ACTIONS ms-dev-cacophony-caco-dev-msd-3 cacophony ms-dev RUNNING — — — — ms-dev-cacophony-companion cacophony ms-dev RUNNING — — — — ms-dev-cacophony-caco-dev-msd-2 cacophony ms-dev RUNNING — — — — ms-dev-cacophony-caco-dev-msd-1 cacophony ms-dev RUNNING — — — — ms-dev-cacophony-caco-dev-msd-4 cacophony ms-dev RUNNING — — — — ms-mac-cacophony-caco-android cacophony ms-mac RUNNING — — — — ms-mac-cacophony-caco-log-monitor-msm"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- wide key 3
+
+--- playwright press 3
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 3
+await page.keyboard.press('3');
+```
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#beads",
+  "activeView": "view-beads",
+  "connection": "Connected",
+  "h1": "Beads 85 of 3871 ×",
+  "hero": null,
+  "visibleViews": [
+    "view-beads"
+  ],
+  "text": "Beads 85 of 3871 × All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer life midi2hid mono picasso-health tendril All Types Task Bug Feature Epic + New Bead Active 87 All 3871 Open 40 In Progress 17 Blocked 30 Closed 2598 Permanent 13 Draft 1173 ID TITLE STATUS PRIORITY TYPE ASSIGNEE LABELS PROJECT CREATED MODIFIED bd-1edd18 add android-utils to default github runners in git.nix collective · task Add-Android OPEN P0 task Unassigned — collective 5h ago 56m ago bd-ec8064 Worker spawns blocked by collective org-cv submodule clone failure collective · bug worker spawn blocked submodule clone OPEN P0 bug Unassigned org-cvsubmodulesworker-spawn collective 4h ago 2h ago"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#beads
+- Page Title: Cacophony Dashboard
+
+--- wide key 4
+
+--- playwright press 4
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 4
+await page.keyboard.press('4');
+```
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#feed",
+  "activeView": "view-feed",
+  "connection": "Connected",
+  "h1": "Feed 50",
+  "hero": null,
+  "visibleViews": [
+    "view-feed"
+  ],
+  "text": "Feed 50 All Types Agent Bead Message Speech Health Last 24h Last 7d Last 30d All Auto-scroll 50 events 05:24:22 [helsinki] cacophony LOG_ERROR startup reconciliation transitioned agent wh7fp277mntkezg3 to failed 05:24:17 [helsinki] cacophony BD:CLOSED bd-540647 TUI Audio tools should use full Read Messages Aloud label 05:24:14 [ms-mac] cacophony MSG:SPEAK bd-540647 is committed with summary while ms-mac was in a restart window. I’m checking daemon reachability and will reintegrate recorded as soon as it accepts lifecycle calls. 05:24:04 [helsinki] tendril LOG_ERROR startup reconciliation transitioned agent o5973m043nqk74am to failed 05:23:54 [ms-dev] cacophony MSG:SPEAK bd-540647 is committe"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#feed
+- Page Title: Cacophony Dashboard
+
+--- wide key 5
+
+--- playwright press 5
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press 5
+await page.keyboard.press('5');
+```
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#chat",
+  "activeView": "view-chat",
+  "connection": "Connected",
+  "h1": "Chat 250",
+  "hero": null,
+  "visibleViews": [
+    "view-chat"
+  ],
+  "text": "Chat 250 All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer life midi2hid mono picasso-health tendril All Types Chat Speech Broadcast Last 24h Last 7d Last 30d All CHANNELS ‹ # all PROJECTS # a.skh.am # agent-utils 19 # android-utils 5 # cacophony 161 # collective 4 # gfx-replacer # life # midi2hid # mono # picasso-health # tendril 7 AGENTS hard-pine 12 bone-oar 4 slow-eagle best-dawn 22 mint-hill 15 ms-mac-cacop 16 ms-mac-cacop 3 ms-mac-cacop ms-mac-cacop 25 ms-mac-cacop 5 ms-mac-cacop 4 ms-mac-cacop 14 ms-mac-cacop 8 ms-mac-cacop 1 ms-mac-cacop 17 helsinki-cac helsinki-cac helsinki-cac helsinki-col 4 helsinki-cac helsinki-cac helsinki-cac helsinki-cac helsink"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#chat
+- Page Title: Cacophony Dashboard
+
+--- wide key w
+
+--- playwright press w
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press w
+await page.keyboard.press('w');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#workspace
+- Page Title: Cacophony Dashboard
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#workspace",
+  "activeView": "view-workspace",
+  "connection": "Connected",
+  "h1": "Workspace",
+  "hero": null,
+  "visibleViews": [
+    "view-workspace"
+  ],
+  "text": "Workspace Terminal Agents Beads Chat Logs Feed Source Status Services Nodes Projects Notifications Actions Timeline Choices Merge Queue Speech Bead Detail Agent Detail Hooks Crons All projects Preset… Mission Control Bead Triage Agent Driver Operator Cockpit Fleet Ops Minimal 👥 Agents ⌨ Terminal 👥 Agents 📿 Beads 💬 Chat 📋 Logs 📡 Feed 📄 Source 🌟 Status ⚙️ Services 🖥 Nodes 📁 Projects 🔔 Notifications ⚡ Actions 📅 Timeline 🤔 Choices 🔀 Merge Queue 🗣 Speech 🔎 Bead Detail 🔎 Agent Detail 🪝 Hooks ⏰ Crons all running starting idle failed stopped AGENT STATE BEAD NODE RUNTIME USAGE ACTIONS hard-pine RUNNING — ms-dev — — ⌨ 🔎 ⧉ bone-oar RUNNING — ms-dev — — ⌨ 🔎 ⧉ roam-hawk COMPLETED — m"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+
+--- wide key s
+
+--- playwright press s
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press s
+await page.keyboard.press('s');
+```
+
+--- wide active view
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const hero = active?.querySelector('.status-hero');
+  const hr = hero?.getBoundingClientRect();
+  return {
+    url: location.href,
+    activeView: active?.id,
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,
+    visibleViews: Array.from(document.querySelectorAll('.view'))
+      .filter(v => getComputedStyle(v).display !== 'none' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)
+      .map(v => v.id),
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 700)
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:62319/#summaries",
+  "activeView": "view-summaries",
+  "connection": "Connected",
+  "h1": "Session Summaries",
+  "hero": null,
+  "visibleViews": [
+    "view-summaries"
+  ],
+  "text": "Session Summaries Refresh 10 of 955 ↑/↓ select Enter open row / filter r refresh l load more ms-dev/caco-dev-msd-4 2 #0095 1m ago Session summary — full Audio tools read-aloud label bd-540647 #0094 6m ago Session summary — explicit TUI voice rotation row bd-b8688e ms-mac/caco-web 2 #0026 3m ago Session summary — caco-web dashboard observation duty cycle #0025 12m ago Session summary — summary screenshot preview regression observed bd-926b01 beelink/technical-writer 2 #0066 5m ago Session summary — TUI Audio tools docs freshness pass bd-1d2e41 bd-212884 bd-b8688e #0065 18m ago Session summary — full GitHub Pages polish and privacy pass bd-1d2e41 bd-2cb360 ms-mac/caco-tui 3 #0023 8m ago Sessio"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+```
+### Page
+- Page URL: http://127.0.0.1:62319/#summaries
+- Page Title: Cacophony Dashboard
+
+--- help overlay
+
+--- playwright press ?
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+// Press ?
+await page.keyboard.press('?');
+```
+
+--- help overlay
+
+--- playwright eval () => ({
+  dialogOpen: !!document.querySelector('[role=dialog], .modal-overlay, .keyboard-help'),
+  helpTextPresent: /Keyboard|Shortcuts|Workspace|Agents|Beads/.test(document.body.innerText)
+})
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "dialogOpen": true,
+  "helpTextPresent": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({\n  dialogOpen: !!document.querySelector(\'[role=dialog], .modal-overlay, .keyboard-help\'),\n  helpTextPresent: /Keyboard|Shortcuts|Workspace|Agents|Beads/.test(document.body.innerText)\n})');
+```
+
+--- console
+
+--- playwright console
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+Total messages: 0 (Errors: 0, Warnings: 0)
+
+
+--- network
+
+--- playwright network
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+[GET] http://127.0.0.1:62319/health => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/merge-queue?since=24h => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/tts/status => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/tts/voices => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/ms-mac => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/helsinki => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/pocket4 => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/winmini => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/beelink => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/sgu24 => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/astra => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/summaries?limit=10&offset=0&project=cacophony => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-4/95?project=cacophony => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/ms-mac => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/helsinki => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/pocket4 => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/winmini => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/beelink => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/sgu24 => [200] OK
+[GET] http://127.0.0.1:62319/api/v1/nodes/astra => [200] OK
+
+--- final screenshot
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-25-29-477Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-25-29-477Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-25-29-477Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- playwright close
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+Browser 'caco-web-observe-1777263814' closed
+
+
+Observation log: .cacophony/agent/ms-dev-cacophony-caco-dev-msd-1/summary/0039/web/observation.log
