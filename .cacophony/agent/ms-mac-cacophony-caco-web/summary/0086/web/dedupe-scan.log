@@ -1,0 +1,23 @@
+## search possible existing backpressure/snapshot beads
+### status=open label=web
+no beads found
+### status=open label=caco-web
+no beads found
+### status=in_progress label=web
+no beads found
+### status=in_progress label=caco-web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m11h55m ago[0m [2m11h55m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+### status=draft label=web
+no beads found
+### status=draft label=caco-web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m--------            [0m [2m---[0m
+[35mbd-4f39dd   [0m P3   [2mbug     [0m [33mdraft       [0m [2m1d7h ago  [0m -                    [docs] caco-web visual source drift found during Pages audit
+[35mbd-77f386   [0m P3   [2mbug     [0m [33mdraft       [0m [2m13h13m ago[0m -                    [docs] caco-web observe warning references missing Nix shell
+--- broad text scan from open/in_progress/draft lists
+### status=open
+### status=in_progress
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m11h56m ago[0m [2m11h55m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+### status=draft
