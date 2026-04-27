@@ -1,0 +1,162 @@
+# Focused Workspace mobile validation
+2026-04-27T12:20:12+01:00
+server=http://127.0.0.1:63872
+chrome=/run/current-system/sw/bin/google-chrome-stable
++ npx --yes @playwright/cli -s=caco-web-duty-0061-workspace-focus open http://127.0.0.1:63872/#workspace
+### Browser `caco-web-duty-0061-workspace-focus` opened with pid 60987.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63872/#workspace');
+```
+### Page
+- Page URL: http://127.0.0.1:63872/#workspace
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-04-27T11-20-14-718Z.yml)
++ npx --yes @playwright/cli -s=caco-web-duty-0061-workspace-focus resize 390 844
+### Ran Playwright code
+```js
+await page.setViewportSize({ width: 390, height: 844 });
+```
++ npx --yes @playwright/cli -s=caco-web-duty-0061-workspace-focus eval 'async () => {
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline) {
+      const rows = document.querySelectorAll("#view-workspace .ws-agent-table tbody tr").length;
+      const status = document.querySelector("#connection-status")?.textContent?.trim();
+      if (rows > 0 && status && status !== "Connecting") break;
+      await sleep(500);
+    }
+    const wrap = document.querySelector("#view-workspace .ws-pane-scroll--compact");
+    const table = document.querySelector("#view-workspace .ws-agent-table");
+    const row = table?.querySelector("tbody tr");
+    const cells = row ? Array.from(row.children).map((td) => ({ text: td.textContent.trim().replace(/\s+/g, " "), display: getComputedStyle(td).display, w: Math.round(td.getBoundingClientRect().width) })) : [];
+    const headers = table ? Array.from(table.querySelectorAll("th")).map((th) => ({ text: th.textContent.trim(), display: getComputedStyle(th).display, w: Math.round(th.getBoundingClientRect().width) })) : [];
+    const wr = wrap?.getBoundingClientRect();
+    const tr = table?.getBoundingClientRect();
+    return {
+      viewport: { w: innerWidth, h: innerHeight },
+      connection: document.querySelector("#connection-status")?.textContent?.trim(),
+      rowCount: table?.querySelectorAll("tbody tr").length || 0,
+      wrap: wrap ? { w: Math.round(wr.width), sw: wrap.scrollWidth, overflowX: getComputedStyle(wrap).overflowX } : null,
+      table: table ? { w: Math.round(tr.width), sw: table.scrollWidth, className: table.className } : null,
+      headers,
+      cells,
+      horizontalOverflow: !!wrap && wrap.scrollWidth > Math.round(wr.width) + 4,
+      text: document.querySelector("#view-workspace")?.innerText.trim().replace(/\s+/g, " ").slice(0, 500)
+    };
+  }'
+### Result
+{
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "connection": "Connected",
+  "rowCount": 37,
+  "wrap": {
+    "w": 372,
+    "sw": 372,
+    "overflowX": "auto"
+  },
+  "table": {
+    "w": 356,
+    "sw": 356,
+    "className": "data-table ws-data-table ws-agent-table"
+  },
+  "headers": [
+    {
+      "text": "Agent",
+      "display": "table-cell",
+      "w": 164
+    },
+    {
+      "text": "State",
+      "display": "table-cell",
+      "w": 107
+    },
+    {
+      "text": "Bead",
+      "display": "table-cell",
+      "w": 85
+    },
+    {
+      "text": "Node",
+      "display": "none",
+      "w": 0
+    },
+    {
+      "text": "Runtime",
+      "display": "none",
+      "w": 0
+    },
+    {
+      "text": "Usage",
+      "display": "none",
+      "w": 0
+    },
+    {
+      "text": "Actions",
+      "display": "none",
+      "w": 0
+    }
+  ],
+  "cells": [
+    {
+      "text": "wage-helm",
+      "display": "table-cell",
+      "w": 164
+    },
+    {
+      "text": "stopped",
+      "display": "table-cell",
+      "w": 107
+    },
+    {
+      "text": "—",
+      "display": "table-cell",
+      "w": 85
+    },
+    {
+      "text": "ms-mac",
+      "display": "none",
+      "w": 0
+    },
+    {
+      "text": "—",
+      "display": "none",
+      "w": 0
+    },
+    {
+      "text": "—",
+      "display": "none",
+      "w": 0
+    },
+    {
+      "text": "⌨🔎⧉",
+      "display": "none",
+      "w": 0
+    }
+  ],
+  "horizontalOverflow": false,
+  "text": "Workspace Terminal Agents Beads Chat Logs Feed Source Status Services Nodes Projects Notifications Actions Timeline Choices Merge Queue Speech Bead Detail Agent Detail Hooks Crons All projects Preset… Mission Control Bead Triage Agent Driver Operator Cockpit Fleet Ops Minimal 👥 Agents all running starting idle failed stopped AGENT STATE BEAD wage-helm STOPPED — side-manor RUNNING — live-beam STOPPED — aged-lynx STOPPED — side-vale RUNNING — odd-maze RUNNING — icy-pier RUNNING — opal-coral STOPP"
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n    const deadline = Date.now() + 30000;\n    while (Date.now() < deadline) {\n      const rows = document.querySelectorAll("#view-workspace .ws-agent-table tbody tr").length;\n      const status = document.querySelector("#connection-status")?.textContent?.trim();\n      if (rows > 0 && status && status !== "Connecting") break;\n      await sleep(500);\n    }\n    const wrap = document.querySelector("#view-workspace .ws-pane-scroll--compact");\n    const table = document.querySelector("#view-workspace .ws-agent-table");\n    const row = table?.querySelector("tbody tr");\n    const cells = row ? Array.from(row.children).map((td) => ({ text: td.textContent.trim().replace(/\\s+/g, " "), display: getComputedStyle(td).display, w: Math.round(td.getBoundingClientRect().width) })) : [];\n    const headers = table ? Array.from(table.querySelectorAll("th")).map((th) => ({ text: th.textContent.trim(), display: getComputedStyle(th).display, w: Math.round(th.getBoundingClientRect().width) })) : [];\n    const wr = wrap?.getBoundingClientRect();\n    const tr = table?.getBoundingClientRect();\n    return {\n      viewport: { w: innerWidth, h: innerHeight },\n      connection: document.querySelector("#connection-status")?.textContent?.trim(),\n      rowCount: table?.querySelectorAll("tbody tr").length || 0,\n      wrap: wrap ? { w: Math.round(wr.width), sw: wrap.scrollWidth, overflowX: getComputedStyle(wrap).overflowX } : null,\n      table: table ? { w: Math.round(tr.width), sw: table.scrollWidth, className: table.className } : null,\n      headers,\n      cells,\n      horizontalOverflow: !!wrap && wrap.scrollWidth > Math.round(wr.width) + 4,\n      text: document.querySelector("#view-workspace")?.innerText.trim().replace(/\\s+/g, " ").slice(0, 500)\n    };\n  }');
+```
++ npx --yes @playwright/cli -s=caco-web-duty-0061-workspace-focus screenshot
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T11-20-17-181Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T11-20-17-181Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T11-20-17-181Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
++ npx --yes @playwright/cli -s=caco-web-duty-0061-workspace-focus close
+Browser 'caco-web-duty-0061-workspace-focus' closed
+

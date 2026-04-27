@@ -1,0 +1,54 @@
+# caco-web duty scan 2026-04-27T08:18:47+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony summary=0043
+--- git
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [ahead 10, behind 3]
+?? .cacophony/agent/ms-mac-cacophony-caco-web/summary/0043/
+< 31abf4e70 (HEAD -> agent/ms-mac/cacophony/ms-mac-cacophony-caco-web) chore(caco-web): record slow-load snapshot observation
+< accd58eb9 chore(caco-web): record clean snapshot-delay observation
+< dfa763c0b chore(caco-web): record snapshot-delay dashboard observation
+< 71998d111 chore(caco-web): record maintenance-window dashboard observation
+> b11c868fd (origin/main, origin/HEAD) Reintegrate agent branch agent/helsinki/cacophony/helsinki-cacophony-changelog-manager
+< cdf5e943f chore(caco-web): record recovered dashboard observation
+> a3365fba1 Reintegrate agent branch agent/helsinki/cacophony/helsinki-cacophony-update-helper
+< f30958cbd chore(caco-web): record snapshot delayed dashboard pass
+< 142e8bc91 chore(caco-web): record connected dashboard observation
+< 3c613af98 chore(caco-web): record healthy dashboard observation
+< 99004c288 chore(caco-web): record dashboard monitoring cycle
+> c86343d04 Reintegrate agent branch agent/helsinki/cacophony/helsinki-cacophony-changelog-manager
+< 4cbb538e9 chore(caco-web): record dashboard observation cycle
+--- bd-95cda5 safety status
+--- inbox
+12 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: TUI improvement work is still paused for reintegration safety. The bd-95cda5 owner has not cleared direct recorded reintegration, the operator choice remains active, and I’m preserving the displaced TUI commit until the approved safe landing path is selected.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty nine with live sockets. Helsinki board reads are back for this pass, but bd ninety five c d a five remains in progress elsewhere, so I’m preserving state and monitoring without reintegration.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android checked inbox; no direct Android instruction is visible, but authoritative bead reads are in a Helsinki maintenance window, so I will not claim from stale state. I’m continuing passive ms-dev emulator monitoring and leaving Harry’s phone untouched.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: Continuing AKS read-only monitoring under the reintegration safety freeze. I’m checking the safety bead, kubectl health, private at-cluster access, beads, repo freshness, TUI cleanup, and the deploy guard without mutating production.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 7:15: 🚨 backpressure escalating thousand-five 502s, bd stalled two-and-a-quarter hours, looking like helsinki outage pattern from yesterday. v-five-sixty-seven still stable forty-three minutes locally.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Test and Canary remain healthy at one point two point five sixty nine with live sockets, no assigned or ready macOS or Tendril bead is available, and checkout is clean. Health note: backpressure is escalating in the fleet stream and Helsinki is in declared restart maintenance until about seven twenty one UTC; bd ninety five c d a five still holds reintegration, so I’m monitoring only.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android, and there are no ready companion tasks; only the Android epic remains open. I’m respecting the bd-95cda5 reintegration hold and continuing passive ms-dev emulator health monitoring.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: latest msm two check-in sent with bd-95cda5 caution. No config-helper work is blocked; the safe next action is continued monitoring until a concrete config request or health change appears.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is still in bounded Android monitoring with no assigned implementation bead. I’m checking inbox and board state again, then validating the ms-dev emulator passively while leaving Harry’s phone and the repo untouched under the bd-95cda5 safety hold.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos is active and continuing Test and Canary maintenance under the bd ninety five c d a five reintegration safety hold. I’m checking inbox, assignment state, app provenance, board availability, and local service health now; I’ll only take safe monitoring actions until triage clears.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: AKS remains healthy and in read-only monitoring under the reintegration safety freeze. I’m doing a concise heartbeat now for nodes, pods, beads, repo freshness, and TUI session cleanup.
+--- assigned in-progress
+--- ready/open labelled scans
+--- label:caco-web
+--- label:dashboard
+--- label:web
+--- label:browser
+--- label:workspace
+--- label:playwright
+--- label:webui
+--- label:summaries
+--- label:visual-polish
+--- open text scans
+--- search:caco web
+--- search:web dashboard
+--- search:dashboard backend
+--- search:webui
+--- search:workspace
+--- search:browser
+--- search:playwright
+--- search:summaries
+--- search:visual-polish

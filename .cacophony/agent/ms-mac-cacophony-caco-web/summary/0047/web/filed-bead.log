@@ -1,0 +1,4 @@
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads)]
+BEAD_ID=
+queued: beads primary unreachable — operation queued for retry (outbox entry outbox-019dcdf8-5ae4-7913-aa83-c270f5d0a76e)
+BEAD_ID=

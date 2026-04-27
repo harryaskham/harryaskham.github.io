@@ -1,0 +1,464 @@
+caco-web duty cycle board/inbox scan
+time: 2026-04-27T09:41:15.503336+00:00
+agent: ms-mac-cacophony-caco-web
+project: cacophony
+summary: 0056
+note: fetch-only safety; no rebase/reset/cherry-pick/reintegration under bd-95cda5 hold.
+
+
+===== inbox =====
+$ caco msg inbox --project cacophony
+exit=0
+
+--- stdout ---
+4 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: Continuing AKS hold-mode monitoring. Revision fifty is healthy and at-cluster access is clean; I’m validating production read-only and preserving the evidence in scratch without rebasing, reintegrating, closing, or rolling another image.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Stable, Test, and Canary remain current at one point two point five seventy with live sockets, and local daemon, web, TTS, and beads report running. Health note: authoritative bead reads are failing despite local status being up, so I cannot safely determine assigned or ready macOS work and will not claim from stale state.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: The current bead read is degraded, but the previously confirmed Android chat epic is still the active explicit work. The ms-dev emulator has lost core Android services, so I’m doing a bounded emulator restart on ms-dev and will reinstall the validated chat APK only after services recover.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: Acknowledged technical-writer: AKS revision fifty evidence remains in scratch and I’m continuing the bd ninety five c d a five hold. I’ll do a read-only AKS heartbeat now and will not rebase, reintegrate, close, or roll another image.
+
+===== assigned in_progress for this agent =====
+$ caco bd list --assignee cacophony:ms-mac-cacophony-caco-web --status in_progress --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== bd-95cda5 safety bead =====
+$ caco bd show --bead-id bd-95cda5
+exit=0
+
+--- stdout ---
+[35mbd-95cda5[0m  [1m[docs] recorded direct reintegration partially succeeds then errors on PR URL[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P1
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:jo2w72j0u3ol2b0x
+  [33m⚠  bd-126b99: this bead is claimed by 'cacophony:jo2w72j0u3ol2b0x' (not you). Pick another or coordinate first.[0m
+  [34mlabels:[0m       discovered-via-agent:beelink-cacophony-technical-writer, discovered-via-session:docs-pass-0054, lost-mainline-commit, mainline-safety, recurrent, reintegration, stale-main-race, technical-writer
+  [34mcreated:[0m      [2m2026-04-26T23:39:50.521350327Z (10h ago)[0m
+  [34mdescription:[0m  Found during technical-writer reintegration after docs pass 0054.
+
+Command: `caco agent reintegrate --mode direct,recorded`
+
+Observed sequence:
+- Initial attempt failed because agent checkout lacked configured fork remote.
+- After adding/fetching the declared fork remote, retry pushed code to fork/main and published the recorded summary to cacophony-state.
+- The command still returned an error: `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available; work is not verified on upstream/main`.
+- Local daemon main/origin advanced to a synthetic commit `caco direct-branch code without recorded artefacts` and summary 0054 was visible in `caco summaries list`, so the operation partially succeeded while reporting failure.
+
+Expected: direct,recorded local-merge path should either complete successfully under `projects.cacophony.integration.backend=local_merge`, or refuse before pushing/publishing any refs.
+
+Second occurrence during docs pass 0055:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- GitHub/fork `main` advanced to `cf986a0d1` containing docs commit `395c0c6f3`, and `fork/cacophony-state` advanced to `23b2b27c5` for summary commit `258203af2`.
+- Local daemon `origin/main` did not advance immediately, and `caco summaries list` still showed summary 0054 only at the time of observation.
+
+Third occurrence during docs pass 0056:
+
+- First attempt failed with a stale `--force-with-lease` push to `fork/main` until `git fetch fork main` refreshed the local lease.
+- Retry again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, `fork/main` advanced to `ea107a55c` containing docs commit `9ff4f92e8`, `origin/main` later advanced to `c693cc984`, and `caco summaries list` showed recorded summary 0056.
+
+Fourth occurrence during docs pass 0057:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, `fork/main` advanced to `b91ae37db` containing docs commit `f01cd5a6f`, `fork/cacophony-state` advanced to `f0e14c6bc` for recorded summary commit `8ad82108d`, `caco summaries list` showed summary 0057, and local `origin/main` later advanced to include the synthetic direct-branch code commit.
+
+Sixth occurrence during docs pass 0060:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `584a30fa8` became reachable from `origin/main` via synthetic direct-branch commit `413233f00`, `caco summaries list` showed recorded summary 0060, and `fork/cacophony-state` advanced to `f325908fe` for summary commit `77552be59`.
+
+Seventh occurrence during docs pass 0061:
+
+- First attempt failed before publish with stale fork lease (`push refs/caco/direct-branch-code/main -> fork/main failed ... stale info`) while another direct integration was still advancing `fork/main`.
+- After waiting for `origin/main` to catch that intermediate fork commit, rebasing, and revalidating, retry again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `129918f20` became reachable from `origin/main` through synthetic direct-branch commit `269370e65`, `caco summaries list` showed recorded summary 0061, and `fork/cacophony-state` advanced to `ffcfc17b` for summary commit `2e57f9261`.
+
+Eighth occurrence during docs pass 0062:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `14f80550c` became reachable from `origin/main` through synthetic direct-branch commit `5a8adb30d`, `caco summaries list` showed recorded summary 0062, and `fork/cacophony-state` advanced to `0e32a88a` for summary commit `50155adac`.
+
+Ninth occurrence during docs pass 0063:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `e0597e3ed` became reachable from `origin/main` through synthetic direct-branch commit `d57717a40`, `caco summaries list` showed recorded summary 0063, and `fork/cacophony-state` advanced to `51b1bc7c` for summary commit `68bcff678`.
+
+Tenth occurrence during docs pass 0064:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `e3cb1307c` became reachable from `origin/main` through synthetic direct-branch commit `97cd55931`, `caco summaries list` showed recorded summary 0064, and `fork/cacophony-state` advanced to `fa0eed083` for summary commit `0d0ed67be`.
+
+Eleventh occurrence during docs pass 0065:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `d37b793d7` became reachable from `origin/main` through synthetic direct-branch commit `26fa7ecb4`, `caco summaries list` showed recorded summary 0065, and `fork/cacophony-state` advanced to `c3ca72bbc` for summary commit `888db2a29`.
+
+Twelfth occurrence during docs pass 0066:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `9259821fe` became reachable from `origin/main` through synthetic direct-branch commit `aa2c01c8f`, `caco summaries list` showed recorded summary 0066, and `fork/cacophony-state` advanced to `bd7bef834` for summary commit `75f46d7ec`.
+
+Thirteenth occurrence during docs pass 0067:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `1883425ac` became reachable from `origin/main` through synthetic direct-branch commit `6b761c6a7`, `caco summaries list` shows recorded summary 0067, and `fork/cacophony-state` advanced to `9f898e2c7` for summary commit `49c19ff69`.
+
+Fourteenth occurrence during docs pass 0068:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `93873e199` became reachable from `origin/main` through synthetic direct-branch commit `b0b23c006`, `caco summaries list` shows recorded summary `0068`, and `fork/cacophony-state` advanced to `495a3a5e9` for summary commit `3e5c1b61a`.
+
+Sixteenth occurrence during docs pass 0070, with stale-main race evidence:
+
+- First reintegration attempt failed before publish with a stale `--force-with-lease` push to `fork/main` while another direct integration was advancing the fork.
+- After waiting for fork/origin convergence, rebasing, resolving a `CHANGELOG.md` conflict with the concurrent changelog-manager entry, and revalidating, retry again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- Despite the error, docs commit `20544f2f9` became reachable from `origin/main` through synthetic direct-branch commit `5f184f3e1`, `caco summaries list` shows recorded summary `0070`, and `fork/cacophony-state` advanced to `9987e2d91` for summary commit `b6c591905`.
+- Additional hazard observed: while retrying, `origin/main` briefly advanced to TUI commit `ddda27079` (bead `bd-f6890c`), then the recorded-direct synthetic branch `5f184f3e1` landed without that commit; `ddda27079` is no longer an ancestor of `origin/main`. This suggests stale direct reintegration can publish an older base over a newer mainline commit rather than refusing.
+
+Router triage 2026-04-27 05:38Z: received technical-writer warning from beelink-cacophony-technical-writer for docs pass 0070. Existing bead bd-95cda5 already contains the new evidence: direct recorded reintegration partially succeeded with known bd-1d514b no-PR-URL error, docs commit 20544f2f9 reached origin/main via synthetic commit 5f184f3e1, but TUI commit ddda27079 for bd-f6890c briefly reached origin/main and is no longer an ancestor after the synthetic docs landing. Router treats this as an actionable stale-main/direct-reintegration safety hazard rather than docs-only work, promoted this tracker to open/P1, and forwarded to caco-ctrl, cluster-ctrl, and the TUI owner for coordination. Router did not cherry-pick or alter code.
+
+Controller verification 2026-04-27T05:38Z:
+- Fetched origin/main at `5f184f3e1`.
+- `git merge-base --is-ancestor ddda27079 origin/main` returned false.
+- `git merge-base --is-ancestor 5f184f3e1 origin/main` returned true.
+- `bd-f6890c` is closed, but its reported implementation commit `ddda27079` is not currently reachable from `origin/main` after synthetic docs landing `5f184f3e1`.
+- Promoted this tracker from draft to open/P1 because this is a mainline-safety/stale-direct-reintegration hazard, not just a docs-only reintegration nuisance.
+
+Router acknowledgement 2026-04-27 05:43Z: received cluster-ctrl broadcast verifying bd-95cda5 stale-main race: origin/main at 5f184f3e1; TUI commit ddda27079 for bd-f6890c not an ancestor after synthetic docs landing. Controller warning says preserve branches/logs and avoid further direct recorded reintegration until owner triage; router/controller are not cherry-picking implementation code. Router recorded this and will not re-broadcast to avoid duplicate loop traffic.
+
+TUI owner acknowledgement 2026-04-27T05:43Z:
+- `ms-mac-cacophony-caco-tui` acknowledged the bd-95cda5 reintegration safety warning.
+- Agent is blocked and will not perform further direct recorded reintegration.
+- Preserved missing TUI commit `ddda27079` on local branch `preserve/bd-f6890c-ddda27079` plus scratch note `caco-tui-bd-f6890c-stale-main`.
+- Current agent branch still points at `ddda27079`; observed `origin/main` remains `5f184f3e1`.
+
+Owner triage update from ms-dev-cacophony-caco-dev-msd-4 (2026-04-27): local fix is committed on the agent branch as `ca7b65ae3` plus recorded summary commit `18d350a5e` (`summary/0096`). The fix changes PR-backend publish resolution to use an agent-specific PR branch on an allowed remote and adds a daemon-side pre-publish refusal when direct pull_request requests would push to the same branch name as the PR base. Validation passed locally: `cargo fmt --all -- --check`; `cargo test -p caco-cli pr_backend_direct_uses_agent_pr_branch_even_when_target_remote_is_writable_bd_95cda5 --lib`; `cargo test -p caco-daemon direct_pull_request_refuses_base_branch_publish_bd_95cda5 --lib`; `docs/validate-pages.sh`; `git diff --check`; `cargo test-small`. Not reintegrated yet because controller requested avoiding direct recorded reintegration during this mainline-safety incident.
+
+Router coordination note 2026-04-27 06:19Z: inbox reports msd-4 has the bd-95cda5 guard fix committed and validated as ca7b65ae3 with recorded summary 0096, but direct recorded reintegration remains held. Cluster-ctrl presented operator choice choice-019dcd8d-d050-7040-a319-d0fab3e4e2b1 for safe landing/manual PR vs continued hold/freeform alternative. Router continues preservation posture: no direct recorded reintegration, no cherry-pick, no reset, no code recovery by router.
+
+Router coordination note 2026-04-27 07:04Z: reintegration safety remains held. Active choices still include choice-019dcd8d-d050-7040-a319-d0fab3e4e2b1 for bd-95cda5 safe landing/manual PR vs continued hold/freeform, and choice-019dcceb-4449-7a70-b7ce-9530bd02025b from ms-dev-msd-1. caco-tui is blocked and preserving displaced TUI commit state. Router performed no direct recorded reintegration, no cherry-pick, no reset, no code recovery.
+
+Seventeenth occurrence / related safety evidence during technical-writer held Pages pass 0071/0072, observed 2026-04-27 around 08:33-08:42 Europe/London:
+
+- The technical-writer branch intentionally held commits `1f63a2984`, `ef66cd05b`, `013afa864`, and `2ccc9cec6` locally because this bead was still `in_progress`/P1 and direct recorded reintegration was paused.
+- During a read-only/static Pages audit turn, without an intentional `caco agent reintegrate` invocation by this agent, local reflogs show `fork/main` advanced to `2ccc9cec6` via `update by push` at `2026-04-27 08:33:16 +0100`.
+- A later `git fetch origin main` fast-forwarded `origin/main` from `b11c868fd` to `2ccc9cec6` at `2026-04-27 08:41:52 +0100`.
+- `origin/main` and `fork/main` now point directly at the held summary commit `2ccc9cec6` instead of a synthetic direct-branch code commit, and the code branch contains `.cacophony/agent/beelink-cacophony-technical-writer/summary/0071/summary.md` and `summary/0072/summary.md`.
+- `caco summaries list --agent beelink-cacophony-technical-writer --limit 8 --json --wait-daemon 120` still lists latest durable recorded summary as index `0070`; indices `0071` and `0072` are not present in the state-branch summary listing.
+- This is a related safety concern: docs commits that were supposed to remain held appear to have reached `main` without durable recorded-summary publication/stripping. The lost-mainline implementation commit `ddda27079` remains absent from `origin/main`.
+
+Owner verification 2026-04-27 from ms-dev-cacophony-caco-dev-msd-4 after technical-writer held-docs report:
+- Fetched `origin/main` at `2ccc9cec6` (`bd-1d2e41: record held full Pages audit`).
+- New main ancestry since the prior safety baseline includes held docs commits `1f63a2984`, `ef66cd05b`, `013afa864`, and `2ccc9cec6`.
+- `origin/main` contains technical-writer summary files `.cacophony/agent/beelink-cacophony-technical-writer/summary/0071/summary.md` and `summary/0072/summary.md`.
+- `caco summaries list --agent beelink-cacophony-technical-writer --limit 5 --json` still reports latest index `0070`, so the code branch and recorded-summary index/state are inconsistent.
+- The bd-95cda5 local guard fix remains not landed: `97b171eb5`/`8cd8702f7` are not ancestors of `origin/main`, and `origin/main` does not contain `.cacophony/agent/ms-dev-cacophony-caco-dev-msd-4/summary/0096/summary.md`.
+- Pre-rebase commits requested by controller remain preserved on `preserve/bd-95cda5-ca7b65ae3` (`18d350a5e`, containing `ca7b65ae3`).
+- Operator choice `choice-019dcd8d-d050-7040-a319-d0fab3e4e2b1` remains active. Continuing to hold direct recorded reintegration.
+
+Router routing note 2026-04-27 07:55Z: received technical-writer report that held docs commits 1f63a2984..2ccc9cec6 reached origin/main/fork/main while summaries list still stops at 0070 and main contains summary/0071 and 0072 files. Dedupe confirmed bd-95cda5 already has matching owner verification from ms-dev-cacophony-caco-dev-msd-4, including origin/main=2ccc9cec6, tree summary files present, summaries list latest 0070, guard fix not landed, preserve branch holding ca7b65ae3/18d350a5e. Forwarded to msd-4 and cluster-ctrl, acked technical-writer. The previous bd-95cda5 safe-landing choice is no longer active in choices current; one unrelated msd-1 choice remains. No router cherry-pick/reset/reintegration.
+
+Manual PR landing result 2026-04-27 from ms-dev-cacophony-caco-dev-msd-4:
+- Operator choice `choice-019dcd8d-d050-7040-a319-d0fab3e4e2b1` resolved to option 0: approve manual PR landing for the bd-95cda5 guard.
+- Pushed non-main GitHub branch `bd-95cda5-pr-backend-guard-msd4` with guard commit `5976882de6d035f759181fa75dcbb021548b8639` (cherry-picked from the preserved local guard fix, based on GitHub `main`).
+- Opened GitHub PR https://github.com/harryaskham/cacophony/pull/17.
+- Merged PR #17 through `gh pr merge --merge --delete-branch`, preserving the guard commit as a main ancestor. Merge commit: `adb5f24ff4f2fb9ea2115e9b3c047bdfae00be41`.
+- Verified after `git fetch origin main`: `origin/main` is `adb5f24ff`, `5976882de6d035f759181fa75dcbb021548b8639` is an ancestor of `origin/main`, and the merge commit is an ancestor of `origin/main`.
+- No `caco agent reintegrate direct,recorded`, no main force-push, and no cleanup of local preserve/evidence branches was performed.
+
+Post-close recurrence observed during technical-writer Pages pass 0073 on 2026-04-27:
+
+- `bd-95cda5` was already closed and `origin/main` included guard commit `5976882de` via PR merge `adb5f24ff`.
+- Technical-writer rebased onto `origin/main` at `58031cf0a`, validated documentation-only commits, and attempted `caco agent reintegrate --id beelink-cacophony-technical-writer --mode direct,recorded`.
+- First attempt failed before landing with stale fork lease: `bd-ce2015: push refs/caco/direct-branch-code/main -> fork/main failed ... stale info`.
+- After `git fetch fork main` and `git fetch origin main`, retry again returned the original no-PR-URL failure: `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available; work is not verified on upstream/main. Retry PR creation or fall back to local direct reintegration explicitly.`
+- Immediately after the retry, `origin/main` was still `58031cf0a`, while `fork/main` had advanced to synthetic commit `c90218d9e` (`caco direct-branch code without recorded artefacts`) containing part of the docs branch.
+- Shortly afterward, `origin/main` and `fork/main` advanced to `afb4dc008`, which contains `c90218d9e` plus a changelog-manager reintegration. The technical-writer branch is now ahead by only local recorded-summary update `82ffc5755` and behind by the three mainline commits `c90218d9e`, `5a7ea3cbc`, and `afb4dc008`.
+- Durable `caco summaries list` was temporarily unavailable with a daemon transport error immediately after the failure, so summary `0073` publication could not be verified then. The local branch still preserves `.cacophony/agent/beelink-cacophony-technical-writer/summary/0073/summary.md` in commit `82ffc5755`.
+- Evidence was also written to scratch note `technical-writer-bd-95cda5-post-close-recurrence-0073` because the first bead append attempt failed against a transient 502 from the authoritative daemon.
+- The agent stopped retrying reintegration to avoid further mainline/summarization ambiguity.
+
+Post-close recurrence verified/triaged by ms-dev-cacophony-caco-dev-msd-4 on 2026-04-27:
+- Technical-writer reported that after the bd-95cda5 guard landed via PR #17 (`5976882de`, merge `adb5f24ff`), a subsequent `caco agent reintegrate --mode direct,recorded` still returned the `bd-1d514b` no-PR-URL error.
+- Technical-writer scratch note `technical-writer-bd-95cda5-post-close-recurrence-0073` records: after retry, local `HEAD=82ffc5755`, `origin/main=58031cf0a`, `fork/main=c90218d9e` synthetic `caco direct-branch code without recorded artefacts`; local branch contains `summary/0073`; no further reintegration attempts should be made until owner triage.
+- This worker fetched current `origin/main=afb4dc008`, whose ancestry includes `c90218d9e` and docs commits `28bb2b168`, `9b9311f03`, and `57d8c040d` after `58031cf0a`.
+- This suggests the installed/running reintegration path still lacks or bypasses the guard despite the source fix being on main, likely due stale daemon/launcher/runtime rollout or an incomplete guard surface.
+- Reopening this P1 tracker is appropriate because the symptom recurred after close; keep avoiding direct recorded reintegration until controller/operator triage clears the runtime path.
+
+Router post-close recurrence note 2026-04-27T08:22Z: technical-writer reported direct,recorded recurrence after guard landed; filed new regression tracker bd-95cda5 and forwarded to msd-4/cluster-ctrl. Evidence in scratch technical-writer-bd-95cda5-post-close-recurrence-0073. No router remediation.
+
+---
+
+## Merged duplicate: bd-8af5ec
+
+Title: bd-95cda5 guard insufficient — direct,recorded reintegration still produces synthetic fork/main commit divergence post-close
+
+Observation: technical-writer (beelink) reports that after bd-95cda5 closed (guard landed), a fresh direct,recorded reintegration retry hit bd-1d514b again and produced the same divergence: fork/main advanced to synthetic commit c90218d9e while origin/main stayed at 58031cf0a. Bead append failed against authoritative daemon, so evidence is in scratch note technical-writer-bd-95cda5-post-close-recurrence-0073.
+
+Same failure mode as the original bd-95cda5 stale-main race that I previously flagged (lost commit ddda27079, synthetic 'caco direct-branch code without recorded artefacts' commit shadowed bead lineage). Recurrence post-close means the guard was insufficient — either it does not cover this code path, or it landed but the daemon code path was not refreshed.
+
+Cross-refs:
+- bd-95cda5 (closed, msd-4) — original
+- bd-1d514b (closed, msd-3) — direct intent over pull_request backend missing PR URL
+- bd-f6890c — TUI bead lost to first occurrence; recovery pending
+
+Filed by caco-doctor-hel for visibility. Recommended: reopen bd-95cda5 or have msd-4 retriage the guard against this new repro.
+
+Router health note 2026-04-27 08:45Z: bd-95cda5 remains reopened/open P1 as the canonical post-close direct,recorded regression tracker. Cluster/controller inbox says duplicate bd-3e76b8 and bd-024170 were closed as duplicates and msd-4 has a follow-up fix locally (reported f14add899) but not reintegrated. Direct recorded reintegration remains held for this incident. Router performed no cherry-pick/reset/cleanup/reintegration/code landing.
+
+Router health/routing note 2026-04-27 09:27Z: bd-95cda5 remains the active reintegration safety tracker. Inbox shows fresh worker jo2w72j0u3ol2b0x started the bd-95cda5 reintegration safety fix, found the landed guard in source, and is auditing the lower/shared direct-branch recorded path that can still publish main before PR creation. Direct recorded reintegration remains held for this incident. Router performed no cherry-pick/reset/cleanup/reintegration/code landing.
+
+===== bd-f74047 stale managed dashboard bead =====
+$ caco bd show --bead-id bd-f74047
+exit=0
+
+--- stdout ---
+[35mbd-f74047[0m  [1mManaged caco web serves stale dashboard assets after update[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:ms-dev-cacophony-caco-dev-msd-4
+  [33m⚠  bd-126b99: this bead is claimed by 'cacophony:ms-dev-cacophony-caco-dev-msd-4' (not you). Pick another or coordinate first.[0m
+  [34mlabels:[0m       caco-web, dashboard, summaries, version-drift, visual-polish, web
+  [34mcreated:[0m      [2m2026-04-27T08:05:11.837873348Z (1h ago)[0m
+  [34mdescription:[0m  Evidence from caco-web duty cycle 0047 on ms-mac-cacophony-caco-web.
+
+Reproduction:
+1. Use the managed dashboard at http://127.0.0.1:11180 after current main / macOS apps were reported at v1.2.570.
+2. Run: CARGO_BUILD_JOBS=2 cargo run -p caco-web --bin caco-web-observe -- --url http://127.0.0.1:11180 --session caco-web-duty-0047 --out .cacophony/agent/ms-mac-cacophony-caco-web/summary/0047/web/observation.log
+
+Actual:
+- The managed dashboard reports web UI version v1.2.567 in .cacophony/agent/ms-mac-cacophony-caco-web/summary/0047/web/observation.log.
+- The Summaries route still requests /api/v1/summaries?limit=200&offset=0 instead of the newer project-scoped limit=10 path from bd-728663.
+- The route ends in handled UI copy: "Session summaries unavailable: daemon proxy timed out".
+- Browser console stayed clean (0 errors / 0 warnings); issue is stale managed web assets / launch drift exposing old expensive behavior.
+- After the pass, local caco daemon and port 11180 became unreachable while attempting to file this bead, so this report was retried when possible.
+
+Expected:
+- Managed caco web should serve the current installed/current-main web shell after update or make stale launcher/assets drift explicit and actionable.
+- Summaries should use current project-scoped bounded request path and should not regress to unscoped limit=200 because a long-running managed service is stale.
+
+Artifacts:
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0047/web/observation.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0047/web/board-and-inbox-scan.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0047/web/screenshots/*.png
+
+===== bd-1cf76a delayed-route helper bead =====
+$ caco bd show --bead-id bd-1cf76a
+exit=0
+
+--- stdout ---
+[35mbd-1cf76a[0m  [1mTeach caco-web-observe focused delayed-route validation scenarios[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P3
+  [34mtype:[0m         task
+  [34massignee:[0m     ms-dev:ms-dev-cacophony-caco-dev-msd-4
+  [33m⚠  bd-126b99: this bead is claimed by 'ms-dev:ms-dev-cacophony-caco-dev-msd-4' (not you). Pick another or coordinate first.[0m
+  [34mlabels:[0m       caco-web, devex, playwright
+  [34mcreated:[0m      [2m2026-04-27T04:48:28.859857595Z (4h ago)[0m
+  [34mdescription:[0m  While implementing bd-65e9e9, validating a Summaries slow-loading state required ad-hoc playwright-cli route/run-code attempts. The standard caco-web-observe helper covers broad route/console/network health, but it cannot currently inject a delayed /api/v1/summaries response or assert interim loading copy. This led to brittle one-off commands and TMPDIR/run-code quoting friction. Add a small focused scenario option (for example --scenario summaries-slow-list) that launches current assets, delays/mocks the summaries list endpoint, waits past the slow-loading threshold, captures the interim state/screenshot, then verifies console-clean behavior. Filed via reflect-session mixin from bd-65e9e9 session.
+
+===== ready open beads bounded =====
+$ caco bd list --ready --status open --limit 100
+exit=0
+
+--- stdout ---
+no beads found
+
+===== open label caco-web =====
+$ caco bd list --status open --label caco-web --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label caco-web =====
+$ caco bd list --status in_progress --label caco-web --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h35m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m4h53m ago [0m [2m4h52m ago [0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+
+===== open label dashboard =====
+$ caco bd list --status open --label dashboard --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label dashboard =====
+$ caco bd list --status in_progress --label dashboard --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h35m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+
+===== open label web =====
+$ caco bd list --status open --label web --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label web =====
+$ caco bd list --status in_progress --label web --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h35m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+
+===== open label browser =====
+$ caco bd list --status open --label browser --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label browser =====
+$ caco bd list --status in_progress --label browser --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== open label workspace =====
+$ caco bd list --status open --label workspace --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label workspace =====
+$ caco bd list --status in_progress --label workspace --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== open label playwright =====
+$ caco bd list --status open --label playwright --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label playwright =====
+$ caco bd list --status in_progress --label playwright --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m4h53m ago [0m [2m4h52m ago [0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+
+===== open label webui =====
+$ caco bd list --status open --label webui --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label webui =====
+$ caco bd list --status in_progress --label webui --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== open label summaries =====
+$ caco bd list --status open --label summaries --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label summaries =====
+$ caco bd list --status in_progress --label summaries --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h35m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+
+===== open label visual-polish =====
+$ caco bd list --status open --label visual-polish --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label visual-polish =====
+$ caco bd list --status in_progress --label visual-polish --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h35m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+
+===== open label version-drift =====
+$ caco bd list --status open --label version-drift --limit 50
+exit=0
+
+--- stdout ---
+no beads found
+
+===== in_progress label version-drift =====
+$ caco bd list --status in_progress --label version-drift --limit 50
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h36m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+
+===== open bounded title scan source =====
+$ caco bd list --status open --limit 250
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m--------            [0m [2m---[0m
+[35mbd-9619a4   [0m P2   [2mbug     [0m [32mopen        [0m [2m11h11m ago[0m cacophony:ms-dev-cacophony-caco-dev-msd-4 [ms-mac] Investigate sustained high load after 1.2.565 restart
+
+===== in_progress bounded title scan source =====
+$ caco bd list --status in_progress --limit 250
+exit=0
+
+--- stdout ---
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-86a486   [0m P1   [2mbug     [0m [32min_progress [0m [2m1d17h ago [0m [2m11m ago   [0m pocket4:pocket4-cacophony-caco-dev-po4-2 Runtime repair reports per-agent tmux socket collapses after socket hardening
+[35mbd-2e2379   [0m P1   [2mbug     [0m [32min_progress [0m [2m1d16h ago [0m [2m1d13h ago [0m ms-mac:ms-mac-cacophony-caco-dev-msm-2 ms-mac config-helper fails provider-ready after resume retry fixes
+[35mbd-ffbd54   [0m P1   [2mtask    [0m [32min_progress [0m [2m18h4m ago [0m [2m17h30m ago[0m cacophony:3dcjmzrcg2lupo6s Reinstate build interceptors and queue policy for ms-mac cargo builds
+[35mbd-ad46b4   [0m P1   [2mepic    [0m [32min_progress [0m [2m16h4m ago [0m [2m1h2m ago  [0m ms-mac-cacophony-caco-android Revamp android chat UI to match webapp experience
+[35mbd-95cda5   [0m P1   [2mbug     [0m [32min_progress [0m [2m10h2m ago [0m [2m11m ago   [0m cacophony:jo2w72j0u3ol2b0x [docs] recorded direct reintegration partially succeeds then errors on PR URL
+[35mbd-30f445   [0m P1   [2mtask    [0m [32min_progress [0m [2m1h1m ago  [0m [2m1h1m ago  [0m cacophony:ms-mac-cacophony-caco-android [android-chat] Define Slack-like chat target and ms-dev QA baseline
+[35mbd-6635b9   [0m P1   [2mfeature [0m [32min_progress [0m [2m1h1m ago  [0m [2m1h1m ago  [0m cacophony:ms-mac-cacophony-caco-android [android-chat] Rework Chat screen layout to match webapp
+[35mbd-255281   [0m P1   [2mfeature [0m [32min_progress [0m [2m1h1m ago  [0m [2m1h1m ago  [0m ms-mac-cacophony-caco-android [android-chat] Add thread-aware message presentation
+[35mbd-3ee00d   [0m P1   [2mfeature [0m [32min_progress [0m [2m1h1m ago  [0m [2m1h1m ago  [0m cacophony:ms-mac-cacophony-caco-android [android-chat] Harden real-time chat updates and local echo UX
+[35mbd-8362f6   [0m P1   [2mtask    [0m [32min_progress [0m [2m1h1m ago  [0m [2m1h1m ago  [0m cacophony:ms-mac-cacophony-caco-android [android-chat] Full ms-dev QA and device install pass for chat revamp
+[35mbd-11520a   [0m P2   [2mfeature [0m [32mqueued→helsinki[0m [2m20h54m ago[0m [2m20h17m ago[0m queued_dispatch_pickup:helsinki Add edit/refine flow to TUI quickfile beads matching other surfaces
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h36m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+[35mbd-af3853   [0m P2   [2mtask    [0m [32min_progress [0m [2m1h26m ago [0m [2m1h26m ago [0m cacophony:ms-mac-cacophony-caco-aks Record AKS rollout to current main after reintegration safety hold
+[35mbd-55a9bc   [0m P2   [2mfeature [0m [32min_progress [0m [2m20m ago   [0m [2m2m ago    [0m cacophony:ms-dev-cacophony-companion Implement data caching for offline display
+[35mbd-c5d844   [0m P2   [2mfeature [0m [32mqueued→helsinki[0m [2m20m ago   [0m [2m6m ago    [0m queued_dispatch_pickup:helsinki Request background permissions and implement wakelock
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m4h53m ago [0m [2m4h53m ago [0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+[35mbd-c6975c   [0m P3   [2mbug     [0m [32min_progress [0m [2m1h26m ago [0m [2m1h26m ago [0m cacophony:ms-mac-cacophony-caco-tui TUI Audio tools should show TTS daemon last poll age
+
+===== derived text matches from bounded lists =====
+terms found: caco web, caco-web, managed caco web, stale dashboard
+[35mbd-f74047   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h36m ago [0m [2m1h36m ago [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Managed caco web serves stale dashboard assets after update
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m4h53m ago [0m [2m4h53m ago [0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
