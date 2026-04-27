@@ -1,0 +1,7 @@
+# bd-1056da final validation after rebase
+
+- Rebased onto current `origin/main` after main advanced by three commits.
+- Passed: `CARGO_BUILD_JOBS=2 cargo test -p caco-web notifications_clear_all_persists_acknowledgements_bd_1056da --lib`.
+- Passed: `CARGO_BUILD_JOBS=2 cargo test -p caco-web notifications_nav_accessible_name_includes_unread_count_bd_4273ef --lib`.
+- Passed: `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`.
+- Working tree after validation: ahead of `origin/main` by one commit, no code changes pending before recording this log.

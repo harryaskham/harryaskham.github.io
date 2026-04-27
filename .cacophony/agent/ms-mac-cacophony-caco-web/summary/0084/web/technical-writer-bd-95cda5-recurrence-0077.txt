@@ -1,0 +1,24 @@
+[1;36mcaco scratch show[0m
+  [34mNote ID:[0m      technical-writer-bd-95cda5-recurrence-0077
+  [34mName:[0m         technical-writer-bd-95cda5-recurrence-0077
+  [34mProject:[0m      global
+  [34mUpdated:[0m      2026-04-27T15:06:58.610385077Z
+  [34mWriter:[0m       beelink:cacophony:beelink-cacophony-technical-writer
+
+
+2026-04-27 recurrence during technical-writer docs pass 0077/0081:
+
+- `bd-95cda5` was observed closed before this pass.
+- Operator/controller guidance said merge paths appeared available again, with backup/rebase precautions.
+- Technical-writer created preserve branches before rebase/reintegration, repeatedly rebased onto current `origin/main`, and validated a documentation-only diff.
+- Final intended docs commit chain before reintegration: `903703dad` (daemon/profile Pages), `90a2aa572` (web workspace caption), `ad806ef41` (summary update) above `origin/main=fcdc9ba13`.
+- First direct,recorded attempt hit stale fork lease (`bd-ce2015`) before publish. After fetching `fork/main`, `origin/main` and `fork/main` both pointed at `fcdc9ba13`, and both were ancestors of local HEAD. A retry was attempted.
+- Retry returned the historical error again:
+  `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available; work is not verified on upstream/main. Retry PR creation or fall back to local direct reintegration explicitly.`
+- After the failure, fetching showed `origin/main=fork/main=4062285ca` (`caco direct-branch code without recorded artefacts`).
+- Local `HEAD=ad806ef41` is NOT an ancestor of `origin/main` or `fork/main`.
+- `origin/main` nevertheless contains the intended code/docs changes in `docs/daemon.html`, `docs/profiles.html`, and `docs/index.html`, and does not contain `.cacophony/agent/.../summary/0077` in the code tree.
+- `fork/cacophony-state=0c2d9098736c`; `caco summaries list --agent beelink-cacophony-technical-writer --limit 5 --json` shows recorded summary index `0077` published with title `Session summary — caco-web status and profile-mode Pages alignment`.
+- Current local branch is ahead 1 / behind 1 relative to `origin/main`; preserve branches include `preserve/technical-writer-pre-final-reintegrate-20260427T150338Z-ad806ef41c57` and `preserve/technical-writer-after-second-stale-lease-20260427T150447Z-ad806ef41c57`.
+
+Technical-writer stopped retries immediately after the no-PR-URL error, preserved refs/logs/summary evidence, and did not rebase/reset/cleanup after the failure.

@@ -1,0 +1,12 @@
+# bd-1056da reintegration refusal
+
+Initial `caco agent reintegrate --id ms-mac-cacophony-caco-web --mode direct,recorded` refused with `bd-4b1ffd` because the remote caco-web agent branch contained a remote-only same-bead commit:
+
+- `eb250cb51 fix(caco-web): persist notification clear all (bd-1056da)`
+
+Inspection showed the remote-only commit had the same product-code changes and summary artifacts before the later local `web/final-validation.log` addition. The only `remote..HEAD` diff was:
+
+- modified `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0084/summary.md`
+- added `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0084/web/final-validation.log`
+
+Planned recovery: preserve the remote same-bead commit as ancestry with an ours merge, keep the locally validated tree, then retry direct recorded reintegration.

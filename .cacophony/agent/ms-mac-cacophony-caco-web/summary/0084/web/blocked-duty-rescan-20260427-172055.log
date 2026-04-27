@@ -1,0 +1,142 @@
+# caco-web active duty rescan
+2026-04-27T17:20:55+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status before fetch
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [ahead 4, behind 8]
+?? .cacophony/agent/ms-mac-cacophony-caco-web/summary/0084/web/blocked-duty-rescan-20260427-172055.log
+head=acecfcc15ffa48ce089c6bc26774314880cf4af3
+origin_main=28ce934eebaafb78a2057776eda0984947db980c
+
+## fetch origin main (read-only freshness)
+From /Users/harryaskham/.cacophony/daemon/checkouts/cacophony
+ * branch                main       -> FETCH_HEAD
+   28ce934ee..9a7fa8b14  main       -> origin/main
+
+## git status after fetch
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [ahead 4, behind 9]
+?? .cacophony/agent/ms-mac-cacophony-caco-web/summary/0084/web/blocked-duty-rescan-20260427-172055.log
+head=acecfcc15ffa48ce089c6bc26774314880cf4af3
+origin_main=9a7fa8b144b466e1efb1365762e26796e57e24ea
+
+## inbox
+8 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-e963e3 is implemented and committed locally. The help overlay now documents Alt+0 and Alt+1/2/3 for agent-detail summary collapse, and the keybinding registry coverage test passes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assignment state. I remain on bd-29ebd0 and will keep the helper changes local while validating the ms-dev seed-verification path.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 4:15: 🎯 bd three-thousand-four-hundred milestone, four 502s clean. Plus two closed two-thousand-three-hundred-fifty-two. v-five-seventy-three stable seventy-seven minutes.
+[broadcast] helsinki:cacophony:helsinki-cacophony-changelog-manager: Coordination: I am helsinki-cacophony-changelog-manager, not one of the listed bd-9e4be4 duplicate workers. I am not mutating bd-9e4be4 agents and will continue only changelog/reverse-audit work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Test and Canary still pass provenance at one point two point five seventy three with live sockets, Stable remains intentionally at one point two point five seventy, and no ready unassigned macOS or Tendril beads were found. bd nine e four be four remains finalized to yuyg as sole owner, and I still hold bd seven six nine eight d c while recorded direct is blocked.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assignments. I’m still on bd-29ebd0 and will keep it local until validation and reintegration safety are clear.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: Acknowledged Harry: the choices decode failure is exactly my active bd seven six nine eight d c path. I’m unblocking local work, will add the missing compatibility shape if needed, back up the branch, validate, and use the safe direct landing path.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor narrating two pass all clear on reachability. All peers reachable except dampened astra. Pocket four recovered to mismatch from brief flap. Stuck two rotation. Daemon stable on five seventy three, no recent crashes, load down to seventeen. Daemon db crossed four hundred ten megs growing two and a half megs per cycle. Persistent only native supervisor unloaded. Cleanest sustained state in many cycles.
+
+## assigned in-progress beads for this agent
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1056da   [0m P2   [2mbug     [0m [32min_progress [0m [2m1h49m ago [0m [2m1h26m ago [0m cacophony:ms-mac-cacophony-caco-web Fix notification clear all button on web surface
+
+## bd-1056da detail
+[35mbd-1056da[0m  [1mFix notification clear all button on web surface[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:ms-mac-cacophony-caco-web
+  [34mlabels:[0m       notifications, ui, web
+  [34mcreated:[0m      [2m2026-04-27T14:31:42.617446528Z (1h ago)[0m
+  [34mdescription:[0m  The 'Clear All' button for notifications on the web surface has no effect. After clicking the button and refreshing the page, notifications remain visible instead of being cleared. This should be investigated to determine if the issue is with the UI button functionality, the backend notification deletion API, or the state management. Accept criteria: 1) Clear All button removes all notifications from the display, 2) Cleared notifications do not reappear after page refresh, 3) The cleared state persists across sessions.
+
+## ready open web-adjacent beads
+### label=web
+no beads found
+### label=caco-web
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=workspace
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+
+## safety and coordination excerpts
+### bd-95cda5 status excerpt
+[35mbd-95cda5[0m  [1m[docs] recorded direct reintegration partially succeeds then errors on PR URL[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P1
+  [34mtype:[0m         bug
+  [34massignee:[0m     queued_dispatch_pickup:helsinki
+  [33m⚠  bd-126b99: this bead is claimed by 'queued_dispatch_pickup:helsinki' (not you). Pick another or coordinate first.[0m
+  [34mlabels:[0m       discovered-via-agent:beelink-cacophony-technical-writer, discovered-via-session:docs-pass-0054, lost-mainline-commit, mainline-safety, recurrent, reintegration, stale-main-race, technical-writer
+  [34mcreated:[0m      [2m2026-04-26T23:39:50.521350327Z (16h ago)[0m
+  [34mdispatch:[0m     queued for helsinki (4h ago)
+  [34mdescription:[0m  Found during technical-writer reintegration after docs pass 0054.
+
+Command: `caco agent reintegrate --mode direct,recorded`
+
+Observed sequence:
+- Initial attempt failed because agent checkout lacked configured fork remote.
+- After adding/fetching the declared fork remote, retry pushed code to fork/main and published the recorded summary to cacophony-state.
+- The command still returned an error: `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available; work is not verified on upstream/main`.
+- Local daemon main/origin advanced to a synthetic commit `caco direct-branch code without recorded artefacts` and summary 0054 was visible in `caco summaries list`, so the operation partially succeeded while reporting failure.
+
+Expected: direct,recorded local-merge path should either complete successfully under `projects.cacophony.integration.backend=local_merge`, or refuse before pushing/publishing any refs.
+
+Second occurrence during docs pass 0055:
+
+- `caco agent reintegrate --mode direct,recorded` again returned `bd-1d514b: direct intent over pull_request backend published fork/main but no PR URL was available`.
+- GitHub/fork `main` advanced to `cf986a0d1` containing docs commit `395c0c6f3`, and `fork/cacophony-state` advanced to `23b2b27c5` for summary commit `258203af2`.
+- Local daemon `origin/main` did not advance immediately, and `caco summaries list` still showed summary 0054 only at the time of observation.
+
+Third occurrence during docs pass 0056:
+### bd-9e4be4 status excerpt
+[35mbd-9e4be4[0m  [1mRedesign reintegration around immutable agent checkouts and repo-committed direct summaries[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P0
+  [34mtype:[0m         feature
+  [34massignee:[0m     yuyg5sygj4ums1fj
+  [33m⚠  bd-126b99: this bead is claimed by 'yuyg5sygj4ums1fj' (not you). Pick another or coordinate first.[0m
+  [34mlabels:[0m       agent-lifecycle, recorded, reintegration, safety, state
+  [34mcreated:[0m      [2m2026-04-27T15:31:19.637759677Z (50m ago)[0m
+  [34mdispatch:[0m     queued for helsinki (34m ago)
+  [34mdescription:[0m  Operator request: replace the fragile direct,recorded model with a simpler, safer reintegration contract that behaves like normal git collaboration and has zero risk of mutating an agent's own checkout during reintegration.\n\nProblem / evidence:\n- bd-95cda5 and follow-up recurrence reports show direct,recorded can return bd-1d514b while refs/state have already moved.\n- Reported examples include fork/main and/or origin/main advancing to synthetic commits, cacophony-state summaries being published, and local agent HEAD not being an ancestor after retry.\n- This is confusing because regular git collaboration should be: try merge/squash, succeed or reject with conflict/stale-base, and leave the agent branch recoverable.\n- The current recorded path appears to mix code landing, summary/state publication, lifecycle bookkeeping, and checkout sync/repair into one operation, so partial side effects can make the final outcome ambiguous.\n\nDesired product contract:\n1. caco agent reintegrate must treat the agent checkout as an immutable input. It must not implicitly rebase, merge, reset, sync, checkout another branch, rewrite the agent branch, or otherwise mutate the agent working tree.\n2. Any operation that mutates the agent checkout must be explicit and separately named, e.g. caco agent rebase. Reintegration may reject with stale_base and tell the agent to rebase, but must not auto-rebase.\n3. Before any publish attempt, reintegration must create/confirm a recoverable backup ref for the agent HEAD, e.g. refs/caco-backup/<agent-id>/<attempt-id>/head or an equivalent local backup branch/ref. The receipt must print it.\n4. Reintegration should run merge/squash preparation in an isolated integration worktree/temp checkout, not in the agent checkout.\n5. Publish to main must use an explicit compare-and-swap/lease model against the expected target SHA, ideally serialized by a per-project/per-target-branch integration lock or merge queue. If the target moved, reject cleanly; do not mutate agent checkout.\n6. Reintegration results must be transactional from the agent perspective and return a structured receipt. Possible outcomes should be at least: accepted, rejected_no_publish, accepted_with_warning / accepted_state_pending. If any remote ref moved, the command must detect that and report which ref moved instead of returning an opaque failure.\n7. Plain direct mode should be the default safe path. It should behave as a normal branch landing/squash only.\n8. For direct mode, agent summaries/artifacts should be normal repo-committed files on the agent branch, e.g. .cacophony/agent/<agent-id>/summary/<n>/summary.md or a documented successor layout. They land with the code commit/squash on main. No separate cacophony-state publication should be required for direct mode.\n9. direct,recorded should be disabled/deprecated as a default path until redesigned. If retained, recorded state publication must be separated from code landing and must not cause a code landing to be reported as failure after the code ref moved. Rejected attempts may publish attempt logs, but must not masquerade as landed summaries.\n10. Profiles/docs should be updated so agents use direct mode plus repo-committed summaries by default, and only use recorded/PR flows when explicitly requested.\n\nImplementation guidance / likely work areas:\n- Inspect caco agent reintegrate implementation in caco-daemon/caco-cli and profile/lifecycle hooks.\n- Find all places where reintegrate mutates/syncs the agent checkout or performs auto-rebase/auto-merge; remove from reintegrate or gate behind explicit separate commands.\n- Add backup-ref creation before publish attempts.\n- Add/extend receipt JSON and human output with attempt_id, agent_head, backup_ref, target_before, target_after, landed_commit, state_before/state_after if any, checkout_mutated=false, and published refs.\n- Add post-error verification: after any publish error, fetch/inspect relevant refs and report accepted_with_warning if target actually moved to the expected landed commit.\n- Update default profiles/instructions to direct and repo-committed summaries; remove direct,recorded default usage.\n- Add regression tests that simulate stale target/conflict/push failure/post-push reporting failure and assert the agent checkout is unchanged and receipt is unambiguous.\n\nAcceptance criteria:\n- caco agent reintegrate on a clean direct candidate can land/squash without mutating the agent checkout before publish.\n- If main has moved, reintegrate rejects with stale_base/target_moved and leaves the agent checkout byte-for-byte/HEAD-identical, with a backup ref printed.\n- If a conflict occurs in the isolated integration worktree, reintegrate rejects cleanly and leaves the agent checkout untouched.\n- If a publish succeeds but a later bookkeeping/state/reporting step fails, output says accepted_with_warning or accepted_state_pending and identifies the moved ref/commit; it must not look like a plain failure.\n- Direct-mode summaries can be committed in-repo and land with code; no cacophony-state side effect is required for direct mode.\n- direct,recorded is no longer used as a default in checked-in profiles.\n- Tests cover no-checkout-mutation, backup-ref presence, stale-main rejection, and post-publish verification behavior.\n\nValidation:\n- Run targeted Rust tests for the changed crates.\n- Run cargo test-small or the profile's fast gate if appropriate.\n- Manually exercise a dry-run or fixture reintegration scenario if available.\n\nDo not implement destructive cleanup, force-push agent branches, or remove preserved evidence from bd-95cda5/bd-b8470c while working this.
+
+Controller containment note 2026-04-27T16:03Z: duplicate worker storm contained. Earlier duplicate attempts hit bd-2df6e9 tmux-socket-dead during startup and were stopped/discarded without deleting checkouts. yuyg5sygj4ums1fj is the selected sole live owner; no other bd-9e4be4 worker should implement or reintegrate.
+
+Router duplicate-worker update 2026-04-27T16:05:23Z: yuyg5sygj4ums1fj reports it is continuing bd-9e4be4 implementation unless controller redirects. Earlier technical-writer named ldf67rq2v01sia8h as provisional sole owner, but current agent index did not show ldf67rq2v01sia8h and only uc2tzo2cezt0nmdy from the original duplicate list was visible/stopped. Potential ownership conflict now exists between yuyg5sygj4ums1fj (self-declared continuing) and the prior provisional ldf67rq2v01sia8h note. Controller must finalize exactly one owner before reintegration. Router did not stop/discard/delete/reintegrate any worktree.
+
+Controller final note 2026-04-27T16:08Z: supersedes prior router/provisional-owner notes. yuyg5sygj4ums1fj is the sole selected live owner and current bead assignee. Earlier ldf67rq2v01sia8h provisional guidance is stale because that agent is not live in the current index. Duplicate startup attempts remain stopped/discarded/not-live with checkouts/logs preserved. No other bd-9e4be4 worker should implement or reintegrate.
+
+Router duplicate-worker containment update 2026-04-27T16:12:33Z: technical-writer reports yuyg5sygj4ums1fj paused, m1htbuwmnqvsu0by and xm2u12nmnxw194qy stopped non-destructively; earlier bd-9e4be4 duplicate workers were stopped/dead/paused. Provisional sole owner remains ldf67rq2v01sia8h pending controller confirmation, but router has not seen it in current agent index. Controller asked to confirm or dispatch exactly one sole owner. No duplicate reintegration should proceed; preserve worktrees/logs.
+
+Router duplicate-worker containment final 2026-04-27T16:13:09Z: cluster-ctrl finalized bd-9e4be4 ownership. yuyg5sygj4ums1fj is the sole selected owner and bead assignee is set to yuyg5sygj4ums1fj. Earlier provisional ldf67rq2v01sia8h guidance is superseded; ldf67rq2v01sia8h and other duplicate startup attempts were stopped/discarded or are no longer active with checkouts/logs preserved. No other bd-9e4be4 worker should implement or reintegrate.
+### bd-00dbf4 status excerpt
+[35mbd-00dbf4[0m  [1m[broken-on-main] playback::tests::write_to_pipe_broken_pipe_detected failing[0m
+  [34mstatus:[0m       [32mclosed[0m
+  [34mpriority:[0m     P1
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:ms-dev-cacophony-caco-dev-msd-1
+  [34mlabels:[0m       broken-on-main, test-failure
+  [34mcreated:[0m      [2m2026-04-11T04:27:08.060240933Z (2w ago)[0m
+  [34mclosed_at:[0m    [2m2026-04-27T15:32:02.495872055Z (49m ago)[0m
+  [34mclosed_by:[0m    (unknown — closed before bd-5ae1ce)
+  [34mdescription:[0m  Duplicate of bd-138174 which was already fixed and landed (commit c045066b). Filed by bd-7c0a50 worker who saw the pre-existing failure before the fix reached main.
+
+Router broken-on-main coordination 2026-04-27T15:19:54Z: ms-dev-cacophony-caco-dev-msd-1 reports taking recurrence of playback::tests::write_to_pipe_broken_pipe_detected under existing bd-00dbf4. Failure occurs in cargo test-small but passes alone, suggesting parallel/race nondeterminism; intended fix is to wait for the child to exit before writing so the read end is definitely closed. Router treats this as deduped to existing bd-00dbf4 and filed no new bead.
+
+Recurrence observed 2026-04-27 while validating bd-c0bb58: cargo test-small repeatedly failed playback::tests::write_to_pipe_broken_pipe_detected with expected BrokenPipe, got Done, while the targeted test passed alone. Taking in the same validation stream to make the test deterministic.
+
+## duty decision
+bd-1056da remains the active assigned caco-web bead, so no new Playwright observation or bead filing was performed. The implemented notification fix remains preserved locally while direct/recorded reintegration safety remains blocked.
