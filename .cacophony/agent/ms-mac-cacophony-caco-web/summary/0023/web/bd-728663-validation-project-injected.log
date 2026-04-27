@@ -1,0 +1,63 @@
+   Compiling caco-web v1.2.568 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.78s
+curl: (7) Failed to connect to 127.0.0.1 port 65421 after 0 ms: Could not connect to server
+curl: (7) Failed to connect to 127.0.0.1 port 65421 after 0 ms: Could not connect to server
+--- injected default project marker
+<script>window.CACO_WEB_VERSION = "1.2.568";window.CACO_WEB_DEFAULT_PROJECT = "cacophony";</script></body>
+### Browser `caco-web-bd-728663-injected-1777260111` opened with pid 65644.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:65421/#summaries');
+```
+### Page
+- Page URL: http://127.0.0.1:65421/#summaries
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-04-27T03-21-53-752Z.yml)
+### Result
+{
+  "defaultProject": "cacophony",
+  "status": "10 of 933",
+  "rows": 10,
+  "projectPlaceholder": "Project (cacophony)",
+  "list": "ms-mac/caco-aks 3 #0011 5m ago Session summary — AKS deploy decision check bd-2d1ffe #0010 22m ago Session summary — narrow AKS rebuild guard bd-2d1ffe #0009 27m ago Session summary — guarded AKS deploy surface bd-2d1ffe beelink/technical-writer 1 #0062 10m ago Session summary — Pages AKS and TUI speech freshness pass bd-1d2e41 bd-2d1ffe bd-2edc53 +1 ms-mac/caco-tui 2 #0017 15m ago Session summary — Compact TTS speed formatting bd-c016a2 #0016 39m ago Session summary — Speech popup toggle/cycle hint bd-2edc53 ms-dev/caco-dev-msd-3 1 #0034 18m ago Session summary — msg send @target recipient preservation bd-42d036 ms-dev/caco-dev-msd-2 2 #0000 20m ago (no title) bd-00d486 bd-a98d92 #0001 35m ",
+  "detail": "ms-mac/caco-aks #0011 5m ago Session summary — AKS deploy decision check project: cacophony bd-2d1ffe Copy summary Jump to sections GOAL COPY Add a no-mutation check mode for the guarded AKS deploy path so operators can see whether AKS would refresh the in-pod checkout, apply Helm-only changes, or start a remote ACR build without accidentally launching a long rollout. BEAD(S) COPY - `bd-2d1ffe` — Restore AKS cluster health and ergonomic local access BEFORE STATE COPY - Failing tests: none in AKS health; the guarded deploy path existed but lacked a safe decision-only command. - Relevant metrics: AKS remained healthy with eight Ready nodes and all role pods Running; live image was `2ff1b711f71",
+  "connection": "Connected"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ defaultProject: window.CACO_WEB_DEFAULT_PROJECT, status: document.querySelector(".summaries-status")?.textContent?.trim(), rows: document.querySelectorAll(".summaries-row").length, projectPlaceholder: document.querySelector("#summaries-project")?.getAttribute("placeholder"), list: document.querySelector("#summaries-list")?.innerText?.trim().replace(/\\s+/g," ").slice(0,700), detail: document.querySelector("#summaries-detail")?.innerText?.trim().replace(/\\s+/g," ").slice(0,700), connection: document.querySelector("#connection-status")?.textContent?.trim() })');
+```
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T03-22-17-776Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T03-22-17-776Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T03-22-17-776Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+### Result
+Total messages: 0 (Errors: 0, Warnings: 0)
+
+### Result
+[GET] http://127.0.0.1:65421/api/v1/summaries?limit=10&offset=0&project=cacophony => [200] OK
+[GET] http://127.0.0.1:65421/health => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/merge-queue?since=24h => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/tts/status => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/tts/voices => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/ms-dev => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/helsinki => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/pocket4 => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/winmini => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/beelink => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/sgu24 => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/nodes/astra => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:65421/api/v1/summaries/ms-mac-cacophony-caco-aks/11?project=cacophony => [200] OK
+Browser 'caco-web-bd-728663-injected-1777260111' closed
+

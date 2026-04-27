@@ -1,0 +1,40 @@
+--- curl summaries web proxy
+2026-04-27T02:44:41Z
+{"backend_unavailable":true,"detail":"error sending request for url (http://127.0.0.1:11100/api/v1/summaries?limit=20&offset=0)","error":"daemon_proxy_timeout","message":"Session summaries unavailable: daemon proxy timed out","ok":false,"surface":"Session summaries","upstream_status":504}
+HTTP 200 time_total 8.004098
+2026-04-27T02:44:49Z
+### Browser `caco-web-bd-728663-after-1777257889` opened with pid 67659.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:65412/#summaries');
+```
+### Page
+- Page URL: http://127.0.0.1:65412/#summaries
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-04-27T02-44-51-001Z.yml)
+### Result
+{
+  "status": "Loading…",
+  "rows": 0,
+  "list": "Loading summaries…",
+  "detail": "Select a summary on the left.",
+  "connection": "Connected"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ status: document.querySelector(".summaries-status")?.textContent?.trim(), rows: document.querySelectorAll(".summaries-row").length, list: document.querySelector("#summaries-list")?.innerText?.trim().replace(/\\s+/g," ").slice(0,700), detail: document.querySelector("#summaries-detail")?.innerText?.trim().replace(/\\s+/g," ").slice(0,300), connection: document.querySelector("#connection-status")?.textContent?.trim() })');
+```
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T02-44-59-051Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T02-44-59-051Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T02-44-59-051Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+Browser 'caco-web-bd-728663-after-1777257889' closed
+

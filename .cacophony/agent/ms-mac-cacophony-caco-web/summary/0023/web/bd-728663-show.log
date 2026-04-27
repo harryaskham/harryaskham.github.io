@@ -1,0 +1,14 @@
+[35mbd-728663[0m  [1mFix web summaries loading in caco[0m
+  [34mstatus:[0m       [32mopen[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     -
+  [34mlabels:[0m       caco, loading-issue, web-summaries
+  [34mcreated:[0m      [2m2026-04-27T02:29:53.459476826Z (9m ago)[0m
+  [34mdescription:[0m  Web summaries fail to load in the caco application. Users are unable to see summary content when attempting to access web summaries feature. This appears to be a persistent loading issue affecting the web summaries functionality.
+
+Acceptance criteria:
+- Web summaries load successfully when requested
+- Loading indicators display appropriately
+- Content displays within expected timeframe
+- No loading errors appear in console

@@ -1,0 +1,7 @@
+Validation for bd-728663:
+- cargo fmt --all
+- CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets — passed
+- CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib summaries_proxy_and_view_are_bounded_bd_79ea46 — passed
+- CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib index_shell_injects_default_project_for_summaries_bd_728663 — passed
+- CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib — 298 passed
+- Current-assets Playwright validation with CACO_PROJECT=cacophony: Summaries requested /api/v1/summaries?limit=10&offset=0&project=cacophony, rendered 10 rows of 933, loaded parsed detail, console 0 errors / 0 warnings, and all observed requests were 200 OK.

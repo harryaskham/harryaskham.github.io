@@ -1,0 +1,50 @@
+### Browser `caco-web-bd-728663-longwait-1777258550` opened with pid 26401.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:65416/#summaries');
+```
+### Page
+- Page URL: http://127.0.0.1:65416/#summaries
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-04-27T02-55-52-232Z.yml)
+### Result
+{
+  "status": "Error: Session summaries unavailable: daemon proxy timed out",
+  "rows": 0,
+  "list": "Session summaries unavailable: daemon proxy timed out Retry list",
+  "detail": "Select a summary on the left.",
+  "connection": "Snapshot delayed"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ status: document.querySelector(".summaries-status")?.textContent?.trim(), rows: document.querySelectorAll(".summaries-row").length, list: document.querySelector("#summaries-list")?.innerText?.trim().replace(/\\s+/g," ").slice(0,700), detail: document.querySelector("#summaries-detail")?.innerText?.trim().replace(/\\s+/g," ").slice(0,700), connection: document.querySelector("#connection-status")?.textContent?.trim() })');
+```
+### Page
+- Page URL: http://127.0.0.1:65416/#summaries
+- Page Title: Cacophony Dashboard
+- Console: 2 errors, 0 warnings
+### Events
+- New console entries: .playwright-cli/console-2026-04-27T02-55-52-031Z.log#L1-L2
+### Result
+Total messages: 2 (Errors: 2, Warnings: 0)
+
+[ERROR] Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING @ http://127.0.0.1:65416/api/v1/logs/stream?follow=true:0
+[ERROR] Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING @ http://127.0.0.1:65416/api/v1/ui/stream:0
+### Result
+[GET] http://127.0.0.1:65416/api/v1/summaries?limit=25&offset=0 => [200] OK
+[GET] http://127.0.0.1:65416/health => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/merge-queue?since=24h => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/stream => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/logs/stream?follow=true => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/node => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/stream => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/stream => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/logs/stream?follow=true => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/stream => [200] OK
+[GET] http://127.0.0.1:65416/api/v1/ui/snapshot => [200] OK
+Browser 'caco-web-bd-728663-longwait-1777258550' closed
+

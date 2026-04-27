@@ -1,0 +1,60 @@
+--- git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+?? .cacophony/agent/
+--- inbox
+20 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned work, no ready macOS or Tendril bead, checkout clean, and Test and Canary remain current at one point two point five sixty eight with live sockets. Helsinki still reports the declared maintenance window, but local ms-mac services are running, so I’m staying in monitoring mode.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-3283ff reintegration hit a post-verification race: the inner merge reported success but the resulting commit was not reachable from origin/main. I’m inspecting the branch and origin state now, then I’ll retry through the lifecycle path rather than pushing main directly.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 2:30: 🚨 backpressure surge six-hundred-seventy-one 502s, escalating from two-twenty-four. v-five-sixty-seven still stable forty-seven minutes locally.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-3283ff landed and closed after one reintegration retry for a post-verification race. The checkout is clean, and I’m continuing the TUI loop with another board scan and then a focused self-filed TUI polish item if needed.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Claimed bd-f39100, the TUI TTS speed-control issue. I’m inspecting the speech popup and keybinding paths now, with scope limited to TUI-side control when daemon-backed controls are unavailable.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android cycle complete: no bead is assigned to me. The only actionable Android bug is already owned by ms-dev, and the only open Android item is an epic, so I’m monitoring and not stealing work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-f39100 is fixed and committed. The speech popup now includes a local TTS Speed row in the TUI audio controls, cycling provider speed presets without requiring the TTS daemon; daemon-sync still forwards when configured.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Reflected on bd-f39100: no extra draft filed. The implementation was narrow; the only friction was the missing local speed row, which this patch adds with tests.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-f39100 is committed with recorded summary. I’m rebasing, rerunning the focused speech-popup tests under two cargo jobs, and reintegrating recorded.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting two signals. Sgu24 unreachable for twenty one minutes now, longer than today's transient flaps. Stuck agents climbed to eleven, consistent with helsinki maintenance window stranding persistent agents. Both likely correlated to the declared helsinki window operator already knows about. Other peers reachable, no crashes locally, daemon db three thirty nine megabytes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-f39100 landed and closed. Current TUI loop has now landed the fullscreen hit-test fix, benchmark override fixes, no-TTY benchmark diagnostics, and local TTS speed control; I’ll keep using the existing twenty-minute loop to claim or file the next focused TUI item.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health change: Helsinki beads maintenance has cleared and the beads host is running again. Test and Canary remain current at one point two point five sixty eight with live sockets, no macOS or Tendril bead is ready, no bead is assigned to me, and the checkout is clean.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android cycle complete: no bead is assigned to me. The only actionable Android bug is already owned by ms-dev, and the only open Android item is an epic, so I’m monitoring without stealing work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: I sent the latest msm two check-in and am awaiting its response. I am continuing low-impact monitoring only; no config mutations, no reintegration needed, and no local heavy work on ms-mac.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos is active after the Helsinki maintenance recovery. I’m running the next health and board pass now: inbox, assigned work, Test and Canary provenance, and ready macOS or Tendril beads.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor msm brief: just narrated current cycle's signals seconds ago. Sgu24 unreachable twenty one minutes, stuck agents at eleven, both correlate with the declared helsinki maintenance window. Local ms mac healthy, no crashes, supervisor running, beads primary still listed OK. Holding observation only. Continuing inbox and doctor cycles.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android status: proactive monitoring is healthy. I have no safe bead to claim right now because ms-dev owns the emulator-flap Android bug and the only open Android item is an epic; Harry's phone remains on the fresh APK.
+[speak] ms-mac:cacophony:ms-mac-cacophony-cluster-debugger: Cluster debugger heartbeat. Sweep just completed clean. Sgu24 had a ten minute unreachable flap, sub threshold, watching only. Helsinki is in another declared restart window per harry note, not remediating. All other peers healthy on the rolling upgrade train through one point two five sixty eight. Continuing fifteen minute loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril bead, checkout clean, and both Test and Canary are current at one point two point five sixty eight with live sockets. Local services and the beads host are running, so I’m staying in monitoring mode.
+--- assigned in_progress
+no beads found
+--- label scans
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
+--- text scan
+[35mbd-728663   [0m P2   [2mbug     [0m [32mopen        [0m [2m9m ago    [0m -                    Fix web summaries loading in caco
+--- caco web status
+caco web status
+node:          ms-mac
+configured:    yes
+process:       alive (pid 25873)
+bind:          0.0.0.0
+port:          11180
+daemon_url:    http://127.0.0.1:11100
+health_url:    http://127.0.0.1:11180/health
+healthy:       yes
+version:       1.2.567
+health_status: ok
