@@ -1,35 +1,37 @@
-# Session summary — unclipped narrow Status hero
+# Session summary — caco-web recorded artifact profile update
 
 ## Goal
 
-Run the caco-web active duty cycle, inspect the rendered dashboard with lightweight Playwright evidence, and fix the focused visual defect found: the Status page hero collapsed into a clipped strip on narrow mobile-width viewports.
+Update the persistent caco-web operating profile so future duty cycles preserve Playwright and validation artifacts under the recorded-summary tree, commit those artifacts with the cycle summary, and reintegrate through the direct recorded lifecycle path instead of leaving evidence only in transient `/tmp` or `.playwright-cli` locations.
 
 ## Bead(s)
 
-- `bd-8c4e7e` — caco-web Status hero is clipped on narrow viewports
+- `bd-09b32d` — caco-web profile should persist duty-cycle artifacts in recorded summaries
 
 ## Before state
 
-- Failing tests: none at cycle start.
-- Relevant metrics: no assigned in-progress caco-web beads and no ready open beads for `caco-web`, `dashboard`, `web`, `browser`, `workspace`, `playwright`, `webui`, `summaries`, or `visual-polish`.
-- Context: current-assets Playwright observation against caco-web `v1.2.565` found `.status-hero` at 390x844 rendered as a 49px/53px-tall strip while its `scrollHeight` was 386px/328px and `overflowY` was `hidden`. The live-orchestration copy and quick facts were clipped in the screenshot.
-- Evidence: `/tmp/caco-web-duty-visual-224128-observation.log`, `/tmp/caco-web-status-narrow-224246-observation.log`, `.playwright-cli/page-2026-04-26T21-43-00-909Z.png`.
+- Failing tests: none known for this profile-only change.
+- Relevant metrics: caco-web profile default reintegration mode was `pr_review`; duty-cycle instructions allowed artifact paths in `/tmp` / `.playwright-cli` chat reports and did not require observation-only cycles to commit recorded summaries.
+- Context: Harry asked directly for the caco-web profile to put all artifacts in the summaries directory and commit plus reintegrate via `direct,recorded`.
 
 ## After state
 
-- Failing tests: none observed.
-- Relevant metrics: Playwright validation at 390x844 reports `.status-hero` `h=330`, `sh=328`, `flexShrink="0"`, `clipped=false`; `#cluster-pulse-expand-btn` remains `position="absolute"`; console stayed `0` errors and `0` warnings.
-- Context: the Status hero now keeps its mobile content visible and the page scrolls instead of compressing the hero into a hidden-overflow strip.
-- Evidence: `/tmp/caco-web-bd-8c4e7e-final-224828-validation.log`, `.playwright-cli/page-2026-04-26T21-48-44-312Z.png`.
+- Failing tests: none known.
+- Relevant metrics: caco-web profile frontmatter now sets `reintegration.mode: direct,recorded` and `allowed_modes: [direct,recorded]`; Active Duty Cycle, Playwright setup, artifact handling, reporting, and reintegration sections now require recorded-summary artifacts and `direct,recorded` reintegration for every duty cycle.
+- Context: Future no-bead observation cycles must write `summary.md`, keep bounded Playwright artifacts under `.cacophony/agent/$CACO_AGENT_ID/summary/<index>/web/`, commit the summary/artifacts, and reintegrate before reporting completion.
 
 ## Diff summary
 
-- Commits: `c3d7f5126` (`bd-8c4e7e: prevent narrow status hero clipping`).
-- Files touched: `crates/caco-web/static/style.css`, `crates/caco-web/src/tests.rs`.
-- Tests: added `style_css_keeps_status_hero_expand_button_absolute_after_tooltip_rule_bd_8c4e7e`.
-- Behavioural delta: `.status-hero` now has `flex-shrink: 0` so the vertical Status view does not compress it on short/narrow screens, and the tooltip host override keeps the cluster-pulse expand button absolutely positioned after the generic `[data-tooltip]` rule.
-- Validation: `git diff --check`; `cargo fmt --all -- --check`; focused regression test; `CARGO_BUILD_JOBS=2 cargo build -p caco-web --bin caco-web-dev-server`; Playwright proof; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` (292 passed); post-rebase focused regression rerun passed.
+- Commits: this recorded-summary commit (`bd-09b32d: require caco-web recorded artifacts`; final SHA is the reintegration tip because the summary is committed with the change)
+- Files touched: `.cacophony/profiles/caco-web.md`, `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0000/summary.md`, `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0000/web/profile-frontmatter-validation.log`, `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0000/web/profile-show-daemon-before-sync.log`.
+- Tests: profile frontmatter parsed with PyYAML and asserted `direct,recorded`; `caco profile show --name caco-web` captured the daemon's pre-sync profile state for comparison.
+- Behavioural delta: caco-web is now instructed to treat recorded summaries as the durable artifact root for both implementation and observation-only cycles, and to use direct recorded reintegration as the normal lifecycle path.
+
+## Embedded artefacts
+
+- `web/profile-frontmatter-validation.log` — local parse/validation proof for the edited profile frontmatter.
+- `web/profile-show-daemon-before-sync.log` — daemon profile snapshot before this profile update has been reintegrated and synced.
 
 ## Operator-takeaway
 
-The Status dashboard now looks trustworthy on mobile width again: the live-orchestration hero expands to show its copy and backend/snapshot facts instead of clipping almost all of its content into a thin decorative strip.
+Future caco-web cycles should no longer finish with only transient Playwright evidence and a chat report: the profile now requires durable summary-directory artifacts plus a committed `direct,recorded` reintegration for each cycle.
