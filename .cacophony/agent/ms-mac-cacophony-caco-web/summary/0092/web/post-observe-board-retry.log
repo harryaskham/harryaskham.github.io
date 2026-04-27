@@ -1,0 +1,152 @@
+# post-observation board authority retry
+2026-04-27T20:29:55+01:00
+## daemon health
+{
+  "ok": false,
+  "version": "1.2.574",
+  "commit": "3e45042fc",
+  "built": "2026-04-27T17:24:54+01:00",
+  "update_channel": "stable",
+  "update_status": "no releases for channel",
+  "node": "ms-mac",
+  "config_hash": "5662d08edf92bb00f82ad2fc8ed2590fb9e5321cb07205508c0d85bb647c3e3d",
+  "daemon": {
+    "configured": true,
+    "reachable": false,
+    "port_holder_pid": 44923,
+    "down_reason": "last lifecycle decision at 2026-04-27T17:54:40.418451+00:00: restart_requested: caco restart (all services) (unknown provenance)"
+  },
+  "beads_host": {
+    "is_host": false,
+    "reachable": false,
+    "status": "not_running"
+  },
+  "launcher": {
+    "local": {
+      "path": "/Users/harryaskham/.cargo/bin/caco",
+      "fingerprint": "d55813235828ac8602783212f147e9b22595c64e4d02dfdba4682bdf82408d78"
+    },
+    "canonical": {
+      "path": "/Users/harryaskham/.cargo/bin/caco",
+      "fingerprint": "d55813235828ac8602783212f147e9b22595c64e4d02dfdba4682bdf82408d78"
+    },
+    "daemon": null,
+    "drift": {
+      "local_differs_from_canonical": false,
+      "daemon_differs_from_local": false,
+      "daemon_differs_from_canonical": false,
+      "warning": null
+    },
+    "staged": {
+      "active": {
+        "path": "/Users/harryaskham/.cargo/bin/caco",
+        "fingerprint": "d55813235828ac8602783212f147e9b22595c64e4d02dfdba4682bdf82408d78"
+      },
+      "previous": {
+        "path": "/Users/harryaskham/.cargo/bin/caco",
+        "fingerprint": "d55813235828ac8602783212f147e9b22595c64e4d02dfdba4682bdf82408d78"
+      },
+      "pending": null
+    }
+  },
+  "services": [],
+  "peers": [
+    {
+      "host": "100.103.121.27",
+      "name": "ms-mac",
+      "reachable": true,
+      "status": "self",
+      "summary": "local node"
+    },
+    {
+      "host": "100.66.53.117",
+      "name": "ms-dev",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    },
+    {
+      "host": "100.83.90.42",
+      "name": "helsinki",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    },
+    {
+      "host": "100.104.0.14",
+      "name": "pocket4",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    },
+    {
+      "host": "100.124.46.12",
+      "name": "winmini",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    },
+    {
+      "host": "100.116.137.100",
+      "name": "beelink",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    },
+    {
+      "host": "100.67.137.9",
+      "name": "sgu24",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    },
+    {
+      "host": "100.86.212.43",
+      "name": "astra",
+      "reachable": null,
+      "status": "unknown",
+      "summary": "unknown (local daemon down; peer not probed)"
+    }
+  ],
+  "agents": [
+    {
+      "agent_type": "pi",
+      "bead_id": null,
+      "branch": "agent/ms-mac/agent-utils/5nefmjf5xnxv9naq",
+      "checkout_path": "/Users/harryaskham/.cacophony/agents/agent-utils/5nefmjf5xnxv9naq/checkout",
+      "goal": "You are a generalist interactive agent; complete tasks as instructed.",
+      "id": "5nefmjf5xnxv9naq",
+      "last_error": null,
+      "last_tool_activity": "2026-04-27T19:28:07.286632Z",
+      "node": "ms-mac",
+      "project": "agent-utils",
+      "retry_count": 0,
+      "state": "running",
+      "tmux_session": "caco-ms-mac-agent-utils-5nefmjf5xnxv9naq"
+    },
+    {
+      "agent_type": "pi",
+      "bead_id": null,
+      "branch": "agent/ms-mac/cacophony/ms-mac-cacophony-caco-android",
+      "checkout_path": "/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-android/checkout",
+      "goal": "Persistent Project agent 'caco-android' (persistent-115b5b4f).\n\n# Cacophony Agent Instruction
+## assigned
+no beads found
+## ready caco-web/web/feed/agents/beads
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=feed
+no beads found
+### label=agents
+no beads found
+### label=beads
+no beads found
+### label=dashboard
+no beads found
+### label=operator-trust
+no beads found
+## in-progress caco-web/web
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=in_progress&label=caco-web&limit=50)]
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=in_progress&label=web&limit=50)]

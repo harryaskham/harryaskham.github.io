@@ -1,0 +1,69 @@
+# caco-web duty scan retry
+2026-04-27T20:20:17+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=88fb44582d063aeaaaa34bd3cfbae2aba4755030
+origin_main=88fb44582d063aeaaaa34bd3cfbae2aba4755030
+
+## inbox
+3 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Validation passed for the held TUI batch and the Ctrl-R release blocker. I’m checking freshness, creating a fresh backup ref, and will attempt operator-approved direct reintegration without recorded if still current.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Final rebase succeeded. I’m rerunning the focused release-blocker and agent-detail/fuzzy-picker tests before direct-only reintegration.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: active bead remains bd e b nine nine nine nine. Test and Canary are healthy and current at one point two point five seventy four; Stable remains intentionally stale. Services and beads host are running after retry, and I’m continuing focused validation of the load-reporting fix.
+
+## assigned/in-progress web-ish view
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-9e4be4   [0m P0   [2mfeature [0m [32mqueued→helsinki[0m [2m3h49m ago [0m [2m2m ago    [0m yuyg5sygj4ums1fj     Redesign reintegration around immutable agent checkouts and repo-committed direct summaries
+[35mbd-86a486   [0m P1   [2mbug     [0m [32min_progress [0m [2m2d3h ago  [0m [2m3m ago    [0m pocket4:pocket4-cacophony-caco-dev-po4-2 Runtime repair reports per-agent tmux socket collapses after socket hardening
+[35mbd-2e2379   [0m P1   [2mbug     [0m [32min_progress [0m [2m2d2h ago  [0m [2m1d23h ago [0m ms-mac:ms-mac-cacophony-caco-dev-msm-2 ms-mac config-helper fails provider-ready after resume retry fixes
+[35mbd-ffbd54   [0m P1   [2mtask    [0m [32min_progress [0m [2m1d3h ago  [0m [2m1d3h ago  [0m cacophony:3dcjmzrcg2lupo6s Reinstate build interceptors and queue policy for ms-mac cargo builds
+[35mbd-95cda5   [0m P1   [2mbug     [0m [32mqueued→helsinki[0m [2m19h40m ago[0m [2m1m ago    [0m queued_dispatch_pickup:helsinki [docs] recorded direct reintegration partially succeeds then errors on PR URL
+[35mbd-da6124   [0m P1   [2mbug     [0m [32min_progress [0m [2m1h44m ago [0m [2mjust now  [0m cacophony:ms-mac-cacophony-caco-tui test failure: caco-tui app::tests::ctrl_r_persists_state_for_restart - assertion app.should_quit failed
+[35mbd-11520a   [0m P2   [2mfeature [0m [32mqueued→helsinki[0m [2m1d6h ago  [0m [2m1d5h ago  [0m queued_dispatch_pickup:helsinki Add edit/refine flow to TUI quickfile beads matching other surfaces
+[35mbd-c5d844   [0m P2   [2mfeature [0m [32mqueued→helsinki[0m [2m9h59m ago [0m [2m9h44m ago [0m queued_dispatch_pickup:helsinki Request background permissions and implement wakelock
+[35mbd-f6fb80   [0m P2   [2mtask    [0m [32min_progress [0m [2m4h13m ago [0m [2m4h13m ago [0m cacophony:ms-mac-cacophony-caco-tui TUI Ctrl-P should show keyboard action hints
+[35mbd-ed9f88   [0m P2   [2mtask    [0m [32min_progress [0m [2m4h7m ago  [0m [2m4h6m ago  [0m cacophony:ms-mac-cacophony-caco-tui TUI Ctrl-P should find project profile views
+[35mbd-71f40c   [0m P2   [2mtask    [0m [32min_progress [0m [2m3h39m ago [0m [2m3h34m ago [0m cacophony:ms-mac-cacophony-caco-tui TUI agent detail top summary panels should be collapsible
+[35mbd-e963e3   [0m P2   [2mtask    [0m [32min_progress [0m [2m3h10m ago [0m [2m3h10m ago [0m cacophony:ms-mac-cacophony-caco-tui TUI help should document agent detail collapse keys
+[35mbd-daa862   [0m P2   [2mtask    [0m [32min_progress [0m [2m2h31m ago [0m [2m2h30m ago [0m cacophony:ms-mac-cacophony-caco-tui TUI compact agent detail hint should mention Alt+0
+[35mbd-4e72ec   [0m P2   [2mtask    [0m [32min_progress [0m [2m1h49m ago [0m [2m1h49m ago [0m cacophony:ms-mac-cacophony-caco-tui TUI persistent agent detail should honor collapse keys
+[35mbd-594313   [0m P2   [2mfeature [0m [32min_progress [0m [2m32m ago   [0m [2m31m ago   [0m cacophony:ms-dev-cacophony-caco-dev-msd-4 Use microvm.nix to generate reusable NixOS systemd/zsh agent images
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m14h32m ago[0m [2m14h31m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+[35mbd-29ebd0   [0m P3   [2mtask    [0m [32min_progress [0m [2m7h46m ago [0m [2m4h23m ago [0m cacophony:ms-mac-cacophony-caco-android Android QA: make emulator preference seeding verify written host
+[35mbd-eb9999   [0m P3   [2mbug     [0m [32min_progress [0m [2m1h32m ago [0m [2m1h22m ago [0m cacophony:ms-mac-cacophony-caco-macos [macos] verify load reporting for hot-but-stable hosts
+
+## assigned in-progress exact agent
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=in_progress&limit=2000)]
+
+## ready open web-adjacent labels
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=open&ready=true&label=ui&limit=50)]
+
+## in-progress caco-web/web owned elsewhere
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=in_progress&label=caco-web&limit=50)]
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=in_progress&label=web&limit=50)]
