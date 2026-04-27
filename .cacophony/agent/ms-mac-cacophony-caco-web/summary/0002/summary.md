@@ -1,36 +1,33 @@
-# Session summary — caco-web CDN-free static pages
+# Session summary — caco-web observe skip-build stale warning
 
 ## Goal
 
-Remove third-party CDN loads from the caco-web dashboard and standalone terminal/source surfaces so the browser dashboard remains offline-capable and privacy-aligned with the docs site posture.
+Close the validation workflow gap found while fixing bd-c2310e: `caco-web-observe --skip-build` can launch an old `caco-web-dev-server` binary after source changes, producing misleading Playwright evidence. This session added a bounded warning so future caco-web duty cycles know when fast-path observation may be stale.
 
 ## Bead(s)
 
-- `bd-fe1717` — [docs] caco-web standalone pages still load CDN assets
+- `bd-bfc2b8` — Make caco-web-observe skip-build warn when dev-server binary is stale
 
 ## Before state
 
-- Failing tests: none known at session start.
-- Relevant metrics: active duty cycle found no assigned bead, then found unowned ready `bd-fe1717` under the `caco-web` label.
-- Context: `index.html` loaded Google Fonts, `terminal.html` loaded xterm assets from jsDelivr, and `workspace-panes.js` dynamically loaded Prism CSS/JS from cdnjs when opening source files.
+- Failing tests: none.
+- Relevant metrics: during bd-c2310e, an unavailable-daemon validation run with `--skip-build` showed 62 browser console errors because it reused a stale dev-server binary; rerunning without `--skip-build` exercised the new proxy and produced 0 errors.
+- Context: the helper documented `--skip-build` as a speed flag but did not warn when source files were newer than the sibling `caco-web-dev-server` binary.
 
 ## After state
 
-- Failing tests: none in caco-web validation.
-- Relevant metrics: `cargo check -p caco-web --all-targets` passed; `cargo test -p caco-web --lib` passed with 280 tests.
-- Context: dashboard and terminal pages no longer contain external link/script tags for the audited CDN hosts. Terminal uses existing vendored xterm assets, and source panes stay readable as escaped plain text unless a future local Prism bundle is present.
+- Failing tests: none observed in the caco-web validation lane.
+- Relevant metrics: `CARGO_BUILD_JOBS=2 cargo check -p caco-web --bin caco-web-observe` passed; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` passed with 297 tests.
+- Context: when `--skip-build` is used, the helper compares the dev-server binary mtime against key caco-web Rust/static source files and writes a warning to both the observation log and stderr if the binary may be stale.
 
 ## Diff summary
 
-- Commits: `cf5c4bb2f`
-- Files touched: `crates/caco-web/static/index.html`, `crates/caco-web/static/terminal.html`, `crates/caco-web/static/workspace-panes.js`, `crates/caco-web/src/tests.rs`
-- Tests: +1 regression test / -0 / flipped 0
-- Behavioural delta: caco-web no longer reaches Google Fonts, jsDelivr, or cdnjs from the audited static pages; the regression test pins the no-third-party-CDN contract and local xterm asset usage.
-
-## Embedded artefacts
-
-- `.playwright-cli/page-2026-04-26T16-45-50-103Z.png` — terminal page smoke after local vendored xterm assets loaded with no external link/script tags.
+- Commits: `c4ed3226d`
+- Files touched: `crates/caco-web/src/bin/caco-web-observe.rs`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 tests / flipped 0 tests
+- Behavioural delta: `caco-web-observe --skip-build` now warns before launching a potentially stale `caco-web-dev-server`, including source names and an instruction to rerun without `--skip-build` before filing or validating evidence.
+- Validation: `cargo fmt --all`; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --bin caco-web-observe`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` — 297 passed.
 
 ## Operator-takeaway
 
-The browser dashboard now follows the same no-third-party-runtime-assets posture as the docs site for these caco-web surfaces: web rendering stays local, auditable, and less dependent on external CDN availability.
+Fast caco-web observations are still available, but the helper now protects operators and agents from accidentally trusting stale dev-server evidence after source changes.
