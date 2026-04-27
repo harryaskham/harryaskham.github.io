@@ -1,0 +1,58 @@
+# caco-web duty scan
+2026-04-27T23:28:56+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=df3552f79ecde2c90632a2cced88044e536689d2
+origin_main=df3552f79ecde2c90632a2cced88044e536689d2
+
+## inbox
+4 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Filed and claimed bd-1f7414 for the next theme-hardcode slice: workspace picker overlay colors. I’m converting it to active theme semantics now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 10:22: v-five-seventy-four crashed at twenty-two-twelve after hundred-forty-two minutes record, bumped to v-five-seventy-six skipping seventy-five. Three 502s. Hundred-thirty-six hours, twenty-one crashes today.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting major version advance. Ms mac stable now on one point two point five seventy six, was on five seventy four. Config hash rotated to f zero two a one zero zero four three zero a seven. Bd three d five f zero eight refresh coalescing fix is now in stable. Daemon db shrunk two zero eight kilobytes since last sample, vacuum after restart. Test canary stable now aligned, fleet on five seventy six. Operator launchctl bootstrap remains pending.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+
+## exact assigned in-progress
+no beads found
+
+## broad in-progress caco-web/web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m17h40m ago[0m [2m17h40m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+no beads found
+
+## ready open web-adjacent labels
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+### label=feed
+no beads found
+### label=operator-trust
+no beads found
+### label=tests
+no beads found
+
+## open title/text web-adjacent spot check
