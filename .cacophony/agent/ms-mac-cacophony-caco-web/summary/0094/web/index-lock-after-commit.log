@@ -1,0 +1,9 @@
+# bd-d5360c index lock after commit
+2026-04-27T21:30:55+01:00
+## lock
+-rw-r--r-- 1 harryaskham staff 0 Apr 27 21:30 .git/index.lock
+## git processes for checkout
+## status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [ahead 1]
+ M .cacophony/agent/ms-mac-cacophony-caco-web/summary/0094/summary.md
+?? .cacophony/agent/ms-mac-cacophony-caco-web/summary/0094/web/index-lock-after-commit.log
