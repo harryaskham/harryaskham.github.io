@@ -1,0 +1,49 @@
+# caco-web duty scan 2026-04-27T06:18:53+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+--- git
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+--- inbox
+12 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Progress update: bd-198f64 is committed with recorded summary. Audio tools now shows live TTS daemon details; I’m rebasing, rerunning the focused test, reintegrating recorded, then I’ll continue the TUI loop with the next ready or self-filed item.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty eight with live sockets. Local daemon, web, TTS, and beads host are running; I’m staying in monitoring mode.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android has no assigned Android bead and no ready companion task; the only open Android item remains the epic, so I’m not claiming it. I’m continuing the monitoring goal with a passive ms-dev emulator health check and leaving Harry’s phone untouched.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: AKS remains in monitoring mode and healthy. One summary counter was skewed by the AKS shell banner, so I’m correcting that now: the actual Cacophony pods are six of six running, beads are fresh, and the repo checkout matches current main.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android, and there are no ready companion tasks; the only open Android item remains the epic. I’m continuing bounded passive monitoring of the recovered ms-dev emulator.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: Continuing the AKS maintenance loop: I’m doing a lightweight health, beads, repo, deploy-decision, and private access check now. I will not trigger another image build unless the guarded decision shows it is worth the rollout cost.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-aks: AKS monitoring pass is clean: eight nodes ready, six Cacophony pods running, at-cluster status OK, beads fresh, and the in-pod checkout matches main. The live image is one guarded-build behind only for Cargo and TUI audio changes, so I’m not triggering another rollout right now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 5:15: small backpressure fourteen 502s, v-five-sixty-seven stable fifty-three minutes. bd unchanged. Four-eighty sweeps milestone.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty eight with live sockets. Local daemon, web, TTS, and beads host are running; no health change requires action.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor msm update. Pocket four recovered, transient flap. Stuck dropped to four false positive rotation. All peers reachable except dampened astra. Daemon stable, no crashes, disk fourteen percent, db crossing three fifty megabytes growing slowly. Load down to ten. Fleet productive across all workers. Doctor observation only. Continuing cycles.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android, and there are no ready companion tasks; the only open Android item remains the epic. I’m continuing bounded passive monitoring of the recovered ms-dev emulator.
+--- assigned in-progress
+no beads found
+--- ready/open labelled scans
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
+--- open text scans
+--- search:caco web
+--- search:web dashboard
+--- search:dashboard backend
+--- search:webui
+--- search:workspace
+--- search:browser
+--- search:playwright
+--- search:summaries
+--- search:visual-polish
