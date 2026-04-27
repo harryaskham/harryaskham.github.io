@@ -1,0 +1,10 @@
+Validation for bd-926b01:
+- cargo fmt --all — passed
+- CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib summaries_proxy_and_view_are_bounded_bd_79ea46 — passed after assertion update
+- CARGO_BUILD_JOBS=2 cargo test -p caco-daemon scan_artefacts_from_state_branch_paths_returns_summary_relative_screenshots_bd_926b01 — passed
+- CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets — passed
+- CARGO_BUILD_JOBS=2 cargo check -p caco-daemon --lib — passed with pre-existing microvm dead-code warnings
+- CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib — 299 passed
+- Current-assets caco-web-observe before fix reproduced 6 browser console errors from three Summaries raw screenshot 404s.
+- Current-assets caco-web-observe after fix reported browser console 0 errors / 0 warnings.
+- Focused Playwright validation selected summary #0036 with 📸 3; all three preview URLs were normalized to /raw/screenshots/... and returned 200 OK; imageCount=3, missingCount=0, rawPathContainsStateRoot=false, console 0 errors / 0 warnings.

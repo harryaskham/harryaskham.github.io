@@ -1,0 +1,75 @@
+port=59073 session=caco-web-bd-926b01-shot-0025 chrome=/run/current-system/sw/bin/google-chrome-stable
+--- open summaries
+### Browser `caco-web-bd-926b01-shot-0025` opened with pid 88850.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:59073/#summaries');
+```
+### Page
+- Page URL: http://127.0.0.1:59073/#summaries
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-04-27T04-04-57-229Z.yml)
+--- select row with screenshot artefacts and wait previews
+### Result
+{
+  "clicked": " #0036 18m ago Session summary — Android Beads surface screenshot QA bd-669f07bd-70193abd-a8b2a9 📸 3 ",
+  "previews": [
+    {
+      "state": "loaded",
+      "path": "screenshots/android-msdev-connected-beads.png",
+      "href": "http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36/raw/screenshots/android-msdev-connected-beads.png?project=cacophony",
+      "text": ""
+    },
+    {
+      "state": "loaded",
+      "path": "screenshots/android-msdev-connected-overview.png",
+      "href": "http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36/raw/screenshots/android-msdev-connected-overview.png?project=cacophony",
+      "text": ""
+    },
+    {
+      "state": "loaded",
+      "path": "screenshots/android-msdev-connected-ready-wait.png",
+      "href": "http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36/raw/screenshots/android-msdev-connected-ready-wait.png?project=cacophony",
+      "text": ""
+    }
+  ],
+  "imageCount": 3,
+  "missingCount": 0,
+  "rawPathContainsStateRoot": false,
+  "text": "ms-dev/caco-dev-msd-1 #0036 18m ago Session summary — Android Beads surface screenshot QA project: cacophony bd-669f07 bd-70193a bd-a8b2a9 Copy summary Jump to sections GOAL COPY Resume Android companion Beads surface QA after the ms-dev emulator/package-manager recovery, capture low-resolution evidence from the approved ms-dev emulator path, and decide whether the current Beads surface needs focused visual or performance follow-up beads. BEAD(S) COPY - `bd-a8b2a9` — Android companion: capture Beads surface on ms-dev after More promotions - Related blockers resolved earlier: `bd-669f07`, `bd-70193a` BEFORE STATE COPY - Failing tests: none for app code; prior capture attempts were blocked by "
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n    const sleep = ms => new Promise(r => setTimeout(r, ms));\n    for (let i = 0; i < 100; i++) {\n      const rows = Array.from(document.querySelectorAll(\'.summaries-row\'));\n      const target = rows.find(r => (r.querySelector(\'.summaries-row-artefacts\')?.innerText || \'\').includes(\'📸\'));\n      if (target) {\n        target.click();\n        for (let j = 0; j < 100; j++) {\n          const previews = Array.from(document.querySelectorAll(\'.summaries-artefact-preview[data-preview-url]\'));\n          if (previews.length && previews.every(p => [\'loaded\',\'missing\'].includes(p.dataset.previewState))) {\n            return {\n              clicked: target.innerText.replace(/\\s+/g, \' \').slice(0, 220),\n              previews: previews.map(p => ({ state: p.dataset.previewState, path: p.dataset.previewPath, href: p.href, text: p.innerText.trim().slice(0, 160) })),\n              imageCount: document.querySelectorAll(\'img.summaries-screenshot-thumb\').length,\n              missingCount: document.querySelectorAll(\'.summaries-artefact-preview-missing\').length,\n              rawPathContainsStateRoot: previews.some(p => /\\.cacophony\\/agent/.test(p.href)),\n              text: document.querySelector(\'#summaries-detail\')?.innerText?.replace(/\\s+/g, \' \').slice(0, 700)\n            };\n          }\n          await sleep(250);\n        }\n        return { clicked: target.innerText.replace(/\\s+/g, \' \').slice(0, 220), timeout: true, previewCount: document.querySelectorAll(\'.summaries-artefact-preview[data-preview-url]\').length, states: Array.from(document.querySelectorAll(\'.summaries-artefact-preview[data-preview-url]\')).map(p => p.dataset.previewState || \'\') };\n      }\n      const more = document.querySelector(\'#summaries-load-more:not([disabled])\');\n      if (i % 20 === 19 && more) more.click();\n      await sleep(250);\n    }\n    return { error: \'no screenshot row found\', rows: Array.from(document.querySelectorAll(\'.summaries-row\')).map(r => ({text:r.innerText.replace(/\\s+/g, \' \').slice(0, 160), icons:r.querySelector(\'.summaries-row-artefacts\')?.innerText || \'\'})) };\n  }');
+```
+--- console
+### Result
+Total messages: 0 (Errors: 0, Warnings: 0)
+
+--- network
+### Result
+[GET] http://127.0.0.1:59073/api/v1/summaries?limit=10&offset=0&project=cacophony => [200] OK
+[GET] http://127.0.0.1:59073/health => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/merge-queue?since=24h => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/38?project=cacophony => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36?project=cacophony => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36/raw/screenshots/android-msdev-connected-beads.png?project=cacophony => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36/raw/screenshots/android-msdev-connected-overview.png?project=cacophony => [200] OK
+[GET] http://127.0.0.1:59073/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-1/36/raw/screenshots/android-msdev-connected-ready-wait.png?project=cacophony => [200] OK
+--- screenshot
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-04-27T04-05-10-642Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-04-27T04-05-10-642Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-04-27T04-05-10-642Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+--- close
+Browser 'caco-web-bd-926b01-shot-0025' closed
+

@@ -1,0 +1,126 @@
+# caco-web duty scan 2026-04-27T04:48:40+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+--- git
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+--- inbox
+11 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android. bd-a8b2a9 remains owned by the ms-dev worker and the only open Android item is an epic, so I’m continuing passive emulator health monitoring without taking over the shared QA flow.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-6da914 landed and closed. Audio tools now shows STT unavailable reasons consistently with TTS, the checkout is clean, and I’ll continue the TUI loop with another board scan or a focused self-filed TUI polish item.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 3:45: zero errors, v-five-sixty-seven stable twenty-five minutes. Plus four closed two-thousand-two-hundred-eighty-four. Hundred-eighteen hours continuous.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete with no health change requiring action. Test and Canary are current at one point two point five sixty eight with live sockets, no macOS or Tendril bead is ready, no bead is assigned, checkout is clean, and local services plus beads host are running.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned and there are no ready unowned non-epic Android beads; the remaining open Android item is an epic. I’m continuing the bounded QA loop with a passive ms-dev emulator health check and won’t touch Harry’s phone or claim unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is in monitoring mode: the ms-dev emulator remains recovered and there is no current assigned Android implementation bead. I’m checking inbox and the Android board now, then I’ll keep the companion QA surface healthy without taking unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor msm: no fresh signals since last narration. Daemon recovered and stable, beads primary OK, sgu24 still unreachable around ninety minutes per cluster debugger awaiting advisory restart. Stuck thirteen helsinki maintenance class. Local healthy, no crashes, disk fourteen percent, db three forty four megabytes, load down to ten. Doctor observation only. Continuing cycles.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: another msm two check-in is out. I am staying within config-helper scope, with no source changes or builds, and will reintegrate promptly only if a validated config edit becomes necessary.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Progress update: the last Audio tools STT diagnostics slice is landed and closed. I’m still in the caco-tui loop: scanning for ready TUI beads now, and if none are safe to claim I’ll file the next focused TUI improvement from hands-on inspection and land it with a recorded summary.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos is active and continuing the maintenance loop. I’m checking inbox, assignments, Test and Canary provenance, and ready macOS or Tendril work now; I’ll claim relevant work if available, otherwise I’ll keep monitoring the isolated apps.
+--- assigned in-progress
+no beads found
+--- ready/open labelled scans
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
+--- open text scans
+--- search:caco web
+--- search:web dashboard
+--- search:dashboard backend
+--- search:webui
+--- search:workspace
+--- search:browser
+--- search:playwright
+--- search:summaries
+--- search:visual-polish
+--- continuation duty scan 2026-04-27T05:11:51+01:00
+--- inbox
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-8decc9 validation passed, but reintegration hit the stale-branch guard after main advanced during the four-minute build. I’m taking the first-party rebase path and retrying recorded reintegration now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-8decc9 landed and closed after the stale-branch retry. Audio tools now shows friendly local audio device names with ids, checkout is clean, and I’m continuing the TUI improvement loop with another scan.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 4:00: small backpressure thirteen 502s, v-five-sixty-seven stable forty minutes. Plus three closed two-thousand-two-hundred-eighty-seven.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Next TUI slice is an Audio tools parity polish: I filed and claimed the missing explicit voice-rotation state row, so operators can see ON or OFF without inferring it from the Voice line.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android, and the only open Android bead is still the epic, so I’m not claiming work. I’m continuing bounded monitoring with a passive ms-dev emulator health check.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-b8688e is implemented and validated. Audio tools now has an explicit voice-rotation ON or OFF row and keeps the pool count when enabled; I’m committing and recording the summary now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health change: the Helsinki beads maintenance window has cleared and the beads host is running again. Test and Canary remain current at one point two point five sixty eight with live sockets, no macOS or Tendril bead is ready, no bead is assigned, and the checkout is clean.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-b8688e is committed. The summaries API briefly hit a daemon transport error, so I used the next recorded summary index and will retry daemon-backed reintegration once the service responds.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-b8688e is committed with recorded summary. I’m rebasing, rerunning the focused voice-rotation Audio tools tests under two jobs, and reintegrating recorded.
+[broadcast] ms-mac:unknown:harryaskham: Speak an update on your progress and continue toward your goal, reintegrating often with summaries recorded if relevant, or montitoring and maintaining anything you are intended to keep healthy
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No explicit Android work is assigned to caco-android. The only open Android item remains an epic, so I’m not claiming it; I’m continuing bounded passive monitoring of the recovered ms-dev emulator.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos is active and continuing the maintenance loop. I’m checking inbox, assignments, Test and Canary provenance, and ready macOS or Tendril work now; I’ll claim relevant work if available, otherwise I’ll keep the isolated apps healthy.
+[speak] ms-mac:cacophony:ms-mac-cacophony-cluster-debugger: Cluster debugger steady. Sgu24 daemon still not binding port, about one hundred minutes now, nix on droid device, host alive over SSH. All other six peers healthy with only version drift mismatches settling across five sixty five through five sixty eight. No new cross node anomalies or beads warranted. Continuing fifteen minute sweep loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: caco-android is still in bounded monitoring. I have no assigned Android bead, the recovered ms-dev emulator remains the surface I’m keeping healthy, and I’m checking the board again before any further passive QA.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Config-helper update: latest msm two check-in sent; no response yet in this stream. I remain idle-but-monitoring, with config valid on last strict check and no local changes to commit or reintegrate.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos health pass is clean: no assigned bead, no ready macOS or Tendril work, checkout clean, and Test plus Canary remain current at one point two point five sixty eight with live sockets. Local daemon, web, TTS, and beads host are running, so I’m staying in monitoring mode.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-b8688e validation passed, but main advanced during the test run so reintegration hit the stale-branch guard. I’m rebasing through the first-party path, retrying recorded reintegration, then I’ll close and continue the TUI loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor msm: daemon stable three consecutive passes since recovery. Sgu24 unreachable one hundred ten minutes, cluster debugger tracking advisory restart. Stuck twelve decreasing as helsinki maintenance settles. Log monitor confirms v five sixty seven stable forty minutes with minor backpressure. Local healthy, no crashes, disk fourteen percent, db three forty six megabytes, load twenty one. Doctor observation only. Continuing cycles.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-b8688e landed and closed after the stale-branch retry. Audio tools now explicitly shows voice rotation ON or OFF with pool count when enabled; checkout is clean and I’m scanning for the next TUI item.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Next TUI slice is bd just filed: Audio tools should show an explicit none device row when local-device routing has no selected device, matching the speech popup instead of omitting the row.
+--- assigned in-progress
+no beads found
+--- bead bd-926b01
+[35mbd-926b01[0m  [1mcaco-web Summaries raw artifact 404s pollute browser console[0m
+  [34mstatus:[0m       [32mclosed[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:ms-dev-cacophony-caco-dev-msd-1
+  [34mlabels:[0m       caco-web, console-clean, summaries, web
+  [34mcreated:[0m      [2m2026-04-27T03:51:02.756844331Z (20m ago)[0m
+  [34mclosed_at:[0m    [2m2026-04-27T04:01:37.465965006Z (10m ago)[0m
+  [34mclosed_by:[0m    (unknown — closed before bd-5ae1ce)
+  [34mdescription:[0m  During the caco-web active duty cycle recorded under .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025, the Summaries route loaded the project-scoped list/detail successfully but attempted to render embedded PNG artefacts from a recorded summary via /api/v1/summaries/<agent>/<idx>/raw/<path>. Three referenced screenshot resources returned HTTP 404 and Chromium logged six console errors. Evidence: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/observation.log, console-2026-04-27T03-49-23-351Z.log, and server.log. Expected: missing summary artefacts should render as a bounded placeholder/link or otherwise be handled without browser console resource errors. Actual: broken image requests return 404 and pollute the console. Acceptance: Summaries detail with missing embedded artefacts has zero browser console errors, no 404 image resource noise, and still lets operators see/copy the missing artefact path.
+--- git
+## HEAD (no branch)
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/summary.md
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/01-page-2026-04-27T03-49-23-532Z.yml
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/11-page-2026-04-27T04-00-55-954Z.yml
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/21-page-2026-04-27T04-03-49-790Z.yml
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/23-page-2026-04-27T04-04-57-229Z.yml
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/bd-926b01-focused-after-fix-server.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/bd-926b01-focused-after-fix.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/bd-926b01-focused-screenshot-row-after-fix-server.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/bd-926b01-focused-screenshot-row-after-fix.log
+AM .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/board-and-inbox-scan.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/console-2026-04-27T03-49-23-351Z.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/filed-bead.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/observation-after-fix.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/observation.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/02-page-2026-04-27T03-49-35-167Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/03-page-2026-04-27T03-49-39-937Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/04-page-2026-04-27T03-49-44-223Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/05-page-2026-04-27T03-49-48-691Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/06-page-2026-04-27T03-49-56-194Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/07-page-2026-04-27T03-50-00-510Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/08-page-2026-04-27T03-50-04-947Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/09-page-2026-04-27T03-50-10-252Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/10-page-2026-04-27T03-50-38-058Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/12-page-2026-04-27T04-01-07-974Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/13-page-2026-04-27T04-01-12-924Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/14-page-2026-04-27T04-01-18-372Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/15-page-2026-04-27T04-01-29-002Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/16-page-2026-04-27T04-01-33-474Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/17-page-2026-04-27T04-01-38-240Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/18-page-2026-04-27T04-01-42-719Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/19-page-2026-04-27T04-01-47-035Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/20-page-2026-04-27T04-02-19-983Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/22-page-2026-04-27T04-04-26-167Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/screenshots/24-page-2026-04-27T04-05-10-642Z.png
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/server-after-fix.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/server.log
+A  .cacophony/agent/ms-mac-cacophony-caco-web/summary/0025/web/validation-summary.log
+M  crates/caco-daemon/src/summary.rs
+MM crates/caco-web/src/tests.rs
+MM crates/caco-web/static/summaries.css
+UU crates/caco-web/static/summaries.js
