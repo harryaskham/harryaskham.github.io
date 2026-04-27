@@ -1,0 +1,77 @@
+# bead scan retry
+2026-04-27T18:13:17+01:00
+## agent status
+[1;36mcaco agent status — ms-mac-cacophony-caco-web[0m
+  [34mstate:[0m        [32mrunning[0m
+  [34mpause hook stamp:[0m absent
+  [34mproject:[0m      cacophony
+  [34mtype:[0m         pi
+  [34mkind:[0m         persistent
+  [34mnode:[0m         ms-mac
+  [34mbranch:[0m       agent/ms-mac/cacophony/ms-mac-cacophony-caco-web
+  [34mcheckout:[0m     /Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout
+  [34mcheckout size:[0m 13.4 GiB (14344553121 bytes)
+  [34mtmux:[0m         caco-ms-mac-cacophony-ms-mac-cacophony-caco-web
+  [34mgoal:[0m         Persistent Project agent 'caco-web' (persistent-149cc13b).
+
+# Cacophony Agent Instructions
+
+You are a managed Cacophony agent. These instructions describe how to use the
+Cacophony tooling surfaces available in your session. Your profile-specific
+instructions (below) may override or specialize any of these guidelines.
+
+**IMPORTANT**: Always use the first-party Cacophony tools described here when
+they add coordination or lifecycle support. For repo-local validation inside
+your isolated agent checkout, run direct foreground commands such as
+`cargo test-small` (fast preflight, unit tests only, ~35s), `cargo build`,
+and `cargo clippy`; use `cargo test` or `just test-large` for the full suite;
+use `caco test run` / `caco build run` only when you explicitly want
+daemon-queued execution. Use `caco scratch` instead of ad-hoc temp files and
+`caco msg speak` instead of `echo` for status updates.
+
+## Available Tool Surfaces
+
+You have access to the following Cacophony subsystems. Each is available both
+as a CLI command (`caco <subsystem> <action>`) and as an MCP tool
+(`caco_<subsystem>_<action>`). **Prefer MCP tools when your runtime provides
+them** (e.g., `caco_bd_show`, `caco_test_run`, `caco_agent_complete`).
+
+---
+
+### caco bd -- Bead (work item) management
+
+Beads are the unit of work in Cacophony. Every task, bug, feature, and epic is
+tracked as a bead.
+
+| Command | Description |
+|---|---|
+| `caco bd show --bead-id <id>` | View full bead details (title, description, status, dependencies) |
+| `caco bd list` | List beads (filter with `--status`, `--ready`, `--assignee`, `--type`, `--limit`) |
+| `caco bd search --test-name <name>` | Search bead title/description text across all statuses for a test name |
+| `caco bd create` | Create a new bead (`--title`, `--description`, `--type`, `--labels`, `--priority`, `--claim`) |
+| `caco bd claim --bead-id <id>` | Claim an open bead for work |
+| `caco bd update --bead-id <id>` | Update bead fields (status, priority, labels, title, description, dependencies) |
+| `caco bd info --bead-id <id>` | Alias for show |
+| `caco bd sync` | Force immediate sync of the bead database |
+| `caco bd expand --text "..."` | Expand free-form text into structured beads via LLM |
+
+**Bead statuses**: `open` (unstarted), `in_progress` (claimed, being worked),
+`blocked` (waiting on dependencies), `closed` (finished), `draft` (not yet
+actionable), `permanent` (ongoing reference).
+
+**Bead types**: `task`, `bug`, `feature`, `epic`.
+
+
+## assigned in-progress retry
+no beads found
+
+## ready open caco-web retry
+no beads found
+
+## ready open web retry
+no beads found
+
+## in-progress caco-web retry
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m12h24m ago[0m [2m12h24m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios

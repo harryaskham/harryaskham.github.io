@@ -1,0 +1,53 @@
+# active duty continuation scan
+2026-04-27T18:20:55+01:00
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+ M crates/caco-web/src/tests.rs
+ M crates/caco-web/static/app.js
+?? .cacophony/agent/
+
+## inbox
+8 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. I remain scoped to bd-29ebd0 and will not duplicate the separate P0 reintegration work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-cluster-debugger: Cluster debugger note. Local ms-mac daemon went unreachable again briefly, recovered after caco up. Same regression class as earlier — native supervisor still unloaded so no auto restart on hang. Cluster remote nodes healthy, only routine version drift and known sgu24 flap. Continuing loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I improved the compact agent-detail summary locally: the State field no longer repeats the bead ID that is shown in the separate Bead field. Focused compact-state and render tests pass.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor confirms seventh daemon outage event this session. Cluster debugger reports local ms mac daemon went unreachable briefly, recovered via caco up manual intervention. Native supervisor still unloaded so no auto restart on hang. Operator launchctl bootstrap remains pending. Bead scans were partially unavailable during the window. Cluster remote nodes otherwise healthy. Doctor observation, no auto recovery available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 5:15: mostly clean twenty-nine 502s, v-five-seventy-four stable forty-five minutes, plus one closed two-thousand-three-hundred-fifty-nine.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no assigned bead and no ready macOS or Tendril beads. Test and Canary remain current at one point two point five seventy four with live sockets, Stable remains intentionally at one point two point five seventy, and services are running. Noted the P zero reintegration no-activity advisory, but ownership remains with yuyg and controller.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. I remain scoped to bd-29ebd0 and will keep the P zero reintegration coordination out of Android scope.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting historic load spike. Load average fifty two over sixty over fifty, highest sustained this session. Winmini and beelink recovered from outage wave, winmini got new hash four d seven four. Sgu twenty four sustained unreachable seventeen minutes now, the longer flap pattern. Ms dev daemon state stale seven hundred forty four seconds. Disk eleven percent. Daemon db four sixteen megs. Multiple workers on direct landings, bd nine e four be four P zero owner still no tool activity. Likely contention pressure.
+
+## assigned in-progress beads for this agent
+no beads found
+
+## bd-05ad06 detail
+[35mbd-05ad06[0m  [1mcaco-web stays snapshot delayed after delayed 200 snapshots[0m
+  [34mstatus:[0m       [32mopen[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     -
+  [34mlabels:[0m       backpressure, caco-web, dashboard, operator-trust, web
+  [34mcreated:[0m      [2m2026-04-27T17:18:16.145651259Z (2m ago)[0m
+  [34mdescription:[0m  During caco-web duty cycle 0089 on 2026-04-27, current-assets observation against daemon http://127.0.0.1:11100 showed that the dashboard can remain in `Snapshot delayed` / `Snapshot pending` across the whole route sweep even after the bd-0e204c copy fix landed and was closed.
+
+Evidence:
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/observation.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/server.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-16-39-637Z.png
+
+Observed:
+- Status hero correctly avoids healthy zero-count copy and shows `Waiting for daemon snapshot · counts unavailable until backpressure clears`.
+- However every major route in the sweep (Status, Agents, Beads, Feed, Chat, Workspace, Summaries) still reported connection `Snapshot delayed`.
+- The dev-server proxy logged repeated `/api/v1/ui/snapshot` responses as `200` only after about 8001-8003ms, plus `/api/v1/summaries?limit=10...` taking 15164ms.
+- Network summary included repeated `/api/v1/node` `net::ERR_ABORTED` entries while navigating.
+- Console was clean, so the browser surface looks calmly stuck rather than explaining whether a delayed 200 snapshot was unusable, last-known data is absent, or route/navigation requests are being canceled.
+
+Expected:
+- A delayed-but-200 snapshot should either hydrate visible last-known/status data or be surfaced as an explicit degraded/unusable snapshot state with the cause.
+- Route-level requests that are aborted during observation/navigation should not leave all routes looking indefinitely pending without a clear recovery or retry cue.
+
+Acceptance criteria:
+1. Reproduce the delayed-200 snapshot path with a focused helper/static test or observe scenario.
+2. The dashboard distinguishes `snapshot request completed but did not hydrate usable data` from `request still pending`.
+3. When a usable snapshot or stale cached snapshot is available, major dashboard routes render that data with a degraded freshness banner instead of staying empty/pending across the whole route sweep.
+4. Validate with focused caco-web tests and a lightweight caco-web-observe or Playwright repro.

@@ -1,0 +1,5 @@
+# reflect-session dedupe for bd-05ad06
+2026-04-27T18:25:03+01:00
+## draft beads matching claim/create
+## open beads matching claim/create
+created: bd-9d60d9 — Ensure caco bd create --claim persists ownership before reporting success
