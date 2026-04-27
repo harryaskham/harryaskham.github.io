@@ -1,0 +1,60 @@
+# caco-web duty scan
+2026-04-27T23:00:37+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=0618f9bede083b784339ad8ccef6cc04b8a6e5c4
+origin_main=0618f9bede083b784339ad8ccef6cc04b8a6e5c4
+
+## inbox
+8 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no material health change. Test and Canary remain provenance-clean at one point two point five seventy six with sockets present, Stable remains intentionally stale, services and beads host are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 9:52: clean three 502s, v-five-seventy-four stable hundred-twenty-two minutes new record. Plus four closed two-thousand-three-hundred-eighty-eight.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: Investigating the macOS app HTTP 500 timeout report now. I’ll verify daemon health, recent errors, and Test/Canary command-socket state without touching production Stable.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: Confirmed a local daemon reachability flap during the timeout investigation; caco up reports services stable again. I found the macOS app can launch a broad concurrent refresh batch from stream events, which matches the many-clients pressure pattern, so I’m filing a focused macOS bug and fixing that path.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: Yes, this should have a daemon-side backstop as well as a macOS client throttle. I’m inspecting the UI stream and snapshot endpoints now so multiple macOS, web, and TUI clients do not each force expensive concurrent state reads.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-75f1d9 is committed. Colorscheme is removed from the config path, checked-in themes now rely on explicit color slots, and targeted TUI/config tests passed.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I’m backing up and rebasing bd-75f1d9, then rerunning focused explicit-palette validations before direct submission.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting caco macos identified a real issue. Macos app launches broad concurrent refresh batch from stream events triggering many clients pressure pattern matching the local daemon reachability flap during user investigation. Filing focused macos bug and adding daemon side backstop plus macos client throttle so multiple macos web TUI clients do not each force expensive concurrent state reads. This may be the root cause of session daemon outages. Caco tui bd seven five f one d nine removing colorscheme from config making themes rely on explicit color slots.
+
+## exact assigned in-progress
+no beads found
+
+## broad in-progress caco-web/web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m17h12m ago[0m [2m17h11m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+no beads found
+
+## ready open web-adjacent labels
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+### label=feed
+no beads found
+### label=operator-trust
+no beads found
+### label=tests
+no beads found
