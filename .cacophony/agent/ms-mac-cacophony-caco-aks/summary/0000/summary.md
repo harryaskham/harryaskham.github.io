@@ -1,33 +1,36 @@
-# Session summary — Hermetic AKS beads sync config
+# AKS operator 101 docs update
 
 ## Goal
 
-Fix the production AKS beads sync failure where the self-contained ConfigMap leaked host-local SSH identity paths into pods, preventing the AKS master from fetching the shared `beads` branch and leaving web/TUI without the expected shared bead view.
+Publish a beginner-friendly AKS operator guide on the GitHub Pages AKS deployment page so the operator can see how the cluster is named, how to disambiguate it with `@cluster` syntax, how to connect privately, where configuration lives, and how to update or scale it.
 
 ## Bead(s)
 
-- `bd-d69a2a` — [AKS] Beads sync uses host SSH identity path in pod config
+- `bd-af3853` — Record AKS rollout to current main after reintegration safety hold.
 
 ## Before state
 
-- Failing tests: none known in repo validation; production AKS runtime was failing beads sync.
-- Relevant metrics: `deploy/aks/render-config.sh --self-contained` included `/Users/harryaskham/.ssh/caco` and `/Users/harryaskham/.ssh/caco-work`; AKS master pod lacked usable `/home/caco/.ssh/caco*` identities before Helm secret projection was corrected.
-- Context: AKS CA, relay, master, and three worker pods were running, but `git fetch origin beads` inside the master failed with `Identity file /Users/harryaskham/.ssh/caco not accessible` and `Permission denied (publickey)`.
+- `docs/aks.html` already documented guarded AKS rollout, private `@cluster` access, and nodepool recovery at a technical level.
+- It did not have a compact "n00b 101" section listing the concrete production context (`caco-aks`), namespace (`cacophony`), Helm release (`cacophony-aks`), default command pod, config locations, and exact copy/paste health/update/scale commands.
+- AKS production had been recovered separately to nodepool count 11 with all Cacophony role pods healthy; this docs change did not need another cluster mutation.
 
 ## After state
 
-- Failing tests: none observed for the AKS validation surfaces run in this session.
-- Relevant metrics: self-contained render has zero `/Users/` leaks; identity paths render as `/home/caco/.ssh/caco` and `/home/caco/.ssh/caco-work`; `caco bd list --status open --limit 5` succeeds inside `pod/caco-aks-master-0` and returns shared beads.
-- Context: production ConfigMap was replaced, StatefulSets restarted, Helm release was upgraded to revision 24 with `cacophony-node-secrets` SSH key projection, and master pod verification showed no host path leaks plus present SSH keys.
+- Added a `Production cluster 101` section to `docs/aks.html`.
+- Documented the production AKS names and the private `caco @cluster:caco-aks ...` workflow.
+- Added raw Kubernetes examples through `nix develop .#aks-lite`, heavier Azure/ACR/nodepool guidance through `nix develop .#aks`, repo and in-pod config locations, guarded deploy commands, nodepool scaling commands, and a quick health checklist.
+- Preserved the private-by-default contract: access uses kubeconfig plus `kubectl exec`, not public daemon/web/SSE ingress.
 
 ## Diff summary
 
-- Commits: `0f951f4bf`
-- Files touched: `deploy/aks/render-config.sh`, `deploy/aks/validate-self-contained-config.sh`, `deploy/aks/validate-operator-surfaces.sh`, `deploy/aks/README.md`, `deploy/aks/PRODUCTION-ROLLOUT.md`, `justfile`
-- Tests: +0 / -0 / flipped 0
-- Behavioural delta: AKS self-contained config now rewrites host-local secret/static paths to container paths, removes provider secret-file references in favor of env names, validates that no `/Users/` paths leak, and passes production SSH secret/key names through the AKS Helm helper paths.
-- Validation run: `./deploy/aks/validate-self-contained-config.sh`; `./deploy/aks/validate-operator-surfaces.sh`; `./deploy/helm/validate.sh`; `./deploy/aks/validate.sh`; `CACO_AKS_CONTEXT=caco-aks CACO_AKS_NAMESPACE=cacophony just aks-self-dry-run`; live `kubectl exec pod/caco-aks-master-0 -- caco bd list --status open --limit 5`.
+- `docs/aks.html`: inserted a new operator-oriented AKS 101 section before the existing rollout workflow, including commands for `@cluster`, `kubectl`, `helm`, guarded deploy, nodepool scaling, and repo freshness checks.
+- `.cacophony/agent/ms-mac-cacophony-caco-aks/summary/0000/summary.md`: recorded this session summary for direct recorded reintegration.
+
+## Validation
+
+- `./docs/validate-pages.sh` — passed (`1781 passed, 0 warnings, 0 failed`).
+- `git diff --check` — passed.
 
 ## Operator-takeaway
 
-The AKS deployment is no longer depending on Harry's macOS SSH paths for beads sync. The large repo can still make the first in-cluster beads fetch slow, but once the fetch completes the AKS master now sees the shared Cacophony bead view through hermetic in-pod config and projected Kubernetes secrets.
+Use `caco @cluster:caco-aks ...` for private Cacophony commands against AKS, `nix develop .#aks-lite` for read-only Kubernetes checks, `nix develop .#aks --command just aks-deploy-check` before any guarded deployment, and `nix develop .#aks --command just aks-nodepool-scale harryaskham-sandbox caco-aks system <count>` for AKS nodepool recovery.
