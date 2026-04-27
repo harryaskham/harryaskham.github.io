@@ -1,0 +1,28 @@
+--- network
+
+--- playwright network
+### Result
+[GET] http://127.0.0.1:65389/health => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/merge-queue?since=24h => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/stream => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/node => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/stream => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/summaries?limit=200&offset=0 => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/tts/status => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/tts/voices => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/ms-dev => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/helsinki => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/pocket4 => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/winmini => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/beelink => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/sgu24 => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/nodes/astra => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/speech/agent-audio => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/ui/snapshot => [200] OK
+[GET] http://127.0.0.1:65389/api/v1/speech/agent-audio => [200] OK
+
