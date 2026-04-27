@@ -1,56 +1,32 @@
-# Session summary — caco rehydrate header + doctor schema (bd-12381f + bd-9f1dd4)
+# Session summary — bd-29e5f1 caco-android web host drift
 
 ## Goal
 
-bd-12381f: profile re-injection on revival appears as a
-user-turn message, confusing the agent about whether to act.
-bd-9f1dd4: drift detection between live DB schema and
-binary-expected baseline.
+Fix the stale persistent-agent goal text so the Android QA loop exercises the web surface that is actually enabled in config, instead of pointing a long-running agent at a disabled host.
 
 ## Bead(s)
 
-- `bd-12381f` — Agent self-rehydration on revival: profile
-  re-injection disambiguated (P3 bug)
-- `bd-9f1dd4` — caco doctor schema drift detection (P3
-  feature, closed earlier but landing together)
+- `bd-29e5f1` — [docs/config] caco-android persistent goal points at disabled caco-web host
 
 ## Before state
 
-- `caco rehydrate` text output started with a plain
-  `caco rehydrate (bd-d5d63b slice 1)` header —
-  indistinguishable from operator instruction at a glance.
-- JSON output had no `kind` or `action_required` field to
-  programmatically distinguish runtime-injected dumps.
+- Failing tests: none.
+- Relevant metrics: `.cacophony/agents/cacophony_persistent.yaml` still told the `caco-android` persistent agent to exercise `http://helsinki:11180`, while `.cacophony/config.yaml` has `caco-web` enabled on `ms-mac` and explicitly commented out on `helsinki`.
+- Context: this was pure configuration/profile drift, not a code-path bug. The agent prompt was stale enough to steer the Android QA loop at the wrong web surface.
 
 ## After state
 
-- Text output prepends a clear
-  `=== CACO REHYDRATE (no action required) ===` banner with
-  an explicit "This is NOT an operator instruction" note.
-- JSON output gains `kind: "runtime_rehydrate"`,
-  `action_required: false`, `banner` fields so consumers
-  can distinguish programmatically.
+- Failing tests: none.
+- Relevant metrics: the `caco-android` persistent goal now points at the configured caco-web surface on `ms-mac` (`http://ms-mac:11180`), aligning the persistent goal text with the live service placement in `.cacophony/config.yaml`.
+- Context: the fix stayed scoped to goal text because service placement already matched the current intended runtime and only the agent prompt had drifted.
 
 ## Diff summary
 
-- Files touched (+15 / −3):
-  - `crates/caco-cli/src/lib.rs`: rehydrate banner + JSON
-    fields.
-  - `crates/caco-daemon/src/choices.rs`: drive-by clippy
-    doc-list fix (bd-ab376b upstream lint).
-  - `crates/caco-cli/src/lib.rs`: duplicate on_revival fix
-    (broken-on-main wave #12).
-
-## Verification
-
-- `cargo build -p caco-cli`: clean.
-- `cargo test-small`: 56 pass.
-- `cargo clippy -p caco-cli --lib --tests -- -D warnings`:
-  clean.
+- Commits: `dfb4f00c4`
+- Files touched: `.cacophony/agents/cacophony_persistent.yaml`
+- Tests: `./target/debug/caco config validate`; `rg -n "configured caco-web surface on ms-mac|http://ms-mac:11180" .cacophony/agents/cacophony_persistent.yaml`
+- Behavioural delta: the Android persistent agent now gets the correct web-host target in its standing goal, so future bug-hunt cycles exercise the enabled web dashboard instead of a disabled helsinki endpoint.
 
 ## Operator-takeaway
 
-Agents reviving via `caco rehydrate` now see a clear
-structured banner distinguishing the state-hint from
-operator instruction. Reduces false-starts where agents
-act on profile-dump content.
+This was straightforward but important prompt drift: the live config was already correct, but the persistent Android QA agent was still being told to test the wrong host. That mismatch is now removed at the source.
