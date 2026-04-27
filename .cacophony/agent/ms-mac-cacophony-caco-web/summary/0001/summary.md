@@ -1,38 +1,40 @@
-# Session summary — caco-web observation helper
+# Session summary — Console-clean daemon unavailable state
 
 ## Goal
 
-Implement the queued caco-web workflow bead to replace fragile long inline Playwright duty-cycle commands with a repo-owned helper that launches or targets a dashboard, drives standard route checks, and records console/network/screenshot evidence consistently.
+Keep the caco-web browser dashboard trustworthy during daemon restart/unavailable windows. This duty cycle observed that the UI rendered a handled degraded state, but Chromium still reported red resource-load errors for expected daemon 503s; the goal became to make those handled backend-unavailable paths console-clean without hiding the operator-facing degraded state.
 
 ## Bead(s)
 
-- `bd-1ed859` — Add reusable caco-web Playwright visual-observation helper
+- `bd-c2310e` — caco-web logs handled daemon 503s as browser console errors during restart
 
 ## Before state
 
-- Failing tests: none at implementation start.
-- Relevant metrics: prior duty cycles relied on long inline bash plus `npx --yes @playwright/cli` commands, which had already caused quote-related failures during visual observation.
-- Context: `bd-1ed859` was open and unassigned; after `bd-d78de9` landed, it was the next focused caco-web bead surfaced by text/title scans.
+- Failing tests: none at start of implementation.
+- Relevant metrics: duty-cycle observation `/tmp/caco-web-duty-current-001255-observation.log` reported `Total messages: 8 (Errors: 8, Warnings: 0)` from 503 responses during a daemon restart/unavailable window.
+- Context: `caco web status` recovered to healthy on `11180`, but local daemon/bead authority had just flapped. The current-assets helper showed handled `Backend unavailable` / `Snapshot delayed` UI while DevTools still logged `Failed to load resource: 503` for snapshot, merge-queue, UI stream, and logs stream endpoints.
 
 ## After state
 
-- Failing tests: none observed.
-- Relevant metrics: helper validation against managed `http://127.0.0.1:11180` completed successfully, produced console `0` errors / `0` warnings, and saved a final screenshot.
-- Context: caco-web duty cycles can now run `cargo run -p caco-web --bin caco-web-observe -- ...` for the standard Workspace/route/console/network observation pass instead of embedding large JavaScript snippets in shell one-liners.
+- Failing tests: none observed in the caco-web validation lane.
+- Relevant metrics: fresh unavailable-daemon Playwright validation `/tmp/caco-web-bd-c2310e-validation-fresh.log` reported `Total messages: 0 (Errors: 0, Warnings: 0)` while still rendering `Backend unavailable`.
+- Context: caco-web proxy now maps read-only daemon 503/connect-unavailable paths to HTTP 200 handled sentinels, with SSE-shaped sentinel events for EventSource clients, so browser DevTools stays clean while app.js continues showing explicit degraded/retry UI.
 
 ## Diff summary
 
-- Commits: `fad2c8ae4` (`bd-1ed859: add caco-web observe helper`).
-- Files touched: `crates/caco-web/src/bin/caco-web-observe.rs`, `crates/caco-web/src/tests.rs`, `.cacophony/profiles/caco-web.md`.
-- Tests: added `caco_web_observe_helper_standardizes_playwright_cycle_bd_1ed859`.
-- Behavioural delta: new `caco-web-observe` helper supports launching the current-assets `caco-web-dev-server` or observing an existing `--url`, sets `TMPDIR=/tmp` for `@playwright/cli`, captures narrow and wide route sweeps, Workspace overflow data, help overlay status, console output, network output, screenshots, and cleanup. The caco-web profile now recommends the helper for the standard duty-cycle pass.
-- Validation: `cargo fmt --all -- --check`; `git diff --check`; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --bin caco-web-observe`; focused helper test; helper live validation; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` (295 passed); post-rebase focused helper test passed.
+- Commits: `7842731ae`
+- Files touched: `crates/caco-web/src/proxy.rs`, `crates/caco-web/src/tests.rs`
+- Tests: +1 regression test / -0 tests / flipped 0 tests
+- Behavioural delta: caco-web now translates expected read-only daemon unavailable responses into console-clean sentinels instead of forwarding 503s directly to the browser. Snapshot timeout behaviour remains unchanged, and SSE consumers get a one-event `event: error` stream with backend-unavailable metadata.
+- Validation: `cargo fmt --all`; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` — 296 passed; fresh Playwright unavailable-daemon validation at `/tmp/caco-web-bd-c2310e-validation-fresh.log` — 0 console errors / 0 warnings.
 
 ## Embedded artefacts
 
-- `/tmp/caco-web-bd-1ed859-helper-validation.log` — live helper run against managed caco-web, including route sweep, console, and network output.
-- `.playwright-cli/page-2026-04-26T22-48-38-478Z.png` — final screenshot from the helper validation run.
+- `/tmp/caco-web-duty-current-001255-observation.log` — before evidence showing handled UI plus browser 503 console errors during daemon unavailability.
+- `/tmp/caco-web-bd-c2310e-validation-fresh.log` — after evidence showing handled `Backend unavailable` UI with zero browser console errors.
+- `.playwright-cli/page-2026-04-27T00-23-18-957Z.png` — after Workspace screenshot in the unavailable-daemon validation pass.
+- `.playwright-cli/page-2026-04-27T00-25-17-958Z.png` — after help-overlay screenshot from the same validation pass.
 
 ## Operator-takeaway
 
-The caco-web observation loop now has a first-party helper for repeatable Playwright evidence capture, reducing quote-related failures and making future visual duty-cycle reports easier to produce consistently.
+The dashboard still tells the operator when the daemon is unavailable, but expected restart-window 503s no longer pollute the browser console as red errors. A follow-up draft `bd-bfc2b8` captures the validation friction where `caco-web-observe --skip-build` can accidentally reuse a stale dev-server binary after proxy changes.
