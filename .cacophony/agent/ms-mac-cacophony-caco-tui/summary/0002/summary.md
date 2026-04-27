@@ -1,36 +1,36 @@
-# Session summary — workspace MVP thin slice
+# Session summary — TUI kitty cleanup on resize
 
 ## Goal
 
-Ship the first usable slice of the new web workspace surface so the rest of the workspace-view epic can build in parallel on top of stable contracts. This session aimed to prove the end-to-end shape: a dedicated `/workspace` route, a draggable two-pane layout, a bead list in one pane, and a live tmux-backed terminal in the other, with browser-side state and shared `window.Workspace` contracts ready for downstream beads.
+Fix the operator-reported class of TUI kitty graphics artefacts where image-backed borders or decorative surfaces can survive resize, redraw, or navigation because cleanup depends too narrowly on explicit resize events and panel-role suppression.
 
 ## Bead(s)
 
-- `bd-a78749` — [workspace-view MVP] 2-pane split + 1 terminal + 1 bead list + layout JSON scaffold (end-to-end thin slice)
-- (parent: `bd-027e9d` — [EPIC] caco-web Workspace View: splittable panes, saved layouts, multi-agent terminals, parity with TUI)
+- `bd-01497a` — TUI kitty graphics borders persist after resize/redraw/navigation
 
 ## Before state
 
-- `caco-web` had the main dashboard and the agent terminal surface, but no dedicated `/workspace` route.
-- The existing terminal path was `/api/v1/agents/<id>/pty/stream`, a legacy read-only-ish stream contract used by the current dashboard terminal surface.
-- There was no web-side `window.Workspace` object, no MVP pane tree contract, and no `workspace.*` localStorage namespace for layout state.
-- There was no dedicated acceptance test for a workspace page plus terminal WebSocket handshake.
+- Failing tests: none known for this path; existing coverage asserted explicit `CrosstermEvent::Resize` cleanup only.
+- Relevant metrics: no FPS benchmark run; this was a correctness cleanup, not a performance iteration.
+- Context: previous fixes queued kitty deletes on explicit resize and some content swaps, but a frame could still arrive with changed geometry before/without the resize handler, and resize suppression did not cover unscoped decorative requests such as span pills, glows, fills, cursor glows, and sparklines.
 
 ## After state
 
-- `caco-web` now serves `/workspace` with a two-pane split view, draggable splitter, bead list pane, and xterm.js-backed terminal pane.
-- The browser now exposes `window.Workspace` with `paneTree`, `bus.on()/emit()`, and local persistence under `workspace.split_ratio`, `workspace.selected_agent`, and `workspace.project`.
-- The daemon and web proxy now expose a dedicated `/api/v1/agents/<id>/pty` WebSocket path for the workspace MVP, while preserving the older `/pty/stream` route for the existing terminal surface.
-- The workspace route now injects the configured default project into the page and the client also falls back to `ui/snapshot.default_project` / first configured project when needed.
-- `caco-web` now has an acceptance test that loads `/workspace` and confirms the terminal WebSocket handshake.
+- Failing tests: none in targeted validation.
+- Relevant metrics: targeted caco-tui tests passed with `CARGO_BUILD_JOBS=2` / `cargo -j2` after rebasing onto current `origin/main`.
+- Context: render now treats actual ratatui frame size as authoritative; if frame geometry changes, it queues explicit kitty deletes, invalidates border/background caches, and honors resize debounce. Full resize suppression also skips unscoped decorative kitty requests so they retire instead of being re-recorded while borders fall back to text.
 
 ## Diff summary
 
-- Commits: `a734c27b`
-- Files touched: `crates/caco-web/src/server.rs`, `crates/caco-web/src/proxy.rs`, `crates/caco-web/src/static_assets.rs`, `crates/caco-web/src/tests.rs`, `crates/caco-web/src/ws_proxy.rs`, `crates/caco-web/static/workspace.html`, `crates/caco-web/static/workspace.css`, `crates/caco-web/static/workspace.js`, `crates/caco-daemon/src/pty_stream.rs`, `crates/caco-daemon/src/agent/health.rs`, `crates/caco-daemon/src/lib.rs`, `crates/caco-cli/src/lib.rs`, `README.md`, `AGENTS.md`
-- Tests: added workspace-MVP acceptance coverage in `crates/caco-web/src/tests.rs`; retained daemon PTY-stream unit coverage; full `cargo test-small` and `cargo check --workspace --tests` preflight passed.
-- Behavioural delta: operators can now open a dedicated browser workspace page and use a simple saved split plus a live terminal selection workflow, and downstream workspace beads now have concrete page, bus, storage, and WebSocket contracts to build against instead of inventing parallel ones.
+- Commits: `6e55a43bd`
+- Files touched: `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/views/common.rs`
+- Tests: +2 regression tests / -0 / flipped 0
+- Behavioural delta: kitty graphics cleanup no longer relies solely on crossterm resize events, and all-roles resize suppression now applies to unscoped decorative graphics surfaces as well as panel borders.
+- Validation:
+  - `CARGO_BUILD_JOBS=2 cargo test -j2 -p caco-tui render_frame_size_change_queues_kitty_deletes_for_displayed_surfaces --lib`
+  - `CARGO_BUILD_JOBS=2 cargo test -j2 -p caco-tui full_role_suppression_skips_unscoped_graphics_requests --lib`
+  - earlier targeted checks also covered `handle_resize_queues_kitty_deletes_for_displayed_borders`, `handle_resize_invalidates_surfaces`, and `role_suppression`.
 
 ## Operator-takeaway
 
-This session established the MVP contract that the rest of the web-workspace buildout can safely target. The crucial outcome is not just the page itself, but the fact that the workspace route, `window.Workspace` contract, localStorage keys, and dedicated `/pty` terminal path now exist as stable integration points for the remaining parallel beads.
+This closes an important blind spot in the kitty cleanup lifecycle: the TUI now uses the frame it actually rendered, not just the event it hoped to receive, to decide when old image placements must be deleted. I also filed `bd-c88d36` as a draft follow-up for a stronger terminal-level kitty placement lifecycle harness.
