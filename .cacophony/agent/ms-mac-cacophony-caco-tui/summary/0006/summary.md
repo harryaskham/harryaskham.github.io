@@ -1,32 +1,35 @@
-# Session summary — Workspace-scoped merge queue in the TUI
+# Session summary — Graphics-only Performance filter
 
 ## Goal
 
-Make the TUI’s top-level merge-queue pane respect the active workspace tab so a project workspace can show its own isolated merge queue without clobbering the existing cluster-wide queue or the separate project-specific merge-queue pane.
+Add a small TUI usability improvement on top of the new kitty graphics Performance summary: let operators drill into only graphics-related perf rows without scrolling past unrelated daemon or project performance events.
 
 ## Bead(s)
 
-- `bd-b544e8` — Add per-workspace merge queue to TUI
+- `bd-a33222` — TUI Performance view: add graphics-only filter
 
 ## Before state
 
-- Failing tests: none in the touched TUI area, but broader validation initially hit an unrelated broken-on-main compile regression in `TopLevelBeadsConfig` test initializers (`bd-0225e7`)
-- Relevant metrics: the TUI had two queue scopes only — cluster-wide (`ClusterMergeQueue`) and per-project (`ProjectMergeQueue`)
-- Context: when a project workspace tab was active, the top-level merge-queue pane still read and rendered the global cluster cache, so operators could not treat it as a workspace-local queue surface
+- Failing tests: none known for this path; `tests::shipped_profiles_html_matches_autogen_output` was reported broken-on-main and owned by `ms-dev-cacophony-caco-dev-msd-4`, not part of this TUI change.
+- Relevant metrics: no FPS benchmark run; this was a TUI interaction/filtering slice.
+- Context: `bd-c84513` added a compact kitty graphics summary strip to the Performance view, but the underlying table still mixed `tui.graphics` rows with unrelated perf records, making detail inspection and bead filing noisy.
 
 ## After state
 
-- Failing tests: none in local validation
-- Relevant metrics: the TUI now maintains three distinct merge-queue caches — global, per-project, and per-workspace — with retry state isolated for each
-- Context: `ClusterMergeQueue` now becomes workspace-scoped whenever `workspace_project` is set, with dedicated fetch keys, breadcrumb wording, retry handling, and render-time cache selection; the project pane remains independently scoped
+- Failing tests: none in targeted validation.
+- Relevant metrics: targeted caco-tui tests passed with cargo limited to two jobs after rebasing onto current `origin/main`.
+- Context: the Performance view now has a `g` toggle for graphics-only rows. The title and hint line reflect the active filter, selection resets on toggle, detail overlay uses the filtered rows, and filing a bead from Performance targets the selected filtered record.
 
 ## Diff summary
 
-- Commits: `f156572f`
-- Files touched: `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/event.rs`, `crates/caco-tui/src/state/mod.rs`, `crates/caco-tui/src/views/merge_queue.rs`, `crates/caco-tui/src/views/tab_bar.rs`
-- Tests: added targeted TUI coverage for workspace merge-queue retry, action-result cache separation, workspace breadcrumb wording, and render-path selection; validated with `cargo test -p caco-tui handle_key_r_retries_ --lib`, `cargo test -p caco-tui merge_queue_action_result_stores_workspace_cache_separately --lib`, `cargo test -p caco-tui breadcrumbs_workspace_merge_queue --lib`, `cargo test -p caco-tui render_uses_workspace_cache_when_workspace_project_is_set --lib`, `cargo test -p caco-tui merge_queue --lib`, `cargo test -p caco-tui nav --lib`, `cargo build -p caco-tui`, `cargo test-small`, and `cargo check --workspace --tests`
-- Behavioural delta: the top-level merge queue now follows the active workspace tab, uses its own cache/error lifecycle, and labels itself as `Workspace > Merge Queue` in the header so it is visibly distinct from both the global cluster queue and the per-project queue pane
+- Commits: `14b9821c6`
+- Files touched: `crates/caco-tui/src/app.rs`, `crates/caco-tui/src/state/mod.rs`, `crates/caco-tui/src/views/performance.rs`
+- Tests: +1 new filtering regression test / -0 / flipped 0
+- Behavioural delta: pressing `g` inside a project Performance pane toggles between all perf events and graphics-only perf events while preserving existing row navigation/detail workflows.
+- Validation:
+  - `CARGO_BUILD_JOBS=2 cargo test -j2 -p caco-tui filtered_perf_events_respects_graphics_only_toggle --lib`
+  - `CARGO_BUILD_JOBS=2 cargo test -j2 -p caco-tui graphics_perf_summary_extracts_latest_window_metrics --lib`
 
 ## Operator-takeaway
 
-The TUI now has a real third merge-queue scope: workspace. Operators can stay inside a project workspace and use the top-level queue pane as a workspace-local view without losing the separate project-queue surface or contaminating the global queue cache.
+The TUI Performance pane is now more useful during kitty graphics investigations: operators can see the graphics summary and immediately filter the table to the underlying `tui.graphics` rows with one keypress.
