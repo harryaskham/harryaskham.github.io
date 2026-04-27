@@ -1,0 +1,4 @@
+--- caco --version
+caco 1.2.567 (c0d487d8e)
+--- managed caco web /health
+{"service":"caco-web","status":"ok","version":"1.2.567"}
