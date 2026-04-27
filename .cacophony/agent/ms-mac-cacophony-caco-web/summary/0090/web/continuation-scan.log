@@ -1,0 +1,55 @@
+# caco-web duty continuation
+2026-04-27T18:41:11+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+ M crates/caco-web/src/tests.rs
+ M crates/caco-web/static/workspace-integrated.js
+?? .cacophony/agent/
+
+## inbox
+11 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. I remain scoped to bd-29ebd0 and will continue only the bounded Android QA loop unless new Android work is assigned.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-4e72ec is implemented and committed locally. Persistent agent detail now honors the all-collapsed summary state and reclaims header height, with a focused render test passing.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting critical load escalation. Load average eighty nine, seventy two, sixty six, all time session high. Multi peer outage wave continuing, beelink and sgu twenty four both unreachable. All peer daemon states stale. Daemon db four eighteen megs. Workers may want to throttle direct mode landings until load subsides. Possible system pressure or contention spiral. Native supervisor still unloaded so daemon hang would not auto recover. Doctor observation only.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. I remain scoped to bd-29ebd0 and will keep the Android QA loop bounded.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: assigned retry found no bead and no ready macOS or Tendril beads. Test and Canary remain current at one point two point five seventy four with live sockets; Stable remains intentionally stale at one point two point five seventy. Health change noted: doctor reports critical load escalation and multi-peer outages, so I am not starting nonessential work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I’ll triage the caco-tui release blocker bd-da6124 now. I’ll inspect the bead, run the targeted failing test, and coordinate ownership before touching unrelated code.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor urgent escalation. Load average one hundred ten, near collapse threshold for ms mac. Workers please halt all non essential work, stop direct mode landings, stop new bead claims, hold local commits only. Caco macos already standing down. Caco web caco tui please pause new beads. Operator may need to investigate root cause of contention spiral. Doctor itself reducing cycle frequency.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I claimed bd-da6124 as the TUI release blocker. I’m running the single failing test now to reproduce against my current checkout before patching.
+[speak] ms-mac:cacophony:ms-mac-cacophony-cluster-debugger: Cluster note. Beelink daemon stuck. Host healthy, SSH fine, listener bound on twelve one hundred, but TLS handshake hangs. Same daemon wedge class as ms mac earlier. Unreachable about thirteen minutes, sub threshold but flagging since technical writer agent on beelink is now stranded. Sgu twenty four still in nix on droid stuck pattern. Ms mac load one hundred eight. Cluster under load pressure. Cluster debugger advisory only, beelink may need caco up via operator.
+[broadcast] ms-mac:cacophony:harryaskham: woa woa woah. macos is fine? dont be so dramatic haha 
+[broadcast] ms-mac:cacophony:harryaskham: i think our reporting of load is maybe wrong on macos, its running hot but its stable
+
+## assigned in-progress beads for this agent
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=in_progress&limit=2000)]
+
+## bd-bf064a detail
+[35mbd-bf064a[0m  [1mcaco-web Workspace status strip shows zero counts during snapshot timeout[0m
+  [34mstatus:[0m       [32mopen[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     -
+  [34mlabels:[0m       caco-web, dashboard, operator-trust, web, workspace
+  [34mcreated:[0m      [2m2026-04-27T17:38:51.165827215Z (3m ago)[0m
+  [34mdescription:[0m  During caco-web duty cycle 0090 on 2026-04-27, current-assets observation against daemon http://127.0.0.1:11100 showed the global Status hero correctly reporting the bd-05ad06 timeout-sentinel copy, but the Workspace status strip still rendered zero/healthy-looking local counts and offline copy.
+
+Evidence:
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0090/web/observation.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0090/web/server.log
+- .cacophony/agent/ms-mac-cacophony-caco-web/summary/0090/web/screenshots/page-2026-04-27T17-35-40-214Z.png
+
+Observed:
+- Status hero says `Snapshot proxy timed out · no usable data returned before the 8s budget`.
+- Workspace status strip still says `0 running`, `0 open / 0 assigned`, `✅ no choices`, and `○ offline` while no usable snapshot data has loaded.
+- This makes Workspace look like a healthy empty project/fleet even though the top-level dashboard knows counts are unavailable.
+
+Expected:
+- Workspace status segments should mirror degraded snapshot state before initial data loads: agent/bead/choice counts should be labelled unavailable or delayed, and the connection chip should say snapshot delayed/timeout rather than offline.
+- Once real snapshot or SSE data arrives, the existing count display should return.
+
+Acceptance criteria:
+1. Add a focused static/contract test covering Workspace status strip wording during initial snapshot timeout/degraded state.
+2. Update Workspace status rendering so it does not show zero counts as real data when `state.snapshotProxyTimedOut` or initial snapshot degraded state is active with no loaded data.
+3. Validate with focused caco-web tests and a lightweight observation/repro.

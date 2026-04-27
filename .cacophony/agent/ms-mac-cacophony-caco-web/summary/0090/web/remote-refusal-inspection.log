@@ -1,0 +1,68 @@
+# remote-agent-branch refusal inspection bd-bf064a
+2026-04-27T18:50:18+01:00
+## remote-only log
+d415fa5ed merge(caco-web): preserve remote summary ancestry (bd-05ad06)
+c9c2e4af9 fix(caco-web): label delayed snapshot timeout sentinel (bd-05ad06)
+2a4fb4a6c chore(caco-web): record snapshot-delay follow-up observation
+## local-only log
+dc9e49df7 fix(caco-web): show workspace snapshot timeout state (bd-bf064a)
+17eff204a Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-web
+## remote-only name-status
+### d415fa5edde43dc6a4e575d66cfd9fda28de330e merge(caco-web): preserve remote summary ancestry (bd-05ad06)
+### c9c2e4af9acc6ed7f758e7d85b9464b05b252ce7 fix(caco-web): label delayed snapshot timeout sentinel (bd-05ad06)
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/summary.md
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/board-and-inbox-scan.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/board-retry.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/claim-bd-05ad06.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/continuation-scan.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/dedupe-scan.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/filed-bead.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/final-validation.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/index-lock-inspection.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/notes.md
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/observation-after-fix.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/observation.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/page-snapshots/page-2026-04-27T17-15-16-099Z.yml
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/page-snapshots/page-2026-04-27T17-21-50-557Z.yml
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/reflect-session.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-15-27-494Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-15-31-705Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-15-36-060Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-15-40-517Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-15-44-737Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-15-51-777Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-16-01-949Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-16-06-522Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-16-39-637Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-02-071Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-06-439Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-10-666Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-14-840Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-19-178Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-23-436Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-27-782Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-22-31-917Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/screenshots/page-2026-04-27T17-23-04-441Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/server-after-fix.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0089/web/server.log
+M	crates/caco-web/src/tests.rs
+M	crates/caco-web/static/app.js
+### 2a4fb4a6c1e9c8041674ff1315e900eee8d18b98 chore(caco-web): record snapshot-delay follow-up observation
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/summary.md
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/board-and-inbox-scan.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/notes.md
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/observation.log
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/page-snapshots/page-2026-04-27T17-01-44-215Z.yml
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-01-55-348Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-01-59-683Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-03-937Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-08-166Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-12-494Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-17-038Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-21-618Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-26-994Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/screenshots/page-2026-04-27T17-02-54-304Z.png
+A	.cacophony/agent/ms-mac-cacophony-caco-web/summary/0088/web/server.log
+## ancestry checks
+remote_ancestor_of_head=1
+remote_ancestor_of_origin_main=1

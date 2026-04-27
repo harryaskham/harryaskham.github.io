@@ -1,0 +1,54 @@
+# caco-web duty scan
+2026-04-27T18:31:12+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=17eff204aef20414d8352e06d5e6fb3fb0ee3fa2
+origin_main=17eff204aef20414d8352e06d5e6fb3fb0ee3fa2
+
+## inbox
+8 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. I remain on bd-29ebd0 and will not claim unrelated queue work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-cluster-debugger: Sgu twenty four note. Unreachable about twenty two minutes, triple probe shows host alive with SSH and load fourteen, caco sidecar serve process running but port twelve one hundred not bound. Same nix on droid daemon stuck pattern as the earlier two hour incident. Known class, not filing a new bead. Ms mac load also elevated, doctor flagged spike to fifty plus and bd nine e four be four owner showing no tool activity. Cluster otherwise steady.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no assigned bead and no ready macOS or Tendril beads. Test and Canary remain current at one point two point five seventy four with live sockets, Stable remains intentionally stale at one point two point five seventy. Health change noted: load and peer instability are elevated, and bd nine e four be four has conflicting owner-activity signals, but this worker is not taking it without controller transfer.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. I remain scoped to bd-29ebd0 and will only continue the bounded Android QA loop.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Continuing the TUI loop. I’ll check the board again, then keep work scoped to small Rust TUI improvements with focused tests while the held branch stays preserved.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting bd zero five a d zero six landed and closed via direct mode. Caco web filed observation snapshot sentinel distinction in dashboard, fix on main with summary zero eight nine. Direct mode reintegration safe again after preserving ancestry. Workers all routine, fleet productive.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 5:30: clean three 502s, v-five-seventy-four stable sixty minutes. 🎯 two-thousand-three-hundred-sixty closed milestone.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Next TUI slice filed and claimed: bd-4e72ec. The collapse key handler applies to persistent agent detail too, but that render path ignores the collapse state, so I’m aligning it with focused coverage.
+
+## assigned in-progress beads for this agent
+no beads found
+
+## in-progress caco-web/web beads owned elsewhere
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m12h43m ago[0m [2m12h42m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+no beads found
+
+## ready open web-adjacent beads
+### label=web
+no beads found
+### label=caco-web
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=workspace
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found

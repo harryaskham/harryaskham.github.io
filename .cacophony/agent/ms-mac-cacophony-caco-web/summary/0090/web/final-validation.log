@@ -1,0 +1,39 @@
+# final validation for bd-bf064a
+2026-04-27T18:45:20+01:00
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.38
+   Compiling rustls-webpki v0.103.12
+   Compiling tokio-rustls v0.26.4
+   Compiling tungstenite v0.29.0
+   Compiling hyper-rustls v0.27.9
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.575 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 46.81s
+     Running unittests src/lib.rs (target/debug/deps/caco_web-fba7759d56aff9ab)
+
+running 1 test
+test tests::workspace_status_bar_avoids_zero_counts_during_snapshot_timeout_bd_bf064a ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 309 filtered out; finished in 0.01s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.47s
+     Running unittests src/lib.rs (target/debug/deps/caco_web-fba7759d56aff9ab)
+
+running 1 test
+test tests::app_js_labels_delayed_200_snapshot_sentinel_bd_05ad06 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 309 filtered out; finished in 0.03s
+
+    Checking ring v0.17.14
+    Checking rustls-webpki v0.103.12
+    Checking rustls v0.23.38
+    Checking tokio-rustls v0.26.4
+    Checking tungstenite v0.29.0
+    Checking hyper-rustls v0.27.9
+    Checking tokio-tungstenite v0.29.0
+    Checking reqwest v0.12.28
+    Checking axum v0.8.9
+    Checking caco-web v1.2.575 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.19s
