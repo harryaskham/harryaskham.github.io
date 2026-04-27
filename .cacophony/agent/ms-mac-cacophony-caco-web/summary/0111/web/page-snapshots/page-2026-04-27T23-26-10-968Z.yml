@@ -1,0 +1,295 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic "ms-mac — click to copy" [ref=e403] [cursor=pointer]: ms-mac
+        - generic "Cacophony web v1.2.578 (daemon v1.2.576) — click to copy" [ref=e404] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, 28 running agents, shortcut 2" [ref=e405]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "28 running agents" [ref=e406]: "28"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "28"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "35"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, 42 open beads, shortcut 3" [ref=e407]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "42 open beads" [ref=e408]: "42"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e628]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e629]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, 11 unread notifications, shortcut 8" [ref=e409]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "11 unread notifications" [ref=e410]: "11"
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "The daemon is reachable, but the bulk dashboard snapshot timed out. Live updates and targeted routes may still be available while the dashboard retries." [ref=e4669]:
+          - generic [ref=e134]: Snapshot delayed
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - generic [ref=e938]: "Snapshot: 2m ago"
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV Export as CSV Time window for feed events Time window for chat messages Remove all notifications
+      - generic [ref=e939]:
+        - generic [ref=e7722]:
+          - heading "Session Summaries" [level=2] [ref=e7723]
+          - generic [ref=e7724]:
+            - textbox "Filter by project" [ref=e7725]:
+              - /placeholder: Project (cacophony)
+            - textbox "Filter by agent" [ref=e7726]:
+              - /placeholder: Agent ID
+            - textbox "Filter by bead-id" [ref=e7727]:
+              - /placeholder: bd-XXXXXX
+            - button "Refresh summaries" [ref=e7728] [cursor=pointer]:
+              - img [ref=e7729]
+              - text: Refresh
+            - generic [ref=e7732]: 10 of 1122
+        - generic "Summaries keyboard shortcuts" [ref=e7733]:
+          - generic [ref=e7734]:
+            - generic [ref=e7735]: ↑
+            - text: /
+            - generic [ref=e7736]: ↓
+            - text: select
+          - generic [ref=e7737]:
+            - generic [ref=e7738]: Enter
+            - text: open row
+          - generic [ref=e7739]:
+            - generic [ref=e7740]: /
+            - text: filter
+          - generic [ref=e7741]:
+            - generic [ref=e7742]: r
+            - text: refresh
+          - generic [ref=e7743]:
+            - generic [ref=e7744]: l
+            - text: load more
+        - generic "Active summary filters" [ref=e7745]
+        - generic [ref=e7747]:
+          - listbox "Session summaries" [ref=e7748]:
+            - generic [ref=e7749]:
+              - generic "ms-mac-cacophony-caco-tui" [ref=e7750]:
+                - generic [ref=e7751]: ms-mac/caco-tui
+                - generic [ref=e7752]: "5"
+              - list [ref=e7753]:
+                - 'option "Summary 0062 from ms-mac/caco-tui: Session summary — Syntax fallback text uses active theme foreground" [selected] [ref=e7754] [cursor=pointer]':
+                  - generic [ref=e7755]:
+                    - generic [ref=e7756]: "#0062"
+                    - generic "28/04/2026, 00:19:32" [ref=e7757]: 6m ago
+                  - generic [ref=e7758]: Session summary — Syntax fallback text uses active theme foreground
+                  - generic [ref=e7760]: bd-7e83d7
+                  - text: selected
+                - 'option "Summary 0061 from ms-mac/caco-tui: Session summary — Project tree view uses active theme colors" [ref=e7761] [cursor=pointer]':
+                  - generic [ref=e7762]:
+                    - generic [ref=e7763]: "#0061"
+                    - generic "28/04/2026, 00:00:17" [ref=e7764]: 25m ago
+                  - generic [ref=e7765]: Session summary — Project tree view uses active theme colors
+                  - generic [ref=e7767]: bd-f0325b
+                - 'option "Summary 0060 from ms-mac/caco-tui: Session summary — Timeline view uses active theme colors" [ref=e7768] [cursor=pointer]':
+                  - generic [ref=e7769]:
+                    - generic [ref=e7770]: "#0060"
+                    - generic "27/04/2026, 23:54:53" [ref=e7771]: 31m ago
+                  - generic [ref=e7772]: Session summary — Timeline view uses active theme colors
+                  - generic [ref=e7774]: bd-99e353
+                - 'option "Summary 0059 from ms-mac/caco-tui: Session summary — Merge queue view uses active theme colors" [ref=e7775] [cursor=pointer]':
+                  - generic [ref=e7776]:
+                    - generic [ref=e7777]: "#0059"
+                    - generic "27/04/2026, 23:41:29" [ref=e7778]: 44m ago
+                  - generic [ref=e7779]: Session summary — Merge queue view uses active theme colors
+                  - generic [ref=e7781]: bd-c779da
+                - 'option "Summary 0058 from ms-mac/caco-tui: Session summary — Workspace picker uses active theme colors" [ref=e7782] [cursor=pointer]':
+                  - generic [ref=e7783]:
+                    - generic [ref=e7784]: "#0058"
+                    - generic "27/04/2026, 23:35:53" [ref=e7785]: 50m ago
+                  - generic [ref=e7786]: Session summary — Workspace picker uses active theme colors
+                  - generic [ref=e7788]: bd-1f7414
+            - generic [ref=e7789]:
+              - generic "ms-mac-cacophony-caco-web" [ref=e7790]:
+                - generic [ref=e7791]: ms-mac/caco-web
+                - generic [ref=e7792]: "4"
+              - list [ref=e7793]:
+                - 'option "Summary 0110 from ms-mac/caco-web: Session summary — Clean caco-web observation after transient board flaps" [ref=e7794] [cursor=pointer]':
+                  - generic [ref=e7795]:
+                    - generic [ref=e7796]: "#0110"
+                    - generic "28/04/2026, 00:14:18" [ref=e7797]: 11m ago
+                  - generic [ref=e7798]: Session summary — Clean caco-web observation after transient board flaps
+                  - generic [ref=e7800]: bd-7e83d7
+                - 'option "Summary 0109 from ms-mac/caco-web: Session summary — Clean caco-web observation with technical-writer recurrence chatter" [ref=e7801] [cursor=pointer]':
+                  - generic [ref=e7802]:
+                    - generic [ref=e7803]: "#0109"
+                    - generic "28/04/2026, 00:02:29" [ref=e7804]: 23m ago
+                  - generic [ref=e7805]: Session summary — Clean caco-web observation with technical-writer recurrence chatter
+                - 'option "Summary 0108 from ms-mac/caco-web: Session summary — Clean caco-web observation with summaries detail load" [ref=e7806] [cursor=pointer]':
+                  - generic [ref=e7807]:
+                    - generic [ref=e7808]: "#0108"
+                    - generic "27/04/2026, 23:52:28" [ref=e7809]: 33m ago
+                  - generic [ref=e7810]: Session summary — Clean caco-web observation with summaries detail load
+                - 'option "Summary 0107 from ms-mac/caco-web: Session summary — Clean caco-web observation with partial board-scan flap" [ref=e7811] [cursor=pointer]':
+                  - generic [ref=e7812]:
+                    - generic [ref=e7813]: "#0107"
+                    - generic "27/04/2026, 23:42:54" [ref=e7814]: 43m ago
+                  - generic [ref=e7815]: Session summary — Clean caco-web observation with partial board-scan flap
+            - generic [ref=e7816]:
+              - generic "ms-dev-cacophony-caco-dev-msd-3" [ref=e7817]:
+                - generic [ref=e7818]: ms-dev/caco-dev-msd-3
+                - generic [ref=e7819]: "1"
+              - list [ref=e7820]:
+                - 'option "Summary 0046 from ms-dev/caco-dev-msd-3: Session summary — PR backend direct branch recurrence guard" [ref=e7821] [cursor=pointer]':
+                  - generic [ref=e7822]:
+                    - generic [ref=e7823]: "#0046"
+                    - generic "27/04/2026, 23:48:25" [ref=e7824]: 37m ago
+                  - generic [ref=e7825]: Session summary — PR backend direct branch recurrence guard
+                  - generic [ref=e7826]:
+                    - generic [ref=e7827]: bd-95cda5
+                    - generic [ref=e7828]: bd-9e4be4
+                    - generic [ref=e7829]: bd-b8470c
+            - button "Load more summaries; 1112 remaining" [ref=e7831] [cursor=pointer]: Load more (1112 remaining)
+          - generic "Selected summary detail" [ref=e7832]:
+            - generic [ref=e7833]:
+              - generic [ref=e7834]:
+                - generic "ms-mac-cacophony-caco-tui" [ref=e7835]: ms-mac/caco-tui
+                - generic [ref=e7836]: "#0062"
+                - generic "28/04/2026, 00:19:32" [ref=e7837]: 6m ago
+              - generic [ref=e7838]: Session summary — Syntax fallback text uses active theme foreground
+              - generic [ref=e7839]:
+                - text: "project:"
+                - code [ref=e7840]: cacophony
+              - link "bd-7e83d7" [ref=e7842]:
+                - /url: "#beads?q=bd-7e83d7"
+              - generic "Summary detail actions" [ref=e7843]:
+                - button "Copy full summary markdown to clipboard" [ref=e7844] [cursor=pointer]: Copy summary
+                - button "Jump to parsed summary sections" [ref=e7845] [cursor=pointer]: Jump to sections
+            - generic [ref=e7846]:
+              - generic [ref=e7847]:
+                - heading "Goal" [level=3] [ref=e7848]
+                - button "Copy" [ref=e7850] [cursor=pointer]
+              - generic [ref=e7851]: Continue the TUI hardcoded-color sweep by converting syntax-view fallback/plain text colors from fixed Nord primary foreground to the active theme foreground.
+            - generic [ref=e7852]:
+              - generic [ref=e7853]:
+                - heading "Bead(s)" [level=3] [ref=e7854]
+                - button "Copy" [ref=e7856] [cursor=pointer]
+              - generic [ref=e7857]: "- `bd-7e83d7` — Syntax view fallback text should use active TUI theme color"
+            - generic [ref=e7858]:
+              - generic [ref=e7859]:
+                - heading "Before state" [level=3] [ref=e7860]
+                - button "Copy" [ref=e7862] [cursor=pointer]
+              - generic [ref=e7863]: "- Failing tests: none; this was a small visual/theme consistency gap found by scanning remaining `nord::NORD*` usage. - Relevant metrics: not benchmarked. - Context: `crates/caco-tui/src/views/syntax.rs` used hardcoded `nord::NORD4` when `syntect_tui` conversion failed or when highlighting fell back to plain text."
+            - generic [ref=e7864]:
+              - generic [ref=e7865]:
+                - heading "After state" [level=3] [ref=e7866]
+                - button "Copy" [ref=e7868] [cursor=pointer]
+              - generic [ref=e7869]: "- Failing tests: none in targeted validation. - Relevant metrics: not applicable. - Context: fallback/plain syntax spans now use `common::theme().fg_primary()`. The module comments now describe base16-ocean.dark as token colors plus active-theme fallback text, rather than a Nord-aligned palette contract."
+            - generic [ref=e7870]:
+              - generic [ref=e7871]:
+                - heading "Diff summary" [level=3] [ref=e7872]
+                - button "Copy" [ref=e7874] [cursor=pointer]
+              - generic [ref=e7875]: "- Commits: `2ed6a61ad` - Files touched: `crates/caco-tui/src/views/syntax.rs` - Tests: existing focused syntax tests passed - Behavioural delta: no source-view workflow change; fallback syntax text is now theme-aware. - Validation: - `CARGO_BUILD_JOBS=2 cargo test -j2 -p caco-tui syntax --lib`"
+            - generic [ref=e7876]:
+              - generic [ref=e7877]:
+                - heading "Operator-takeaway" [level=3] [ref=e7878]
+                - button "Copy" [ref=e7880] [cursor=pointer]
+              - generic [ref=e7881]: Source-view syntax fallback text no longer pins itself to Nord and will use the configured theme foreground.
+      - text: Split horizontal Split vertical Filter all panes by project Apply layout preset Save current layout as named preset Keyboard shortcuts (?) Close active pane Reset layout Pending operator choices
+  - status
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top

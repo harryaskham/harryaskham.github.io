@@ -1,0 +1,381 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic "ms-mac — click to copy" [ref=e403] [cursor=pointer]: ms-mac
+        - generic "Cacophony web v1.2.578 (daemon v1.2.576) — click to copy" [ref=e404] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, 28 running agents, shortcut 2" [ref=e405]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "28 running agents" [ref=e406]: "28"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "28"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "35"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, 42 open beads, shortcut 3" [ref=e407]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "42 open beads" [ref=e408]: "42"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e628]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e629]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, 11 unread notifications, shortcut 8" [ref=e409]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "11 unread notifications" [ref=e410]: "11"
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "The daemon is reachable, but the bulk dashboard snapshot timed out. Live updates and targeted routes may still be available while the dashboard retries." [ref=e4669]:
+          - generic [ref=e134]: Snapshot delayed
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - generic [ref=e938]: "Snapshot: 2m ago"
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV Export as CSV Time window for feed events Time window for chat messages
+      - generic [ref=e412]:
+        - heading "Projects 11" [level=2] [ref=e414]:
+          - text: Projects
+          - generic [ref=e415]: "11"
+        - list "Configured projects" [ref=e416]:
+          - listitem [ref=e417]:
+            - generic [ref=e418]:
+              - generic [ref=e419]: a.skh.am
+              - button "Enter" [ref=e420]:
+                - img [ref=e421]
+                - text: Enter
+            - generic [ref=e423]:
+              - generic [ref=e424] [cursor=pointer]:
+                - generic [ref=e425]: "0"
+                - text: Running
+              - generic "No agents" [ref=e426]:
+                - generic [ref=e427]: "0"
+                - text: Total Agents
+              - generic [ref=e428] [cursor=pointer]:
+                - generic [ref=e429]: "1"
+                - text: Open Beads
+              - generic [ref=e430] [cursor=pointer]:
+                - generic [ref=e431]: "179"
+                - text: Total Beads
+            - generic [ref=e432]:
+              - generic "13 closed" [ref=e433]
+              - generic "1 open" [ref=e434]
+          - listitem [ref=e435]:
+            - generic [ref=e436]:
+              - generic [ref=e437]: agent-utils
+              - button "Enter" [ref=e438]:
+                - img [ref=e439]
+                - text: Enter
+            - generic [ref=e441]:
+              - generic [ref=e442] [cursor=pointer]:
+                - generic [ref=e443]: "0"
+                - text: Running
+              - 'generic "pi: 1" [ref=e444]':
+                - generic [ref=e445]: "1"
+                - text: Total Agents
+              - generic [ref=e446] [cursor=pointer]:
+                - generic [ref=e447]: "0"
+                - text: Open Beads
+              - generic [ref=e448] [cursor=pointer]:
+                - generic [ref=e449]: "8"
+                - text: Total Beads
+            - generic "8 closed" [ref=e451]
+          - listitem [ref=e452]:
+            - generic [ref=e453]:
+              - generic [ref=e454]: android-utils
+              - button "Enter" [ref=e455]:
+                - img [ref=e456]
+                - text: Enter
+            - generic [ref=e458]:
+              - generic [ref=e459] [cursor=pointer]:
+                - generic [ref=e460]: "1"
+                - text: Running
+              - 'generic "pi: 1" [ref=e461]':
+                - generic [ref=e462]: "1"
+                - text: Total Agents
+              - generic [ref=e463] [cursor=pointer]:
+                - generic [ref=e464]: "0"
+                - text: Open Beads
+              - generic [ref=e465] [cursor=pointer]:
+                - generic [ref=e466]: "58"
+                - text: Total Beads
+            - generic [ref=e467]:
+              - generic "57 closed" [ref=e468]
+              - generic "1 blocked" [ref=e469]
+          - listitem [ref=e470]:
+            - generic [ref=e471]:
+              - generic [ref=e472]: cacophony
+              - button "Enter" [ref=e473]:
+                - img [ref=e474]
+                - text: Enter
+            - generic [ref=e476]:
+              - generic [ref=e477] [cursor=pointer]:
+                - generic [ref=e478]: "24"
+                - text: Running
+              - 'generic "pi: 30" [ref=e479]':
+                - generic [ref=e480]: "30"
+                - text: Total Agents
+              - generic [ref=e481] [cursor=pointer]:
+                - generic [ref=e482]: "8"
+                - text: Open Beads
+              - generic [ref=e483] [cursor=pointer]:
+                - generic [ref=e484]: "3433"
+                - text: Total Beads
+            - generic [ref=e485]:
+              - generic "2396 closed" [ref=e486]
+              - generic "8 in progress" [ref=e487]
+              - generic "18 blocked" [ref=e488]
+          - listitem [ref=e489]:
+            - generic [ref=e490]:
+              - generic [ref=e491]: collective
+              - button "Enter" [ref=e492]:
+                - img [ref=e493]
+                - text: Enter
+            - generic [ref=e495]:
+              - generic [ref=e496] [cursor=pointer]:
+                - generic [ref=e497]: "1"
+                - text: Running
+              - 'generic "pi: 1" [ref=e498]':
+                - generic [ref=e499]: "1"
+                - text: Total Agents
+              - generic [ref=e500] [cursor=pointer]:
+                - generic [ref=e501]: "6"
+                - text: Open Beads
+              - generic [ref=e502] [cursor=pointer]:
+                - generic [ref=e503]: "115"
+                - text: Total Beads
+            - generic [ref=e504]:
+              - generic "106 closed" [ref=e505]
+              - generic "6 open" [ref=e506]
+              - generic "1 blocked" [ref=e507]
+          - listitem [ref=e508]:
+            - generic [ref=e509]:
+              - generic [ref=e510]: gfx-replacer
+              - button "Enter" [ref=e511]:
+                - img [ref=e512]
+                - text: Enter
+            - generic [ref=e514]:
+              - generic [ref=e515] [cursor=pointer]:
+                - generic [ref=e516]: "0"
+                - text: Running
+              - generic "No agents" [ref=e517]:
+                - generic [ref=e518]: "0"
+                - text: Total Agents
+              - generic [ref=e519] [cursor=pointer]:
+                - generic [ref=e520]: "0"
+                - text: Open Beads
+              - generic [ref=e521] [cursor=pointer]:
+                - generic [ref=e522]: "36"
+                - text: Total Beads
+            - generic "34 closed" [ref=e524]
+          - listitem [ref=e525]:
+            - generic [ref=e526]:
+              - generic [ref=e527]: life
+              - button "Enter" [ref=e528]:
+                - img [ref=e529]
+                - text: Enter
+            - generic [ref=e531]:
+              - generic [ref=e532] [cursor=pointer]:
+                - generic [ref=e533]: "0"
+                - text: Running
+              - generic "No agents" [ref=e534]:
+                - generic [ref=e535]: "0"
+                - text: Total Agents
+              - generic [ref=e536] [cursor=pointer]:
+                - generic [ref=e537]: "0"
+                - text: Open Beads
+              - generic [ref=e538] [cursor=pointer]:
+                - generic [ref=e539]: "0"
+                - text: Total Beads
+          - listitem [ref=e541]:
+            - generic [ref=e542]:
+              - generic [ref=e543]: midi2hid
+              - button "Enter" [ref=e544]:
+                - img [ref=e545]
+                - text: Enter
+            - generic [ref=e547]:
+              - generic [ref=e548] [cursor=pointer]:
+                - generic [ref=e549]: "0"
+                - text: Running
+              - generic "No agents" [ref=e550]:
+                - generic [ref=e551]: "0"
+                - text: Total Agents
+              - generic [ref=e552] [cursor=pointer]:
+                - generic [ref=e553]: "12"
+                - text: Open Beads
+              - generic [ref=e554] [cursor=pointer]:
+                - generic [ref=e555]: "54"
+                - text: Total Beads
+            - generic [ref=e556]:
+              - generic "38 closed" [ref=e557]
+              - generic "12 open" [ref=e558]
+          - listitem [ref=e559]:
+            - generic [ref=e560]:
+              - generic [ref=e561]: mono
+              - button "Enter" [ref=e562]:
+                - img [ref=e563]
+                - text: Enter
+            - generic [ref=e565]:
+              - generic [ref=e566] [cursor=pointer]:
+                - generic [ref=e567]: "0"
+                - text: Running
+              - generic "No agents" [ref=e568]:
+                - generic [ref=e569]: "0"
+                - text: Total Agents
+              - generic [ref=e570] [cursor=pointer]:
+                - generic [ref=e571]: "4"
+                - text: Open Beads
+              - generic [ref=e572] [cursor=pointer]:
+                - generic [ref=e573]: "13"
+                - text: Total Beads
+            - generic [ref=e574]:
+              - generic "9 closed" [ref=e575]
+              - generic "4 open" [ref=e576]
+          - listitem [ref=e577]:
+            - generic [ref=e578]:
+              - generic [ref=e579]: picasso-health
+              - button "Enter" [ref=e580]:
+                - img [ref=e581]
+                - text: Enter
+            - generic [ref=e583]:
+              - generic [ref=e584] [cursor=pointer]:
+                - generic [ref=e585]: "0"
+                - text: Running
+              - generic "No agents" [ref=e586]:
+                - generic [ref=e587]: "0"
+                - text: Total Agents
+              - generic [ref=e588] [cursor=pointer]:
+                - generic [ref=e589]: "10"
+                - text: Open Beads
+              - generic [ref=e590] [cursor=pointer]:
+                - generic [ref=e591]: "41"
+                - text: Total Beads
+            - generic [ref=e592]:
+              - generic "20 closed" [ref=e593]
+              - generic "10 open" [ref=e594]
+              - generic "10 blocked" [ref=e595]
+          - listitem [ref=e596]:
+            - generic [ref=e597]:
+              - generic [ref=e598]: tendril
+              - button "Enter" [ref=e599]:
+                - img [ref=e600]
+                - text: Enter
+            - generic [ref=e602]:
+              - generic [ref=e603] [cursor=pointer]:
+                - generic [ref=e604]: "2"
+                - text: Running
+              - 'generic "pi: 2" [ref=e605]':
+                - generic [ref=e606]: "2"
+                - text: Total Agents
+              - generic [ref=e607] [cursor=pointer]:
+                - generic [ref=e608]: "1"
+                - text: Open Beads
+              - generic [ref=e609] [cursor=pointer]:
+                - generic [ref=e610]: "96"
+                - text: Total Beads
+            - generic [ref=e611]:
+              - generic "93 closed" [ref=e612]
+              - generic "1 in progress" [ref=e613]
+      - text: Remove all notifications selected Split horizontal Split vertical Filter all panes by project Apply layout preset Save current layout as named preset Keyboard shortcuts (?) Close active pane Reset layout Pending operator choices
+  - status
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top

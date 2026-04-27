@@ -1,0 +1,1674 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic "ms-mac — click to copy" [ref=e403] [cursor=pointer]: ms-mac
+        - generic "Cacophony web v1.2.578 (daemon v1.2.576) — click to copy" [ref=e404] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, 28 running agents, shortcut 2" [ref=e405]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "28 running agents" [ref=e406]: "28"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "28"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "35"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, 42 open beads, shortcut 3" [ref=e407]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "42 open beads" [ref=e408]: "42"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e628]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e629]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, 11 unread notifications, shortcut 8" [ref=e409]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "11 unread notifications" [ref=e410]: "11"
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "Click to reconnect" [ref=e411]:
+          - generic [ref=e134]: Connected
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - generic [ref=e938]: "Snapshot: 1m ago"
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV
+      - generic [ref=e314]:
+        - generic [ref=e315]:
+          - heading "Beads 72 of 85 ×" [level=2] [ref=e3228]:
+            - text: Beads
+            - button "72 of 85 ×" [ref=e3229]
+          - generic [ref=e317]:
+            - generic [ref=e318]:
+              - img
+              - searchbox "Search beads" [ref=e319]
+            - combobox "Filter by project" [ref=e320] [cursor=pointer]:
+              - option "All Projects" [selected]
+              - option "a.skh.am"
+              - option "agent-utils"
+              - option "android-utils"
+              - option "cacophony"
+              - option "collective"
+              - option "gfx-replacer"
+              - option "life"
+              - option "midi2hid"
+              - option "mono"
+              - option "picasso-health"
+              - option "tendril"
+            - combobox "Filter by type" [ref=e321] [cursor=pointer]:
+              - option "All Types" [selected]
+              - option "Task"
+              - option "Bug"
+              - option "Feature"
+              - option "Epic"
+            - button "Export as CSV" [ref=e322]:
+              - img [ref=e323]
+              - text: Export as CSV
+            - button "+ New Bead" [ref=e325] [cursor=pointer]
+        - tablist "Bead status filters" [ref=e326]:
+          - tab "Active 72" [selected] [ref=e3230] [cursor=pointer]:
+            - text: Active
+            - generic [ref=e3231]: "72"
+          - tab "All 85" [ref=e3232] [cursor=pointer]:
+            - text: All
+            - generic [ref=e3233]: "85"
+          - tab "Open 63" [ref=e3234] [cursor=pointer]:
+            - text: Open
+            - generic [ref=e3235]: "63"
+          - tab "In Progress 9" [ref=e3236] [cursor=pointer]:
+            - text: In Progress
+            - generic [ref=e3237]: "9"
+          - tab "Blocked 0" [ref=e3238] [cursor=pointer]:
+            - text: Blocked
+            - generic [ref=e3239]: "0"
+          - tab "Closed 0" [ref=e3240] [cursor=pointer]:
+            - text: Closed
+            - generic [ref=e3241]: "0"
+          - tab "Permanent 13" [ref=e3242] [cursor=pointer]:
+            - text: Permanent
+            - generic [ref=e3243]: "13"
+          - tab "Draft 0" [ref=e3244] [cursor=pointer]:
+            - text: Draft
+            - generic [ref=e3245]: "0"
+        - table [ref=e328]:
+          - rowgroup [ref=e329]:
+            - row "Select all ID Title Status Priority Type Assignee Labels Project Created Modified" [ref=e3246]:
+              - columnheader "Select all" [ref=e3247]:
+                - checkbox "Select all" [ref=e3248] [cursor=pointer]
+              - columnheader "ID" [ref=e3250] [cursor=pointer]:
+                - text: ID
+                - img [ref=e3251]
+              - columnheader "Title" [ref=e3255] [cursor=pointer]:
+                - text: Title
+                - img [ref=e3256]
+              - columnheader "Status" [ref=e3260] [cursor=pointer]:
+                - text: Status
+                - img [ref=e3261]
+              - columnheader "Priority" [ref=e3265] [cursor=pointer]:
+                - text: Priority
+                - img [ref=e3266]
+              - columnheader "Type" [ref=e3269]: Type
+              - columnheader "Assignee" [ref=e3271] [cursor=pointer]:
+                - text: Assignee
+                - img [ref=e3272]
+              - columnheader "Labels" [ref=e3276]: Labels
+              - columnheader "Project" [ref=e3278] [cursor=pointer]:
+                - text: Project
+                - img [ref=e3279]
+              - columnheader "Created" [ref=e3283] [cursor=pointer]:
+                - text: Created
+                - img [ref=e3284]
+              - columnheader "Modified" [ref=e3288] [cursor=pointer]:
+                - text: Modified
+                - img [ref=e3289]
+          - rowgroup [ref=e3293]:
+            - button "Select bd-b8470c bd-b8470c [reintegration] recorded direct path still fails after bd-95cda5 closure cacophony · bug reintegration path failure in progress P0 bug ms-dev-cacophony… bd-95cda5-followup mainline-safety recorded +3 system 2 cacophony 11h ago 2m ago" [ref=e3294] [cursor=pointer]:
+              - cell "Select bd-b8470c" [ref=e3295]:
+                - checkbox "Select bd-b8470c" [ref=e3296]
+              - cell "bd-b8470c" [ref=e3297]
+              - cell "[reintegration] recorded direct path still fails after bd-95cda5 closure cacophony · bug reintegration path failure" [ref=e3298]:
+                - text: "[reintegration] recorded direct path still fails after bd-95cda5 closure"
+                - generic [ref=e3299]: cacophony · bug
+                - generic [ref=e3300]: reintegration path failure
+              - cell "in progress" [ref=e3301]:
+                - generic [ref=e3302]: in progress
+              - cell "P0" [ref=e3303]
+              - cell "bug" [ref=e3304]
+              - cell "ms-dev-cacophony…" [ref=e3305]
+              - cell "bd-95cda5-followup mainline-safety recorded +3 system 2" [ref=e3306]:
+                - 'generic "Filter by label: bd-95cda5-followup" [ref=e3307]': bd-95cda5-followup
+                - 'generic "Filter by label: mainline-safety" [ref=e3308]': mainline-safety
+                - 'generic "Filter by label: recorded" [ref=e3309]': recorded
+                - generic "recurrent, reintegration, technical-writer" [ref=e3310]: "+3"
+                - 'generic "Hidden system labels: discovered-via-agent:beelink-cacophony-technical-writer, discovered-via-session:docs-pass-0076" [ref=e3311]': system 2
+              - cell "cacophony" [ref=e3312]
+              - cell "11h ago" [ref=e3313]
+              - cell "2m ago" [ref=e3314]
+            - button "Select bd-29b039 bd-29b039 Configure automated APK builds on version tag commits android-utils · feature automated apk builds open P1 feature Unassigned automation build ci-cd android-utils 1d ago 1d ago" [ref=e3315] [cursor=pointer]:
+              - cell "Select bd-29b039" [ref=e3316]:
+                - checkbox "Select bd-29b039" [ref=e3317]
+              - cell "bd-29b039" [ref=e3318]
+              - cell "Configure automated APK builds on version tag commits android-utils · feature automated apk builds" [ref=e3319]:
+                - text: Configure automated APK builds on version tag commits
+                - generic [ref=e3320]: android-utils · feature
+                - generic [ref=e3321]: automated apk builds
+              - cell "open" [ref=e3322]:
+                - generic [ref=e3323]: open
+              - cell "P1" [ref=e3324]
+              - cell "feature" [ref=e3325]
+              - cell "Unassigned" [ref=e3326]
+              - cell "automation build ci-cd" [ref=e3327]:
+                - 'generic "Filter by label: automation" [ref=e3328]': automation
+                - 'generic "Filter by label: build" [ref=e3329]': build
+                - 'generic "Filter by label: ci-cd" [ref=e3330]': ci-cd
+              - cell "android-utils" [ref=e3331]
+              - cell "1d ago" [ref=e3332]
+              - cell "1d ago" [ref=e3333]
+            - button "Select bd-2b495e bd-2b495e Implement live voice calls with agents - Web surface cacophony · feature Implement-Live open P1 feature Unassigned agents voice-calls web cacophony 4d ago 4d ago" [ref=e3334] [cursor=pointer]:
+              - cell "Select bd-2b495e" [ref=e3335]:
+                - checkbox "Select bd-2b495e" [ref=e3336]
+              - cell "bd-2b495e" [ref=e3337]
+              - cell "Implement live voice calls with agents - Web surface cacophony · feature Implement-Live" [ref=e3338]:
+                - text: Implement live voice calls with agents - Web surface
+                - generic [ref=e3339]: cacophony · feature
+                - generic [ref=e3340]: Implement-Live
+              - cell "open" [ref=e3341]:
+                - generic [ref=e3342]: open
+              - cell "P1" [ref=e3343]
+              - cell "feature" [ref=e3344]
+              - cell "Unassigned" [ref=e3345]
+              - cell "agents voice-calls web" [ref=e3346]:
+                - 'generic "Filter by label: agents" [ref=e3347]': agents
+                - 'generic "Filter by label: voice-calls" [ref=e3348]': voice-calls
+                - 'generic "Filter by label: web" [ref=e3349]': web
+              - cell "cacophony" [ref=e3350]
+              - cell "4d ago" [ref=e3351]
+              - cell "4d ago" [ref=e3352]
+            - button "Select bd-169b5f bd-169b5f Implement live voice calls with agents - TUI surface cacophony · feature Implement-Live open P1 feature Unassigned agents tui voice-calls cacophony 4d ago 4d ago" [ref=e3353] [cursor=pointer]:
+              - cell "Select bd-169b5f" [ref=e3354]:
+                - checkbox "Select bd-169b5f" [ref=e3355]
+              - cell "bd-169b5f" [ref=e3356]
+              - cell "Implement live voice calls with agents - TUI surface cacophony · feature Implement-Live" [ref=e3357]:
+                - text: Implement live voice calls with agents - TUI surface
+                - generic [ref=e3358]: cacophony · feature
+                - generic [ref=e3359]: Implement-Live
+              - cell "open" [ref=e3360]:
+                - generic [ref=e3361]: open
+              - cell "P1" [ref=e3362]
+              - cell "feature" [ref=e3363]
+              - cell "Unassigned" [ref=e3364]
+              - cell "agents tui voice-calls" [ref=e3365]:
+                - 'generic "Filter by label: agents" [ref=e3366]': agents
+                - 'generic "Filter by label: tui" [ref=e3367]': tui
+                - 'generic "Filter by label: voice-calls" [ref=e3368]': voice-calls
+              - cell "cacophony" [ref=e3369]
+              - cell "4d ago" [ref=e3370]
+              - cell "4d ago" [ref=e3371]
+            - button "Select bd-1f5565 bd-1f5565 Implement live voice calls with agents - Android surface cacophony · feature Implement-Live open P1 feature Unassigned agents android voice-calls cacophony 4d ago 4d ago" [ref=e3372] [cursor=pointer]:
+              - cell "Select bd-1f5565" [ref=e3373]:
+                - checkbox "Select bd-1f5565" [ref=e3374]
+              - cell "bd-1f5565" [ref=e3375]
+              - cell "Implement live voice calls with agents - Android surface cacophony · feature Implement-Live" [ref=e3376]:
+                - text: Implement live voice calls with agents - Android surface
+                - generic [ref=e3377]: cacophony · feature
+                - generic [ref=e3378]: Implement-Live
+              - cell "open" [ref=e3379]:
+                - generic [ref=e3380]: open
+              - cell "P1" [ref=e3381]
+              - cell "feature" [ref=e3382]
+              - cell "Unassigned" [ref=e3383]
+              - cell "agents android voice-calls" [ref=e3384]:
+                - 'generic "Filter by label: agents" [ref=e3385]': agents
+                - 'generic "Filter by label: android" [ref=e3386]': android
+                - 'generic "Filter by label: voice-calls" [ref=e3387]': voice-calls
+              - cell "cacophony" [ref=e3388]
+              - cell "4d ago" [ref=e3389]
+              - cell "4d ago" [ref=e3390]
+            - button "Select bd-a4c59a bd-a4c59a Test cross-surface voice call consistency cacophony · task Test-Cross open P1 task Unassigned qa testing voice-calls cacophony 4d ago 4d ago" [ref=e3391] [cursor=pointer]:
+              - cell "Select bd-a4c59a" [ref=e3392]:
+                - checkbox "Select bd-a4c59a" [ref=e3393]
+              - cell "bd-a4c59a" [ref=e3394]
+              - cell "Test cross-surface voice call consistency cacophony · task Test-Cross" [ref=e3395]:
+                - text: Test cross-surface voice call consistency
+                - generic [ref=e3396]: cacophony · task
+                - generic [ref=e3397]: Test-Cross
+              - cell "open" [ref=e3398]:
+                - generic [ref=e3399]: open
+              - cell "P1" [ref=e3400]
+              - cell "task" [ref=e3401]
+              - cell "Unassigned" [ref=e3402]
+              - cell "qa testing voice-calls" [ref=e3403]:
+                - 'generic "Filter by label: qa" [ref=e3404]': qa
+                - 'generic "Filter by label: testing" [ref=e3405]': testing
+                - 'generic "Filter by label: voice-calls" [ref=e3406]': voice-calls
+              - cell "cacophony" [ref=e3407]
+              - cell "4d ago" [ref=e3408]
+              - cell "4d ago" [ref=e3409]
+            - button "Select bd-a2def3 bd-a2def3 Implement websocket-based code synchronization cacophony · feature Implement-Websocket open P1 feature Unassigned daemon real-time-sync webapp +1 cacophony 3d ago 3d ago" [ref=e3410] [cursor=pointer]:
+              - cell "Select bd-a2def3" [ref=e3411]:
+                - checkbox "Select bd-a2def3" [ref=e3412]
+              - cell "bd-a2def3" [ref=e3413]
+              - cell "Implement websocket-based code synchronization cacophony · feature Implement-Websocket" [ref=e3414]:
+                - text: Implement websocket-based code synchronization
+                - generic [ref=e3415]: cacophony · feature
+                - generic [ref=e3416]: Implement-Websocket
+              - cell "open" [ref=e3417]:
+                - generic [ref=e3418]: open
+              - cell "P1" [ref=e3419]
+              - cell "feature" [ref=e3420]
+              - cell "Unassigned" [ref=e3421]
+              - cell "daemon real-time-sync webapp +1" [ref=e3422]:
+                - 'generic "Filter by label: daemon" [ref=e3423]': daemon
+                - 'generic "Filter by label: real-time-sync" [ref=e3424]': real-time-sync
+                - 'generic "Filter by label: webapp" [ref=e3425]': webapp
+                - generic "websocket" [ref=e3426]: "+1"
+              - cell "cacophony" [ref=e3427]
+              - cell "3d ago" [ref=e3428]
+              - cell "3d ago" [ref=e3429]
+            - button "Select bd-86a486 bd-86a486 Runtime repair reports per-agent tmux socket collapses after socket hardening cacophony · bug runtime repair socket collapse in progress P1 bug pocket4-cacophon… agents ms-mac resilience +3 cacophony 2d ago 12m ago" [ref=e3430] [cursor=pointer]:
+              - cell "Select bd-86a486" [ref=e3431]:
+                - checkbox "Select bd-86a486" [ref=e3432]
+              - cell "bd-86a486" [ref=e3433]
+              - cell "Runtime repair reports per-agent tmux socket collapses after socket hardening cacophony · bug runtime repair socket collapse" [ref=e3434]:
+                - text: Runtime repair reports per-agent tmux socket collapses after socket hardening
+                - generic [ref=e3435]: cacophony · bug
+                - generic [ref=e3436]: runtime repair socket collapse
+              - cell "in progress" [ref=e3437]:
+                - generic [ref=e3438]: in progress
+              - cell "P1" [ref=e3439]
+              - cell "bug" [ref=e3440]
+              - cell "pocket4-cacophon…" [ref=e3441]
+              - cell "agents ms-mac resilience +3" [ref=e3442]:
+                - 'generic "Filter by label: agents" [ref=e3443]': agents
+                - 'generic "Filter by label: ms-mac" [ref=e3444]': ms-mac
+                - 'generic "Filter by label: resilience" [ref=e3445]': resilience
+                - generic "runtime-repair, sockets, tmux" [ref=e3446]: "+3"
+              - cell "cacophony" [ref=e3447]
+              - cell "2d ago" [ref=e3448]
+              - cell "12m ago" [ref=e3449]
+            - button "Select bd-2e2379 bd-2e2379 ms-mac config-helper fails provider-ready after resume retry fixes cacophony · bug mac config helper provider ready in progress P1 bug ms-mac-cacophony… agents config-helper ms-mac +3 system 3 cacophony 2d ago 2d ago" [ref=e3450] [cursor=pointer]:
+              - cell "Select bd-2e2379" [ref=e3451]:
+                - checkbox "Select bd-2e2379" [ref=e3452]
+              - cell "bd-2e2379" [ref=e3453]
+              - cell "ms-mac config-helper fails provider-ready after resume retry fixes cacophony · bug mac config helper provider ready" [ref=e3454]:
+                - text: ms-mac config-helper fails provider-ready after resume retry fixes
+                - generic [ref=e3455]: cacophony · bug
+                - generic [ref=e3456]: mac config helper provider ready
+              - cell "in progress" [ref=e3457]:
+                - generic [ref=e3458]: in progress
+              - cell "P1" [ref=e3459]
+              - cell "bug" [ref=e3460]
+              - cell "ms-mac-cacophony…" [ref=e3461]
+              - cell "agents config-helper ms-mac +3 system 3" [ref=e3462]:
+                - 'generic "Filter by label: agents" [ref=e3463]': agents
+                - 'generic "Filter by label: config-helper" [ref=e3464]': config-helper
+                - 'generic "Filter by label: ms-mac" [ref=e3465]': ms-mac
+                - generic "pi, provider-ready, resume" [ref=e3466]: "+3"
+                - 'generic "Hidden system labels: discovered-via-agent:ms-mac-cacophony-router, discovered-via-node:ms-mac, discovered-via-session:router-health-pass" [ref=e3467]': system 3
+              - cell "cacophony" [ref=e3468]
+              - cell "2d ago" [ref=e3469]
+              - cell "2d ago" [ref=e3470]
+            - button "Select bd-6a0838 bd-6a0838 [stt-xplat] Android sgu24 WER diverged by 3.14pp in bd-ec4014 cycle cacophony · bug android sgu24 wer diverged open P1 bug Unassigned android platform-regression stt-xplat +1 system 3 cacophony 1d ago 1d ago" [ref=e3471] [cursor=pointer]:
+              - cell "Select bd-6a0838" [ref=e3472]:
+                - checkbox "Select bd-6a0838" [ref=e3473]
+              - cell "bd-6a0838" [ref=e3474]
+              - cell "[stt-xplat] Android sgu24 WER diverged by 3.14pp in bd-ec4014 cycle cacophony · bug android sgu24 wer diverged" [ref=e3475]:
+                - text: "[stt-xplat] Android sgu24 WER diverged by 3.14pp in bd-ec4014 cycle"
+                - generic [ref=e3476]: cacophony · bug
+                - generic [ref=e3477]: android sgu24 wer diverged
+              - cell "open" [ref=e3478]:
+                - generic [ref=e3479]: open
+              - cell "P1" [ref=e3480]
+              - cell "bug" [ref=e3481]
+              - cell "Unassigned" [ref=e3482]
+              - cell "android platform-regression stt-xplat +1 system 3" [ref=e3483]:
+                - 'generic "Filter by label: android" [ref=e3484]': android
+                - 'generic "Filter by label: platform-regression" [ref=e3485]': platform-regression
+                - 'generic "Filter by label: stt-xplat" [ref=e3486]': stt-xplat
+                - generic "wer" [ref=e3487]: "+1"
+                - 'generic "Hidden system labels: discovered-via-agent:s8cr8c6tj55h24cl, discovered-via-bead:bd-ec4014, discovered-via-node:helsinki" [ref=e3488]': system 3
+              - cell "cacophony" [ref=e3489]
+              - cell "1d ago" [ref=e3490]
+              - cell "1d ago" [ref=e3491]
+            - button "Select bd-3fc9ba bd-3fc9ba [stt-xplat] caco stt doctor reports scribble feature not compiled on all cycle platforms cacophony · bug scribble feature cross platform open P1 bug Unassigned scribble stt-doctor stt-xplat system 3 cacophony 1d ago 1d ago" [ref=e3492] [cursor=pointer]:
+              - cell "Select bd-3fc9ba" [ref=e3493]:
+                - checkbox "Select bd-3fc9ba" [ref=e3494]
+              - cell "bd-3fc9ba" [ref=e3495]
+              - cell "[stt-xplat] caco stt doctor reports scribble feature not compiled on all cycle platforms cacophony · bug scribble feature cross platform" [ref=e3496]:
+                - text: "[stt-xplat] caco stt doctor reports scribble feature not compiled on all cycle platforms"
+                - generic [ref=e3497]: cacophony · bug
+                - generic [ref=e3498]: scribble feature cross platform
+              - cell "open" [ref=e3499]:
+                - generic [ref=e3500]: open
+              - cell "P1" [ref=e3501]
+              - cell "bug" [ref=e3502]
+              - cell "Unassigned" [ref=e3503]
+              - cell "scribble stt-doctor stt-xplat system 3" [ref=e3504]:
+                - 'generic "Filter by label: scribble" [ref=e3505]': scribble
+                - 'generic "Filter by label: stt-doctor" [ref=e3506]': stt-doctor
+                - 'generic "Filter by label: stt-xplat" [ref=e3507]': stt-xplat
+                - 'generic "Hidden system labels: discovered-via-agent:s8cr8c6tj55h24cl, discovered-via-bead:bd-ec4014, discovered-via-node:helsinki" [ref=e3508]': system 3
+              - cell "cacophony" [ref=e3509]
+              - cell "1d ago" [ref=e3510]
+              - cell "1d ago" [ref=e3511]
+            - button "Select bd-bc4fd3 bd-bc4fd3 Implement dynamic loading for TUI summaries cacophony · feature dynamic tui summary loading open P1 feature Unassigned lazy-loading performance summaries +1 cacophony 1d ago 1d ago" [ref=e3512] [cursor=pointer]:
+              - cell "Select bd-bc4fd3" [ref=e3513]:
+                - checkbox "Select bd-bc4fd3" [ref=e3514]
+              - cell "bd-bc4fd3" [ref=e3515]
+              - cell "Implement dynamic loading for TUI summaries cacophony · feature dynamic tui summary loading" [ref=e3516]:
+                - text: Implement dynamic loading for TUI summaries
+                - generic [ref=e3517]: cacophony · feature
+                - generic [ref=e3518]: dynamic tui summary loading
+              - cell "open" [ref=e3519]:
+                - generic [ref=e3520]: open
+              - cell "P1" [ref=e3521]
+              - cell "feature" [ref=e3522]
+              - cell "Unassigned" [ref=e3523]
+              - cell "lazy-loading performance summaries +1" [ref=e3524]:
+                - 'generic "Filter by label: lazy-loading" [ref=e3525]': lazy-loading
+                - 'generic "Filter by label: performance" [ref=e3526]': performance
+                - 'generic "Filter by label: summaries" [ref=e3527]': summaries
+                - generic "tui" [ref=e3528]: "+1"
+              - cell "cacophony" [ref=e3529]
+              - cell "1d ago" [ref=e3530]
+              - cell "1d ago" [ref=e3531]
+            - button "Select bd-ffbd54 bd-ffbd54 Reinstate build interceptors and queue policy for ms-mac cargo builds cacophony · task Reinstate-Build in progress P1 task 3dcjmzrcg2lupo6s build config ms-mac +2 cacophony 1d ago 1d ago" [ref=e3532] [cursor=pointer]:
+              - cell "Select bd-ffbd54" [ref=e3533]:
+                - checkbox "Select bd-ffbd54" [ref=e3534]
+              - cell "bd-ffbd54" [ref=e3535]
+              - cell "Reinstate build interceptors and queue policy for ms-mac cargo builds cacophony · task Reinstate-Build" [ref=e3536]:
+                - text: Reinstate build interceptors and queue policy for ms-mac cargo builds
+                - generic [ref=e3537]: cacophony · task
+                - generic [ref=e3538]: Reinstate-Build
+              - cell "in progress" [ref=e3539]:
+                - generic [ref=e3540]: in progress
+              - cell "P1" [ref=e3541]
+              - cell "task" [ref=e3542]
+              - cell "3dcjmzrcg2lupo6s" [ref=e3543]
+              - cell "build config ms-mac +2" [ref=e3544]:
+                - 'generic "Filter by label: build" [ref=e3545]': build
+                - 'generic "Filter by label: config" [ref=e3546]': config
+                - 'generic "Filter by label: ms-mac" [ref=e3547]': ms-mac
+                - generic "operator, performance" [ref=e3548]: "+2"
+              - cell "cacophony" [ref=e3549]
+              - cell "1d ago" [ref=e3550]
+              - cell "1d ago" [ref=e3551]
+            - button "Select bd-ec9f37 bd-ec9f37 Revamp chat UX to match webapp cacophony · feature Revamp-Chat open P1 feature Unassigned android chat ux cacophony 1d ago 1d ago" [ref=e3552] [cursor=pointer]:
+              - cell "Select bd-ec9f37" [ref=e3553]:
+                - checkbox "Select bd-ec9f37" [ref=e3554]
+              - cell "bd-ec9f37" [ref=e3555]
+              - cell "Revamp chat UX to match webapp cacophony · feature Revamp-Chat" [ref=e3556]:
+                - text: Revamp chat UX to match webapp
+                - generic [ref=e3557]: cacophony · feature
+                - generic [ref=e3558]: Revamp-Chat
+              - cell "open" [ref=e3559]:
+                - generic [ref=e3560]: open
+              - cell "P1" [ref=e3561]
+              - cell "feature" [ref=e3562]
+              - cell "Unassigned" [ref=e3563]
+              - cell "android chat ux" [ref=e3564]:
+                - 'generic "Filter by label: android" [ref=e3565]': android
+                - 'generic "Filter by label: chat" [ref=e3566]': chat
+                - 'generic "Filter by label: ux" [ref=e3567]': ux
+              - cell "cacophony" [ref=e3568]
+              - cell "1d ago" [ref=e3569]
+              - cell "1d ago" [ref=e3570]
+            - button "Select bd-a81d16 bd-a81d16 Fix caco web workspace loading cacophony · task fix caco workspace loading open P1 task Unassigned caco loading web +1 cacophony 20h ago 12m ago" [ref=e3571] [cursor=pointer]:
+              - cell "Select bd-a81d16" [ref=e3572]:
+                - checkbox "Select bd-a81d16" [ref=e3573]
+              - cell "bd-a81d16" [ref=e3574]
+              - cell "Fix caco web workspace loading cacophony · task fix caco workspace loading" [ref=e3575]:
+                - text: Fix caco web workspace loading
+                - generic [ref=e3576]: cacophony · task
+                - generic [ref=e3577]: fix caco workspace loading
+              - cell "open" [ref=e3578]:
+                - generic [ref=e3579]: open
+              - cell "P1" [ref=e3580]
+              - cell "task" [ref=e3581]
+              - cell "Unassigned" [ref=e3582]
+              - cell "caco loading web +1" [ref=e3583]:
+                - 'generic "Filter by label: caco" [ref=e3584]': caco
+                - 'generic "Filter by label: loading" [ref=e3585]': loading
+                - 'generic "Filter by label: web" [ref=e3586]': web
+                - generic "workspace" [ref=e3587]: "+1"
+              - cell "cacophony" [ref=e3588]
+              - cell "20h ago" [ref=e3589]
+              - cell "12m ago" [ref=e3590]
+            - button "Select bd-a4bc7e bd-a4bc7e pi won't accept github-copiot models that don't come up on /models endpoint btu they are really there b/c i can use via other means collective · task github copilot model override open P1 task Unassigned — collective 8d ago 7h ago" [ref=e3591] [cursor=pointer]:
+              - cell "Select bd-a4bc7e" [ref=e3592]:
+                - checkbox "Select bd-a4bc7e" [ref=e3593]
+              - cell "bd-a4bc7e" [ref=e3594]
+              - cell "pi won't accept github-copiot models that don't come up on /models endpoint btu they are really there b/c i can use via other means collective · task github copilot model override" [ref=e3595]:
+                - text: pi won't accept github-copiot models that don't come up on /models endpoint btu they are really there b/c i can use via other means
+                - generic [ref=e3596]: collective · task
+                - generic [ref=e3597]: github copilot model override
+              - cell "open" [ref=e3598]:
+                - generic [ref=e3599]: open
+              - cell "P1" [ref=e3600]
+              - cell "task" [ref=e3601]
+              - cell "Unassigned" [ref=e3602]
+              - cell "—" [ref=e3603]
+              - cell "collective" [ref=e3604]
+              - cell "8d ago" [ref=e3605]
+              - cell "7h ago" [ref=e3606]
+            - button "Select bd-70fac6 bd-70fac6 Native Pi Slack MCP extension with built-in token refresh collective · feature Native-Pi open P1 feature Unassigned extension mcp pi +1 collective 5d ago 1d ago" [ref=e3607] [cursor=pointer]:
+              - cell "Select bd-70fac6" [ref=e3608]:
+                - checkbox "Select bd-70fac6" [ref=e3609]
+              - cell "bd-70fac6" [ref=e3610]
+              - cell "Native Pi Slack MCP extension with built-in token refresh collective · feature Native-Pi" [ref=e3611]:
+                - text: Native Pi Slack MCP extension with built-in token refresh
+                - generic [ref=e3612]: collective · feature
+                - generic [ref=e3613]: Native-Pi
+              - cell "open" [ref=e3614]:
+                - generic [ref=e3615]: open
+              - cell "P1" [ref=e3616]
+              - cell "feature" [ref=e3617]
+              - cell "Unassigned" [ref=e3618]
+              - cell "extension mcp pi +1" [ref=e3619]:
+                - 'generic "Filter by label: extension" [ref=e3620]': extension
+                - 'generic "Filter by label: mcp" [ref=e3621]': mcp
+                - 'generic "Filter by label: pi" [ref=e3622]': pi
+                - generic "slack" [ref=e3623]: "+1"
+              - cell "collective" [ref=e3624]
+              - cell "5d ago" [ref=e3625]
+              - cell "1d ago" [ref=e3626]
+            - button "Select bd-ae59ea bd-ae59ea Complete summaries display in web interface collective · bug complete summaries display open P1 bug Unassigned summaries web-ux collective 2d ago 2d ago" [ref=e3627] [cursor=pointer]:
+              - cell "Select bd-ae59ea" [ref=e3628]:
+                - checkbox "Select bd-ae59ea" [ref=e3629]
+              - cell "bd-ae59ea" [ref=e3630]
+              - cell "Complete summaries display in web interface collective · bug complete summaries display" [ref=e3631]:
+                - text: Complete summaries display in web interface
+                - generic [ref=e3632]: collective · bug
+                - generic [ref=e3633]: complete summaries display
+              - cell "open" [ref=e3634]:
+                - generic [ref=e3635]: open
+              - cell "P1" [ref=e3636]
+              - cell "bug" [ref=e3637]
+              - cell "Unassigned" [ref=e3638]
+              - cell "summaries web-ux" [ref=e3639]:
+                - 'generic "Filter by label: summaries" [ref=e3640]': summaries
+                - 'generic "Filter by label: web-ux" [ref=e3641]': web-ux
+              - cell "collective" [ref=e3642]
+              - cell "2d ago" [ref=e3643]
+              - cell "2d ago" [ref=e3644]
+            - button "Select bd-c2221d bd-c2221d [upstream:cacophony] First-party caco computer-use surfaces wrapping tendril (TUI-visible) picasso-health · feature caco computer use surfaces open P1 feature Unassigned computer-use tendril tui +1 picasso-health 4d ago 4d ago" [ref=e3645] [cursor=pointer]:
+              - cell "Select bd-c2221d" [ref=e3646]:
+                - checkbox "Select bd-c2221d" [ref=e3647]
+              - cell "bd-c2221d" [ref=e3648]
+              - cell "[upstream:cacophony] First-party caco computer-use surfaces wrapping tendril (TUI-visible) picasso-health · feature caco computer use surfaces" [ref=e3649]:
+                - text: "[upstream:cacophony] First-party caco computer-use surfaces wrapping tendril (TUI-visible)"
+                - generic [ref=e3650]: picasso-health · feature
+                - generic [ref=e3651]: caco computer use surfaces
+              - cell "open" [ref=e3652]:
+                - generic [ref=e3653]: open
+              - cell "P1" [ref=e3654]
+              - cell "feature" [ref=e3655]
+              - cell "Unassigned" [ref=e3656]
+              - cell "computer-use tendril tui +1" [ref=e3657]:
+                - 'generic "Filter by label: computer-use" [ref=e3658]': computer-use
+                - 'generic "Filter by label: tendril" [ref=e3659]': tendril
+                - 'generic "Filter by label: tui" [ref=e3660]': tui
+                - generic "upstream-cacophony" [ref=e3661]: "+1"
+              - cell "picasso-health" [ref=e3662]
+              - cell "4d ago" [ref=e3663]
+              - cell "4d ago" [ref=e3664]
+            - button "Select bd-e24899 bd-e24899 Validate tendril spike + integrate via 1P caco ui surfaces once available picasso-health · feature tendril spike validation open P1 feature Unassigned agent-tooling follows-upstream tendril +1 picasso-health 4d ago 4d ago" [ref=e3665] [cursor=pointer]:
+              - cell "Select bd-e24899" [ref=e3666]:
+                - checkbox "Select bd-e24899" [ref=e3667]
+              - cell "bd-e24899" [ref=e3668]
+              - cell "Validate tendril spike + integrate via 1P caco ui surfaces once available picasso-health · feature tendril spike validation" [ref=e3669]:
+                - text: Validate tendril spike + integrate via 1P caco ui surfaces once available
+                - generic [ref=e3670]: picasso-health · feature
+                - generic [ref=e3671]: tendril spike validation
+              - cell "open" [ref=e3672]:
+                - generic [ref=e3673]: open
+              - cell "P1" [ref=e3674]
+              - cell "feature" [ref=e3675]
+              - cell "Unassigned" [ref=e3676]
+              - cell "agent-tooling follows-upstream tendril +1" [ref=e3677]:
+                - 'generic "Filter by label: agent-tooling" [ref=e3678]': agent-tooling
+                - 'generic "Filter by label: follows-upstream" [ref=e3679]': follows-upstream
+                - 'generic "Filter by label: tendril" [ref=e3680]': tendril
+                - generic "validation" [ref=e3681]: "+1"
+              - cell "picasso-health" [ref=e3682]
+              - cell "4d ago" [ref=e3683]
+              - cell "4d ago" [ref=e3684]
+            - button "Select bd-175c12 bd-175c12 [upstream:cacophony] Tendril DSL silently demotes typo'd commands to literal text — types junk into focused window picasso-health · bug Upstream-Cacophony open P1 bug Unassigned follows-finding footgun safety +2 picasso-health 4d ago 4d ago" [ref=e3685] [cursor=pointer]:
+              - cell "Select bd-175c12" [ref=e3686]:
+                - checkbox "Select bd-175c12" [ref=e3687]
+              - cell "bd-175c12" [ref=e3688]
+              - cell "[upstream:cacophony] Tendril DSL silently demotes typo'd commands to literal text — types junk into focused window picasso-health · bug Upstream-Cacophony" [ref=e3689]:
+                - text: "[upstream:cacophony] Tendril DSL silently demotes typo'd commands to literal text — types junk into focused window"
+                - generic [ref=e3690]: picasso-health · bug
+                - generic [ref=e3691]: Upstream-Cacophony
+              - cell "open" [ref=e3692]:
+                - generic [ref=e3693]: open
+              - cell "P1" [ref=e3694]
+              - cell "bug" [ref=e3695]
+              - cell "Unassigned" [ref=e3696]
+              - cell "follows-finding footgun safety +2" [ref=e3697]:
+                - 'generic "Filter by label: follows-finding" [ref=e3698]': follows-finding
+                - 'generic "Filter by label: footgun" [ref=e3699]': footgun
+                - 'generic "Filter by label: safety" [ref=e3700]': safety
+                - generic "tendril, upstream-cacophony" [ref=e3701]: "+2"
+              - cell "picasso-health" [ref=e3702]
+              - cell "4d ago" [ref=e3703]
+              - cell "4d ago" [ref=e3704]
+            - button "Select bd-a0d703 bd-a0d703 Scripted tendril taste-test runner under .cacophony/bin (agent-summarised QA scripts) picasso-health · feature tendril taste test runner open P1 feature Unassigned agent-tooling e2e follows-finding +3 picasso-health 4d ago 4d ago" [ref=e3705] [cursor=pointer]:
+              - cell "Select bd-a0d703" [ref=e3706]:
+                - checkbox "Select bd-a0d703" [ref=e3707]
+              - cell "bd-a0d703" [ref=e3708]
+              - cell "Scripted tendril taste-test runner under .cacophony/bin (agent-summarised QA scripts) picasso-health · feature tendril taste test runner" [ref=e3709]:
+                - text: Scripted tendril taste-test runner under .cacophony/bin (agent-summarised QA scripts)
+                - generic [ref=e3710]: picasso-health · feature
+                - generic [ref=e3711]: tendril taste test runner
+              - cell "open" [ref=e3712]:
+                - generic [ref=e3713]: open
+              - cell "P1" [ref=e3714]
+              - cell "feature" [ref=e3715]
+              - cell "Unassigned" [ref=e3716]
+              - cell "agent-tooling e2e follows-finding +3" [ref=e3717]:
+                - 'generic "Filter by label: agent-tooling" [ref=e3718]': agent-tooling
+                - 'generic "Filter by label: e2e" [ref=e3719]': e2e
+                - 'generic "Filter by label: follows-finding" [ref=e3720]': follows-finding
+                - generic "qa, self-improvement, tendril" [ref=e3721]: "+3"
+              - cell "picasso-health" [ref=e3722]
+              - cell "4d ago" [ref=e3723]
+              - cell "4d ago" [ref=e3724]
+            - 'button "Select bd-e2d081 bd-e2d081 Eval-rubric → QA-scenario bridge: derive .cacophony/qa scripts from health_information_judge tiers picasso-health · feature Eval-Rubric open P1 feature Unassigned agent-tooling evals follows-finding +2 picasso-health 4d ago 4d ago" [ref=e3725] [cursor=pointer]':
+              - cell "Select bd-e2d081" [ref=e3726]:
+                - checkbox "Select bd-e2d081" [ref=e3727]
+              - cell "bd-e2d081" [ref=e3728]
+              - 'cell "Eval-rubric → QA-scenario bridge: derive .cacophony/qa scripts from health_information_judge tiers picasso-health · feature Eval-Rubric" [ref=e3729]':
+                - text: "Eval-rubric → QA-scenario bridge: derive .cacophony/qa scripts from health_information_judge tiers"
+                - generic [ref=e3730]: picasso-health · feature
+                - generic [ref=e3731]: Eval-Rubric
+              - cell "open" [ref=e3732]:
+                - generic [ref=e3733]: open
+              - cell "P1" [ref=e3734]
+              - cell "feature" [ref=e3735]
+              - cell "Unassigned" [ref=e3736]
+              - cell "agent-tooling evals follows-finding +2" [ref=e3737]:
+                - 'generic "Filter by label: agent-tooling" [ref=e3738]': agent-tooling
+                - 'generic "Filter by label: evals" [ref=e3739]': evals
+                - 'generic "Filter by label: follows-finding" [ref=e3740]': follows-finding
+                - generic "qa, self-improvement" [ref=e3741]: "+2"
+              - cell "picasso-health" [ref=e3742]
+              - cell "4d ago" [ref=e3743]
+              - cell "4d ago" [ref=e3744]
+            - button "Select bd-f1ba2a bd-f1ba2a Self-improvement chain triage + dispatch ladder under .cacophony/bin (compounds the entire .cacophony chain by getting it built) picasso-health · task Self-Improvement open P1 task Unassigned agent-tooling follows-finding meta +1 picasso-health 4d ago 4d ago" [ref=e3745] [cursor=pointer]:
+              - cell "Select bd-f1ba2a" [ref=e3746]:
+                - checkbox "Select bd-f1ba2a" [ref=e3747]
+              - cell "bd-f1ba2a" [ref=e3748]
+              - cell "Self-improvement chain triage + dispatch ladder under .cacophony/bin (compounds the entire .cacophony chain by getting it built) picasso-health · task Self-Improvement" [ref=e3749]:
+                - text: Self-improvement chain triage + dispatch ladder under .cacophony/bin (compounds the entire .cacophony chain by getting it built)
+                - generic [ref=e3750]: picasso-health · task
+                - generic [ref=e3751]: Self-Improvement
+              - cell "open" [ref=e3752]:
+                - generic [ref=e3753]: open
+              - cell "P1" [ref=e3754]
+              - cell "task" [ref=e3755]
+              - cell "Unassigned" [ref=e3756]
+              - cell "agent-tooling follows-finding meta +1" [ref=e3757]:
+                - 'generic "Filter by label: agent-tooling" [ref=e3758]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e3759]': follows-finding
+                - 'generic "Filter by label: meta" [ref=e3760]': meta
+                - generic "self-improvement" [ref=e3761]: "+1"
+              - cell "picasso-health" [ref=e3762]
+              - cell "4d ago" [ref=e3763]
+              - cell "4d ago" [ref=e3764]
+            - 'button "Select bd-ef3db4 bd-ef3db4 [upstream:cacophony] Operator-intent ledger: stopped agents must not be auto-revived by doctors/controllers picasso-health · feature stopped agents no auto revival open P1 feature Unassigned controller doctor operator-intent +1 picasso-health 4d ago 4d ago" [ref=e3765] [cursor=pointer]':
+              - cell "Select bd-ef3db4" [ref=e3766]:
+                - checkbox "Select bd-ef3db4" [ref=e3767]
+              - cell "bd-ef3db4" [ref=e3768]
+              - 'cell "[upstream:cacophony] Operator-intent ledger: stopped agents must not be auto-revived by doctors/controllers picasso-health · feature stopped agents no auto revival" [ref=e3769]':
+                - text: "[upstream:cacophony] Operator-intent ledger: stopped agents must not be auto-revived by doctors/controllers"
+                - generic [ref=e3770]: picasso-health · feature
+                - generic [ref=e3771]: stopped agents no auto revival
+              - cell "open" [ref=e3772]:
+                - generic [ref=e3773]: open
+              - cell "P1" [ref=e3774]
+              - cell "feature" [ref=e3775]
+              - cell "Unassigned" [ref=e3776]
+              - cell "controller doctor operator-intent +1" [ref=e3777]:
+                - 'generic "Filter by label: controller" [ref=e3778]': controller
+                - 'generic "Filter by label: doctor" [ref=e3779]': doctor
+                - 'generic "Filter by label: operator-intent" [ref=e3780]': operator-intent
+                - generic "safety" [ref=e3781]: "+1"
+              - cell "picasso-health" [ref=e3782]
+              - cell "4d ago" [ref=e3783]
+              - cell "4d ago" [ref=e3784]
+            - button "Select bd-36a509 bd-36a509 Audit code execution sandbox image security picasso-health · task sandbox image security audit open P1 task Unassigned code-execution sandbox security picasso-health 5h ago 5h ago" [ref=e3785] [cursor=pointer]:
+              - cell "Select bd-36a509" [ref=e3786]:
+                - checkbox "Select bd-36a509" [ref=e3787]
+              - cell "bd-36a509" [ref=e3788]
+              - cell "Audit code execution sandbox image security picasso-health · task sandbox image security audit" [ref=e3789]:
+                - text: Audit code execution sandbox image security
+                - generic [ref=e3790]: picasso-health · task
+                - generic [ref=e3791]: sandbox image security audit
+              - cell "open" [ref=e3792]:
+                - generic [ref=e3793]: open
+              - cell "P1" [ref=e3794]
+              - cell "task" [ref=e3795]
+              - cell "Unassigned" [ref=e3796]
+              - cell "code-execution sandbox security" [ref=e3797]:
+                - 'generic "Filter by label: code-execution" [ref=e3798]': code-execution
+                - 'generic "Filter by label: sandbox" [ref=e3799]': sandbox
+                - 'generic "Filter by label: security" [ref=e3800]': security
+              - cell "picasso-health" [ref=e3801]
+              - cell "5h ago" [ref=e3802]
+              - cell "5h ago" [ref=e3803]
+            - button "Select bd-384541 bd-384541 Add security validation to sandbox image pipeline picasso-health · feature security validation sandbox images open P1 feature Unassigned code-execution sandbox security picasso-health 5h ago 5h ago" [ref=e3804] [cursor=pointer]:
+              - cell "Select bd-384541" [ref=e3805]:
+                - checkbox "Select bd-384541" [ref=e3806]
+              - cell "bd-384541" [ref=e3807]
+              - cell "Add security validation to sandbox image pipeline picasso-health · feature security validation sandbox images" [ref=e3808]:
+                - text: Add security validation to sandbox image pipeline
+                - generic [ref=e3809]: picasso-health · feature
+                - generic [ref=e3810]: security validation sandbox images
+              - cell "open" [ref=e3811]:
+                - generic [ref=e3812]: open
+              - cell "P1" [ref=e3813]
+              - cell "feature" [ref=e3814]
+              - cell "Unassigned" [ref=e3815]
+              - cell "code-execution sandbox security" [ref=e3816]:
+                - 'generic "Filter by label: code-execution" [ref=e3817]': code-execution
+                - 'generic "Filter by label: sandbox" [ref=e3818]': sandbox
+                - 'generic "Filter by label: security" [ref=e3819]': security
+              - cell "picasso-health" [ref=e3820]
+              - cell "5h ago" [ref=e3821]
+              - cell "5h ago" [ref=e3822]
+            - button "Select bd-b6c6f4 bd-b6c6f4 Implement secure sandbox image capture mechanism picasso-health · feature secure sandbox image capture open P1 feature Unassigned code-execution sandbox security picasso-health 5h ago 5h ago" [ref=e3823] [cursor=pointer]:
+              - cell "Select bd-b6c6f4" [ref=e3824]:
+                - checkbox "Select bd-b6c6f4" [ref=e3825]
+              - cell "bd-b6c6f4" [ref=e3826]
+              - cell "Implement secure sandbox image capture mechanism picasso-health · feature secure sandbox image capture" [ref=e3827]:
+                - text: Implement secure sandbox image capture mechanism
+                - generic [ref=e3828]: picasso-health · feature
+                - generic [ref=e3829]: secure sandbox image capture
+              - cell "open" [ref=e3830]:
+                - generic [ref=e3831]: open
+              - cell "P1" [ref=e3832]
+              - cell "feature" [ref=e3833]
+              - cell "Unassigned" [ref=e3834]
+              - cell "code-execution sandbox security" [ref=e3835]:
+                - 'generic "Filter by label: code-execution" [ref=e3836]': code-execution
+                - 'generic "Filter by label: sandbox" [ref=e3837]': sandbox
+                - 'generic "Filter by label: security" [ref=e3838]': security
+              - cell "picasso-health" [ref=e3839]
+              - cell "5h ago" [ref=e3840]
+              - cell "5h ago" [ref=e3841]
+            - button "Select bd-ecac53 bd-ecac53 Preserve existing content when Unicode send targets Firefox contenteditable rich editors tendril · bug preserve content unicode firefox editor in progress P1 bug h7pcd88it0p0teah browser contenteditable headless +3 system 2 tendril 4h ago 4h ago" [ref=e3842] [cursor=pointer]:
+              - cell "Select bd-ecac53" [ref=e3843]:
+                - checkbox "Select bd-ecac53" [ref=e3844]
+              - cell "bd-ecac53" [ref=e3845]
+              - cell "Preserve existing content when Unicode send targets Firefox contenteditable rich editors tendril · bug preserve content unicode firefox editor" [ref=e3846]:
+                - text: Preserve existing content when Unicode send targets Firefox contenteditable rich editors
+                - generic [ref=e3847]: tendril · bug
+                - generic [ref=e3848]: preserve content unicode firefox editor
+              - cell "in progress" [ref=e3849]:
+                - generic [ref=e3850]: in progress
+              - cell "P1" [ref=e3851]
+              - cell "bug" [ref=e3852]
+              - cell "h7pcd88it0p0teah" [ref=e3853]
+              - cell "browser contenteditable headless +3 system 2" [ref=e3854]:
+                - 'generic "Filter by label: browser" [ref=e3855]': browser
+                - 'generic "Filter by label: contenteditable" [ref=e3856]': contenteditable
+                - 'generic "Filter by label: headless" [ref=e3857]': headless
+                - generic "input, unicode, x11" [ref=e3858]: "+3"
+                - 'generic "Hidden system labels: discovered-via-bead:bd-c82db3, discovered-via-session:hands-on-tendril-control" [ref=e3859]': system 2
+              - cell "tendril" [ref=e3860]
+              - cell "4h ago" [ref=e3861]
+              - cell "4h ago" [ref=e3862]
+            - 'button "Select bd-c60c80 bd-c60c80 web app parity: lots of missing views amd features a.skh.am · task web app parity missing views open P2 task Unassigned — a.skh.am 8d ago 5d ago" [ref=e3863] [cursor=pointer]':
+              - cell "Select bd-c60c80" [ref=e3864]:
+                - checkbox "Select bd-c60c80" [ref=e3865]
+              - cell "bd-c60c80" [ref=e3866]
+              - 'cell "web app parity: lots of missing views amd features a.skh.am · task web app parity missing views" [ref=e3867]':
+                - text: "web app parity: lots of missing views amd features"
+                - generic [ref=e3868]: a.skh.am · task
+                - generic [ref=e3869]: web app parity missing views
+              - cell "open" [ref=e3870]:
+                - generic [ref=e3871]: open
+              - cell "P2" [ref=e3872]
+              - cell "task" [ref=e3873]
+              - cell "Unassigned" [ref=e3874]
+              - cell "—" [ref=e3875]
+              - cell "a.skh.am" [ref=e3876]
+              - cell "8d ago" [ref=e3877]
+              - cell "5d ago" [ref=e3878]
+            - button "Select bd-11bc46 bd-11bc46 Validate transcription functionality cacophony · task Validate-Transcription open P2 task Unassigned testing transcription validation cacophony 4d ago 4d ago" [ref=e3879] [cursor=pointer]:
+              - cell "Select bd-11bc46" [ref=e3880]:
+                - checkbox "Select bd-11bc46" [ref=e3881]
+              - cell "bd-11bc46" [ref=e3882]
+              - cell "Validate transcription functionality cacophony · task Validate-Transcription" [ref=e3883]:
+                - text: Validate transcription functionality
+                - generic [ref=e3884]: cacophony · task
+                - generic [ref=e3885]: Validate-Transcription
+              - cell "open" [ref=e3886]:
+                - generic [ref=e3887]: open
+              - cell "P2" [ref=e3888]
+              - cell "task" [ref=e3889]
+              - cell "Unassigned" [ref=e3890]
+              - cell "testing transcription validation" [ref=e3891]:
+                - 'generic "Filter by label: testing" [ref=e3892]': testing
+                - 'generic "Filter by label: transcription" [ref=e3893]': transcription
+                - 'generic "Filter by label: validation" [ref=e3894]': validation
+              - cell "cacophony" [ref=e3895]
+              - cell "4d ago" [ref=e3896]
+              - cell "4d ago" [ref=e3897]
+            - button "Select bd-d0d59c bd-d0d59c Integrate transcription with text-to-speech pipeline cacophony · task Integrate-Transcription open P2 task Unassigned integration text-to-speech transcription cacophony 4d ago 4d ago" [ref=e3898] [cursor=pointer]:
+              - cell "Select bd-d0d59c" [ref=e3899]:
+                - checkbox "Select bd-d0d59c" [ref=e3900]
+              - cell "bd-d0d59c" [ref=e3901]
+              - cell "Integrate transcription with text-to-speech pipeline cacophony · task Integrate-Transcription" [ref=e3902]:
+                - text: Integrate transcription with text-to-speech pipeline
+                - generic [ref=e3903]: cacophony · task
+                - generic [ref=e3904]: Integrate-Transcription
+              - cell "open" [ref=e3905]:
+                - generic [ref=e3906]: open
+              - cell "P2" [ref=e3907]
+              - cell "task" [ref=e3908]
+              - cell "Unassigned" [ref=e3909]
+              - cell "integration text-to-speech transcription" [ref=e3910]:
+                - 'generic "Filter by label: integration" [ref=e3911]': integration
+                - 'generic "Filter by label: text-to-speech" [ref=e3912]': text-to-speech
+                - 'generic "Filter by label: transcription" [ref=e3913]': transcription
+              - cell "cacophony" [ref=e3914]
+              - cell "4d ago" [ref=e3915]
+              - cell "4d ago" [ref=e3916]
+            - button "Select bd-0c17e0 bd-0c17e0 Polish voice call UX across all surfaces cacophony · task Polish-Voice open P2 task Unassigned polish ux voice-calls cacophony 4d ago 4d ago" [ref=e3917] [cursor=pointer]:
+              - cell "Select bd-0c17e0" [ref=e3918]:
+                - checkbox "Select bd-0c17e0" [ref=e3919]
+              - cell "bd-0c17e0" [ref=e3920]
+              - cell "Polish voice call UX across all surfaces cacophony · task Polish-Voice" [ref=e3921]:
+                - text: Polish voice call UX across all surfaces
+                - generic [ref=e3922]: cacophony · task
+                - generic [ref=e3923]: Polish-Voice
+              - cell "open" [ref=e3924]:
+                - generic [ref=e3925]: open
+              - cell "P2" [ref=e3926]
+              - cell "task" [ref=e3927]
+              - cell "Unassigned" [ref=e3928]
+              - cell "polish ux voice-calls" [ref=e3929]:
+                - 'generic "Filter by label: polish" [ref=e3930]': polish
+                - 'generic "Filter by label: ux" [ref=e3931]': ux
+                - 'generic "Filter by label: voice-calls" [ref=e3932]': voice-calls
+              - cell "cacophony" [ref=e3933]
+              - cell "4d ago" [ref=e3934]
+              - cell "4d ago" [ref=e3935]
+            - button "Select bd-a2bbe3 bd-a2bbe3 Integrate cloud-understanding code editor cacophony · feature integrate cloud editor open P2 feature Unassigned cloud-understanding editor webapp cacophony 3d ago 3d ago" [ref=e3936] [cursor=pointer]:
+              - cell "Select bd-a2bbe3" [ref=e3937]:
+                - checkbox "Select bd-a2bbe3" [ref=e3938]
+              - cell "bd-a2bbe3" [ref=e3939]
+              - cell "Integrate cloud-understanding code editor cacophony · feature integrate cloud editor" [ref=e3940]:
+                - text: Integrate cloud-understanding code editor
+                - generic [ref=e3941]: cacophony · feature
+                - generic [ref=e3942]: integrate cloud editor
+              - cell "open" [ref=e3943]:
+                - generic [ref=e3944]: open
+              - cell "P2" [ref=e3945]
+              - cell "feature" [ref=e3946]
+              - cell "Unassigned" [ref=e3947]
+              - cell "cloud-understanding editor webapp" [ref=e3948]:
+                - 'generic "Filter by label: cloud-understanding" [ref=e3949]': cloud-understanding
+                - 'generic "Filter by label: editor" [ref=e3950]': editor
+                - 'generic "Filter by label: webapp" [ref=e3951]': webapp
+              - cell "cacophony" [ref=e3952]
+              - cell "3d ago" [ref=e3953]
+              - cell "3d ago" [ref=e3954]
+            - button "Select bd-1bd659 bd-1bd659 Add fullscreen support to wallpaper viewer cacophony · task add fullscreen wallpaper viewer open P2 task Unassigned fullscreen ui wallpaper cacophony 1d ago 1d ago" [ref=e3955] [cursor=pointer]:
+              - cell "Select bd-1bd659" [ref=e3956]:
+                - checkbox "Select bd-1bd659" [ref=e3957]
+              - cell "bd-1bd659" [ref=e3958]
+              - cell "Add fullscreen support to wallpaper viewer cacophony · task add fullscreen wallpaper viewer" [ref=e3959]:
+                - text: Add fullscreen support to wallpaper viewer
+                - generic [ref=e3960]: cacophony · task
+                - generic [ref=e3961]: add fullscreen wallpaper viewer
+              - cell "open" [ref=e3962]:
+                - generic [ref=e3963]: open
+              - cell "P2" [ref=e3964]
+              - cell "task" [ref=e3965]
+              - cell "Unassigned" [ref=e3966]
+              - cell "fullscreen ui wallpaper" [ref=e3967]:
+                - 'generic "Filter by label: fullscreen" [ref=e3968]': fullscreen
+                - 'generic "Filter by label: ui" [ref=e3969]': ui
+                - 'generic "Filter by label: wallpaper" [ref=e3970]': wallpaper
+              - cell "cacophony" [ref=e3971]
+              - cell "1d ago" [ref=e3972]
+              - cell "1d ago" [ref=e3973]
+            - button "Select bd-d77c97 bd-d77c97 Implement slideshow component for wallpapers cacophony · task implement slideshow wallpaper open P2 task Unassigned component slideshow ui cacophony 1d ago 1d ago" [ref=e3974] [cursor=pointer]:
+              - cell "Select bd-d77c97" [ref=e3975]:
+                - checkbox "Select bd-d77c97" [ref=e3976]
+              - cell "bd-d77c97" [ref=e3977]
+              - cell "Implement slideshow component for wallpapers cacophony · task implement slideshow wallpaper" [ref=e3978]:
+                - text: Implement slideshow component for wallpapers
+                - generic [ref=e3979]: cacophony · task
+                - generic [ref=e3980]: implement slideshow wallpaper
+              - cell "open" [ref=e3981]:
+                - generic [ref=e3982]: open
+              - cell "P2" [ref=e3983]
+              - cell "task" [ref=e3984]
+              - cell "Unassigned" [ref=e3985]
+              - cell "component slideshow ui" [ref=e3986]:
+                - 'generic "Filter by label: component" [ref=e3987]': component
+                - 'generic "Filter by label: slideshow" [ref=e3988]': slideshow
+                - 'generic "Filter by label: ui" [ref=e3989]': ui
+              - cell "cacophony" [ref=e3990]
+              - cell "1d ago" [ref=e3991]
+              - cell "1d ago" [ref=e3992]
+            - button "Select bd-11520a bd-11520a Add edit/refine flow to TUI quickfile beads matching other surfaces cacophony · feature tui quickfile beads edit refine in progress P2 feature helsinki consistency editing quickfile +1 cacophony 1d ago 1d ago" [ref=e3993] [cursor=pointer]:
+              - cell "Select bd-11520a" [ref=e3994]:
+                - checkbox "Select bd-11520a" [ref=e3995]
+              - cell "bd-11520a" [ref=e3996]
+              - cell "Add edit/refine flow to TUI quickfile beads matching other surfaces cacophony · feature tui quickfile beads edit refine" [ref=e3997]:
+                - text: Add edit/refine flow to TUI quickfile beads matching other surfaces
+                - generic [ref=e3998]: cacophony · feature
+                - generic [ref=e3999]: tui quickfile beads edit refine
+              - cell "in progress" [ref=e4000]:
+                - generic [ref=e4001]: in progress
+              - cell "P2" [ref=e4002]
+              - cell "feature" [ref=e4003]
+              - cell "helsinki" [ref=e4004]
+              - cell "consistency editing quickfile +1" [ref=e4005]:
+                - 'generic "Filter by label: consistency" [ref=e4006]': consistency
+                - 'generic "Filter by label: editing" [ref=e4007]': editing
+                - 'generic "Filter by label: quickfile" [ref=e4008]': quickfile
+                - generic "tui" [ref=e4009]: "+1"
+              - cell "cacophony" [ref=e4010]
+              - cell "1d ago" [ref=e4011]
+              - cell "1d ago" [ref=e4012]
+            - button "Select bd-da8140 bd-da8140 Adjust SSE error reporting timeout window cacophony · task adjust sse error timeout open P2 task Unassigned connectivity daemon sse +1 cacophony 1d ago 1d ago" [ref=e4013] [cursor=pointer]:
+              - cell "Select bd-da8140" [ref=e4014]:
+                - checkbox "Select bd-da8140" [ref=e4015]
+              - cell "bd-da8140" [ref=e4016]
+              - cell "Adjust SSE error reporting timeout window cacophony · task adjust sse error timeout" [ref=e4017]:
+                - text: Adjust SSE error reporting timeout window
+                - generic [ref=e4018]: cacophony · task
+                - generic [ref=e4019]: adjust sse error timeout
+              - cell "open" [ref=e4020]:
+                - generic [ref=e4021]: open
+              - cell "P2" [ref=e4022]
+              - cell "task" [ref=e4023]
+              - cell "Unassigned" [ref=e4024]
+              - cell "connectivity daemon sse +1" [ref=e4025]:
+                - 'generic "Filter by label: connectivity" [ref=e4026]': connectivity
+                - 'generic "Filter by label: daemon" [ref=e4027]': daemon
+                - 'generic "Filter by label: sse" [ref=e4028]': sse
+                - generic "webui" [ref=e4029]: "+1"
+              - cell "cacophony" [ref=e4030]
+              - cell "1d ago" [ref=e4031]
+              - cell "1d ago" [ref=e4032]
+            - button "Select bd-893a04 bd-893a04 [sgu24] Daemon not running after restart-maintenance window cacophony · bug sgu24 daemon restart issue open P2 bug Unassigned daemon node-health operator-decision +3 cacophony 20h ago 12m ago" [ref=e4033] [cursor=pointer]:
+              - cell "Select bd-893a04" [ref=e4034]:
+                - checkbox "Select bd-893a04" [ref=e4035]
+              - cell "bd-893a04" [ref=e4036]
+              - cell "[sgu24] Daemon not running after restart-maintenance window cacophony · bug sgu24 daemon restart issue" [ref=e4037]:
+                - text: "[sgu24] Daemon not running after restart-maintenance window"
+                - generic [ref=e4038]: cacophony · bug
+                - generic [ref=e4039]: sgu24 daemon restart issue
+              - cell "open" [ref=e4040]:
+                - generic [ref=e4041]: open
+              - cell "P2" [ref=e4042]
+              - cell "bug" [ref=e4043]
+              - cell "Unassigned" [ref=e4044]
+              - cell "daemon node-health operator-decision +3" [ref=e4045]:
+                - 'generic "Filter by label: daemon" [ref=e4046]': daemon
+                - 'generic "Filter by label: node-health" [ref=e4047]': node-health
+                - 'generic "Filter by label: operator-decision" [ref=e4048]': operator-decision
+                - generic "restart, sgu24, tts" [ref=e4049]: "+3"
+              - cell "cacophony" [ref=e4050]
+              - cell "20h ago" [ref=e4051]
+              - cell "12m ago" [ref=e4052]
+            - button "Select bd-c5d844 bd-c5d844 Request background permissions and implement wakelock cacophony · feature background permissions wakelock in progress P2 feature helsinki android background-sync permissions cacophony 14h ago 13h ago" [ref=e4053] [cursor=pointer]:
+              - cell "Select bd-c5d844" [ref=e4054]:
+                - checkbox "Select bd-c5d844" [ref=e4055]
+              - cell "bd-c5d844" [ref=e4056]
+              - cell "Request background permissions and implement wakelock cacophony · feature background permissions wakelock" [ref=e4057]:
+                - text: Request background permissions and implement wakelock
+                - generic [ref=e4058]: cacophony · feature
+                - generic [ref=e4059]: background permissions wakelock
+              - cell "in progress" [ref=e4060]:
+                - generic [ref=e4061]: in progress
+              - cell "P2" [ref=e4062]
+              - cell "feature" [ref=e4063]
+              - cell "helsinki" [ref=e4064]
+              - cell "android background-sync permissions" [ref=e4065]:
+                - 'generic "Filter by label: android" [ref=e4066]': android
+                - 'generic "Filter by label: background-sync" [ref=e4067]': background-sync
+                - 'generic "Filter by label: permissions" [ref=e4068]': permissions
+              - cell "cacophony" [ref=e4069]
+              - cell "14h ago" [ref=e4070]
+              - cell "13h ago" [ref=e4071]
+            - button "Select bd-6d0e8b bd-6d0e8b Disable animation in enterprise TUI theme cacophony · task Disable-Animation in progress P2 task ms-dev-cacophony… enterprise theme tui +1 cacophony 3m ago 3m ago" [ref=e4072] [cursor=pointer]:
+              - cell "Select bd-6d0e8b" [ref=e4073]:
+                - checkbox "Select bd-6d0e8b" [ref=e4074]
+              - cell "bd-6d0e8b" [ref=e4075]
+              - cell "Disable animation in enterprise TUI theme cacophony · task Disable-Animation" [ref=e4076]:
+                - text: Disable animation in enterprise TUI theme
+                - generic [ref=e4077]: cacophony · task
+                - generic [ref=e4078]: Disable-Animation
+              - cell "in progress" [ref=e4079]:
+                - generic [ref=e4080]: in progress
+              - cell "P2" [ref=e4081]
+              - cell "task" [ref=e4082]
+              - cell "ms-dev-cacophony…" [ref=e4083]
+              - cell "enterprise theme tui +1" [ref=e4084]:
+                - 'generic "Filter by label: enterprise" [ref=e4085]': enterprise
+                - 'generic "Filter by label: theme" [ref=e4086]': theme
+                - 'generic "Filter by label: tui" [ref=e4087]': tui
+                - generic "visual-polish" [ref=e4088]: "+1"
+              - cell "cacophony" [ref=e4089]
+              - cell "3m ago" [ref=e4090]
+              - cell "3m ago" [ref=e4091]
+            - 'button "Select bd-016e22 bd-016e22 cltv-daemon: per-machine control plane service + multi-machine cltv switch orchestrator collective · feature open P2 feature Unassigned cltv daemon fleet +3 collective 9d ago 9d ago" [ref=e4092] [cursor=pointer]':
+              - cell "Select bd-016e22" [ref=e4093]:
+                - checkbox "Select bd-016e22" [ref=e4094]
+              - cell "bd-016e22" [ref=e4095]
+              - 'cell "cltv-daemon: per-machine control plane service + multi-machine cltv switch orchestrator collective · feature" [ref=e4096]':
+                - text: "cltv-daemon: per-machine control plane service + multi-machine cltv switch orchestrator"
+                - generic [ref=e4097]: collective · feature
+              - cell "open" [ref=e4098]:
+                - generic [ref=e4099]: open
+              - cell "P2" [ref=e4100]
+              - cell "feature" [ref=e4101]
+              - cell "Unassigned" [ref=e4102]
+              - cell "cltv daemon fleet +3" [ref=e4103]:
+                - 'generic "Filter by label: cltv" [ref=e4104]': cltv
+                - 'generic "Filter by label: daemon" [ref=e4105]': daemon
+                - 'generic "Filter by label: fleet" [ref=e4106]': fleet
+                - generic "infrastructure, rust, tailscale" [ref=e4107]: "+3"
+              - cell "collective" [ref=e4108]
+              - cell "9d ago" [ref=e4109]
+              - cell "9d ago" [ref=e4110]
+            - button "Select bd-5350e0 bd-5350e0 pi shows gpt-5.5 as 200k context but github-copilot has it as 400k context collective · task resolve context window discrepancy open P2 task Unassigned — collective 1d ago 1d ago" [ref=e4111] [cursor=pointer]:
+              - cell "Select bd-5350e0" [ref=e4112]:
+                - checkbox "Select bd-5350e0" [ref=e4113]
+              - cell "bd-5350e0" [ref=e4114]
+              - cell "pi shows gpt-5.5 as 200k context but github-copilot has it as 400k context collective · task resolve context window discrepancy" [ref=e4115]:
+                - text: pi shows gpt-5.5 as 200k context but github-copilot has it as 400k context
+                - generic [ref=e4116]: collective · task
+                - generic [ref=e4117]: resolve context window discrepancy
+              - cell "open" [ref=e4118]:
+                - generic [ref=e4119]: open
+              - cell "P2" [ref=e4120]
+              - cell "task" [ref=e4121]
+              - cell "Unassigned" [ref=e4122]
+              - cell "—" [ref=e4123]
+              - cell "collective" [ref=e4124]
+              - cell "1d ago" [ref=e4125]
+              - cell "1d ago" [ref=e4126]
+            - button "Select bd-7c6c95 bd-7c6c95 Launcher fatally crashes when midi2hid-listen binary is not found midi2hid · bug Launcher-Fatally open P2 bug Unassigned launcher test-user midi2hid 10d ago 5d ago" [ref=e4127] [cursor=pointer]:
+              - cell "Select bd-7c6c95" [ref=e4128]:
+                - checkbox "Select bd-7c6c95" [ref=e4129]
+              - cell "bd-7c6c95" [ref=e4130]
+              - cell "Launcher fatally crashes when midi2hid-listen binary is not found midi2hid · bug Launcher-Fatally" [ref=e4131]:
+                - text: Launcher fatally crashes when midi2hid-listen binary is not found
+                - generic [ref=e4132]: midi2hid · bug
+                - generic [ref=e4133]: Launcher-Fatally
+              - cell "open" [ref=e4134]:
+                - generic [ref=e4135]: open
+              - cell "P2" [ref=e4136]
+              - cell "bug" [ref=e4137]
+              - cell "Unassigned" [ref=e4138]
+              - cell "launcher test-user" [ref=e4139]:
+                - 'generic "Filter by label: launcher" [ref=e4140]': launcher
+                - 'generic "Filter by label: test-user" [ref=e4141]': test-user
+              - cell "midi2hid" [ref=e4142]
+              - cell "10d ago" [ref=e4143]
+              - cell "5d ago" [ref=e4144]
+            - button "Select bd-d8fdf6 bd-d8fdf6 Profile examples in README, SPEC, and HTML docs use non-functional TOML trigger/action format midi2hid · bug Profile-Examples open P2 bug Unassigned documentation test-user midi2hid 10d ago 5d ago" [ref=e4145] [cursor=pointer]:
+              - cell "Select bd-d8fdf6" [ref=e4146]:
+                - checkbox "Select bd-d8fdf6" [ref=e4147]
+              - cell "bd-d8fdf6" [ref=e4148]
+              - cell "Profile examples in README, SPEC, and HTML docs use non-functional TOML trigger/action format midi2hid · bug Profile-Examples" [ref=e4149]:
+                - text: Profile examples in README, SPEC, and HTML docs use non-functional TOML trigger/action format
+                - generic [ref=e4150]: midi2hid · bug
+                - generic [ref=e4151]: Profile-Examples
+              - cell "open" [ref=e4152]:
+                - generic [ref=e4153]: open
+              - cell "P2" [ref=e4154]
+              - cell "bug" [ref=e4155]
+              - cell "Unassigned" [ref=e4156]
+              - cell "documentation test-user" [ref=e4157]:
+                - 'generic "Filter by label: documentation" [ref=e4158]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4159]': test-user
+              - cell "midi2hid" [ref=e4160]
+              - cell "10d ago" [ref=e4161]
+              - cell "5d ago" [ref=e4162]
+            - button "Select bd-9d9e04 bd-9d9e04 cargo fmt --check fails - code formatting not consistent midi2hid · bug fix code formatting open P2 bug Unassigned ci test-user midi2hid 10d ago 5d ago" [ref=e4163] [cursor=pointer]:
+              - cell "Select bd-9d9e04" [ref=e4164]:
+                - checkbox "Select bd-9d9e04" [ref=e4165]
+              - cell "bd-9d9e04" [ref=e4166]
+              - cell "cargo fmt --check fails - code formatting not consistent midi2hid · bug fix code formatting" [ref=e4167]:
+                - text: cargo fmt --check fails - code formatting not consistent
+                - generic [ref=e4168]: midi2hid · bug
+                - generic [ref=e4169]: fix code formatting
+              - cell "open" [ref=e4170]:
+                - generic [ref=e4171]: open
+              - cell "P2" [ref=e4172]
+              - cell "bug" [ref=e4173]
+              - cell "Unassigned" [ref=e4174]
+              - cell "ci test-user" [ref=e4175]:
+                - 'generic "Filter by label: ci" [ref=e4176]': ci
+                - 'generic "Filter by label: test-user" [ref=e4177]': test-user
+              - cell "midi2hid" [ref=e4178]
+              - cell "10d ago" [ref=e4179]
+              - cell "5d ago" [ref=e4180]
+            - button "Select bd-131b3d bd-131b3d README Run section lists midi2hid-listen without noting it requires full workspace build midi2hid · task readme midi2hid listen documentation open P2 task Unassigned documentation test-user midi2hid 10d ago 5d ago" [ref=e4181] [cursor=pointer]:
+              - cell "Select bd-131b3d" [ref=e4182]:
+                - checkbox "Select bd-131b3d" [ref=e4183]
+              - cell "bd-131b3d" [ref=e4184]
+              - cell "README Run section lists midi2hid-listen without noting it requires full workspace build midi2hid · task readme midi2hid listen documentation" [ref=e4185]:
+                - text: README Run section lists midi2hid-listen without noting it requires full workspace build
+                - generic [ref=e4186]: midi2hid · task
+                - generic [ref=e4187]: readme midi2hid listen documentation
+              - cell "open" [ref=e4188]:
+                - generic [ref=e4189]: open
+              - cell "P2" [ref=e4190]
+              - cell "task" [ref=e4191]
+              - cell "Unassigned" [ref=e4192]
+              - cell "documentation test-user" [ref=e4193]:
+                - 'generic "Filter by label: documentation" [ref=e4194]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4195]': test-user
+              - cell "midi2hid" [ref=e4196]
+              - cell "10d ago" [ref=e4197]
+              - cell "5d ago" [ref=e4198]
+            - button "Select bd-4beedc bd-4beedc Default profile created by launcher contains non-functional TOML comment example midi2hid · bug fix default profile toml comment open P2 bug Unassigned documentation launcher test-user midi2hid 10d ago 5d ago" [ref=e4199] [cursor=pointer]:
+              - cell "Select bd-4beedc" [ref=e4200]:
+                - checkbox "Select bd-4beedc" [ref=e4201]
+              - cell "bd-4beedc" [ref=e4202]
+              - cell "Default profile created by launcher contains non-functional TOML comment example midi2hid · bug fix default profile toml comment" [ref=e4203]:
+                - text: Default profile created by launcher contains non-functional TOML comment example
+                - generic [ref=e4204]: midi2hid · bug
+                - generic [ref=e4205]: fix default profile toml comment
+              - cell "open" [ref=e4206]:
+                - generic [ref=e4207]: open
+              - cell "P2" [ref=e4208]
+              - cell "bug" [ref=e4209]
+              - cell "Unassigned" [ref=e4210]
+              - cell "documentation launcher test-user" [ref=e4211]:
+                - 'generic "Filter by label: documentation" [ref=e4212]': documentation
+                - 'generic "Filter by label: launcher" [ref=e4213]': launcher
+                - 'generic "Filter by label: test-user" [ref=e4214]': test-user
+              - cell "midi2hid" [ref=e4215]
+              - cell "10d ago" [ref=e4216]
+              - cell "5d ago" [ref=e4217]
+            - button "Select bd-65fdde bd-65fdde Nix flake does not build the unified midi2hid launcher binary midi2hid · bug nix flake midi2hid launcher open P2 bug Unassigned nix test-user midi2hid 10d ago 10d ago" [ref=e4218] [cursor=pointer]:
+              - cell "Select bd-65fdde" [ref=e4219]:
+                - checkbox "Select bd-65fdde" [ref=e4220]
+              - cell "bd-65fdde" [ref=e4221]
+              - cell "Nix flake does not build the unified midi2hid launcher binary midi2hid · bug nix flake midi2hid launcher" [ref=e4222]:
+                - text: Nix flake does not build the unified midi2hid launcher binary
+                - generic [ref=e4223]: midi2hid · bug
+                - generic [ref=e4224]: nix flake midi2hid launcher
+              - cell "open" [ref=e4225]:
+                - generic [ref=e4226]: open
+              - cell "P2" [ref=e4227]
+              - cell "bug" [ref=e4228]
+              - cell "Unassigned" [ref=e4229]
+              - cell "nix test-user" [ref=e4230]:
+                - 'generic "Filter by label: nix" [ref=e4231]': nix
+                - 'generic "Filter by label: test-user" [ref=e4232]': test-user
+              - cell "midi2hid" [ref=e4233]
+              - cell "10d ago" [ref=e4234]
+              - cell "10d ago" [ref=e4235]
+            - button "Select bd-d38546 bd-d38546 FAQ says CC mapping and velocity mapping are 'planned' but they are already implemented midi2hid · bug update faq documentation open P2 bug Unassigned documentation test-user midi2hid 10d ago 10d ago" [ref=e4236] [cursor=pointer]:
+              - cell "Select bd-d38546" [ref=e4237]:
+                - checkbox "Select bd-d38546" [ref=e4238]
+              - cell "bd-d38546" [ref=e4239]
+              - cell "FAQ says CC mapping and velocity mapping are 'planned' but they are already implemented midi2hid · bug update faq documentation" [ref=e4240]:
+                - text: FAQ says CC mapping and velocity mapping are 'planned' but they are already implemented
+                - generic [ref=e4241]: midi2hid · bug
+                - generic [ref=e4242]: update faq documentation
+              - cell "open" [ref=e4243]:
+                - generic [ref=e4244]: open
+              - cell "P2" [ref=e4245]
+              - cell "bug" [ref=e4246]
+              - cell "Unassigned" [ref=e4247]
+              - cell "documentation test-user" [ref=e4248]:
+                - 'generic "Filter by label: documentation" [ref=e4249]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4250]': test-user
+              - cell "midi2hid" [ref=e4251]
+              - cell "10d ago" [ref=e4252]
+              - cell "10d ago" [ref=e4253]
+            - button "Select bd-ad5963 bd-ad5963 Docs claim hid.device_type supports 'steam_input' but actual valid values are keyboard/xbox360/ds4/multi midi2hid · bug Docs-Claim open P2 bug Unassigned documentation test-user midi2hid 10d ago 10d ago" [ref=e4254] [cursor=pointer]:
+              - cell "Select bd-ad5963" [ref=e4255]:
+                - checkbox "Select bd-ad5963" [ref=e4256]
+              - cell "bd-ad5963" [ref=e4257]
+              - cell "Docs claim hid.device_type supports 'steam_input' but actual valid values are keyboard/xbox360/ds4/multi midi2hid · bug Docs-Claim" [ref=e4258]:
+                - text: Docs claim hid.device_type supports 'steam_input' but actual valid values are keyboard/xbox360/ds4/multi
+                - generic [ref=e4259]: midi2hid · bug
+                - generic [ref=e4260]: Docs-Claim
+              - cell "open" [ref=e4261]:
+                - generic [ref=e4262]: open
+              - cell "P2" [ref=e4263]
+              - cell "bug" [ref=e4264]
+              - cell "Unassigned" [ref=e4265]
+              - cell "documentation test-user" [ref=e4266]:
+                - 'generic "Filter by label: documentation" [ref=e4267]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4268]': test-user
+              - cell "midi2hid" [ref=e4269]
+              - cell "10d ago" [ref=e4270]
+              - cell "10d ago" [ref=e4271]
+            - 'button "Select bd-10e8d4 bd-10e8d4 Transport config in docs uses wrong format: ''remote'' mode and flat fields instead of nested tcp variant midi2hid · bug Transport-Config open P2 bug Unassigned documentation test-user midi2hid 10d ago 10d ago" [ref=e4272] [cursor=pointer]':
+              - cell "Select bd-10e8d4" [ref=e4273]:
+                - checkbox "Select bd-10e8d4" [ref=e4274]
+              - cell "bd-10e8d4" [ref=e4275]
+              - 'cell "Transport config in docs uses wrong format: ''remote'' mode and flat fields instead of nested tcp variant midi2hid · bug Transport-Config" [ref=e4276]':
+                - text: "Transport config in docs uses wrong format: 'remote' mode and flat fields instead of nested tcp variant"
+                - generic [ref=e4277]: midi2hid · bug
+                - generic [ref=e4278]: Transport-Config
+              - cell "open" [ref=e4279]:
+                - generic [ref=e4280]: open
+              - cell "P2" [ref=e4281]
+              - cell "bug" [ref=e4282]
+              - cell "Unassigned" [ref=e4283]
+              - cell "documentation test-user" [ref=e4284]:
+                - 'generic "Filter by label: documentation" [ref=e4285]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4286]': test-user
+              - cell "midi2hid" [ref=e4287]
+              - cell "10d ago" [ref=e4288]
+              - cell "10d ago" [ref=e4289]
+            - button "Select bd-0183f5 bd-0183f5 README and SPEC workspace structure missing midi2hid-launcher, midi2hid-test-utils, presets/, and scripts/ midi2hid · task Readme-And open P2 task Unassigned documentation test-user midi2hid 10d ago 10d ago" [ref=e4290] [cursor=pointer]:
+              - cell "Select bd-0183f5" [ref=e4291]:
+                - checkbox "Select bd-0183f5" [ref=e4292]
+              - cell "bd-0183f5" [ref=e4293]
+              - cell "README and SPEC workspace structure missing midi2hid-launcher, midi2hid-test-utils, presets/, and scripts/ midi2hid · task Readme-And" [ref=e4294]:
+                - text: README and SPEC workspace structure missing midi2hid-launcher, midi2hid-test-utils, presets/, and scripts/
+                - generic [ref=e4295]: midi2hid · task
+                - generic [ref=e4296]: Readme-And
+              - cell "open" [ref=e4297]:
+                - generic [ref=e4298]: open
+              - cell "P2" [ref=e4299]
+              - cell "task" [ref=e4300]
+              - cell "Unassigned" [ref=e4301]
+              - cell "documentation test-user" [ref=e4302]:
+                - 'generic "Filter by label: documentation" [ref=e4303]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4304]': test-user
+              - cell "midi2hid" [ref=e4305]
+              - cell "10d ago" [ref=e4306]
+              - cell "10d ago" [ref=e4307]
+            - button "Select bd-458b7e bd-458b7e README platform table claims macOS and Windows HID are 'stub' but they have full implementations midi2hid · bug readme platform table discrepancy open P2 bug Unassigned documentation test-user midi2hid 10d ago 10d ago" [ref=e4308] [cursor=pointer]:
+              - cell "Select bd-458b7e" [ref=e4309]:
+                - checkbox "Select bd-458b7e" [ref=e4310]
+              - cell "bd-458b7e" [ref=e4311]
+              - cell "README platform table claims macOS and Windows HID are 'stub' but they have full implementations midi2hid · bug readme platform table discrepancy" [ref=e4312]:
+                - text: README platform table claims macOS and Windows HID are 'stub' but they have full implementations
+                - generic [ref=e4313]: midi2hid · bug
+                - generic [ref=e4314]: readme platform table discrepancy
+              - cell "open" [ref=e4315]:
+                - generic [ref=e4316]: open
+              - cell "P2" [ref=e4317]
+              - cell "bug" [ref=e4318]
+              - cell "Unassigned" [ref=e4319]
+              - cell "documentation test-user" [ref=e4320]:
+                - 'generic "Filter by label: documentation" [ref=e4321]': documentation
+                - 'generic "Filter by label: test-user" [ref=e4322]': test-user
+              - cell "midi2hid" [ref=e4323]
+              - cell "10d ago" [ref=e4324]
+              - cell "10d ago" [ref=e4325]
+            - button "Select bd-a375c5 bd-a375c5 velocity_threshold on Note triggers is parsed but never enforced — all velocities match midi2hid · bug Velocity-Threshold open P2 bug Unassigned daemon e2e test-user midi2hid 10d ago 10d ago" [ref=e4326] [cursor=pointer]:
+              - cell "Select bd-a375c5" [ref=e4327]:
+                - checkbox "Select bd-a375c5" [ref=e4328]
+              - cell "bd-a375c5" [ref=e4329]
+              - cell "velocity_threshold on Note triggers is parsed but never enforced — all velocities match midi2hid · bug Velocity-Threshold" [ref=e4330]:
+                - text: velocity_threshold on Note triggers is parsed but never enforced — all velocities match
+                - generic [ref=e4331]: midi2hid · bug
+                - generic [ref=e4332]: Velocity-Threshold
+              - cell "open" [ref=e4333]:
+                - generic [ref=e4334]: open
+              - cell "P2" [ref=e4335]
+              - cell "bug" [ref=e4336]
+              - cell "Unassigned" [ref=e4337]
+              - cell "daemon e2e test-user" [ref=e4338]:
+                - 'generic "Filter by label: daemon" [ref=e4339]': daemon
+                - 'generic "Filter by label: e2e" [ref=e4340]': e2e
+                - 'generic "Filter by label: test-user" [ref=e4341]': test-user
+              - cell "midi2hid" [ref=e4342]
+              - cell "10d ago" [ref=e4343]
+              - cell "10d ago" [ref=e4344]
+            - button "Select bd-e27d5b bd-e27d5b mono-daemon CLAUDE.md documents wrong pytest command mono · bug fix pytest command documentation open P2 bug Unassigned docs mono-daemon test-user mono 10d ago 5d ago" [ref=e4345] [cursor=pointer]:
+              - cell "Select bd-e27d5b" [ref=e4346]:
+                - checkbox "Select bd-e27d5b" [ref=e4347]
+              - cell "bd-e27d5b" [ref=e4348]
+              - cell "mono-daemon CLAUDE.md documents wrong pytest command mono · bug fix pytest command documentation" [ref=e4349]:
+                - text: mono-daemon CLAUDE.md documents wrong pytest command
+                - generic [ref=e4350]: mono · bug
+                - generic [ref=e4351]: fix pytest command documentation
+              - cell "open" [ref=e4352]:
+                - generic [ref=e4353]: open
+              - cell "P2" [ref=e4354]
+              - cell "bug" [ref=e4355]
+              - cell "Unassigned" [ref=e4356]
+              - cell "docs mono-daemon test-user" [ref=e4357]:
+                - 'generic "Filter by label: docs" [ref=e4358]': docs
+                - 'generic "Filter by label: mono-daemon" [ref=e4359]': mono-daemon
+                - 'generic "Filter by label: test-user" [ref=e4360]': test-user
+              - cell "mono" [ref=e4361]
+              - cell "10d ago" [ref=e4362]
+              - cell "5d ago" [ref=e4363]
+            - button "Select bd-31fed9 bd-31fed9 AGENTS.md lists incorrect submodule projects mono · bug Agents-Md open P2 bug Unassigned docs test-user mono 10d ago 5d ago" [ref=e4364] [cursor=pointer]:
+              - cell "Select bd-31fed9" [ref=e4365]:
+                - checkbox "Select bd-31fed9" [ref=e4366]
+              - cell "bd-31fed9" [ref=e4367]
+              - cell "AGENTS.md lists incorrect submodule projects mono · bug Agents-Md" [ref=e4368]:
+                - text: AGENTS.md lists incorrect submodule projects
+                - generic [ref=e4369]: mono · bug
+                - generic [ref=e4370]: Agents-Md
+              - cell "open" [ref=e4371]:
+                - generic [ref=e4372]: open
+              - cell "P2" [ref=e4373]
+              - cell "bug" [ref=e4374]
+              - cell "Unassigned" [ref=e4375]
+              - cell "docs test-user" [ref=e4376]:
+                - 'generic "Filter by label: docs" [ref=e4377]': docs
+                - 'generic "Filter by label: test-user" [ref=e4378]': test-user
+              - cell "mono" [ref=e4379]
+              - cell "10d ago" [ref=e4380]
+              - cell "5d ago" [ref=e4381]
+            - button "Select bd-a3bbd3 bd-a3bbd3 Dashboard navigation is inconsistent across daemon HTML pages mono · task Dashboard-Navigation open P2 task Unassigned dashboard docs test-user mono 10d ago 5d ago" [ref=e4382] [cursor=pointer]:
+              - cell "Select bd-a3bbd3" [ref=e4383]:
+                - checkbox "Select bd-a3bbd3" [ref=e4384]
+              - cell "bd-a3bbd3" [ref=e4385]
+              - cell "Dashboard navigation is inconsistent across daemon HTML pages mono · task Dashboard-Navigation" [ref=e4386]:
+                - text: Dashboard navigation is inconsistent across daemon HTML pages
+                - generic [ref=e4387]: mono · task
+                - generic [ref=e4388]: Dashboard-Navigation
+              - cell "open" [ref=e4389]:
+                - generic [ref=e4390]: open
+              - cell "P2" [ref=e4391]
+              - cell "task" [ref=e4392]
+              - cell "Unassigned" [ref=e4393]
+              - cell "dashboard docs test-user" [ref=e4394]:
+                - 'generic "Filter by label: dashboard" [ref=e4395]': dashboard
+                - 'generic "Filter by label: docs" [ref=e4396]': docs
+                - 'generic "Filter by label: test-user" [ref=e4397]': test-user
+              - cell "mono" [ref=e4398]
+              - cell "10d ago" [ref=e4399]
+              - cell "5d ago" [ref=e4400]
+            - button "Select bd-899e67 bd-899e67 Add gpt-5.5 model configuration alongside gpt-5.4 mono · task Add-Gpt open P2 task Unassigned gpt-5.5 infrastructure model-configuration mono 4d ago 4d ago" [ref=e4401] [cursor=pointer]:
+              - cell "Select bd-899e67" [ref=e4402]:
+                - checkbox "Select bd-899e67" [ref=e4403]
+              - cell "bd-899e67" [ref=e4404]
+              - cell "Add gpt-5.5 model configuration alongside gpt-5.4 mono · task Add-Gpt" [ref=e4405]:
+                - text: Add gpt-5.5 model configuration alongside gpt-5.4
+                - generic [ref=e4406]: mono · task
+                - generic [ref=e4407]: Add-Gpt
+              - cell "open" [ref=e4408]:
+                - generic [ref=e4409]: open
+              - cell "P2" [ref=e4410]
+              - cell "task" [ref=e4411]
+              - cell "Unassigned" [ref=e4412]
+              - cell "gpt-5.5 infrastructure model-configuration" [ref=e4413]:
+                - 'generic "Filter by label: gpt-5.5" [ref=e4414]': gpt-5.5
+                - 'generic "Filter by label: infrastructure" [ref=e4415]': infrastructure
+                - 'generic "Filter by label: model-configuration" [ref=e4416]': model-configuration
+              - cell "mono" [ref=e4417]
+              - cell "4d ago" [ref=e4418]
+              - cell "4d ago" [ref=e4419]
+            - button "Select bd-322e10 bd-322e10 Lightweight homedir-only worker spawn shape for UI/observation agents picasso-health · feature homedir only worker spawn open P2 feature Unassigned agent-tooling follows-finding self-improvement +1 picasso-health 4d ago 4d ago" [ref=e4420] [cursor=pointer]:
+              - cell "Select bd-322e10" [ref=e4421]:
+                - checkbox "Select bd-322e10" [ref=e4422]
+              - cell "bd-322e10" [ref=e4423]
+              - cell "Lightweight homedir-only worker spawn shape for UI/observation agents picasso-health · feature homedir only worker spawn" [ref=e4424]:
+                - text: Lightweight homedir-only worker spawn shape for UI/observation agents
+                - generic [ref=e4425]: picasso-health · feature
+                - generic [ref=e4426]: homedir only worker spawn
+              - cell "open" [ref=e4427]:
+                - generic [ref=e4428]: open
+              - cell "P2" [ref=e4429]
+              - cell "feature" [ref=e4430]
+              - cell "Unassigned" [ref=e4431]
+              - cell "agent-tooling follows-finding self-improvement +1" [ref=e4432]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4433]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e4434]': follows-finding
+                - 'generic "Filter by label: self-improvement" [ref=e4435]': self-improvement
+                - generic "spawn-shape" [ref=e4436]: "+1"
+              - cell "picasso-health" [ref=e4437]
+              - cell "4d ago" [ref=e4438]
+              - cell "4d ago" [ref=e4439]
+            - button "Select bd-05af18 bd-05af18 Rubric library + scroll-recapture primitive for QA scenarios (compounds taste-test runner) picasso-health · feature rubric library qa scroll open P2 feature Unassigned agent-tooling e2e follows-finding +3 picasso-health 4d ago 4d ago" [ref=e4440] [cursor=pointer]:
+              - cell "Select bd-05af18" [ref=e4441]:
+                - checkbox "Select bd-05af18" [ref=e4442]
+              - cell "bd-05af18" [ref=e4443]
+              - cell "Rubric library + scroll-recapture primitive for QA scenarios (compounds taste-test runner) picasso-health · feature rubric library qa scroll" [ref=e4444]:
+                - text: Rubric library + scroll-recapture primitive for QA scenarios (compounds taste-test runner)
+                - generic [ref=e4445]: picasso-health · feature
+                - generic [ref=e4446]: rubric library qa scroll
+              - cell "open" [ref=e4447]:
+                - generic [ref=e4448]: open
+              - cell "P2" [ref=e4449]
+              - cell "feature" [ref=e4450]
+              - cell "Unassigned" [ref=e4451]
+              - cell "agent-tooling e2e follows-finding +3" [ref=e4452]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4453]': agent-tooling
+                - 'generic "Filter by label: e2e" [ref=e4454]': e2e
+                - 'generic "Filter by label: follows-finding" [ref=e4455]': follows-finding
+                - generic "qa, self-improvement, tendril" [ref=e4456]: "+3"
+              - cell "picasso-health" [ref=e4457]
+              - cell "4d ago" [ref=e4458]
+              - cell "4d ago" [ref=e4459]
+            - button "Select bd-12b252 bd-12b252 Shared rate-limit governor + backoff under .cacophony/bin (compounds QA + roamer + future ui workers) picasso-health · feature rate limit governor backoff open P2 feature Unassigned agent-tooling follows-finding qa +3 picasso-health 4d ago 4d ago" [ref=e4460] [cursor=pointer]:
+              - cell "Select bd-12b252" [ref=e4461]:
+                - checkbox "Select bd-12b252" [ref=e4462]
+              - cell "bd-12b252" [ref=e4463]
+              - cell "Shared rate-limit governor + backoff under .cacophony/bin (compounds QA + roamer + future ui workers) picasso-health · feature rate limit governor backoff" [ref=e4464]:
+                - text: Shared rate-limit governor + backoff under .cacophony/bin (compounds QA + roamer + future ui workers)
+                - generic [ref=e4465]: picasso-health · feature
+                - generic [ref=e4466]: rate limit governor backoff
+              - cell "open" [ref=e4467]:
+                - generic [ref=e4468]: open
+              - cell "P2" [ref=e4469]
+              - cell "feature" [ref=e4470]
+              - cell "Unassigned" [ref=e4471]
+              - cell "agent-tooling follows-finding qa +3" [ref=e4472]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4473]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e4474]': follows-finding
+                - 'generic "Filter by label: qa" [ref=e4475]': qa
+                - generic "rate-limit, self-improvement, tendril" [ref=e4476]: "+3"
+              - cell "picasso-health" [ref=e4477]
+              - cell "4d ago" [ref=e4478]
+              - cell "4d ago" [ref=e4479]
+            - button "Select bd-bac0eb bd-bac0eb Agent heartbeat + watchdog convention under .cacophony/ (compounds roamer + all persistent workers) picasso-health · feature agent heartbeat watchdog open P2 feature Unassigned agent-tooling follows-finding self-improvement +1 picasso-health 4d ago 4d ago" [ref=e4480] [cursor=pointer]:
+              - cell "Select bd-bac0eb" [ref=e4481]:
+                - checkbox "Select bd-bac0eb" [ref=e4482]
+              - cell "bd-bac0eb" [ref=e4483]
+              - cell "Agent heartbeat + watchdog convention under .cacophony/ (compounds roamer + all persistent workers) picasso-health · feature agent heartbeat watchdog" [ref=e4484]:
+                - text: Agent heartbeat + watchdog convention under .cacophony/ (compounds roamer + all persistent workers)
+                - generic [ref=e4485]: picasso-health · feature
+                - generic [ref=e4486]: agent heartbeat watchdog
+              - cell "open" [ref=e4487]:
+                - generic [ref=e4488]: open
+              - cell "P2" [ref=e4489]
+              - cell "feature" [ref=e4490]
+              - cell "Unassigned" [ref=e4491]
+              - cell "agent-tooling follows-finding self-improvement +1" [ref=e4492]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4493]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e4494]': follows-finding
+                - 'generic "Filter by label: self-improvement" [ref=e4495]': self-improvement
+                - generic "watchdog" [ref=e4496]: "+1"
+              - cell "picasso-health" [ref=e4497]
+              - cell "4d ago" [ref=e4498]
+              - cell "4d ago" [ref=e4499]
+            - button "Select bd-a8b1ce bd-a8b1ce Controller cross-agent log tailing under .cacophony/bin (read peer worker state without tmux attach) picasso-health · feature Controller-Cross open P2 feature Unassigned agent-tooling follows-finding observability +1 picasso-health 4d ago 4d ago" [ref=e4500] [cursor=pointer]:
+              - cell "Select bd-a8b1ce" [ref=e4501]:
+                - checkbox "Select bd-a8b1ce" [ref=e4502]
+              - cell "bd-a8b1ce" [ref=e4503]
+              - cell "Controller cross-agent log tailing under .cacophony/bin (read peer worker state without tmux attach) picasso-health · feature Controller-Cross" [ref=e4504]:
+                - text: Controller cross-agent log tailing under .cacophony/bin (read peer worker state without tmux attach)
+                - generic [ref=e4505]: picasso-health · feature
+                - generic [ref=e4506]: Controller-Cross
+              - cell "open" [ref=e4507]:
+                - generic [ref=e4508]: open
+              - cell "P2" [ref=e4509]
+              - cell "feature" [ref=e4510]
+              - cell "Unassigned" [ref=e4511]
+              - cell "agent-tooling follows-finding observability +1" [ref=e4512]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4513]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e4514]': follows-finding
+                - 'generic "Filter by label: observability" [ref=e4515]': observability
+                - generic "self-improvement" [ref=e4516]: "+1"
+              - cell "picasso-health" [ref=e4517]
+              - cell "4d ago" [ref=e4518]
+              - cell "4d ago" [ref=e4519]
+            - 'button "Select bd-15dfe3 bd-15dfe3 Copilot Health: chat-title stays stale when re-navigating to /health (creates noise + appends to wrong chat) picasso-health · bug copilot health chat title stale open P2 bug Unassigned system 3 picasso-health 4d ago 4d ago" [ref=e4520] [cursor=pointer]':
+              - cell "Select bd-15dfe3" [ref=e4521]:
+                - checkbox "Select bd-15dfe3" [ref=e4522]
+              - cell "bd-15dfe3" [ref=e4523]
+              - 'cell "Copilot Health: chat-title stays stale when re-navigating to /health (creates noise + appends to wrong chat) picasso-health · bug copilot health chat title stale" [ref=e4524]':
+                - text: "Copilot Health: chat-title stays stale when re-navigating to /health (creates noise + appends to wrong chat)"
+                - generic [ref=e4525]: picasso-health · bug
+                - generic [ref=e4526]: copilot health chat title stale
+              - cell "open" [ref=e4527]:
+                - generic [ref=e4528]: open
+              - cell "P2" [ref=e4529]
+              - cell "bug" [ref=e4530]
+              - cell "Unassigned" [ref=e4531]
+              - cell "system 3" [ref=e4532]:
+                - 'generic "Hidden system labels: discovered-via-agent:filu35o8r7zojbe8, discovered-via-bead:bd-d12797, discovered-via-session:roamer-reflect" [ref=e4533]': system 3
+              - cell "picasso-health" [ref=e4534]
+              - cell "4d ago" [ref=e4535]
+              - cell "4d ago" [ref=e4536]
+            - button "Select bd-4063f9 bd-4063f9 Worker self-timeout + auto-checkpoint convention under .cacophony/ (compounds heartbeat + roamer) picasso-health · feature Worker-Self open P2 feature Unassigned agent-tooling follows-finding resilience +1 picasso-health 4d ago 4d ago" [ref=e4537] [cursor=pointer]:
+              - cell "Select bd-4063f9" [ref=e4538]:
+                - checkbox "Select bd-4063f9" [ref=e4539]
+              - cell "bd-4063f9" [ref=e4540]
+              - cell "Worker self-timeout + auto-checkpoint convention under .cacophony/ (compounds heartbeat + roamer) picasso-health · feature Worker-Self" [ref=e4541]:
+                - text: Worker self-timeout + auto-checkpoint convention under .cacophony/ (compounds heartbeat + roamer)
+                - generic [ref=e4542]: picasso-health · feature
+                - generic [ref=e4543]: Worker-Self
+              - cell "open" [ref=e4544]:
+                - generic [ref=e4545]: open
+              - cell "P2" [ref=e4546]
+              - cell "feature" [ref=e4547]
+              - cell "Unassigned" [ref=e4548]
+              - cell "agent-tooling follows-finding resilience +1" [ref=e4549]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4550]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e4551]': follows-finding
+                - 'generic "Filter by label: resilience" [ref=e4552]': resilience
+                - generic "self-improvement" [ref=e4553]: "+1"
+              - cell "picasso-health" [ref=e4554]
+              - cell "4d ago" [ref=e4555]
+              - cell "4d ago" [ref=e4556]
+            - 'button "Select bd-eac296 bd-eac296 Copilot Health: cmd+L URL navigation race — URL string typed as user message picasso-health · bug Copilot-Health open P2 bug Unassigned system 3 picasso-health 4d ago 4d ago" [ref=e4557] [cursor=pointer]':
+              - cell "Select bd-eac296" [ref=e4558]:
+                - checkbox "Select bd-eac296" [ref=e4559]
+              - cell "bd-eac296" [ref=e4560]
+              - 'cell "Copilot Health: cmd+L URL navigation race — URL string typed as user message picasso-health · bug Copilot-Health" [ref=e4561]':
+                - text: "Copilot Health: cmd+L URL navigation race — URL string typed as user message"
+                - generic [ref=e4562]: picasso-health · bug
+                - generic [ref=e4563]: Copilot-Health
+              - cell "open" [ref=e4564]:
+                - generic [ref=e4565]: open
+              - cell "P2" [ref=e4566]
+              - cell "bug" [ref=e4567]
+              - cell "Unassigned" [ref=e4568]
+              - cell "system 3" [ref=e4569]:
+                - 'generic "Hidden system labels: discovered-via-agent:filu35o8r7zojbe8, discovered-via-bead:bd-d12797, discovered-via-session:roamer-reflect" [ref=e4570]': system 3
+              - cell "picasso-health" [ref=e4571]
+              - cell "4d ago" [ref=e4572]
+              - cell "4d ago" [ref=e4573]
+            - button "Select bd-d04676 bd-d04676 Finding-dedup ledger under .cacophony/state (compounds roamer + ambient → dream pipeline) picasso-health · feature Finding-Dedup open P2 feature Unassigned agent-tooling follows-finding observability +1 picasso-health 4d ago 4d ago" [ref=e4574] [cursor=pointer]:
+              - cell "Select bd-d04676" [ref=e4575]:
+                - checkbox "Select bd-d04676" [ref=e4576]
+              - cell "bd-d04676" [ref=e4577]
+              - cell "Finding-dedup ledger under .cacophony/state (compounds roamer + ambient → dream pipeline) picasso-health · feature Finding-Dedup" [ref=e4578]:
+                - text: Finding-dedup ledger under .cacophony/state (compounds roamer + ambient → dream pipeline)
+                - generic [ref=e4579]: picasso-health · feature
+                - generic [ref=e4580]: Finding-Dedup
+              - cell "open" [ref=e4581]:
+                - generic [ref=e4582]: open
+              - cell "P2" [ref=e4583]
+              - cell "feature" [ref=e4584]
+              - cell "Unassigned" [ref=e4585]
+              - cell "agent-tooling follows-finding observability +1" [ref=e4586]:
+                - 'generic "Filter by label: agent-tooling" [ref=e4587]': agent-tooling
+                - 'generic "Filter by label: follows-finding" [ref=e4588]': follows-finding
+                - 'generic "Filter by label: observability" [ref=e4589]': observability
+                - generic "self-improvement" [ref=e4590]: "+1"
+              - cell "picasso-health" [ref=e4591]
+              - cell "4d ago" [ref=e4592]
+              - cell "4d ago" [ref=e4593]
+            - 'button "Select bd-f3ef62 bd-f3ef62 Copilot Health: silent submit-block — composer accepts text and send arrow looks active, but Send does nothing (no modal, no error) picasso-health · bug copilot health silent submit block open P2 bug Unassigned system 3 picasso-health 4d ago 4d ago" [ref=e4594] [cursor=pointer]':
+              - cell "Select bd-f3ef62" [ref=e4595]:
+                - checkbox "Select bd-f3ef62" [ref=e4596]
+              - cell "bd-f3ef62" [ref=e4597]
+              - 'cell "Copilot Health: silent submit-block — composer accepts text and send arrow looks active, but Send does nothing (no modal, no error) picasso-health · bug copilot health silent submit block" [ref=e4598]':
+                - text: "Copilot Health: silent submit-block — composer accepts text and send arrow looks active, but Send does nothing (no modal, no error)"
+                - generic [ref=e4599]: picasso-health · bug
+                - generic [ref=e4600]: copilot health silent submit block
+              - cell "open" [ref=e4601]:
+                - generic [ref=e4602]: open
+              - cell "P2" [ref=e4603]
+              - cell "bug" [ref=e4604]
+              - cell "Unassigned" [ref=e4605]
+              - cell "system 3" [ref=e4606]:
+                - 'generic "Hidden system labels: discovered-via-agent:filu35o8r7zojbe8, discovered-via-bead:bd-d12797, discovered-via-session:roamer-reflect" [ref=e4607]': system 3
+              - cell "picasso-health" [ref=e4608]
+              - cell "4d ago" [ref=e4609]
+              - cell "4d ago" [ref=e4610]
+            - button "Select bd-1cf76a bd-1cf76a Teach caco-web-observe focused delayed-route validation scenarios cacophony · task teach caco web observe delayed routes in progress P3 task ms-dev-cacophony… caco-web devex playwright cacophony 18h ago 18h ago" [ref=e4611] [cursor=pointer]:
+              - cell "Select bd-1cf76a" [ref=e4612]:
+                - checkbox "Select bd-1cf76a" [ref=e4613]
+              - cell "bd-1cf76a" [ref=e4614]
+              - cell "Teach caco-web-observe focused delayed-route validation scenarios cacophony · task teach caco web observe delayed routes" [ref=e4615]:
+                - text: Teach caco-web-observe focused delayed-route validation scenarios
+                - generic [ref=e4616]: cacophony · task
+                - generic [ref=e4617]: teach caco web observe delayed routes
+              - cell "in progress" [ref=e4618]:
+                - generic [ref=e4619]: in progress
+              - cell "P3" [ref=e4620]
+              - cell "task" [ref=e4621]
+              - cell "ms-dev-cacophony…" [ref=e4622]
+              - cell "caco-web devex playwright" [ref=e4623]:
+                - 'generic "Filter by label: caco-web" [ref=e4624]': caco-web
+                - 'generic "Filter by label: devex" [ref=e4625]': devex
+                - 'generic "Filter by label: playwright" [ref=e4626]': playwright
+              - cell "cacophony" [ref=e4627]
+              - cell "18h ago" [ref=e4628]
+              - cell "18h ago" [ref=e4629]
+            - 'button "Select bd-3ccd64 bd-3ccd64 cltv switch --machines: command-centre TUI collective · task open P3 task Unassigned bd-016e22 cltv ratatui +1 collective 9d ago 9d ago" [ref=e4630] [cursor=pointer]':
+              - cell "Select bd-3ccd64" [ref=e4631]:
+                - checkbox "Select bd-3ccd64" [ref=e4632]
+              - cell "bd-3ccd64" [ref=e4633]
+              - 'cell "cltv switch --machines: command-centre TUI collective · task" [ref=e4634]':
+                - text: "cltv switch --machines: command-centre TUI"
+                - generic [ref=e4635]: collective · task
+              - cell "open" [ref=e4636]:
+                - generic [ref=e4637]: open
+              - cell "P3" [ref=e4638]
+              - cell "task" [ref=e4639]
+              - cell "Unassigned" [ref=e4640]
+              - cell "bd-016e22 cltv ratatui +1" [ref=e4641]:
+                - 'generic "Filter by label: bd-016e22" [ref=e4642]': bd-016e22
+                - 'generic "Filter by label: cltv" [ref=e4643]': cltv
+                - 'generic "Filter by label: ratatui" [ref=e4644]': ratatui
+                - generic "tui" [ref=e4645]: "+1"
+              - cell "collective" [ref=e4646]
+              - cell "9d ago" [ref=e4647]
+              - cell "9d ago" [ref=e4648]
+            - 'button "Select bd-158aed bd-158aed APK release watcher daemon: auto-install latest APKs from GitHub releases via nod-install collective · feature Apk-Release open P3 feature Unassigned apk daemon github-releases +2 collective 6d ago 3d ago" [ref=e4649] [cursor=pointer]':
+              - cell "Select bd-158aed" [ref=e4650]:
+                - checkbox "Select bd-158aed" [ref=e4651]
+              - cell "bd-158aed" [ref=e4652]
+              - 'cell "APK release watcher daemon: auto-install latest APKs from GitHub releases via nod-install collective · feature Apk-Release" [ref=e4653]':
+                - text: "APK release watcher daemon: auto-install latest APKs from GitHub releases via nod-install"
+                - generic [ref=e4654]: collective · feature
+                - generic [ref=e4655]: Apk-Release
+              - cell "open" [ref=e4656]:
+                - generic [ref=e4657]: open
+              - cell "P3" [ref=e4658]
+              - cell "feature" [ref=e4659]
+              - cell "Unassigned" [ref=e4660]
+              - cell "apk daemon github-releases +2" [ref=e4661]:
+                - 'generic "Filter by label: apk" [ref=e4662]': apk
+                - 'generic "Filter by label: daemon" [ref=e4663]': daemon
+                - 'generic "Filter by label: github-releases" [ref=e4664]': github-releases
+                - generic "nod, sgu24" [ref=e4665]: "+2"
+              - cell "collective" [ref=e4666]
+              - cell "6d ago" [ref=e4667]
+              - cell "3d ago" [ref=e4668]
+      - text: Time window for feed events Time window for chat messages Remove all notifications selected Split horizontal Split vertical Filter all panes by project Apply layout preset Save current layout as named preset Keyboard shortcuts (?) Close active pane Reset layout Pending operator choices
+  - status
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top

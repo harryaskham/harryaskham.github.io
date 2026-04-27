@@ -1,0 +1,233 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic "ms-mac — click to copy" [ref=e403] [cursor=pointer]: ms-mac
+        - generic "Cacophony web v1.2.578 (daemon v1.2.576) — click to copy" [ref=e404] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, 28 running agents, shortcut 2" [ref=e405]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "28 running agents" [ref=e406]: "28"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "28"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "35"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, 42 open beads, shortcut 3" [ref=e407]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "42 open beads" [ref=e408]: "42"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e628]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e629]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, 11 unread notifications, shortcut 8" [ref=e409]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "11 unread notifications" [ref=e410]: "11"
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "The daemon is reachable, but the bulk dashboard snapshot timed out. Live updates and targeted routes may still be available while the dashboard retries." [ref=e4669]:
+          - generic [ref=e134]: Snapshot delayed
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - generic [ref=e938]: "Snapshot: 2m ago"
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV Export as CSV Time window for feed events Time window for chat messages
+      - generic [ref=e662]:
+        - generic [ref=e663]:
+          - heading "Notifications 11" [level=2] [ref=e664]:
+            - text: Notifications
+            - generic [ref=e665]: "11"
+          - generic [ref=e666]:
+            - button "Mark All Read" [ref=e667] [cursor=pointer]:
+              - img [ref=e668]
+              - text: Mark All Read
+            - button "Remove all notifications" [ref=e670]:
+              - img [ref=e671]
+              - text: Clear All Remove all notifications
+        - list "Notifications" [ref=e673]:
+          - listitem [ref=e674]:
+            - img [ref=e676]
+            - generic [ref=e679]:
+              - generic [ref=e680]:
+                - generic [ref=e681]:
+                  - text: Notification
+                  - generic [ref=e682]: "3"
+                - generic [ref=e683]: 1d ago
+              - generic [ref=e684]: user
+            - button "Mark as read" [ref=e685]:
+              - img [ref=e686]
+          - listitem [ref=e688]:
+            - img [ref=e690]
+            - generic [ref=e693]:
+              - generic [ref=e695]: 2d ago
+              - generic [ref=e696]: user
+            - button "Mark as read" [ref=e697]:
+              - img [ref=e698]
+          - listitem [ref=e700]:
+            - img [ref=e702]
+            - generic [ref=e705]:
+              - generic [ref=e706]:
+                - generic [ref=e707]: Notification
+                - generic [ref=e708]: 2d ago
+              - generic [ref=e709]: user
+            - button "Mark as read" [ref=e710]:
+              - img [ref=e711]
+          - listitem [ref=e713]:
+            - img [ref=e715]
+            - generic [ref=e718]:
+              - generic [ref=e719]:
+                - generic [ref=e720]: test-user-hel probe abort
+                - generic [ref=e721]: 2d ago
+              - generic [ref=e722]: user
+            - button "Mark as read" [ref=e723]:
+              - img [ref=e724]
+          - listitem [ref=e726]:
+            - img [ref=e728]
+            - generic [ref=e731]:
+              - generic [ref=e733]: 2d ago
+              - generic [ref=e734]: user
+            - button "Mark as read" [ref=e735]:
+              - img [ref=e736]
+          - listitem [ref=e738]:
+            - img [ref=e740]
+            - generic [ref=e743]:
+              - generic [ref=e744]:
+                - generic [ref=e745]:
+                  - text: Notification
+                  - generic [ref=e746]: "2"
+                - generic [ref=e747]: 2d ago
+              - generic [ref=e748]: user
+            - button "Mark as read" [ref=e749]:
+              - img [ref=e750]
+          - listitem [ref=e752]:
+            - img [ref=e754]
+            - generic [ref=e757]:
+              - generic [ref=e758]:
+                - generic [ref=e759]: bad level
+                - generic [ref=e760]: 5d ago
+              - generic [ref=e761]: test
+              - generic [ref=e762]: user
+            - button "Mark as read" [ref=e763]:
+              - img [ref=e764]
+          - listitem [ref=e766]:
+            - img [ref=e768]
+            - generic [ref=e771]:
+              - generic [ref=e772]:
+                - generic [ref=e773]: test-user-hel probe
+                - generic [ref=e774]: 5d ago
+              - generic [ref=e775]: ignore — testing the notify surface
+              - generic [ref=e776]: user
+            - button "Mark as read" [ref=e777]:
+              - img [ref=e778]
+      - text: selected Split horizontal Split vertical Filter all panes by project Apply layout preset Save current layout as named preset Keyboard shortcuts (?) Close active pane Reset layout Pending operator choices
+  - status:
+    - status [ref=e7631]:
+      - img [ref=e7633]
+      - generic [ref=e7636]: Reconnecting…
+      - button "Dismiss" [ref=e7637] [cursor=pointer]: ×
+    - status [ref=e7638]:
+      - img [ref=e7640]
+      - generic [ref=e7643]: Dashboard snapshot delayed — retrying…
+      - button "Dismiss" [ref=e7644] [cursor=pointer]: ×
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top

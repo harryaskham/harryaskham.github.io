@@ -1,0 +1,46 @@
+# validation for bd-f02d90
+2026-04-28T00:31:23+01:00
+## cargo fmt --all -- --check
+## targeted proxy regression
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.38
+   Compiling rustls-webpki v0.103.12
+   Compiling tokio-rustls v0.26.4
+   Compiling tungstenite v0.29.0
+   Compiling hyper-rustls v0.27.9
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.578 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.52s
+     Running unittests src/lib.rs (target/debug/deps/caco_web-fcf7513ce8956acb)
+
+running 1 test
+test tests::proxy_translates_sse_upstream_read_errors_to_sse_events_bd_f02d90 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 315 filtered out; finished in 0.00s
+
+## existing proxy 503 sentinel regression
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.15s
+     Running unittests src/lib.rs (target/debug/deps/caco_web-fcf7513ce8956acb)
+
+running 1 test
+test tests::proxy_translates_handled_daemon_503s_to_console_clean_sentinels_bd_c2310e ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 315 filtered out; finished in 0.00s
+
+## cargo check caco-web
+    Checking ring v0.17.14
+    Checking caco-profile v1.2.578 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-profile)
+    Checking rustls-webpki v0.103.12
+    Checking caco-config v1.2.578 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-config)
+    Checking rustls v0.23.38
+    Checking tokio-rustls v0.26.4
+    Checking tungstenite v0.29.0
+    Checking tokio-tungstenite v0.29.0
+    Checking hyper-rustls v0.27.9
+    Checking reqwest v0.12.28
+    Checking axum v0.8.9
+    Checking caco-web v1.2.578 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.65s

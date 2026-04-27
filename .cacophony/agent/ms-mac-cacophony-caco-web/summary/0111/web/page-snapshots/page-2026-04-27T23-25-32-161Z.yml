@@ -1,0 +1,303 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic "ms-mac — click to copy" [ref=e403] [cursor=pointer]: ms-mac
+        - generic "Cacophony web v1.2.578 (daemon v1.2.576) — click to copy" [ref=e404] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, 28 running agents, shortcut 2" [ref=e405]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "28 running agents" [ref=e406]: "28"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "28"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "35"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, 42 open beads, shortcut 3" [ref=e407]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "42 open beads" [ref=e408]: "42"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e628]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e629]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, 11 unread notifications, shortcut 8" [ref=e409]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "11 unread notifications" [ref=e410]: "11"
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "The daemon is reachable, but the bulk dashboard snapshot timed out. Live updates and targeted routes may still be available while the dashboard retries." [ref=e4669]:
+          - generic [ref=e134]: Snapshot delayed
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - generic [ref=e938]: "Snapshot: 1m ago"
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV Export as CSV Time window for feed events Time window for chat messages
+      - generic [ref=e388]:
+        - generic [ref=e389]:
+          - heading "Services 3" [level=2] [ref=e7489]:
+            - text: Services
+            - generic [ref=e7490]: "3"
+          - combobox "Filter by node" [ref=e392] [cursor=pointer]:
+            - option "All Nodes" [selected]
+            - option "ms-mac"
+            - option "ms-dev"
+            - option "helsinki"
+            - option "pocket4"
+            - option "winmini"
+            - option "beelink"
+            - option "sgu24"
+            - option "astra"
+        - generic "TTS daemon controls" [ref=e393]:
+          - generic [ref=e7491]:
+            - generic [ref=e7492]:
+              - img [ref=e7493]
+              - text: Text-to-Speech
+            - button "Refresh" [ref=e7497]:
+              - img [ref=e7498]
+              - text: Refresh
+          - generic [ref=e7501]:
+            - generic [ref=e7502]:
+              - generic [ref=e7503]: Browser
+              - generic [ref=e7504]: Affects only this browser tab. Daemon keeps generating; nothing is duplicated.
+              - generic [ref=e7505]:
+                - button "Mute browser" [ref=e7506] [cursor=pointer]:
+                  - img [ref=e7507]
+                  - text: Mute browser
+                - generic [ref=e7510]:
+                  - checkbox "Autoplay new TTS" [checked] [ref=e7511] [cursor=pointer]
+                  - text: Autoplay new TTS
+                - generic [ref=e7512]:
+                  - text: Vol
+                  - slider "Vol" [ref=e7513]: "1"
+                - button "Test sound" [ref=e7514]
+            - generic [ref=e7515]:
+              - generic [ref=e7516]: Daemon
+              - generic [ref=e7517]: Cluster-wide setting. Mute here stops generation entirely.
+              - generic [ref=e7518]:
+                - button "Mute daemon" [ref=e7519] [cursor=pointer]
+                - generic [ref=e7520]:
+                  - text: Voice
+                  - combobox "Voice" [ref=e7521] [cursor=pointer]:
+                    - option "—" [selected]
+                - generic [ref=e7522]:
+                  - text: Model
+                  - textbox "Model" [ref=e7523]:
+                    - /placeholder: e.g. tts-1
+                - generic [ref=e7524]:
+                  - text: Speed
+                  - spinbutton "Speed" [ref=e7525]: "1"
+                - 'button "Filter: OFF" [ref=e7526] [cursor=pointer]':
+                  - text: "Filter:"
+                  - strong [ref=e7527]: "OFF"
+            - generic [ref=e7528]:
+              - generic [ref=e7529]: Per-Agent Audio
+              - generic [ref=e7530]: Resolved audio state for running agents. Mute/voice from config.
+              - generic [ref=e7531]:
+                - generic [ref=e7532]:
+                  - text: "Global mute:"
+                  - strong [ref=e7533]: "off"
+                  - text: "· Default agent mute:"
+                  - strong [ref=e7534]: "off"
+                - table [ref=e7535]:
+                  - rowgroup [ref=e7536]:
+                    - row "Agent Project Mute Voice Silenced" [ref=e7537]:
+                      - columnheader "Agent" [ref=e7538]
+                      - columnheader "Project" [ref=e7539]
+                      - columnheader "Mute" [ref=e7540]
+                      - columnheader "Voice" [ref=e7541]
+                      - columnheader "Silenced" [ref=e7542]
+                  - rowgroup [ref=e7543]:
+                    - row "caco-aks cacophony on — 🔊" [ref=e7544]:
+                      - cell "caco-aks" [ref=e7545]
+                      - cell "cacophony" [ref=e7546]
+                      - cell "on" [ref=e7547]
+                      - cell "—" [ref=e7548]
+                      - cell "🔊" [ref=e7549]
+                    - row "caco-android cacophony on — 🔊" [ref=e7550]:
+                      - cell "caco-android" [ref=e7551]
+                      - cell "cacophony" [ref=e7552]
+                      - cell "on" [ref=e7553]
+                      - cell "—" [ref=e7554]
+                      - cell "🔊" [ref=e7555]
+                    - row "doctor-msm cacophony on — 🔊" [ref=e7556]:
+                      - cell "doctor-msm" [ref=e7557]
+                      - cell "cacophony" [ref=e7558]
+                      - cell "on" [ref=e7559]
+                      - cell "—" [ref=e7560]
+                      - cell "🔊" [ref=e7561]
+                    - row "monitor-msm cacophony on — 🔊" [ref=e7562]:
+                      - cell "monitor-msm" [ref=e7563]
+                      - cell "cacophony" [ref=e7564]
+                      - cell "on" [ref=e7565]
+                      - cell "—" [ref=e7566]
+                      - cell "🔊" [ref=e7567]
+                    - row "caco-macos cacophony on — 🔊" [ref=e7568]:
+                      - cell "caco-macos" [ref=e7569]
+                      - cell "cacophony" [ref=e7570]
+                      - cell "on" [ref=e7571]
+                      - cell "—" [ref=e7572]
+                      - cell "🔊" [ref=e7573]
+                    - row "caco-tui cacophony on — 🔊" [ref=e7574]:
+                      - cell "caco-tui" [ref=e7575]
+                      - cell "cacophony" [ref=e7576]
+                      - cell "on" [ref=e7577]
+                      - cell "—" [ref=e7578]
+                      - cell "🔊" [ref=e7579]
+                    - row "caco-web cacophony on — 🔊" [ref=e7580]:
+                      - cell "caco-web" [ref=e7581]
+                      - cell "cacophony" [ref=e7582]
+                      - cell "on" [ref=e7583]
+                      - cell "—" [ref=e7584]
+                      - cell "🔊" [ref=e7585]
+                    - row "cluster-debugger cacophony on — 🔊" [ref=e7586]:
+                      - cell "cluster-debugger" [ref=e7587]
+                      - cell "cacophony" [ref=e7588]
+                      - cell "on" [ref=e7589]
+                      - cell "—" [ref=e7590]
+                      - cell "🔊" [ref=e7591]
+                    - row "config-helper cacophony on — 🔊" [ref=e7592]:
+                      - cell "config-helper" [ref=e7593]
+                      - cell "cacophony" [ref=e7594]
+                      - cell "on" [ref=e7595]
+                      - cell "—" [ref=e7596]
+                      - cell "🔊" [ref=e7597]
+                    - row "cacophony-router cacophony on — 🔊" [ref=e7598]:
+                      - cell "cacophony-router" [ref=e7599]
+                      - cell "cacophony" [ref=e7600]
+                      - cell "on" [ref=e7601]
+                      - cell "—" [ref=e7602]
+                      - cell "🔊" [ref=e7603]
+        - table [ref=e395]:
+          - rowgroup [ref=e396]:
+            - row "Node Service Status In-Process Port" [ref=e397]:
+              - columnheader "Node" [ref=e398]: Node
+              - columnheader "Service" [ref=e399]: Service
+              - columnheader "Status" [ref=e400]: Status
+              - columnheader "In-Process" [ref=e401]: In-Process
+              - columnheader "Port" [ref=e402]: Port
+          - rowgroup [ref=e7609]:
+            - row "ms-mac caco-daemon running no —" [ref=e7610]:
+              - cell "ms-mac" [ref=e7611]
+              - cell "caco-daemon" [ref=e7612]
+              - cell "running" [ref=e7613]:
+                - generic [ref=e7614]: running
+              - cell "no" [ref=e7615]: —
+              - cell "—" [ref=e7616]
+            - row "ms-mac caco-tts-daemon running no —" [ref=e7617]:
+              - cell "ms-mac" [ref=e7618]
+              - cell "caco-tts-daemon" [ref=e7619]
+              - cell "running" [ref=e7620]:
+                - generic [ref=e7621]: running
+              - cell "no" [ref=e7622]: —
+              - cell "—" [ref=e7623]
+            - row "ms-mac caco-web running no —" [ref=e7624]:
+              - cell "ms-mac" [ref=e7625]
+              - cell "caco-web" [ref=e7626]
+              - cell "running" [ref=e7627]:
+                - generic [ref=e7628]: running
+              - cell "no" [ref=e7629]: —
+              - cell "—" [ref=e7630]
+      - text: Remove all notifications selected Split horizontal Split vertical Filter all panes by project Apply layout preset Save current layout as named preset Keyboard shortcuts (?) Close active pane Reset layout Pending operator choices
+  - status
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top

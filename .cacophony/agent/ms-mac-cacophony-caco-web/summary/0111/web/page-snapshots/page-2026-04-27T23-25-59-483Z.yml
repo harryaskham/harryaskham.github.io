@@ -1,0 +1,216 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic "ms-mac — click to copy" [ref=e403] [cursor=pointer]: ms-mac
+        - generic "Cacophony web v1.2.578 (daemon v1.2.576) — click to copy" [ref=e404] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, 28 running agents, shortcut 2" [ref=e405]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "28 running agents" [ref=e406]: "28"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "28"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "35"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, 42 open beads, shortcut 3" [ref=e407]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "42 open beads" [ref=e408]: "42"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e628]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e629]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, 11 unread notifications, shortcut 8" [ref=e409]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic "11 unread notifications" [ref=e410]: "11"
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "The daemon is reachable, but the bulk dashboard snapshot timed out. Live updates and targeted routes may still be available while the dashboard retries." [ref=e4669]:
+          - generic [ref=e134]: Snapshot delayed
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - generic [ref=e938]: "Snapshot: 2m ago"
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV Export as CSV Time window for feed events Time window for chat messages Remove all notifications
+      - generic [ref=e833]:
+        - generic [ref=e834]:
+          - heading "Logs" [level=2] [ref=e835]
+          - generic [ref=e836]:
+            - generic [ref=e837] [cursor=pointer]:
+              - checkbox "Auto-scroll" [checked] [ref=e838]
+              - text: Auto-scroll
+            - generic [ref=e839]:
+              - img
+              - searchbox "Filter logs" [ref=e840]
+            - button "Clear" [ref=e841] [cursor=pointer]
+        - log "Application logs" [ref=e842]:
+          - generic "Click to copy" [ref=e7645]: "[caco-web] req=490 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7646]: "2026-04-27T23:12:59.345Z WARN [tts-daemon] on-demand spoken-name refresh failed: snapshot request returned HTTP 500 Internal Server Error"
+          - generic "Click to copy" [ref=e7647]: "[caco-web] req=491 GET /api/v1/merge-queue?since=24h -> 200 291ms"
+          - generic "Click to copy" [ref=e7648]: "[caco-web] req=492 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7649]: "[caco-web] req=493 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7650]: "[caco-web] req=494 GET /api/v1/logs/stream?follow=true -> 200 21ms"
+          - generic "Click to copy" [ref=e7651]: "[caco-web] req=495 GET /api/v1/ui/stream -> 200 5965ms"
+          - generic "Click to copy" [ref=e7652]: "[caco-web] req=496 GET /api/v1/ui/stream -> 200 5853ms"
+          - generic "Click to copy" [ref=e7653]: "[caco-web] req=497 GET /api/v1/merge-queue?since=24h -> 200 6417ms"
+          - generic "Click to copy" [ref=e7654]: "[caco-web] req=498 GET /api/v1/merge-queue?since=24h -> 200 29ms"
+          - generic "Click to copy" [ref=e7655]: "[caco-web] req=499 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7656]: "[caco-web] req=500 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7657]: "[caco-web] req=501 GET /api/v1/ui/stream -> 200 2345ms"
+          - generic "Click to copy" [ref=e7658]: "[caco-web] req=502 GET /api/v1/logs/stream?follow=true -> 200 45ms"
+          - generic "Click to copy" [ref=e7659]: "[caco-web] req=503 GET /api/v1/logs/stream?follow=true -> 200 40ms"
+          - generic "Click to copy" [ref=e7660]: "[caco-web] req=504 GET /api/v1/merge-queue?since=24h -> 200 240ms"
+          - generic "Click to copy" [ref=e7661]: "[caco-web] req=505 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7662]: "[caco-web] req=506 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7663]: "[caco-web] req=507 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7664]: "[caco-web] req=508 GET /api/v1/merge-queue?since=24h -> 200 212ms"
+          - generic "Click to copy" [ref=e7665]: "[caco-web] req=509 GET /api/v1/merge-queue?since=24h -> 200 202ms"
+          - generic "Click to copy" [ref=e7666]: "[caco-web] req=510 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7667]: "[caco-web] req=511 GET /api/v1/merge-queue?since=24h -> 200 112ms"
+          - generic "Click to copy" [ref=e7668]: "[caco-web] req=512 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7669]: "[caco-web] req=513 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7670]: "[caco-web] req=514 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7671]: "[caco-web] req=515 GET /api/v1/merge-queue?since=24h -> 200 333ms"
+          - generic "Click to copy" [ref=e7672]: "[caco-web] req=516 GET /api/v1/merge-queue?since=24h -> 200 290ms"
+          - generic "Click to copy" [ref=e7673]: "[caco-web] req=517 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7674]: "[caco-web] req=518 GET /api/v1/merge-queue?since=24h -> 200 203ms"
+          - generic "Click to copy" [ref=e7675]: "[caco-web] req=519 GET /api/v1/ui/stream -> 200 0ms"
+          - generic "Click to copy" [ref=e7676]: "[caco-web] req=520 GET /api/v1/ui/stream -> 200 0ms"
+          - generic "Click to copy" [ref=e7677]: "[caco-web] req=521 GET /api/v1/logs/stream?follow=true -> 200 21ms"
+          - generic "Click to copy" [ref=e7678]: "[caco-web] req=522 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7679]: "[caco-web] req=523 GET /api/v1/ui/stream -> 200 2089ms"
+          - generic "Click to copy" [ref=e7680]: "[caco-web] req=524 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7681]: "[caco-web] req=525 GET /api/v1/logs/stream?follow=true -> 200 37ms"
+          - generic "Click to copy" [ref=e7682]: "[caco-web] req=526 GET /api/v1/logs/stream?follow=true -> 200 45ms"
+          - generic "Click to copy" [ref=e7683]: "[caco-web] req=527 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7684]: "[caco-web] req=528 GET /api/v1/merge-queue?since=24h -> 200 4205ms"
+          - generic "Click to copy" [ref=e7685]: "[caco-web] req=529 GET /api/v1/merge-queue?since=24h -> 200 127ms"
+          - generic "Click to copy" [ref=e7686]: "[caco-web] req=530 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7687]: "[caco-web] req=531 GET /api/v1/merge-queue?since=24h -> 200 151ms"
+          - generic "Click to copy" [ref=e7688]: "[caco-web] req=532 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7689]: "[caco-web] req=533 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7690]: "[caco-web] req=534 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7691]: "[caco-web] req=535 GET /api/v1/merge-queue?since=24h -> 200 95ms"
+          - generic "Click to copy" [ref=e7692]: "[caco-web] req=536 GET /api/v1/merge-queue?since=24h -> 200 256ms"
+          - generic "Click to copy" [ref=e7693]: "[caco-web] req=537 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7694]: "[caco-web] req=538 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7695]: "[caco-web] req=539 GET /api/v1/merge-queue?since=24h -> 200 433ms"
+          - generic "Click to copy" [ref=e7696]: "[caco-web] req=540 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7697]: "[caco-web] req=541 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7698]: "[caco-web] req=542 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7699]: "[caco-web] req=543 GET /api/v1/ui/stream -> 200 0ms"
+          - generic "Click to copy" [ref=e7700]: "[caco-web] req=544 GET /api/v1/ui/stream -> 200 0ms"
+          - generic "Click to copy" [ref=e7701]: "[caco-web] req=545 GET /api/v1/logs/stream?follow=true -> 200 22ms"
+          - generic "Click to copy" [ref=e7702]: "[caco-web] req=546 GET /api/v1/merge-queue?since=24h -> 200 135ms"
+          - generic "Click to copy" [ref=e7703]: "[caco-web] req=548 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7704]: "[caco-web] req=547 GET /api/v1/merge-queue?since=24h -> 200 231ms"
+          - generic "Click to copy" [ref=e7705]: "[caco-web] req=549 GET /api/v1/ui/stream -> 200 1191ms"
+          - generic "Click to copy" [ref=e7706]: "[caco-web] req=551 GET /api/v1/logs/stream?follow=true -> 200 22ms"
+          - generic "Click to copy" [ref=e7707]: "[caco-web] req=552 GET"
+          - generic "Click to copy" [ref=e7708]: "[caco-web] req=550 GET /api/v1/merge-queue?since=24h -> 200 382ms"
+          - generic "Click to copy" [ref=e7709]: "[caco-web] req=553 GET /health -> 200 0ms"
+          - generic "Click to copy" [ref=e7710]: "[caco-web] req=554 GET /health -> 200 0ms"
+      - text: selected Split horizontal Split vertical Filter all panes by project Apply layout preset Save current layout as named preset Keyboard shortcuts (?) Close active pane Reset layout Pending operator choices
+  - status
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top

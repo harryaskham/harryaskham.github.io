@@ -1,0 +1,11 @@
+created and claimed: bd-f02d90 — caco-web logs stream abort pollutes browser console (assignee: cacophony:ms-mac-cacophony-caco-web)
+bead=bd-f02d90
+error: invalid operation: bead bd-f02d90 is not open (status: in_progress)
+[35mbd-f02d90[0m  [1mcaco-web logs stream abort pollutes browser console[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         bug
+  [34massignee:[0m     cacophony:ms-mac-cacophony-caco-web
+  [34mlabels:[0m       caco-web, console, logs, operator-trust, web
+  [34mcreated:[0m      [2m2026-04-27T23:30:18.046767883Z (just now)[0m
+  [34mdescription:[0m  During caco-web comprehensive Playwright audit summary 0111, every main dashboard route plus Workspace pane types were visited. The final console capture reported one browser error: 'Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING' for http://127.0.0.1:64961/api/v1/logs/stream?follow=true. Evidence: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0111/web/comprehensive-audit.log lines 3518-3522; network context lines 3523-3552. Repro: run current-assets caco-web against daemon, open dashboard, navigate through routes including Logs/Workspace logs pane, then inspect Playwright console. Expected: expected upstream SSE/log stream interruption is converted into handled SSE error/clean reconnect without polluting the browser console. Actual: Chromium records a red resource error for the logs stream. Scope: caco-web browser/proxy logs stream error handling; keep UI stream semantics intact. Filed from caco-web active duty cycle 0111.

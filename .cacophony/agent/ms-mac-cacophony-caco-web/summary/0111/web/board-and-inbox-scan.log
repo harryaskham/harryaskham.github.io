@@ -1,0 +1,72 @@
+# caco-web duty scan
+2026-04-28T00:19:03+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=f82e42f9fe0261d24ec0af034d4c74f9b6b3b0a0
+origin_main=f82e42f9fe0261d24ec0af034d4c74f9b6b3b0a0
+
+## inbox
+9 message(s):
+[speak] ms-mac:unknown:harryaskham: Harry 55, Disco karaoke ballad, done
+[speak] ms-mac:unknown:harryaskham: Generating Harry 56: Disco backalley brawl
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Test and Canary remain current at one point two point five seventy seven with sockets present, and Stable remains intentionally stale. The bead read briefly flapped during a daemon restart, but caco up reports services stable and startup ready; no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+[speak] ms-mac:unknown:harryaskham: Harry 56, Disco backalley brawl, done
+[speak] ms-mac:unknown:harryaskham: Generating Harry 57: Disco sea-bridge shootout
+[speak] ms-mac:unknown:harryaskham: Harry 57, Disco sea-bridge shootout, done
+[speak] ms-mac:unknown:harryaskham: Generating Harry 58: Disco political vision quest
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+
+## exact assigned in-progress
+no beads found
+
+## broad in-progress caco-web/web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m18h30m ago[0m [2m18h30m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+no beads found
+
+## ready open web-adjacent labels
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+### label=feed
+no beads found
+### label=operator-trust
+no beads found
+### label=tests
+no beads found
+
+## open title/text web-adjacent spot check
+
+## defect candidate: logs stream console error
+2026-04-28T00:30:07+01:00
+Evidence: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0111/web/comprehensive-audit.log lines 3518-3522
+Console reports Total messages: 1 (Errors: 1, Warnings: 0) and Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING on /api/v1/logs/stream?follow=true after route audit.
+
+## existing bead search
+
+## reflect-session dedup search for audit helper/profile friction
