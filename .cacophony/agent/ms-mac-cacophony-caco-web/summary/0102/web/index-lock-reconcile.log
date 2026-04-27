@@ -1,0 +1,63 @@
+# index.lock during remote-agent reconciliation
+2026-04-27T22:53:12+01:00
+## status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [ahead 1]
+?? .cacophony/agent/ms-mac-cacophony-caco-web/summary/0102/web/index-lock-reconcile.log
+## lock
+ls: cannot access '.git/index.lock': No such file or directory
+## relevant processes
+14003 34611       00:17 git status --porcelain
+22759 34611       00:15 git status --porcelain
+31240     1 01-20:59:25 tmux -L caco-agent-cacophony-ms-mac-cacophony-caco-web new-session -d -s caco-ms-mac-cacophony-ms-mac-cacophony-caco-web -c /Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout /Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/init.sh
+32711 34611       00:12 git status --porcelain
+35985 34611       00:10 git status --porcelain
+36324 34611       00:10 git status --porcelain
+50825 34611       00:04 git status --porcelain
+54259 54244       00:02 tee .cacophony/agent/ms-mac-cacophony-caco-web/summary/0102/web/index-lock-reconcile.log
+55194 34611       00:01 git status --porcelain
+55404 34611       00:01 git status --porcelain
+55463 34611       00:01 git status --porcelain
+55581 34611       00:01 git status --porcelain
+57193 34611       00:00 git rev-list --count HEAD..origin/main
+65097     1 05-23:15:23 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/kvss5pvsl8lv3adw7v019dan7pyq4y5x-run-github-runner-cacophony-ms-mac
+65109     1 05-23:15:23 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/sx5h7678mclbm3vsq9ikl2fj3piikm25-run-github-runner-midi2hid-ms-mac
+65146 65097 05-23:15:23 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+65276 65109 05-23:15:22 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+65439     1    22:04:40 git ls-remote --heads ssh://git@github.com/harryaskham/gfx-replacer.git refs/heads/cacophony-state
+65474 65439    22:04:40 ssh -F /dev/null -i /Users/harryaskham/.ssh/caco -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o SendEnv=GIT_PROTOCOL git@github.com git-upload-pack '/harryaskham/gfx-replacer.git'
+78240     1 01-06:02:41 git fetch origin main
+78241 78240 01-06:02:41 ssh -F /dev/null -i /Users/harryaskham/.ssh/caco -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o SendEnv=GIT_PROTOCOL git@github.com git-upload-pack '/harryaskham/midi2hid.git'
+85076     1    02:18:41 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/3pkihaymmbpr8ax3hfi92yaa6fi638h4-run-github-runner-collective-ms-mac
+85603     1    02:18:40 /nix/store/s0psayl7zvkvwdcqc8fy1sbv8rlf1yq8-bash-5.3p9/bin/bash /nix/store/dmibfjp4h098bs7asvnxc1kp7gma394c-run-github-runner-tendril-ms-mac
+85853 85076    02:18:40 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+86004 85603    02:18:40 /nix/store/4r4vypjhap156v5jvhmlplxai8q2sxdl-github-runner-2.332.0/lib/github-runner/Runner.Listener run --startuptype service
+ 4169  3585    03:00:31 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+29783 29554    20:14:17 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+33379 27905 02-10:43:22 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+21217 21178 06-02:09:09 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+67339  6237    03:56:58 /Users/harryaskham/.cargo/bin/caco agent attach --id 5nefmjf5xnxv9naq
+71079 13446    06:08:12 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+94952 94843 02-22:56:01 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+68761 98185 01-12:52:58 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+31890 31677    20:14:09 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+48193 54688    05:22:25 tmux -L caco-agent-cacophony-ms-mac-cacophony-caco-web attach-session -t caco-ms-mac-cacophony-ms-mac-cacophony-caco-web
+86274 85197    04:03:16 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+59481 52820 04-19:55:00 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+67476 66188 02-10:59:44 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+33483 33392 04-01:39:36 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+34161 34096 04-01:39:35 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+85797 77304    14:00:30 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+57592 53815       00:00 git rev-parse --abbrev-ref HEAD
+ 5136  2419    02:12:02 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+74323 72503 04-01:37:00 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+22084 22005 04-01:36:22 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+98203 96741    03:00:41 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+ 9677 17042       00:20 caco agent attach --id pbn4ofl49hwv11yc
+18340 17576    12:20:54 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+23689 23606       04:49 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+89874 86151    13:45:39 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+46261 46227 03-05:12:37 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+50066 50060 03-12:03:55 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+16938 10125    20:02:13 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+ 7023 98806 03-05:03:06 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28
+73016 72100    02:08:01 /nix/store/6gy870z71klg4qzn21iswwzil36yyynq-gitstatus-1.5.5/bin/gitstatusd -G v1.5.5 -s -1 -u -1 -d -1 -c -1 -m -1 -v FATAL -t 28

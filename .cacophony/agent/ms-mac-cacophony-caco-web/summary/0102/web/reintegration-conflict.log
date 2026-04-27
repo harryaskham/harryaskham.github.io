@@ -1,0 +1,23 @@
+# reintegration conflict after remote ancestry merge
+2026-04-27T22:56:18+01:00
+## status
+## HEAD (no branch)
+UD .cacophony/agent/beelink-cacophony-technical-writer/summary/0077/summary.md
+?? .cacophony/agent/ms-mac-cacophony-caco-web/
+## branch
+## head
+ad806ef41 (HEAD, origin/main, origin/HEAD) bd-1d2e41: update Pages alignment summary
+90a2aa572 bd-1d2e41: mention web workspace agent detail panes
+90a9ad54c bd-1d2e41: record Pages web status profile summary
+903703dad bd-1d2e41: refresh Pages for web status and profile modes
+fcdc9ba13 Reintegrate agent branch agent/helsinki/cacophony/ctkj3u4xdgddgquf
+abd3f7f3c Reintegrate agent branch agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-4
+e31c74d5c Reintegrate agent branch agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-3
+57c257ae0 Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-config-helper
+## rebase dirs
+.git/rebase-merge
+## conflicted files
+.cacophony/agent/beelink-cacophony-technical-writer/summary/0077/summary.md
+## merge base checks
+origin_main_ancestor_exit=0
+remote_agent_ancestor_exit=1
