@@ -1,0 +1,66 @@
+# caco-web duty scan
+2026-04-27T23:39:00+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=8493a2352087dab628662fd3ac75b64bbef4fb66
+origin_main=8493a2352087dab628662fd3ac75b64bbef4fb66
+
+## inbox
+6 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: Test and Canary are now refreshed to one point two point five seventy seven with both sockets present, so the refresh coalescing fix is in the QA apps. Stable production remains intentionally stale, services and beads host are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting test and canary advanced again to one point two point five seventy seven, both sockets present. Refresh coalescing fix bd three d five f zero eight in QA apps. Production stable on five seventy six. Builds rolling fast post bd nine e four be four landing. Caco macos correctly idle no ready beads, fleet healthy.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 10:37: clean one 502, v-five-seventy-six stable twenty-four minutes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no health change from the last check. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, services are running, and no assigned or ready macOS or Tendril bead is available.
+
+## exact assigned in-progress
+no beads found
+
+## broad in-progress caco-web/web
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m17h50m ago[0m [2m17h50m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
+no beads found
+
+## ready open web-adjacent labels
+### label=caco-web
+no beads found
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=open&ready=true&label=summaries&limit=50)]
+### label=visual-polish
+no beads found
+### label=terminal
+no beads found
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+### label=feed
+no beads found
+### label=operator-trust
+no beads found
+### label=tests
+no beads found
+
+## open title/text web-adjacent spot check
+
+## post-observation web-work spot check after feed reported 'Fix caco web workspace loading'
+2026-04-27T23:42:14+01:00
+### open grep
+### in_progress grep
+[35mbd-1cf76a   [0m P3   [2mtask    [0m [32min_progress [0m [2m17h53m ago[0m [2m17h53m ago[0m ms-dev:ms-dev-cacophony-caco-dev-msd-4 Teach caco-web-observe focused delayed-route validation scenarios
