@@ -1,0 +1,16 @@
+--- post-patch current UI ---
+  mCurrentFocus=Window{3c1780 u0 com.cacophony.companion/com.cacophony.companion.MainActivity}
+  mFocusedApp=ActivityRecord{230013364 u0 com.cacophony.companion/.MainActivity t18}
+overview-dump-failed
+xml_len 0
+text []
+content-desc []
+--- tap Chat and capture ---
+xml_len 0
+text []
+content-desc []
+--- ANR dialog check ---
+ANR_DIALOG_ABSENT
+--- version ---
+    versionCode=6639 minSdk=26 targetSdk=34
+    versionName=1.2.573-62f8f9bb

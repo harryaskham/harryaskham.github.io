@@ -1,0 +1,12 @@
+boot=1
+Service package: found
+Service activity: found
+Service window: found
+Service input: found
+    versionCode=6639 minSdk=26 targetSdk=34
+    versionName=1.2.573-62f8f9bb
+  mCurrentFocus=Window{3c1780 u0 com.cacophony.companion/com.cacophony.companion.MainActivity}
+  mFocusedApp=ActivityRecord{230013364 u0 com.cacophony.companion/.MainActivity t18}
+--- anr dialog passive grep ---
+dump-failed
+ANR_DIALOG_ABSENT
