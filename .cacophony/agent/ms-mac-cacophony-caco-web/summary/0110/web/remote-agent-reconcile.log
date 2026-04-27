@@ -1,0 +1,16 @@
+# remote-agent branch reconciliation before summary 0110 direct reintegration
+2026-04-28T00:14:07+01:00
+## remote-only commits
+04c9a01ee Merge remote-tracking branch 'origin/main' into agent/ms-mac/cacophony/ms-mac-cacophony-caco-web
+38496f0dc chore(caco-web): record clean recurrence-chatter observation
+## origin/main recent
+3b95af256 Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+58ef35cf2 Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+d7f33c55e Reintegrate agent branch agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-3
+ef0ebfd6a Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+8493a2352 Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+df3552f79 Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+b57f2adc2 Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-macos
+7eae1cd00 Reintegrate agent branch agent/helsinki/cacophony/helsinki-cacophony-update-helper
+6fc349eee Reintegrate agent branch agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-4
+0618f9bed Reintegrate agent branch agent/ms-mac/cacophony/ms-mac-cacophony-caco-web

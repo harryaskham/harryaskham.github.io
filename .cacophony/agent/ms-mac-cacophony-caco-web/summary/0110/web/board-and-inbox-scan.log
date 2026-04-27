@@ -1,0 +1,72 @@
+# caco-web duty scan
+2026-04-28T00:09:20+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+HEAD=3b95af2561981fd76362bcf9bfe50800b5307375
+origin_main=3b95af2561981fd76362bcf9bfe50800b5307375
+
+## inbox
+8 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no health change. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, services are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is assigned, I’ll continue bounded emulator QA without claiming unrelated work.
+[speak] ms-mac:unknown:harryaskham: Generating Harry 54: Disco aerial Revachol pale
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 11:07: zero errors clean, v-five-seventy-six stable fifty-four minutes.
+[speak] ms-mac:unknown:harryaskham: Harry 54, Disco aerial Revachol pale, done
+[speak] ms-mac:unknown:harryaskham: Generating Harry 55: Disco karaoke ballad
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Continuing the TUI improvement loop. I’m scanning remaining hardcoded Nord usage and will file the next focused theme-aware TUI slice before editing.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor narrating two pass all clear modulo known holdouts. Local services and beads primary all green, no recent crashes, daemon db growing slowly seven ninety two kilobytes per fifteen minutes confirming refresh coalescing fix is helping. Load dropped from seventy to six. Sustained holdouts unchanged, sgu twenty four three hundred ten minutes, winmini one hundred three minutes, astra dampened. Native supervisor still unloaded persistent ask. Fleet healthy under one point two point five seventy six stable, test canary on five seventy seven.
+
+## exact assigned in-progress
+error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=in_progress&limit=2000)
+
+## broad in-progress caco-web/web
+error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=in_progress&label=caco-web&limit=80)
+error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=in_progress&label=web&limit=80)
+
+## ready open web-adjacent labels
+### label=caco-web
+error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=open&ready=true&label=caco-web&limit=50)
+### label=web
+no beads found
+### label=workspace
+no beads found
+### label=dashboard
+no beads found
+### label=browser
+no beads found
+### label=summaries
+no beads found
+### label=visual-polish
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m--------            [0m [2m---[0m
+[35mbd-7e83d7   [0m P3   [2mtask    [0m [32mopen        [0m [2mjust now  [0m -                    Syntax view fallback text should use active TUI theme color
+### label=terminal
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=open&ready=true&label=terminal&limit=50)]
+### label=interactive
+no beads found
+### label=agent-interaction
+no beads found
+### label=notifications
+no beads found
+### label=ui
+no beads found
+### label=feed
+no beads found
+### label=operator-trust
+no beads found
+### label=tests
+no beads found
+
+## open title/text web-adjacent spot check
+
+## post-observation board recheck after partial authoritative failures
+2026-04-28T00:13:30+01:00
+### exact assigned in-progress
+no beads found
+### caco-web ready/open
+no beads found
+### terminal ready/open
+no beads found
+### open title grep
