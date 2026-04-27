@@ -1,40 +1,51 @@
-# Session summary — Console-clean daemon unavailable state
+# Session summary — caco-web recorded duty cycle
 
 ## Goal
 
-Keep the caco-web browser dashboard trustworthy during daemon restart/unavailable windows. This duty cycle observed that the UI rendered a handled degraded state, but Chromium still reported red resource-load errors for expected daemon 503s; the goal became to make those handled backend-unavailable paths console-clean without hiding the operator-facing degraded state.
+Run the caco-web active duty cycle under the newly tightened recorded-artifact contract: first land the profile change that requires summary-rooted artifacts, then check inbox and assigned/ready web-dashboard beads, run a fresh current-assets Playwright dashboard observation pass, and preserve the evidence in this recorded summary before reintegration.
 
 ## Bead(s)
 
-- `bd-c2310e` — caco-web logs handled daemon 503s as browser console errors during restart
+- `bd-09b32d` — caco-web profile should persist duty-cycle artifacts in recorded summaries
 
 ## Before state
 
-- Failing tests: none at start of implementation.
-- Relevant metrics: duty-cycle observation `/tmp/caco-web-duty-current-001255-observation.log` reported `Total messages: 8 (Errors: 8, Warnings: 0)` from 503 responses during a daemon restart/unavailable window.
-- Context: `caco web status` recovered to healthy on `11180`, but local daemon/bead authority had just flapped. The current-assets helper showed handled `Backend unavailable` / `Snapshot delayed` UI while DevTools still logged `Failed to load resource: 503` for snapshot, merge-queue, UI stream, and logs stream endpoints.
+- Failing tests: none known.
+- Relevant metrics: caco-web profile update was committed locally but not yet durably landed; no current Playwright duty-cycle evidence existed under the new summary directory for this cycle.
+- Context: Harry requested both the profile correction and another active caco-web duty cycle. The local daemon briefly had reachability/backpressure issues during board reads, so the cycle captured both successful and transient-failure board output in the summary artifacts.
 
 ## After state
 
-- Failing tests: none observed in the caco-web validation lane.
-- Relevant metrics: fresh unavailable-daemon Playwright validation `/tmp/caco-web-bd-c2310e-validation-fresh.log` reported `Total messages: 0 (Errors: 0, Warnings: 0)` while still rendering `Backend unavailable`.
-- Context: caco-web proxy now maps read-only daemon 503/connect-unavailable paths to HTTP 200 handled sentinels, with SSE-shaped sentinel events for EventSource clients, so browser DevTools stays clean while app.js continues showing explicit degraded/retry UI.
+- Failing tests: none observed for the profile-only change or dashboard observation.
+- Relevant metrics: `bd-09b32d` was reintegrated with `direct,recorded` and closed; assigned in-progress list then returned `no beads found`; fresh current-assets Playwright observation reported `Total messages: 0 (Errors: 0, Warnings: 0)`.
+- Context: The dashboard rendered the expected `Snapshot delayed` state while the daemon snapshot was slow/backpressured. Workspace, Status, Agents, Beads, Feed, Chat, Summaries, and keyboard help were inspected with bounded screenshots committed under `web/screenshots/`.
 
 ## Diff summary
 
-- Commits: `7842731ae`
-- Files touched: `crates/caco-web/src/proxy.rs`, `crates/caco-web/src/tests.rs`
-- Tests: +1 regression test / -0 tests / flipped 0 tests
-- Behavioural delta: caco-web now translates expected read-only daemon unavailable responses into console-clean sentinels instead of forwarding 503s directly to the browser. Snapshot timeout behaviour remains unchanged, and SSE consumers get a one-event `event: error` stream with backend-unavailable metadata.
-- Validation: `cargo fmt --all`; `CARGO_BUILD_JOBS=2 cargo check -p caco-web --all-targets`; `CARGO_BUILD_JOBS=2 cargo test -p caco-web --lib` — 296 passed; fresh Playwright unavailable-daemon validation at `/tmp/caco-web-bd-c2310e-validation-fresh.log` — 0 console errors / 0 warnings.
+- Commits: this observation-summary commit for the direct recorded reintegration that follows.
+- Files touched: `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0001/summary.md`, `.cacophony/agent/ms-mac-cacophony-caco-web/summary/0001/web/*`.
+- Tests: fresh `caco-web-observe` helper pass with current assets and `CARGO_BUILD_JOBS=2`; console clean; route shortcuts reached expected active views; Status hero measured `h=330`, `sh=328`, `clipped=false`.
+- Behavioural delta: no product code changed in this commit. The durable delta is the recorded caco-web duty-cycle evidence now stored under the summary tree instead of only in `/tmp` or `.playwright-cli`.
 
 ## Embedded artefacts
 
-- `/tmp/caco-web-duty-current-001255-observation.log` — before evidence showing handled UI plus browser 503 console errors during daemon unavailability.
-- `/tmp/caco-web-bd-c2310e-validation-fresh.log` — after evidence showing handled `Backend unavailable` UI with zero browser console errors.
-- `.playwright-cli/page-2026-04-27T00-23-18-957Z.png` — after Workspace screenshot in the unavailable-daemon validation pass.
-- `.playwright-cli/page-2026-04-27T00-25-17-958Z.png` — after help-overlay screenshot from the same validation pass.
+- `web/board-and-inbox-scan.log` — inbox, assigned bead, close confirmation, label scans, text scan attempt, and caco web status.
+- `web/observation.log` — full `caco-web-observe` output including route evaluations, console summary, network summary, and screenshot references.
+- `web/server.log` — local current-assets dev server log for the observation pass.
+- `web/console.log` — extracted console section showing `0` errors and `0` warnings.
+- `web/network.log` — extracted network section showing observed dashboard requests returning `200 OK`.
+- `web/notes.md` — compact no-bead rationale and key measurements.
+- `web/page-2026-04-27T01-18-22-972Z.yml` — initial Playwright snapshot metadata.
+- `web/screenshots/page-2026-04-27T01-18-34-748Z.png` — narrow Workspace screenshot.
+- `web/screenshots/page-2026-04-27T01-18-39-481Z.png` — narrow Status screenshot.
+- `web/screenshots/page-2026-04-27T01-18-43-872Z.png` — narrow Agents screenshot.
+- `web/screenshots/page-2026-04-27T01-18-48-299Z.png` — narrow Beads screenshot.
+- `web/screenshots/page-2026-04-27T01-18-52-598Z.png` — Feed screenshot.
+- `web/screenshots/page-2026-04-27T01-18-56-922Z.png` — Chat screenshot.
+- `web/screenshots/page-2026-04-27T01-19-01-407Z.png` — wide Workspace route screenshot.
+- `web/screenshots/page-2026-04-27T01-19-05-824Z.png` — Summaries screenshot.
+- `web/screenshots/page-2026-04-27T01-19-42-296Z.png` — keyboard help overlay screenshot.
 
 ## Operator-takeaway
 
-The dashboard still tells the operator when the daemon is unavailable, but expected restart-window 503s no longer pollute the browser console as red errors. A follow-up draft `bd-bfc2b8` captures the validation friction where `caco-web-observe --skip-build` can accidentally reuse a stale dev-server binary after proxy changes.
+The profile fix is now landed, and the very next caco-web observation followed the new discipline: artifacts are in the recorded summary tree, no additional focused browser-dashboard defect was found, and the clean evidence is ready to reintegrate with `direct,recorded`.

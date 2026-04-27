@@ -1,0 +1,69 @@
+--- git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+?? .cacophony/agent/
+--- inbox
+15 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-c84513 now adds a graphics summary strip to the TUI Performance view, aggregating recent tui.graphics perf events into uploads, wire traffic, deletes, cache rate, upload-pass timing, and spike status. Targeted summary extraction test passes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-dev-msm-5: Chat placeholder truncation is fixed and captured on ms-dev. I’m reintegrating the patch and screenshots.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Board authority is temporarily unreachable, but the active Android bead is already known: bd-7bf198. I’m continuing validation and recorded summary work rather than claiming anything new.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Running the required Android validation gate on ms-dev for the Notifications fix now. This may take a few minutes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-transcription: Inbox check found no new transcription request, and the bead authority is temporarily unreachable. I’m continuing the explicit live transcription and voice-call work already in hand rather than taking unrelated queue work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: I fixed the MessagesPane compile blocker exposed by the second cloud build, validated source-only Swift syntax again, and am reintegrating the fix now before dispatching another packaged cloud build.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-c84513 is committed. A stale git index lock from a completed background lifecycle command briefly blocked the commit, but no git process held it; I removed the stale lock and am rebasing plus revalidating now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-dev-msm-5: Chat placeholder fix is reintegrated and bd-20196b is closed.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: The MessagesPane compile fix is now on main. I dispatched a third packaged GitHub macOS cloud build, run 24971997405 for commit 4a8a92c, and re-armed the install loop to refresh Test and Canary if it succeeds.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Android validation passed on ms-dev: focused navigation tests, APK build, daemon integration gate, emulator Notifications capture, and Harry's phone fresh install are complete. I’m claiming the dependent Notifications capture bead and preparing recorded reintegration.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-transcription: I found the immediate live transcription stop cause: the capture command passed a literal dash to parec, which macOS PulseAudio treats as a filename instead of stdout. Targeted tests now pass, and a four second live smoke no longer exits immediately.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Reflected on bd-c84513: no extra draft filed. The friction was raw graphics metrics being hard to interpret, and the new Performance summary addresses that directly.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 1:15: small backpressure ten 502s, bd briefly hung. v-five-sixty-seven stable hour-three minutes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-c84513 is committed with recorded summary and validation. I’m reintegrating it now, then I’ll continue scanning for the next TUI improvement.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-c84513 reintegration was rejected because main advanced by one commit. I’m rebasing through the first-party path and retrying the same recorded reintegration.
+--- assigned in_progress
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mWORKER_AGE[0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m----------[0m [2m--------            [0m [2m---[0m
+[35mbd-09b32d   [0m P2   [2mtask    [0m [32min_progress [0m [2m10m ago   [0m [2m10m ago   [0m cacophony:ms-mac-cacophony-caco-web caco-web profile should persist duty-cycle artifacts in recorded summaries
+--- bd-09b32d close confirmation
+[35mbd-09b32d[0m  [1mcaco-web profile should persist duty-cycle artifacts in recorded summaries[0m
+  [34mstatus:[0m       [32min_progress[0m
+  [34mpriority:[0m     P2
+  [34mtype:[0m         task
+  [34massignee:[0m     cacophony:ms-mac-cacophony-caco-web
+  [34mlabels:[0m       caco-web, session-recording, visual-polish
+  [34mcreated:[0m      [2m2026-04-27T01:05:44.294845208Z (10m ago)[0m
+  [34mdescription:[0m  Operator requested that caco-web stop leaving Playwright duty-cycle artifacts only in /tmp or .playwright-cli, and instead place artifacts under .cacophony/agent/<agent-id>/summary/<index>/web, commit the summary/artifacts, and reintegrate with direct,recorded. Update the caco-web persistent profile to make this required for both implementation and observation-only duty cycles.
+--- label scans
+--- label:caco-web
+no beads found
+--- label:dashboard
+no beads found
+--- label:web
+no beads found
+--- label:browser
+no beads found
+--- label:workspace
+no beads found
+--- label:playwright
+no beads found
+--- label:webui
+no beads found
+--- label:summaries
+no beads found
+--- label:visual-polish
+no beads found
+--- text scan
+--- caco web status
+caco web status
+node:          ms-mac
+configured:    yes
+process:       alive (pid 87577)
+bind:          0.0.0.0
+port:          11180
+daemon_url:    http://127.0.0.1:11100
+health_url:    http://127.0.0.1:11180/health
+healthy:       yes
+version:       1.2.567
+health_status: ok
+--- bd-09b32d close retry
+closed: ? — ?
+--- assigned after close retry
+no beads found
