@@ -1,0 +1,11 @@
+# lightweight caco-web observation
+2026-04-28T01:09:16+01:00
+git_head=abbf0854fbab719d807182dd6c200f28cf16cf3b
+caco_version=caco 1.2.576 (701742351)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.65s
+     Running `target/debug/caco-web-observe --daemon-url 'http://127.0.0.1:11100' --skip-build --out .cacophony/agent/ms-mac-cacophony-caco-web/summary/0113/web/observation.log --server-log .cacophony/agent/ms-mac-cacophony-caco-web/summary/0113/web/server.log`
+WARNING: --skip-build is using a potentially stale caco-web-dev-server; static/app.js, static/index.html, static/style.css, static/workspace-integrated.js changed after /Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/target/debug/caco-web-dev-server. Re-run without --skip-build before filing or validating evidence.
+Observation log: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0113/web/observation.log
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.22s
+     Running `target/debug/caco-web-observe --daemon-url 'http://127.0.0.1:11100' --out .cacophony/agent/ms-mac-cacophony-caco-web/summary/0113/web/observation-current.log --server-log .cacophony/agent/ms-mac-cacophony-caco-web/summary/0113/web/server-current.log`
+Observation log: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0113/web/observation-current.log

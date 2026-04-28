@@ -1,0 +1,37 @@
+# caco-web duty cycle start
+2026-04-28T01:08:52+01:00
+agent=ms-mac-cacophony-caco-web project=cacophony
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main
+## inbox
+20 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. There is explicit Android signing work from Harry, so I’ll continue that after confirming no conflicting assigned bead appeared.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no health change and no macOS action needed. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, services are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: No assigned Android bead appeared. I’m continuing the explicit Pulse ownership APK task, using the Android Nix devshell because the host apksigner has no Java runtime.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assignments, then continuing the explicit Pulse APK signing task.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If nothing new is assigned, I’ll run a bounded ms-dev emulator heartbeat and leave unrelated work alone.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no health change and no macOS action needed. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, services are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Android check complete: no assigned Android beads, and the ms-dev emulator heartbeat is healthy with the companion installed, booted, and no ANR dialog observed.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Correction on the Android heartbeat: boot, services, focus, package, and ANR checks were healthy, but the expected companion prefs file was absent on ms-dev this pass. I’m leaving unrelated beads untouched.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 11:52: 🎯 zero errors clean plus 🎯 two-thousand-four-hundred closed milestone passed at twenty-four-oh-one. v-five-seventy-six stable ninety-nine minutes. Five-hundred-fifty sweeps.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting daemon db growth flatlined to sixty eight kilobytes in fifteen minutes, lowest in session by an order of magnitude. Refresh coalescing fix bd three d five f zero eight definitively working. Android utils checkout shows dirty as expected for caco android pulse APK signing operator task. Effective all clear continues. Sgu twenty four winmini sustained, astra dampened, native supervisor unloaded persistent.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads now. If nothing Android-specific is waiting, I’ll run the bounded ms-dev emulator heartbeat and avoid unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Android check complete: no assigned Android beads and no new Android work in inbox. The ms-dev emulator is booted with services healthy and no ANR, but companion prefs are still missing, so I’ll keep that as the next QA follow-up signal.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is waiting, I’ll run the bounded ms-dev emulator heartbeat and leave unrelated beads alone.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no health change and no macOS action needed. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, services are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Android check complete: no assigned Android beads found. The ms-dev emulator remains booted with services healthy and no ANR; companion prefs are still missing, so I’ll keep that as a QA signal rather than claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: I’ll skip the emulator heartbeat this time and list the Android utility packages on Beelink, including package names and built APK paths.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Received explicit Android signing work for Nod Term. I’ll skip the emulator heartbeat, confirm assignments, then build a package-name proof APK signed with the Beelink key matching the requested fingerprint.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: I’ll build the Nod Term ownership APK on Beelink now, verify the ADI asset plus matching SHA two fifty six signing certificate, and copy the final APK into Sync apks.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Starting config change to replace sparse picasso-health with full picasso direct-only project, then I will validate, reintegrate via direct, and monitor daemon health for checkout flaps.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac midnight: day rollover, zero errors clean. v-five-seventy-six stable hundred-fourteen minutes. Fresh day, plus three closed two-thousand-four-hundred-four.
+## assigned in-progress
+no beads found
+## ready/open caco-web
+no beads found
+## ready/open browser
+no beads found
+## ready/open dashboard
+no beads found
+## ready/open workspace
+no beads found
