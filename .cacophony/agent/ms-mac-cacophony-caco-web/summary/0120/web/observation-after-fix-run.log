@@ -1,0 +1,7 @@
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.579 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.56s
+     Running `target/debug/caco-web-observe --daemon-url 'http://127.0.0.1:11100' --out .cacophony/agent/ms-mac-cacophony-caco-web/summary/0120/web/observation-after-fix.log --server-log .cacophony/agent/ms-mac-cacophony-caco-web/summary/0120/web/server-after-fix.log`
+Observation log: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0120/web/observation-after-fix.log
