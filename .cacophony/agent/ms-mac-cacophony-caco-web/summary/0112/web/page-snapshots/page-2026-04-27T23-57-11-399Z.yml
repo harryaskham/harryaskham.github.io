@@ -1,0 +1,249 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - navigation "Main navigation" [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Cacophony" [level=1] [ref=e7]:
+            - generic [ref=e8]: ♪
+            - generic [ref=e9]: Cacophony
+          - text: Close menu
+        - generic [ref=e10]: —
+        - generic "Cacophony web v1.2.578 — click to copy" [ref=e11] [cursor=pointer]: v1.2.578
+      - list [ref=e12]:
+        - button "Status 1 Cluster Status (1)" [ref=e13]:
+          - img [ref=e15]
+          - generic [ref=e19]: Status
+          - generic [ref=e20]: "1"
+          - text: Cluster Status (1)
+        - button "Agents, no running agents, shortcut 2" [ref=e21]:
+          - img [ref=e23]
+          - generic [ref=e26]: Agents
+          - generic "No running agents" [ref=e27]: "0"
+          - generic [ref=e28]: "2"
+          - button "Toggle agents submenu" [ref=e29] [cursor=pointer]: ▸
+          - text: Agents (2)
+        - button:
+          - generic: Active
+          - generic: "0"
+          - text: Running + starting agents
+        - button:
+          - generic: Failed
+          - generic: "0"
+          - text: Failed agents
+        - button:
+          - generic: Completed
+          - generic: "0"
+          - text: Completed agents
+        - button:
+          - generic: All
+          - generic: "0"
+          - text: All agents (no filter)
+        - button:
+          - generic: Artefacts
+          - generic: "0"
+          - text: Recorded summaries and other artefacts across agents
+        - button "Beads, no open beads, shortcut 3" [ref=e30]:
+          - img [ref=e32]
+          - generic [ref=e35]: Beads
+          - generic "No open beads" [ref=e36]: "0"
+          - generic [ref=e37]: "3"
+          - text: Beads (3)
+        - button "Feed 4 Feed (4)" [ref=e38]:
+          - img [ref=e40]
+          - generic [ref=e44]: Feed
+          - generic [ref=e45]: "4"
+          - text: Feed (4)
+        - button "Chat 5 Chat (5)" [ref=e46]:
+          - img [ref=e48]
+          - generic [ref=e50]: Chat
+          - generic [ref=e51]: "5"
+          - text: Chat (5)
+        - button "Nodes 6 Nodes (6)" [ref=e52]:
+          - img [ref=e54]
+          - generic [ref=e59]: Nodes
+          - generic [ref=e60]: "6"
+          - text: Nodes (6)
+        - button "Services 7 Services (7)" [ref=e61]:
+          - img [ref=e63]
+          - generic [ref=e66]: Services
+          - generic [ref=e67]: "7"
+          - text: Services (7)
+        - button "Projects p Projects (p)" [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e73]: Projects
+          - generic [ref=e74]: p
+          - text: Projects (p)
+        - button "Choices Pending choices c Choices (c)" [ref=e430]:
+          - img [ref=e77]
+          - generic [ref=e80]: Choices
+          - generic "Pending choices" [ref=e431]: "1"
+          - generic [ref=e81]: c
+          - text: Choices (c)
+        - button "Notifications, no unread notifications, shortcut 8" [ref=e82]:
+          - img [ref=e84]
+          - generic [ref=e87]: Notifications
+          - generic [ref=e88]: "8"
+          - text: Notifications (8)
+        - button "Actions 9 Actions (9)" [ref=e89]:
+          - img [ref=e91]
+          - generic [ref=e93]: Actions
+          - generic [ref=e94]: "9"
+          - text: Actions (9)
+        - button "Logs 0 Logs (0)" [ref=e95]:
+          - img [ref=e97]
+          - generic [ref=e99]: Logs
+          - generic [ref=e100]: "0"
+          - text: Logs (0)
+        - button "Timeline t Timeline (t)" [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e107]: Timeline
+          - generic [ref=e108]: t
+          - text: Timeline (t)
+        - button "Summaries s Summaries (s)" [ref=e109]:
+          - img [ref=e111]
+          - generic [ref=e114]: Summaries
+          - generic [ref=e115]: s
+          - text: Summaries (s)
+        - button "Merge Queue m Merge Queue (m)" [ref=e116]:
+          - img [ref=e118]
+          - generic [ref=e121]: Merge Queue
+          - generic [ref=e122]: m
+          - text: Merge Queue (m)
+        - button "Workspace w Workspace (w)" [ref=e123]:
+          - img [ref=e125]
+          - generic [ref=e129]: Workspace
+          - generic [ref=e130]: w
+          - text: Workspace (w)
+      - generic [ref=e131]:
+        - status "The daemon is reachable, but the bulk dashboard snapshot timed out. Live updates and targeted routes may still be available while the dashboard retries." [ref=e254]:
+          - generic [ref=e134]: Snapshot delayed
+          - generic [ref=e135]: SSE activity
+          - text: Click to reconnect
+        - button "⌘ K Commands Open command palette" [ref=e136]:
+          - generic [ref=e137]: ⌘
+          - generic [ref=e138]: K
+          - generic [ref=e139]: Commands
+          - text: Open command palette
+    - main [ref=e140]:
+      - text: Menu Data freshness Expand cluster graph Export as CSV Export as CSV Time window for feed events Time window for chat messages Remove all notifications
+      - generic [ref=e652]:
+        - generic [ref=e653]:
+          - heading "Workspace" [level=2] [ref=e654]
+          - generic [ref=e656]:
+            - button "Split pane horizontally" [ref=e657]:
+              - img [ref=e658]
+              - text: Split horizontal
+            - button "Split pane vertically" [ref=e660]:
+              - img [ref=e661]
+              - text: Split vertical
+            - combobox "Pane type" [ref=e663] [cursor=pointer]:
+              - option "Terminal" [selected]
+              - option "Agents"
+              - option "Beads"
+              - option "Chat"
+              - option "Logs"
+              - option "Feed"
+              - option "Source"
+              - option "Status"
+              - option "Services"
+              - option "Nodes"
+              - option "Projects"
+              - option "Notifications"
+              - option "Actions"
+              - option "Timeline"
+              - option "Choices"
+              - option "Merge Queue"
+              - option "Speech"
+              - option "Bead Detail"
+              - option "Agent Detail"
+              - option "Hooks"
+              - option "Crons"
+            - combobox "Project filter" [ref=e664]:
+              - option "All projects" [selected]
+              - text: Filter all panes by project
+            - combobox "Layout preset" [ref=e665]:
+              - option "Preset…" [selected]
+              - option "Mission Control"
+              - option "Bead Triage"
+              - option "Agent Driver"
+              - option "Operator Cockpit"
+              - option "Fleet Ops"
+              - option "Minimal"
+              - text: Apply layout preset
+            - button "Save layout" [ref=e666]:
+              - img [ref=e667]
+              - text: Save current layout as named preset
+            - button "Help" [ref=e671]:
+              - img [ref=e672]
+              - text: Keyboard shortcuts (?)
+            - button "Close active pane" [ref=e676]:
+              - img [ref=e677]
+              - text: Close active pane
+            - button "Reset workspace layout" [ref=e679]:
+              - img [ref=e680]
+              - text: Reset layout
+        - generic "Workspace pane area" [ref=e683]:
+          - generic [ref=e906]:
+            - generic [ref=e907]:
+              - generic [ref=e908]: 👥 Agents
+              - generic [ref=e909]:
+                - combobox [ref=e910] [cursor=pointer]:
+                  - option "⌨ Terminal"
+                  - option "👥 Agents" [selected]
+                  - option "📿 Beads"
+                  - option "💬 Chat"
+                  - option "📋 Logs"
+                  - option "📡 Feed"
+                  - option "📄 Source"
+                  - option "🌟 Status"
+                  - option "⚙️ Services"
+                  - option "🖥 Nodes"
+                  - option "📁 Projects"
+                  - option "🔔 Notifications"
+                  - option "⚡ Actions"
+                  - option "📅 Timeline"
+                  - option "🤔 Choices"
+                  - option "🔀 Merge Queue"
+                  - option "🗣 Speech"
+                  - option "🔎 Bead Detail"
+                  - option "🔎 Agent Detail"
+                  - option "🪝 Hooks"
+                  - option "⏰ Crons"
+                - button "Split horizontal" [ref=e911]:
+                  - img [ref=e912]
+                - button "Split vertical" [ref=e914]:
+                  - img [ref=e915]
+                - button "Refresh pane" [ref=e917]:
+                  - img [ref=e918]
+                - button "Maximize pane" [ref=e921]:
+                  - img [ref=e922]
+                - button "Close pane" [ref=e924]:
+                  - img [ref=e925]
+            - generic [ref=e928]:
+              - generic [ref=e929]:
+                - searchbox "Search agents…" [ref=e930]
+                - combobox [ref=e931] [cursor=pointer]:
+                  - option "all" [selected]
+                  - option "running"
+                  - option "starting"
+                  - option "idle"
+                  - option "failed"
+                  - option "stopped"
+              - generic [ref=e933]:
+                - generic [ref=e934]: 👥
+                - generic [ref=e935]: No matching agents
+        - status [ref=e713]:
+          - generic [ref=e714]: 1 pane
+          - generic [ref=e715]: no focus
+          - generic [ref=e716]: all projects
+          - generic [ref=e717]: agents unavailable
+          - generic [ref=e718]: beads unavailable
+          - generic [ref=e719] [cursor=pointer]: choices unavailable Pending operator choices
+          - generic [ref=e720]: ⏱ snapshot timeout
+  - status
+  - text: Previous (K) Next (J) Cmd/Ctrl+Enter Previous (K) Next (J)
+  - button "Scroll to top":
+    - img
+    - text: Scroll to top
