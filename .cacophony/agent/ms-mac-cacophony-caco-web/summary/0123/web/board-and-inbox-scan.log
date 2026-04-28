@@ -1,0 +1,200 @@
+# caco-web duty cycle board and inbox scan
+2026-04-28T02:48:55+01:00
+summary=.cacophony/agent/ms-mac-cacophony-caco-web/summary/0123
+agent=ms-mac-cacophony-caco-web
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [behind 1]
+?? .cacophony/agent/
+
+## caco status
+[1;36mcaco status — node: ms-mac[0m
+  [34mversion:[0m      1.2.576
+  [34mcommit:[0m       [2m701742351[0m
+  [34mupdate channel:[0m stable
+  [34mupdate status:[0m [33mno releases for channel[0m
+
+  [34mconfig hash:[0m  29caae065e94
+  [34mlauncher:[0m     [4m/Users/harryaskham/.cargo/bin/caco[0m
+  [34m  local fingerprint:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34m  canonical fingerprint:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34m  daemon launcher:[0m [4m/Users/harryaskham/.cargo/bin/caco[0m
+  [34m  daemon fingerprint:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34m  launcher drift:[0m none
+  [34mlauncher active:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34mlauncher previous:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+
+  [34mdaemon:[0m       [32m✓[0m [32mrunning[0m  uptime: 48m 39s
+  [34mlifecycle decisions:[0m last 12 recorded
+  [34m  decision:[0m   2026-04-27T17:54:40.418451+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-27T19:41:08.949756+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-27T22:11:37.456732+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-27T22:11:49.545917+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-28T01:00:09.480215+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=agent:ms-mac-cacophony-config-helper
+  [34mload:[0m         12.29 14.56 18.94  cores=14  mem=56%
+  [34mscheduling:[0m   policy=least_overloaded  queue=0
+  [34mbeads primary:[0m active on node 'helsinki'
+  [34msupervisor:[0m   [2m?[0m [2mnot loaded[0m  launchd (com.cacophony.lifecycle)
+  [34mbeads primary node:[0m helsinki
+  [34m  candidates:[0m helsinki
+  [34m  failover:[0m   [2m·[0m [2mnot_configured[0m
+  [34m  last switch:[0m [2m2026-03-26T05:31:42.451649494+00:00[0m
+  [34m    beelink:[0m  → helsinki
+  [34m    helsinki:[0m → helsinki
+  [34m    ms-dev:[0m   → helsinki
+  [34m    pocket4:[0m  → helsinki
+  [34m    winmini:[0m  → helsinki
+
+[34mservices:[0m
+  [32m✓[0m caco-daemon          actual=running    sidecar: running
+  [32m✓[0m caco-tts-daemon      actual=running    pid-only
+  [32m✓[0m caco-web             actual=running    pid-only
+
+[34mpeers:[0m
+  [32m✓[0m [32mself[0m  ms-mac  local node  last_seen=2026-04-28T01:00:16
+  [33m![0m [33mmismatch[0m  ms-dev  reachable, config mismatch — peer reports restart pending; running hash may be stale (hash-only advisory, not replication divergence evidence); stuck restart-pending for 2201s (>= 600s); verify bead counts across nodes before remediation; do not force-restart based on stale hash alone (bd-aedb1e/bd-67876b)  hash=2d1e6eed8587  last_seen=2026-04-28T01:48:34
+  [33m![0m [33mmismatch[0m  helsinki  reachable, config mismatch  hash=0c6ac1d0187f  last_seen=2026-04-28T01:46:54  maintenance=planned restart window; reason=caco restart in progress; expected_back=2026-04-28T01:22:47.017782397+00:00
+  [33m![0m [33mmismatch[0m  pocket4  reachable, config mismatch — peer reports restart pending; running hash may be stale (hash-only advisory, not replication divergence evidence); stuck restart-pending for 2317s (>= 600s); verify bead counts across nodes before remediation; do not force-restart based on stale hash alone (bd-aedb1e/bd-67876b)  hash=d1dc4330dde5  last_seen=2026-04-28T01:46:57
+  [31m✗[0m [31munreachable[0m  winmini  unreachable — Sleeping machine; operator wakes it manually when needed.  phase=dial  err=dial error probing peer winmini(100.124.46.12:12100): error sending request for url (https://100.124.46.12:12100/api/v1/…
+  [33m![0m [33mmismatch[0m  beelink  reachable, config mismatch  hash=419d43b1754b  last_seen=2026-04-28T01:46:53
+  [31m✗[0m [31munreachable[0m  sgu24  unreachable  phase=dial  err=dial error probing peer sgu24(100.67.137.9:12100): error sending request for url (https://100.67.137.9:12100/api/v1/conf…
+  [31m✗[0m [31munreachable[0m  astra  unreachable — Persistent advisory peer until the astra cluster listener is restored.  phase=dial  err=dial error probing peer astra(100.86.212.43:12100): error sending request for url (https://100.86.212.43:12100/api/v1/co…
+
+[34mstate sync freshness:[0m
+  [2m?[0m [2mfailing[0m  ms-dev  last_pull=2026-04-28T01:45:03  err=pull request to ms-dev(100.66.53.117:12100) failed: error sending request for url (https://100.66.53.117:12100/api/v1/st…
+  [2m?[0m [2mcurrent[0m  helsinki  last_pull=2026-04-28T01:48:19
+  [2m?[0m [2mfailing[0m  pocket4  last_pull=2026-04-28T01:45:09  err=pull request to pocket4(100.104.0.14:12100) failed: error sending request for url (https://100.104.0.14:12100/api/v1/sta…
+  [2m?[0m [2mfailing[0m  winmini  err=pull request to winmini(100.124.46.12:12100) failed: error sending request for url (https://100.124.46.12:12100/api/v1/s…
+  [2m?[0m [2mcurrent[0m  beelink  last_pull=2026-04-28T01:45:10
+  [2m?[0m [2mfailing[0m  sgu24  err=pull request to sgu24(100.67.137.9:12100) failed: error sending request for url (https://100.67.137.9:12100/api/v1/state…
+  [2m?[0m [2mfailing[0m  astra  err=pull request to astra(100.86.212.43:12100) failed: error sending request for url (https://100.86.212.43:12100/api/v1/sta…
+
+[1magents: 29 running, 52 desired
+[0m  [35mms-mac-cacophony-router[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-router
+  [35mms-mac-cacophony-caco-aks[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-aks
+  [35mms-mac-cacophony-caco-log-monitor-msm[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-log-monitor-msm
+  [35mms-mac-cacophony-config-helper[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-config-helper
+  [35mms-mac-picasso-picasso-dev[0m node=ms-mac project=picasso [32m✓[0m [32mrunning[0m branch=harryaskham/health/agent/ms-mac/picasso/ms-mac-picasso-picasso-dev
+  [35mms-mac-picasso-picasso-ctrl[0m node=ms-mac project=picasso [32m✓[0m [32mrunning[0m branch=harryaskham/health/agent/ms-mac/picasso/ms-mac-picasso-picasso-ctrl
+  [35mms-mac-cacophony-caco-tui[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+  [35mms-mac-cacophony-caco-doctor-msm[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-doctor-msm
+  [35mms-mac-cacophony-caco-android[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-android
+  [35mms-mac-cacophony-caco-web[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-web
+  [35mms-mac-cacophony-cluster-debugger[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-cluster-debugger
+  [35mms-mac-cacophony-caco-macos[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-macos
+  [35mms-dev-cacophony-caco-dev-msd-3[0m node=ms-dev project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-3
+  [35mms-dev-cacophony-companion[0m node=ms-dev project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-dev/cacophony/ms-dev-cacophony-companion
+  [35mms-dev-cacophony-caco-dev-msd-2[0m node=ms-dev project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-2
+  [35mms-dev-cacophony-caco-dev-msd-1[0m node=ms-dev project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-1
+  [35mms-dev-cacophony-caco-dev-msd-4[0m node=ms-dev project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-dev/cacophony/ms-dev-cacophony-caco-dev-msd-4
+  [35mhelsinki-cacophony-caco-log-monitor-hel[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-caco-log-monitor-hel
+  [35mhelsinki-cacophony-changelog-manager[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-changelog-manager
+  [35mhelsinki-tendril-tndl-ctrl[0m node=helsinki project=tendril [32m✓[0m [32mrunning[0m branch=agent/helsinki/tendril/helsinki-tendril-tndl-ctrl
+  [35mhelsinki-cacophony-update-helper[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-update-helper
+  [35mhelsinki-cacophony-caco-doctor-hel[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-caco-doctor-hel
+  [35mhelsinki-cacophony-cluster-ctrl[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-cluster-ctrl
+  [35mhelsinki-cacophony-caco-ctrl[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-caco-ctrl
+  [35mhelsinki-cacophony-project-health[0m node=helsinki project=cacophony [2m?[0m [2mstarting[0m branch=agent/helsinki/cacophony/helsinki-cacophony-project-health
+  [35mhelsinki-cacophony-test-user-hel[0m node=helsinki project=cacophony [32m✓[0m [32mrunning[0m branch=agent/helsinki/cacophony/helsinki-cacophony-test-user-hel
+  [35mhelsinki-collective-cltv-ctrl[0m node=helsinki project=collective [32m✓[0m [32mrunning[0m branch=agent/helsinki/collective/helsinki-collective-cltv-ctrl
+  [35mpocket4-android-utils-andr-ctrl[0m node=pocket4 project=android-utils [32m✓[0m [32mrunning[0m branch=agent/pocket4/android-utils/pocket4-android-utils-andr-ctrl
+  [35mbeelink-cacophony-technical-writer[0m node=beelink project=cacophony [32m✓[0m [32mrunning[0m branch=agent/beelink/cacophony/beelink-cacophony-technical-writer
+
+[34mpersistent agents (52):[0m
+  [31m✗[0m [31mstopped[0m  a.skh.am-dev  scope=project node=ms-mac project=a.skh.am id=persistent-0e1bf03d err=stopped by caco down
+  [31m✗[0m [31mstopped[0m  agnt-ctrl  scope=project node=pocket4 project=agent-utils id=persistent-8cfb9ea8 [operator-stopped]
+  [32m✓[0m [32mrunning[0m  andr-ctrl  scope=project node=pocket4 project=android-utils id=persistent-c3308046
+  [31m✗[0m [31mstopped[0m  askham-ctrl  scope=project node=helsinki project=a.skh.am id=persistent-2fd1a33d [operator-stopped]
+  [2m?[0m [2mstarting[0m  caco-aks  scope=project node=ms-mac project=cacophony id=persistent-f497ec62
+  [32m✓[0m [32mrunning[0m  caco-android  scope=project node=ms-mac project=cacophony id=persistent-115b5b4f
+  [32m✓[0m [32mrunning[0m  caco-ctrl  scope=project node=helsinki project=cacophony id=persistent-4e5f4d43
+  [32m✓[0m [32mrunning[0m  caco-dev-msd-1  scope=project node=ms-dev project=cacophony id=persistent-e744c97d
+  [32m✓[0m [32mrunning[0m  caco-dev-msd-2  scope=project node=ms-dev project=cacophony id=persistent-431f063e
+  [32m✓[0m [32mrunning[0m  caco-dev-msd-3  scope=project node=ms-dev project=cacophony id=persistent-f6cd2fbf
+  [2m?[0m [2mstarting[0m  caco-dev-msd-4  scope=project node=ms-dev project=cacophony id=persistent-634bc01e
+  [31m✗[0m [31mstopped[0m  caco-dev-msd-5  scope=project node=ms-dev project=cacophony id=persistent-85e935bb [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-1  scope=project node=ms-mac project=cacophony id=persistent-ce760099 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-2  scope=project node=ms-mac project=cacophony id=persistent-f1b796c9 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-3  scope=project node=ms-mac project=cacophony id=persistent-00a4fc61 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-4  scope=project node=ms-mac project=cacophony id=persistent-63aaed40 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-5  scope=project node=ms-mac project=cacophony id=persistent-332afdec [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-po4-1  scope=project node=pocket4 project=cacophony id=persistent-18d00073 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-po4-2  scope=project node=pocket4 project=cacophony id=persistent-9dfdfd0e [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-po4-3  scope=project node=pocket4 project=cacophony id=persistent-e0ca4cc6 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-po4-4  scope=project node=pocket4 project=cacophony id=persistent-e8260bcd [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-po4-5  scope=project node=pocket4 project=cacophony id=persistent-74e448d3 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-wmi-1  scope=project node=winmini project=cacophony id=persistent-8ecebef0 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-wmi-2  scope=project node=winmini project=cacophony id=persistent-836b0f2e [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-wmi-3  scope=project node=winmini project=cacophony id=persistent-99c470ff [operator-stopped]
+  [32m✓[0m [32mrunning[0m  caco-doctor-hel  scope=project node=helsinki project=cacophony id=persistent-68ac50e3
+  [32m✓[0m [32mrunning[0m  caco-doctor-msm  scope=project node=ms-mac project=cacophony id=persistent-c0165a67
+  [2m?[0m [2mstarting[0m  caco-log-monitor-hel  scope=project node=helsinki project=cacophony id=persistent-08464aed
+  [32m✓[0m [32mrunning[0m  caco-log-monitor-msm  scope=project node=ms-mac project=cacophony id=persistent-3309cadc
+  [32m✓[0m [32mrunning[0m  caco-macos  scope=project node=ms-mac project=cacophony id=persistent-538a1b37
+  [31m✗[0m [31mstopped[0m  caco-transcription  scope=project node=ms-mac project=cacophony id=persistent-bbfcebeb [operator-stopped]
+  [32m✓[0m [32mrunning[0m  caco-tui  scope=project node=ms-mac project=cacophony id=persistent-aec2cc8c
+  [32m✓[0m [32mrunning[0m  caco-web  scope=project node=ms-mac project=cacophony id=persistent-149cc13b
+  [32m✓[0m [32mrunning[0m  changelog-manager  scope=project node=helsinki project=cacophony id=persistent-60fe00be
+  [32m✓[0m [32mrunning[0m  cltv-ctrl  scope=project node=helsinki project=collective id=persistent-3a73c85a
+  [2m?[0m [2mstarting[0m  cluster-ctrl  scope=project node=helsinki project=cacophony id=persistent-69cd15d1
+  [32m✓[0m [32mrunning[0m  cluster-debugger  scope=project node=ms-mac project=cacophony id=persistent-ae4cd42b
+  [32m✓[0m [32mrunning[0m  companion  scope=project node=ms-dev project=cacophony id=persistent-56392705
+  [32m✓[0m [32mrunning[0m  config-helper  scope=project node=ms-mac project=cacophony id=persistent-d8be40ee
+  [31m✗[0m [31mstopped[0m  gfxr-ctrl  scope=project node=helsinki project=gfx-replacer id=persistent-c3bde81b [operator-stopped]
+  [31m✗[0m [31mstopped[0m  life-ctrl  scope=project node=ms-mac project=life id=persistent-41b719d6 err=stopped by caco down
+  [31m✗[0m [31mstopped[0m  midi-ctrl  scope=project node=helsinki project=midi2hid id=persistent-6a73ae56 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  mono-ctrl  scope=project node=helsinki project=mono id=persistent-63fdd9b2 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  narrator  scope=project node=helsinki project=cacophony id=persistent-58737825 [operator-stopped]
+  [32m✓[0m [32mrunning[0m  picasso-ctrl  scope=project node=ms-mac project=picasso id=persistent-fdd4047e
+  [32m✓[0m [32mrunning[0m  picasso-dev  scope=project node=ms-mac project=picasso id=persistent-c74bbb1a
+  [2m?[0m [2mstarting[0m  project-health  scope=project node=helsinki project=cacophony id=persistent-7ea67de2
+  [32m✓[0m [32mrunning[0m  router  scope=node node=ms-mac id=persistent-5dab62d1
+  [32m✓[0m [32mrunning[0m  technical-writer  scope=project node=beelink project=cacophony id=persistent-3f046110
+  [2m?[0m [2mstarting[0m  test-user-hel  scope=project node=helsinki project=cacophony id=persistent-4a8c99cf
+  [32m✓[0m [32mrunning[0m  tndl-ctrl  scope=project node=helsinki project=tendril id=persistent-4feace55
+  [32m✓[0m [32mrunning[0m  update-helper  scope=project node=helsinki project=cacophony id=persistent-dbb7e490
+
+[34mruntime repair (degraded):[0m
+  stale sessions reaped: 1
+[33m  socket collapses: 2
+[0m  [2m?[0m [2mstale_session_reaped[0m  2026-04-28T01:15:45  reaped stale tmux session for terminal agent ms-mac-picasso-picasso-ctrl
+  [2m?[0m [2msocket_collapse[0m  2026-04-28T01:11:01  tmux socket 'per-agent-sockets' died, 1 agents affected — forced retry with bead…
+  [2m?[0m [2msocket_collapse[0m  2026-04-28T01:10:49  tmux socket 'per-agent-sockets' died, 1 agents affected — forced retry with bead…
+
+## inbox
+6 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: no macOS health change and no action needed. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, services are running, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-fdc050 is recovered cleanly and background renderer tests pass. Submitting plain direct now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-fdc050 landed and closed. No ready TUI beads are listed, so I’m continuing with another narrow hardcoded-theme cleanup slice.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-72c7e5 is committed and actions tests pass. I’m recovering through the remote branch before direct submission.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-72c7e5 is recovered cleanly and actions tests pass. I’m submitting plain direct now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Continuing the TUI improvement loop. I’ll check for ready TUI beads first, then file and fix a narrow source-backed slice if the board is empty.
+
+## assigned in-progress
+no beads found
+
+## ready open label=caco-web
+no beads found
+## ready open label=browser
+no beads found
+## ready open label=dashboard
+no beads found
+## ready open label=workspace
+no beads found
+## ready open label=terminal
+no beads found
+## ready open label=summaries
+no beads found
+## ready open label=notifications
+no beads found
+## ready open label=ui
+no beads found
+## ready open label=feed
+no beads found
+## ready open label=logs
+no beads found
+## ready open label=console
+no beads found
+
+## open caco-web label (not just ready)
+no beads found
