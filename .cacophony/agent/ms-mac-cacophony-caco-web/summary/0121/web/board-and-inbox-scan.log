@@ -1,0 +1,147 @@
+# caco-web duty cycle board and inbox scan
+2026-04-28T02:28:56+01:00
+summary=.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121
+agent=ms-mac-cacophony-caco-web
+
+## git status
+## agent/ms-mac/cacophony/ms-mac-cacophony-caco-web...origin/main [behind 2]
+?? .cacophony/agent/
+
+## caco status
+[1;36mcaco status — node: ms-mac[0m
+  [34mversion:[0m      1.2.576
+  [34mcommit:[0m       [2m701742351[0m
+  [34mupdate channel:[0m stable
+  [34mupdate status:[0m [33mno releases for channel[0m
+
+  [34mconfig hash:[0m  29caae065e94
+  [34mlauncher:[0m     [4m/Users/harryaskham/.cargo/bin/caco[0m
+  [34m  local fingerprint:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34m  canonical fingerprint:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34m  launcher drift:[0m none
+  [34mlauncher active:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+  [34mlauncher previous:[0m c0be48562014c4aff41fd6cf3e32a05d76f51e40fcf70493199d2145c830f814
+
+  [34mdaemon:[0m       [32m✓[0m [32mrunning[0m
+  [34mlifecycle decisions:[0m last 12 recorded
+  [34m  decision:[0m   2026-04-27T17:54:40.418451+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-27T19:41:08.949756+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-27T22:11:37.456732+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-27T22:11:49.545917+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=user:harryaskham
+  [34m  decision:[0m   2026-04-28T01:00:09.480215+00:00 restart_requested: caco restart (all services) provenance=unknown-provenance actor=agent:ms-mac-cacophony-config-helper
+  [34mbeads primary:[0m active on node 'helsinki'
+  [34msupervisor:[0m   [2m?[0m [2mnot loaded[0m  launchd (com.cacophony.lifecycle)
+
+[34mservices:[0m
+  [32m✓[0m caco-daemon          actual=running    sidecar: running
+  [32m✓[0m caco-tts-daemon      actual=running    pid-only
+  [32m✓[0m caco-web             actual=running    pid-only
+
+[34mpeers:[0m
+  [32m✓[0m [32mself[0m  ms-mac  local node
+  [2m?[0m [2munknown[0m  ms-dev  unknown (local daemon down; peer not probed)
+  [2m?[0m [2munknown[0m  helsinki  unknown (local daemon down; peer not probed)
+  [2m?[0m [2munknown[0m  pocket4  unknown (local daemon down; peer not probed)
+  [2m?[0m [2munknown[0m  winmini  unknown (local daemon down; peer not probed)
+  [2m?[0m [2munknown[0m  beelink  unknown (local daemon down; peer not probed)
+  [2m?[0m [2munknown[0m  sgu24  unknown (local daemon down; peer not probed)
+  [2m?[0m [2munknown[0m  astra  unknown (local daemon down; peer not probed)
+
+[34mstate sync freshness:[0m
+  ?  ms-dev  no freshness data
+  ?  helsinki  no freshness data
+  ?  pocket4  no freshness data
+  ?  winmini  no freshness data
+  ?  beelink  no freshness data
+  ?  sgu24  no freshness data
+  ?  astra  no freshness data
+
+[1magents: 12 running, 20 desired
+[0m  [35mms-mac-picasso-picasso-dev[0m node=ms-mac project=picasso [32m✓[0m [32mrunning[0m branch=harryaskham/health/agent/ms-mac/picasso/ms-mac-picasso-picasso-dev
+  [35mms-mac-picasso-picasso-ctrl[0m node=ms-mac project=picasso [32m✓[0m [32mrunning[0m branch=harryaskham/health/agent/ms-mac/picasso/ms-mac-picasso-picasso-ctrl
+  [35mms-mac-cacophony-caco-android[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-android
+  [35mms-mac-cacophony-router[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-router
+  [35mms-mac-cacophony-caco-log-monitor-msm[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-log-monitor-msm
+  [35mms-mac-cacophony-cluster-debugger[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-cluster-debugger
+  [35mms-mac-cacophony-caco-tui[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-tui
+  [35mms-mac-cacophony-caco-web[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-web
+  [35mms-mac-cacophony-caco-aks[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-aks
+  [35mms-mac-cacophony-caco-doctor-msm[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-doctor-msm
+  [35mms-mac-cacophony-config-helper[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-config-helper
+  [35mms-mac-cacophony-caco-macos[0m node=ms-mac project=cacophony [32m✓[0m [32mrunning[0m branch=agent/ms-mac/cacophony/ms-mac-cacophony-caco-macos
+
+[34mpersistent agents (20):[0m
+  [32m✓[0m [32mrunning[0m  cluster-debugger  scope=project node=ms-mac project=cacophony id=persistent-ae4cd42b
+  [32m✓[0m [32mrunning[0m  caco-web  scope=project node=ms-mac project=cacophony id=persistent-149cc13b
+  [31m✗[0m [31mstopped[0m  a.skh.am-dev  scope=project node=ms-mac project=a.skh.am id=persistent-0e1bf03d err=stopped by caco down
+  [32m✓[0m [32mrunning[0m  config-helper  scope=project node=ms-mac project=cacophony id=persistent-d8be40ee
+  [32m✓[0m [32mrunning[0m  router  scope=node node=ms-mac id=persistent-5dab62d1
+  [32m✓[0m [32mrunning[0m  caco-android  scope=project node=ms-mac project=cacophony id=persistent-115b5b4f
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-4  scope=project node=ms-mac project=cacophony id=persistent-63aaed40 [operator-stopped]
+  [32m✓[0m [32mrunning[0m  caco-log-monitor-msm  scope=project node=ms-mac project=cacophony id=persistent-3309cadc
+  [32m✓[0m [32mrunning[0m  caco-doctor-msm  scope=project node=ms-mac project=cacophony id=persistent-c0165a67
+  [32m✓[0m [32mrunning[0m  picasso-ctrl  scope=project node=ms-mac project=picasso id=persistent-fdd4047e
+  [31m✗[0m [31mstopped[0m  life-ctrl  scope=project node=ms-mac project=life id=persistent-41b719d6 err=stopped by caco down
+  [2m?[0m [2mstarting[0m  caco-aks  scope=project node=ms-mac project=cacophony id=persistent-f497ec62
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-5  scope=project node=ms-mac project=cacophony id=persistent-332afdec [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-transcription  scope=project node=ms-mac project=cacophony id=persistent-bbfcebeb [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-2  scope=project node=ms-mac project=cacophony id=persistent-f1b796c9 [operator-stopped]
+  [32m✓[0m [32mrunning[0m  picasso-dev  scope=project node=ms-mac project=picasso id=persistent-c74bbb1a
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-1  scope=project node=ms-mac project=cacophony id=persistent-ce760099 [operator-stopped]
+  [31m✗[0m [31mstopped[0m  caco-dev-msm-3  scope=project node=ms-mac project=cacophony id=persistent-00a4fc61 [operator-stopped]
+  [32m✓[0m [32mrunning[0m  caco-macos  scope=project node=ms-mac project=cacophony id=persistent-538a1b37
+  [32m✓[0m [32mrunning[0m  caco-tui  scope=project node=ms-mac project=cacophony id=persistent-aec2cc8c
+
+[33mwarning: status degraded — timed-out sections: peers, agents, load_summary, scheduling
+[0m
+
+## inbox
+19 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Android check complete. I checked inbox and assignments, then ran the bounded ms-dev emulator heartbeat without claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-d40646 is committed and events tests pass. I’m recovering through the remote branch before direct submission.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-d40646 is recovered cleanly and events tests pass. I’m submitting plain direct now.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: I will check the resolved Picasso config and the project checkout state to find why it used harryaskham main instead of harryaskham health main.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Checking Android inbox and assigned beads. If no explicit Android work is waiting, I’ll run the bounded ms-dev emulator heartbeat and avoid unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor noting daemon recovered from hang event. Same PID one five one five eight now listening and accepting connections. Operator action not needed, daemon self recovered. Tenth daemon event of session, this one was a hang lasting roughly twenty minutes, fleet activity resuming. Caco web bd nine one two d eight d snapshot upstream five xx to JSON sentinel fix in pipeline. Disk still nine percent.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Android check complete. I checked inbox and assignments, then ran the bounded ms-dev emulator heartbeat without claiming unrelated work.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I’ll turn the scaled graphics cache idea into a focused TUI performance bead and inspect the graphics background cache path before implementing.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: services are reachable again after the earlier stall noted by log monitor, and no macOS action is needed. Test and Canary remain current at one point two point five seventy seven with sockets present, Stable production remains intentionally stale and untouched, and no assigned or ready macOS or Tendril bead is available.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I have a small validated notifications theme slice already in the worktree, so I’m landing that first to keep the checkout clean before implementing the scaled graphics cache request.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: bd-b0f1e7 is committed. I’m recovering through the remote branch and submitting it before starting the scaled graphics cache implementation.
+[speak] ms-mac:cacophony:ms-mac-cacophony-config-helper: Retargeting the existing Picasso daemon checkout in place to the health main branch. I will preserve a backup branch first and stop if git refuses.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: I’ll queue and take the scaled graphics cache bead now. First I’m closing the notifications slice and syncing to main, then I’ll inspect the graphics cache path.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Starting a deeper Android companion QA pass on ms-dev. I’ll check inbox and assignments first, then drive the app screen by screen, capture issues, and turn the best findings into focused Android beads or fixes.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: First I’m reseeding the ms-dev emulator connection config and capturing the starting Android companion state so the deep pass tests connected screens, not an unconfigured shell.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-log-monitor-msm: log-monitor ms-mac 1:22 a m: clean one 502, v-five-seventy-six stable twenty-one minutes, 🎯 plus five closed two-thousand-four-hundred-fifteen. Hundred-thirty-nine hours.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: I’m driving the Android bottom navigation now: Overview, Chat, Beads, Agents, Feed, and More, saving screenshots and UI dumps for issue triage.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-doctor-msm: Doctor confirming post hang recovery clean. Local daemon listener cluster sidecar beads primary all green. Stuck agents fully cleared. Daemon db actually shrank one point seven megs from four thirty four eight to four thirty three one, suggesting restart triggered vacuum or compaction. Helsinki config hash rotated to zero c six a. Sustained holdouts unchanged. Disk holding nine percent, watch for slip. Tenth daemon event resolved.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-android: Continuing the explicit deep Android companion QA pass. I’m checking inbox and assignment first, then I’ll resume screen capture with tighter timeouts after the prior capture stalled.
+
+## assigned in-progress
+no beads found
+
+## ready open label=caco-web
+no beads found
+## ready open label=browser
+no beads found
+## ready open label=dashboard
+no beads found
+## ready open label=workspace
+no beads found
+## ready open label=terminal
+no beads found
+## ready open label=summaries
+no beads found
+## ready open label=notifications
+no beads found
+## ready open label=ui
+no beads found
+## ready open label=feed
+no beads found
+## ready open label=logs
+no beads found
+## ready open label=console
+no beads found
+
+## open caco-web label (not just ready)
+no beads found

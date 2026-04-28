@@ -1,0 +1,118 @@
+# observation triage
+2026-04-28T02:31:11+01:00
+## console/network highlights
+881:  "text": "Session Summaries Refresh 10 of 1150 ↑/↓ select Enter open row / filter r refresh l load more ms-dev/caco-dev-msd-3 1 #0050 4m ago Session summary — recorded artefacts split from HEAD bd-95cda5 bd-b8470c bd-e73f7a ms-mac/caco-web 4 #0120 9m ago Session summary — fix snapshot 502 console noise bd-912d8d #0119 15m ago Session summary — caco-web blocked duty check 0119 #0118 15m ago Session summary — caco-web duty cycle 0118 #0117 38m ago Session summary — caco-web duty cycle 0117 ms-mac/caco-tui 5 #0076 10m ago Session summary — Notifications view uses active theme colors bd-b0f1e7 #0075 14m ago Session summary — Events view uses active theme colors bd-d40646 #0074 25m ago Session summary — Pr"
+882-}
+883-### Ran Playwright code
+884-```js
+885-await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const hero = active?.querySelector(\'.status-hero\');\n  const hr = hero?.getBoundingClientRect();\n  return {\n    url: location.href,\n    activeView: active?.id,\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    hero: hero ? { h: Math.round(hr.height), sh: hero.scrollHeight, clipped: hero.scrollHeight > Math.round(hr.height) + 4 } : null,\n    visibleViews: Array.from(document.querySelectorAll(\'.view\'))\n      .filter(v => getComputedStyle(v).display !== \'none\' && v.getBoundingClientRect().width && v.getBoundingClientRect().height)\n      .map(v => v.id),\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 700)\n  };\n}');
+886-```
+887-### Page
+888-- Page URL: http://127.0.0.1:62841/#summaries
+889-- Page Title: Cacophony Dashboard
+890-
+891---- help overlay
+892-
+893---- playwright press ?
+894-chromium: using system binary at /run/current-system/sw/bin/google-chrome-stable
+895-### Ran Playwright code
+896-```js
+897-// Press ?
+898-await page.keyboard.press('?');
+899-```
+900-
+901---- help overlay
+902-
+903---- playwright eval () => ({
+904-  dialogOpen: !!document.querySelector('[role=dialog], .modal-overlay, .keyboard-help'),
+905-  helpTextPresent: /Keyboard|Shortcuts|Workspace|Agents|Beads/.test(document.body.innerText)
+906-})
+907-chromium: using system binary at /run/current-system/sw/bin/google-chrome-stable
+908-### Result
+909-{
+910-  "dialogOpen": true,
+911-  "helpTextPresent": true
+912-}
+913-### Ran Playwright code
+914-```js
+915-await page.evaluate('() => ({\n  dialogOpen: !!document.querySelector(\'[role=dialog], .modal-overlay, .keyboard-help\'),\n  helpTextPresent: /Keyboard|Shortcuts|Workspace|Agents|Beads/.test(document.body.innerText)\n})');
+916-```
+917-
+918:--- console
+919-
+920---- playwright console
+921-chromium: using system binary at /run/current-system/sw/bin/google-chrome-stable
+922-### Result
+923:Total messages: 0 (Errors: 0, Warnings: 0)
+924-
+925-
+926:--- network
+927-
+928---- playwright network
+929-chromium: using system binary at /run/current-system/sw/bin/google-chrome-stable
+930-### Result
+931-[GET] http://127.0.0.1:62841/health => [200] OK
+932-[GET] http://127.0.0.1:62841/api/v1/ui/snapshot => [200] OK
+933-[GET] http://127.0.0.1:62841/api/v1/merge-queue?since=24h => [200] OK
+934-[GET] http://127.0.0.1:62841/api/v1/ui/stream => [200] OK
+935-[GET] http://127.0.0.1:62841/api/v1/ui/snapshot => [200] OK
+936-[GET] http://127.0.0.1:62841/api/v1/ui/snapshot => [200] OK
+937:[GET] http://127.0.0.1:62841/api/v1/node => [FAILED] net::ERR_ABORTED
+938:[GET] http://127.0.0.1:62841/api/v1/node => [FAILED] net::ERR_ABORTED
+939-[GET] http://127.0.0.1:62841/api/v1/ui/snapshot => [200] OK
+940-[GET] http://127.0.0.1:62841/api/v1/summaries?limit=10&offset=0&project=cacophony => [200] OK
+941-[GET] http://127.0.0.1:62841/api/v1/summaries/ms-dev-cacophony-caco-dev-msd-3/50?project=cacophony => [200] OK
+942-[GET] http://127.0.0.1:62841/api/v1/node => [200] OK
+943-[GET] http://127.0.0.1:62841/api/v1/ui/stream => [200] OK
+944-[GET] http://127.0.0.1:62841/api/v1/speech/agent-audio => [200] OK
+945-[GET] http://127.0.0.1:62841/api/v1/tts/status => [200] OK
+946-[GET] http://127.0.0.1:62841/api/v1/tts/voices => [200] OK
+947-[GET] http://127.0.0.1:62841/api/v1/nodes/ms-dev => [200] OK
+948-[GET] http://127.0.0.1:62841/api/v1/nodes/helsinki => [200] OK
+949-[GET] http://127.0.0.1:62841/api/v1/nodes/pocket4 => [200] OK
+950-[GET] http://127.0.0.1:62841/api/v1/nodes/winmini => [200] OK
+951-[GET] http://127.0.0.1:62841/api/v1/nodes/beelink => [200] OK
+952-[GET] http://127.0.0.1:62841/api/v1/nodes/sgu24 => [200] OK
+953-[GET] http://127.0.0.1:62841/api/v1/nodes/astra => [200] OK
+954-[GET] http://127.0.0.1:62841/api/v1/speech/agent-audio => [200] OK
+955-[GET] http://127.0.0.1:62841/api/v1/ui/snapshot => [200] OK
+956-[GET] http://127.0.0.1:62841/api/v1/speech/agent-audio => [200] OK
+957-
+958---- final screenshot
+959-
+960---- playwright screenshot
+961-chromium: using system binary at /run/current-system/sw/bin/google-chrome-stable
+962-### Result
+963-- [Screenshot of viewport](.playwright-cli/page-2026-04-28T01-31-08-182Z.png)
+964-### Ran Playwright code
+965-```js
+966-// Screenshot viewport and save it as .playwright-cli/page-2026-04-28T01-31-08-182Z.png
+967-await page.screenshot({
+968-  path: '.playwright-cli/page-2026-04-28T01-31-08-182Z.png',
+969-  scale: 'css',
+970-  type: 'png'
+971-});
+972-```
+973-
+974:--- copied playwright artifacts
+975-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/page-snapshots/page-2026-04-28T01-29-54-704Z.yml
+976-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-06-098Z.png
+977-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-10-830Z.png
+978-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-15-962Z.png
+979-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-20-438Z.png
+980-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-24-871Z.png
+981-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-29-187Z.png
+982-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-33-645Z.png
+983-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-30-39-263Z.png
+984-.cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/screenshots/page-2026-04-28T01-31-08-182Z.png
+985-
+986---- playwright close
+987-chromium: using system binary at /run/current-system/sw/bin/google-chrome-stable
+988-Browser 'caco-web-observe-1777339788' closed
+989-
+990-
+991-Observation log: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0121/web/observation.log
+## artifact counts
+screenshots=9
+page_snapshots=1
+console_logs=0
