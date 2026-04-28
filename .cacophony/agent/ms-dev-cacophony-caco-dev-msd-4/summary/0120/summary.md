@@ -1,33 +1,32 @@
-# Session summary — summaries-list JSON validator envelopes
+# Session summary — guard config import wrappers
 
 ## Goal
 
-Fix the follow-up JSON-mode validation gap reported after bd-f31814: `caco summaries list --json` should return the same canonical error envelope for local argument validation failures that `caco summaries show --json` now returns.
+Prevent the ms-mac stale-config incident from recurring through `caco config distribute`: a node whose top-level config is an import wrapper into the daemon checkout should not be overwritten by a fully materialized generated config that severs it from the checkout-owned cluster topology.
 
 ## Bead(s)
 
-- `bd-bc1792` — [cli] summaries list --json validators should return JSON envelopes
+- `bd-2dfe67` — `[node-config] ms-mac received stale ~/.cacophony/config.yaml that bypasses daemon checkout`
 
 ## Before state
 
-- Failing tests: no existing regression for the summaries-list validator path.
-- Relevant metrics: reporter observed v1.2.582 returning human stderr and rc=2 for `caco summaries list --limit -1 --json`, `--limit abc --json`, and `--bead-id "" --json`.
-- Context: bd-f31814 fixed the sibling `summaries show` validator envelope path, but `summaries list` still returned `CliError` before producing JSON.
+- Failing tests: targeted bd-2dfe67 regression coverage did not exist.
+- Relevant metrics: ms-mac provenance showed a 75-byte import wrapper had been replaced by an 864-line materialized config snapshot, omitting `winmini` and `beelink`.
+- Context: operator/read-only diagnosis indicated `caco config distribute` or adjacent config mutation paths were the likely class of writer that needed an invariant, even though exact writer identity could not be proven from shell history.
 
 ## After state
 
 - Failing tests: none in targeted validation.
-- Relevant metrics: new regression covers invalid `--limit`, invalid `--offset`, empty `--bead-id`, and empty `--agent` under `caco summaries list --json`.
-- Context: summaries-list local validators now call the shared `summary_cli_error(...)` helper, returning `{ok:false,error:{code:"invalid_argument",...}}` with exit code 1 in JSON mode while preserving human `CliError` behavior in text mode.
+- Relevant metrics: `cargo test -p caco-cli bd_2dfe67 -- --nocapture` passed in queued job `tj-93c1aec1`; `cargo clippy -p caco-cli -p caco-daemon -- -D warnings` passed in queued job `tj-04e0494a`.
+- Context: `caco config distribute` now rejects attempts to overwrite a daemon-checkout import wrapper with a materialized full cluster config before writing either local or remote targets.
 
 ## Diff summary
 
-- Commits: `331ea2701`.
-- Files touched: `crates/caco-cli/src/summary_cmd.rs`, `crates/caco-cli/src/lib.rs`.
-- Tests: +1 table-driven regression test covering five summaries-list JSON validator failures.
-- Behavioural delta: JSON callers now receive a machine-readable envelope instead of human stderr for summaries-list validator failures.
-- Validation: `cargo fmt --all -- --check`; queued `cargo test -p caco-cli bd_bc1792 -- --nocapture`; queued `cargo test -p caco-cli bd_f31814 -- --nocapture`.
+- Commits: `ea10c4e33`
+- Files touched: `crates/caco-cli/src/lib.rs`, `crates/caco-daemon/src/checkout.rs`, `SPEC.md`, `README.md`, `AGENTS.md`
+- Tests: +4 targeted CLI tests for the import-wrapper guard, including an end-to-end `config distribute` JSON/error path.
+- Behavioural delta: config distribution now reports a structured per-node error instead of writing a materialized config over a daemon-checkout import wrapper; the wrapper remains intact. A small broken-on-main clippy `question_mark` lint in `checkout.rs` was fixed while validating.
 
 ## Operator-takeaway
 
-The bd-f31814 envelope behavior is now consistent across both `caco summaries show --json` and `caco summaries list --json` for local validation failures.
+The concrete protection is now at the mutation boundary: even if a stale generated config is selected as the distribution source, Cacophony refuses to sever a repo-managed node from its daemon-checkout config import chain.
