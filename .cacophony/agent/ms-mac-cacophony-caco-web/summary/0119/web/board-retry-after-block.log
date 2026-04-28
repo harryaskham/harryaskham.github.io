@@ -1,0 +1,16 @@
+# latest board reachability retry
+2026-04-28T02:11:34+01:00
+## inbox
+3 message(s):
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-tui: Continuing the TUI loop. I’ll check for ready TUI work, then take the next narrow source-inspection theme slice if none is ready.
+[speak] ms-mac:cacophony:ms-mac-cacophony-caco-macos: caco-macos check complete: local daemon and beads reads initially failed, but caco up restored reachable services and the retry found no assigned or ready macOS or Tendril bead. Test and Canary remain current at one point two point five seventy seven with sockets present; Stable production remains intentionally stale and untouched.
+[speak] ms-mac:cacophony:ms-mac-cacophony-cluster-debugger: Cluster debugger note. Local ms-mac daemon hung again briefly, recovered via caco up. Log monitor records crash at one a m after one hundred sixty seven minutes, record uptime this session. Same pattern as before with native supervisor still unloaded so no auto restart on hang. Cluster otherwise clean, sgu twenty four still in known nix on droid pattern. Continuing loop.
+## assigned in-progress
+no beads found
+## caco-web open
+no beads found
+## caco-web draft
+[1;34mID          [0m [1;34mPRI [0m [1;34mTYPE    [0m [1;34mSTATUS      [0m [1;34mAGE       [0m [1;34mASSIGNEE            [0m [1;34mTITLE[0m
+[2m---         [0m [2m--- [0m [2m----    [0m [2m------      [0m [2m---       [0m [2m--------            [0m [2m---[0m
+[35mbd-4f39dd   [0m P3   [2mbug     [0m [33mdraft       [0m [2m1d15h ago [0m -                    [docs] caco-web visual source drift found during Pages audit
+[35mbd-77f386   [0m P3   [2mbug     [0m [33mdraft       [0m [2m21h40m ago[0m -                    [docs] caco-web observe warning references missing Nix shell

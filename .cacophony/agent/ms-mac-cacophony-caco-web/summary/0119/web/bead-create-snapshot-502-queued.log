@@ -1,0 +1,3 @@
+# bead create snapshot 502
+2026-04-28T02:12:10+01:00
+queued: beads primary unreachable — operation queued for retry (outbox entry outbox-019dd1a4-c881-7740-b806-195bddf4a7dd)

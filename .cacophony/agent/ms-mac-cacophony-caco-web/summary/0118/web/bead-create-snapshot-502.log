@@ -1,0 +1,9 @@
+# bead create attempt bd-0118 snapshot 502
+2026-04-28T02:04:40+01:00
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads)]
+## retry 1 2026-04-28T02:05:07+01:00
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=open&ready=true&label=caco-web&limit=10)]
+## retry 2 2026-04-28T02:05:26+01:00
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=open&ready=true&label=caco-web&limit=10)]
+## retry 3 2026-04-28T02:05:45+01:00
+error: failed to reach daemon — is it running? (try: caco up) [error sending request for url (http://127.0.0.1:11100/api/v1/projects/cacophony/beads?status=open&ready=true&label=caco-web&limit=10)]
