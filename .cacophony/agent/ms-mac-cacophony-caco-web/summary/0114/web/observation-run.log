@@ -1,0 +1,18 @@
+# lightweight caco-web observation
+2026-04-28T01:19:21+01:00
+git_head=dcf94c995fc7e557aba37a50a2dcccd6f8ad1d87
+caco_version=caco 1.2.576 (701742351)
+   Compiling ring v0.17.14
+   Compiling caco-config v1.2.578 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-config)
+   Compiling rustls v0.23.38
+   Compiling rustls-webpki v0.103.12
+   Compiling tokio-rustls v0.26.4
+   Compiling tungstenite v0.29.0
+   Compiling hyper-rustls v0.27.9
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.578 (/Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.68s
+     Running `target/debug/caco-web-observe --daemon-url 'http://127.0.0.1:11100' --out .cacophony/agent/ms-mac-cacophony-caco-web/summary/0114/web/observation.log --server-log .cacophony/agent/ms-mac-cacophony-caco-web/summary/0114/web/server.log`
+Observation log: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0114/web/observation.log
