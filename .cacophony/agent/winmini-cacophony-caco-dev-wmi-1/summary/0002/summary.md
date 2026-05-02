@@ -1,51 +1,32 @@
-# Session summary — bd-63203d: outbox list payload projection
+# Session summary — bd-8573ef status reachability under slow auth probe
 
 ## Goal
 
-Reduce `/api/v1/outbox` list response size by omitting heavy JSON payloads by
-default while preserving an explicit opt-in path for tooling that genuinely
-needs the full payload body.
+Fix the broken-on-main status reachability regression so `caco status --json` does not report `daemon.reachable=false` just because the authenticated `/api/v1/node` probe is slow, when the daemon is actually serving.
 
 ## Bead(s)
 
-- `bd-63203d` — Apply bd-eb1b56 projection pattern to `/api/v1/outbox`
+- `bd-8573ef` — [broken-on-main] integration_e2e status reachability false while authenticated /api/v1/node is slow
 
 ## Before state
 
-- `GET /api/v1/outbox` returned full `OutboxEntry` objects, including the full
-  JSON `payload` for every entry.
-- Outbox payloads can be multi-KB serialized mutation bodies, so list calls
-  were heavier than necessary.
-- `caco outbox list` had no CLI flag for opting back into payload-inclusive
-  JSON/API output.
+- Failing tests: `cargo test -p caco --test integration_e2e status_probe_uses_bearer_token_for_reachability -- --test-threads=1` was the authoritative broken-on-main lane for this regression.
+- Relevant metrics: `probe_daemon_api_port_serving(...)` in `crates/caco-cli/src/lib.rs` treated any authenticated probe transport failure as `daemon_reachable=false`. That meant a slow authenticated `/api/v1/node` could flip the entire status surface to "daemon down" even if the daemon was listening and an unauthenticated request would still get a quick 401.
+- Context: the smallest contained fix was in the CLI status probe itself, not in the daemon. Status needed a bounded fallback path that preserved the authenticated probe first but stopped conflating slowness with unreachability.
 
 ## After state
 
-- `/api/v1/outbox` now returns `OutboxListItem` projections instead of raw
-  `OutboxEntry` values.
-- Default list responses omit `payload` entirely and surface `payload_len`
-  instead.
-- `?include_payload=true` restores the full JSON payload for compatibility.
-- `caco outbox list` now accepts `--include-payload` to wire the opt-in through
-  the CLI surface.
-- Added daemon projection tests and a CLI command-spec test for the new flag.
+- Failing tests: none in the focused caco-cli / integration_e2e lane.
+- Relevant metrics: `probe_daemon_api_port_serving(...)` now treats success/401/403/503 as serving and, when an authenticated probe fails or times out, retries one fast unauthenticated `/api/v1/node` probe before declaring the daemon unreachable. A new caco-cli unit test pins that fallback behavior, and the exact integration_e2e regression test passes.
+- Context: the status surface still prefers bearer-token probing, but it no longer misreports a live daemon as down solely because the authenticated node endpoint is slow.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-daemon/src/lib.rs`
-  - `crates/caco-cli/src/lib.rs`
-- Tests:
-  - `cargo test -p caco-daemon outbox_list_item_ -- --nocapture`
-  - `cargo test -p caco-cli outbox_list_accepts_include_payload_flag_bd_63203d -- --nocapture`
-- Behavioural delta:
-  - Default outbox list JSON becomes cheaper and less noisy.
-  - Retry/replay tooling can still recover the full payload explicitly.
-  - Text-mode `caco outbox list` output stays unchanged.
+- Commits: `047450613`
+- Files touched: `crates/caco-cli/src/lib.rs`
+- Tests: `cargo test -p caco-cli status_reachability_falls_back_when_authenticated_node_probe_is_slow_bd_8573ef -- --nocapture`; `cargo test -p caco --test integration_e2e status_probe_uses_bearer_token_for_reachability -- --test-threads=1`; `cargo build -p caco`
+- Behavioural delta: `caco status --json` keeps `daemon.reachable=true` for a live daemon when the bearer-token probe is merely slow, using a bounded unauthenticated 401-capable fallback instead of immediately declaring the daemon down.
 
 ## Operator-takeaway
 
-This is the same projection pattern already used elsewhere in the repo, now
-applied to one of the highest-payload list endpoints. Operators still have an
-escape hatch for full payload inspection, but the default path is lighter and
-better suited to routine listing.
+This restores the important distinction between "authenticated node probe is slow" and "daemon is actually unreachable". The status surface now degrades more honestly under load instead of turning a slow authenticated check into a false outage.
