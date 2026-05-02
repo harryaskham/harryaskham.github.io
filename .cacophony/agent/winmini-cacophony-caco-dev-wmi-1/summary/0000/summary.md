@@ -1,57 +1,32 @@
-# Session summary — bd-01f27d: F-Droid private repo evaluation
+# Session summary — bd-bb7226 quiet controller health checks
 
 ## Goal
 
-Evaluate whether a private/self-hosted F-Droid repository is a good fit for
-private Android app distribution, specifically against the requirement that it
-be **easy to update** for end users.
+Land the smallest contained fix for the project-controller speech-policy bead by making the checked-in runtime wrapper match the already-updated project-controller profile, and by pinning the intended behavior in tests so healthy routine checks stay channel-local while audible speech is reserved for notable events.
 
 ## Bead(s)
 
-- `bd-01f27d` — Evaluate F-Droid private repository setup
+- `bd-bb7226` — Tune project-controller routine health speech policy
 
 ## Before state
 
-- No project-specific written evaluation existed in-tree for F-Droid private
-  distribution.
-- The open bead asked for:
-  - hosting model
-  - end-user add/update flow
-  - infrastructure requirements
-  - maintenance overhead
-  - security considerations
-  - a judgment on whether it satisfies “easy to update”
+- Failing tests: `cargo test -p caco-profile canonical_project_controller_plugin_agent_matches_generated_runtime_agent` was red on current main.
+- Relevant metrics: `.cacophony/profiles/project-controller.md` already contained the desired quiet-health policy, but `plugins/caco-agent/agents/project-controller.md` still reflected the older louder idle-health wording, so the checked-in wrapper had drifted away from the canonical profile source.
+- Context: this bead did not need a fresh policy design; it needed the shipped runtime wrapper and regression coverage brought back into alignment with the canonical profile text.
 
 ## After state
 
-- Added `docs/investigations/bd-01f27d-fdroid-private-repo-evaluation.md`
-  covering:
-  - official `fdroidserver` repo flow
-  - user onboarding and update behavior
-  - infra and signing-key ownership
-  - security/trust considerations
-  - practical downside of true private/authenticated hosting
-  - recommendation: viable fallback/power-user path, but not the best primary
-    choice when “easy to update” is the top requirement
+- Failing tests: none in the focused caco-profile validation lane.
+- Relevant metrics: the checked-in `plugins/caco-agent/agents/project-controller.md` wrapper now matches the canonical profile again, and a new targeted test explicitly asserts that routine healthy checks remain channel-local while `caco msg speak` is reserved for notable events or explicit audible-update requests.
+- Context: the project-controller role now has the intended quiet healthy-check behavior both in source profile text and in the shipped runtime-native wrapper that persistent controller launches consume.
 
 ## Diff summary
 
-- Files touched:
-  - `docs/investigations/bd-01f27d-fdroid-private-repo-evaluation.md`
-  - `.cacophony/agent/winmini-cacophony-caco-dev-wmi-1/summary/0000/summary.md`
-- Behavioural delta:
-  - no runtime code change
-  - adds a concrete written evaluation that future Android-distribution work
-    can cite rather than re-researching from scratch
-
-## Embedded artefacts
-
-- none
+- Commits: `df9f52e96`
+- Files touched: `plugins/caco-agent/agents/project-controller.md`, `crates/caco-profile/tests/profile.rs`
+- Tests: `cargo test -p caco-profile project_controller_profile_keeps_routine_health_channel_local_bd_bb7226 -- --nocapture`; `cargo test -p caco-profile canonical_project_controller_plugin_agent_matches_generated_runtime_agent -- --nocapture`; `cargo test -p caco-profile project_controller_profile_prompt_requires_idle_reporting -- --nocapture`
+- Behavioural delta: healthy routine project-controller checks are now explicitly pinned as terse in-channel updates, while audible `caco msg speak` is constrained to notable events, worsening anomalies, operator-attention moments, or explicit audible-update requests.
 
 ## Operator-takeaway
 
-A private F-Droid repo is technically straightforward and gives strong hosting
-control, but it is **not the best fit for the project’s “private + easy
-updates” goal** because onboarding and true private-access ergonomics are more
-frictionful than Play-based options. It should be treated as a viable fallback,
-not the default recommendation.
+This was wrapper drift, not a policy debate: the quiet-health controller guidance was already present in the canonical profile, but the shipped project-controller wrapper had not been regenerated. That mismatch is now fixed and covered by a direct regression test.
