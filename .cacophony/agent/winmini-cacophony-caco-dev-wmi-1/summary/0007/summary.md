@@ -1,53 +1,33 @@
-# Session summary — bd-47dc20: add Android timeline view
+# Session summary — bd-fb7474 shared TTS sender-prefix source of truth
 
 ## Goal
 
-Expose the daemon's aggregated timeline in the Android companion as a real
-mobile surface, with cluster/project scope via the existing project selector,
-touch-friendly scrolling, and simple date/range filtering.
+Reduce regression risk in the TTS effect wrappers by factoring the duplicated sender-prefix shell block into one checked-in source of truth, so future fixes to sender naming and intro generation land once and are then synced mechanically into every wrapper.
 
 ## Bead(s)
 
-- `bd-47dc20` — Create timeline view for Android app
+- `bd-fb7474` — Factor shared sender-prefix logic out of duplicated TTS effect wrappers
+- adjacent context only: `bd-b48e4d` is the active semantic regression fix owned elsewhere; this bead stayed scoped to deduplicating the shared wrapper block
 
 ## Before state
 
-- The Android companion had no timeline tab or timeline screen.
-- The daemon already exposed `/api/v1/timeline`, but the Android app did not
-  fetch or render it.
-- Operators could browse Feed on mobile, but not the aggregated timeline view
-  that now exists in TUI/daemon surfaces.
+- Failing tests: no existing regression checked that the ten TTS effect wrappers stayed aligned with the same sender-prefix logic.
+- Relevant metrics: the same long shell block for `effective_body`, `include_agent_name`, `agent.json` probing, persistent-id stripping, NATO fallback, and intro phrase selection was duplicated across ten files under `.cacophony/tts/effects/*.yaml`. Any future sender-prefix fix had to be hand-applied in every wrapper.
+- Context: this duplication became obvious while handing context to the active owner of the separate TTS prefix regression bead. The risk was not only current breakage, but future drift whenever one wrapper got patched and others did not.
 
 ## After state
 
-- Added a new `Timeline` bottom-nav tab to the Android companion.
-- Added `ConnectionManager.fetchTimeline(...)` plus JSON models for the daemon
-  timeline envelope.
-- Added `ui/timeline/TimelineScreen.kt`, which:
-  - loads cluster timeline by default
-  - switches to project scope automatically when the app's project picker is
-    set
-  - offers mobile range chips (`24h`, `48h`, `7d`)
-  - renders timeline cards with project, actor, relative time, and event kind
-  - supports pull-to-refresh and a floating refresh action
-- Verified the phone app still compiles with the new screen wired into the main
-  tab flow.
+- Failing tests: none in the focused config/script lane.
+- Relevant metrics: the shared sender-prefix block now lives in `.cacophony/tts/effects/_shared_sender_prefix.shfrag`, and `scripts/sync-tts-effect-prefix.py` syncs it into the ten effect wrappers with managed BEGIN/END markers. A targeted caco-cli source test now verifies those wrappers remain in sync with the shared fragment.
+- Context: runtime behaviour of the wrappers stays the same for now; the improvement is that there is now one authoritative fragment to edit and one sync/check path to keep the wrappers aligned.
 
 ## Diff summary
 
-- Files touched:
-  - `companion/android/app/src/main/java/com/cacophony/companion/MainActivity.kt`
-  - `companion/android/app/src/main/java/com/cacophony/companion/connection/ConnectionManager.kt`
-  - `companion/android/app/src/main/java/com/cacophony/companion/ui/timeline/TimelineScreen.kt`
-- Validation:
-  - `cd companion/android && nix develop . -c gradle :app:compileDebugKotlin --console=plain`
-- Behavioural delta:
-  - Android now has a first-class timeline surface instead of relying only on
-    Feed for mobile historical context.
+- Commits: `1a99bb8aa`
+- Files touched: `.cacophony/tts/effects/_shared_sender_prefix.shfrag`, `.cacophony/tts/effects/alien-transmission.yaml`, `.cacophony/tts/effects/arcade-glitch.yaml`, `.cacophony/tts/effects/cyberdeck.yaml`, `.cacophony/tts/effects/haunted-cathedral.yaml`, `.cacophony/tts/effects/helmet-comms.yaml`, `.cacophony/tts/effects/mission-control.yaml`, `.cacophony/tts/effects/noir-tape.yaml`, `.cacophony/tts/effects/numbers-station.yaml`, `.cacophony/tts/effects/subway-pa.yaml`, `.cacophony/tts/effects/walkie-talkie.yaml`, `scripts/sync-tts-effect-prefix.py`, `crates/caco-cli/src/audio_cmd.rs`
+- Tests: `python scripts/sync-tts-effect-prefix.py --check`; YAML command-template `bash -n` pass across 10 effect wrappers; `caco config validate --project-config-dir .cacophony`; `cargo test -p caco-cli tts_sender_prefix_wrappers_are_synced_from_shared_fragment_bd_fb7474 -- --nocapture`
+- Behavioural delta: the sender-prefix logic remains the same at runtime, but future edits now have one source-of-truth fragment and an automated sync/check path instead of ten hand-maintained copies.
 
 ## Operator-takeaway
 
-This lands the Android timeline MVP cleanly on top of the already-shipped
-backend: the app now exposes the timeline as a native mobile tab, scoped by the
-existing project picker and backed by the same daemon endpoint as other
-surfaces. It is a practical mobile view now, not just a future design note.
+This is a maintenance hardening slice: it does not itself change the spoken prefix semantics, but it removes the copy-paste hazard that made the active TTS prefix regression harder to fix safely. Future prefix fixes can now be applied once and propagated consistently.
