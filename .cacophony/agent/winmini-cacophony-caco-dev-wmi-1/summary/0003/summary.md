@@ -1,52 +1,33 @@
-# Session summary — bd-68a957: validate caco web serve startup flags
+# Session summary — bd-24b557 ready list vs beadless claim alignment
 
 ## Goal
 
-Fix the fresh `caco web` surface so invalid startup flags fail fast with
-operator-friendly validation errors instead of silently falling back to the
-default port or deferring malformed daemon URLs until first use.
+Fix the queue-contract mismatch where user-facing `caco bd list --ready` and ready counters showed permanent trackers or `[operator-action]` beads as if they were claimable work, even though beadless `caco bd claim` would correctly refuse to assign them. The goal was to make the visible ready queue match what an idle worker can actually pick up.
 
 ## Bead(s)
 
-- `bd-68a957` — `caco web --port` silently coerces invalid values to default 11180; `--bind` and `--daemon-url` need better validation
+- `bd-24b557` — caco bd list --ready includes permanent and operator-action beads that beadless claim will skip
+- discovered during queue-drain follow-up after `bd-8573ef`
 
 ## Before state
 
-- `caco web --port abc`, `--port ''`, `--port -1`, and `--port 99999` all
-  silently fell back to port `11180` because the CLI parsed to `u16` with
-  `.parse().ok().unwrap_or(11180)`.
-- `caco web --bind not-an-ip` failed only later via the web server with a bare
-  `invalid socket address syntax` message and no concrete example.
-- `caco web --daemon-url not-a-url` was accepted at startup and only failed on
-  the first proxied request.
+- Failing tests: no targeted unit test covered the exact ready-list/read-surface mismatch, but queue-drain triage on healthy nodes reproduced it consistently.
+- Relevant metrics: `crates/caco-beads/src/store.rs::list_ready()` returned open plus permanent unassigned/unblocked beads, while `claim_next_ready()` separately skipped permanent-ish trackers, EPIC umbrellas, and operator-action beads. `crates/caco-daemon/src/beads.rs` and `crates/caco-daemon/src/modes.rs` used `list_ready()` directly for `?ready=true` reads and `ready_beads` / ready-count summaries.
+- Context: the practical symptom was a drained implementation queue still looking non-empty because `caco bd list --ready` surfaced permanent workspace/STT umbrellas and `[operator-action]` work, while `caco bd claim` returned `No ready beads available to claim`.
 
 ## After state
 
-- `caco web --port` now validates strictly and rejects invalid values with:
-  `bd-68a957: --port must be a positive integer 1..65535, got 'X'`.
-- `caco web --bind` now rejects invalid or empty bind values up front with a
-  message that includes valid examples and the full socket form.
-- `caco web --daemon-url` now validates at startup using `reqwest::Url` and
-  requires an `http://` or `https://` URL with a host.
-- Added direct validator tests plus a source-contract check that
-  `dispatch_web()` actually calls the validators.
+- Failing tests: none in the focused beads/daemon lane.
+- Relevant metrics: a shared `Bead::is_generic_ready_queue_candidate()` predicate now defines the generic beadless-ready queue contract. It excludes permanent trackers, EPIC umbrellas, and operator-action beads. `claim_next_ready()` now uses that shared predicate, and daemon read surfaces/counters apply the same filter when rendering `?ready=true` and ready counts.
+- Context: explicit `--bead-id` claim remains broader for controller/operator workflows, but user-facing ready listings and counters now reflect only work that generic idle-worker claim can actually assign.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-cli/src/lib.rs`
-- Tests:
-  - `cargo test -p caco-cli web_port_bind_and_daemon_url_validators_bd_68a957 -- --nocapture`
-  - `cargo run -q -p caco -- web --port abc`
-  - `cargo run -q -p caco -- web --bind not-an-ip`
-  - `cargo run -q -p caco -- web --daemon-url not-a-url`
-- Behavioural delta:
-  - The `caco web` startup path is now fail-fast and operator-friendly instead
-    of silently coercing or deferring bad inputs.
+- Commits: `271d15547`
+- Files touched: `crates/caco-beads/src/model.rs`, `crates/caco-beads/src/store.rs`, `crates/caco-daemon/src/beads.rs`, `crates/caco-daemon/src/modes.rs`
+- Tests: `cargo test -p caco-beads generic_ready_queue_candidate_excludes_permanent_epic_and_operator_action_bd_24b557 -- --nocapture`; `cargo test -p caco-beads claim_next_ready_skips_permanent_beads -- --nocapture`; `cargo test -p caco-beads claim_next_ready_skips_operator_action_beads -- --nocapture`; `cargo build -p caco-daemon`; `cargo build -p caco`
+- Behavioural delta: `caco bd list --ready`, aggregate ready listings, project ready summaries, and daemon mode `ready_beads` counters now agree with beadless `caco bd claim` about what counts as generic ready work.
 
 ## Operator-takeaway
 
-This was a classic fresh-surface validation hole: the feature worked for happy
-paths, but invalid inputs quietly degraded into misleading defaults. The CLI
-now rejects bad `web` startup flags early with explicit, example-rich errors so
-operators do not burn time debugging the wrong port or a latent bad daemon URL.
+This closes a subtle but important queue-trust gap: the board no longer advertises permanent/operator-only work as generic ready inventory. When the ready queue is drained, the read surfaces now say so instead of sending workers chasing non-claimable beads.
