@@ -1,49 +1,33 @@
-# Session summary — bd-b78d9c: add gpt-audio-1.5 to TTS model surface
+# Session summary — bd-2c7944 summaries next-index slow daemon tolerance
 
 ## Goal
 
-Expose `gpt-audio-1.5` as a first-class TTS model in the existing audio stack so
-it appears in supported-model lists, gets a friendly display name, and follows
-the same standard-voice compatibility rules as the existing OpenAI TTS model.
+Fix the recorded-summary allocation bug where `caco summaries next-index` could return `0000` for an agent that already had recorded summaries, simply because its daemon-authoritative summaries lookup timed out much earlier than the real summaries list path.
 
 ## Bead(s)
 
-- `bd-b78d9c` — Add `gpt-audio-1.5` for audio generation capabilities
+- `bd-2c7944` — caco summaries next-index returns 0000 when summaries list works but daemon lookup exceeds 3s
+- discovered during collab-mode after the ready queue drained post-`bd-24b557`
 
 ## Before state
 
-- The daemon's supported TTS model list did not include `gpt-audio-1.5`.
-- Voice compatibility logic only treated `gpt-4o-mini-tts` as an OpenAI
-  standard-voice model.
-- TTS help text examples only mentioned `gpt-4o-mini-tts` and Gemini.
+- Failing tests: no existing targeted regression pinned this timeout mismatch.
+- Relevant metrics: on winmini, `caco summaries list --agent $CACO_AGENT_ID --limit 1 --json` succeeded after about 14.7 seconds and showed `reintegration_index: 3`, while `caco summaries next-index --agent $CACO_AGENT_ID --json` returned after about 3.7 seconds with `daemon_status: "daemon_unreachable"`, `daemon_max: null`, and `next_index: 0`.
+- Context: `crates/caco-cli/src/summary_cmd.rs::fetch_daemon_max_summary_index()` used a bespoke blocking reqwest client with a hardcoded 3-second total timeout, so the authoritative summaries probe could fail even when the same daemon endpoint was merely slow rather than unreachable.
 
 ## After state
 
-- `gpt-audio-1.5` is now included in `SUPPORTED_TTS_MODELS`.
-- It has a human-friendly display label: `GPT Audio 1.5`.
-- Standard OpenAI voices are accepted for both `gpt-4o-mini-tts` and
-  `gpt-audio-1.5`.
-- Azure finetuned voices remain rejected for both OpenAI-family models.
-- CLI TTS help text examples now mention `gpt-audio-1.5` as a valid model.
+- Failing tests: none in the focused caco-cli summary lane.
+- Relevant metrics: the daemon-authoritative `next-index` probe now uses a 20-second bounded timeout with a 1-second connect timeout, and a new regression test proves a 4-second delayed but healthy summaries endpoint still returns the existing max reintegration index instead of degrading to `daemon_unreachable`.
+- Context: `caco summaries next-index` still falls back safely when the daemon is genuinely unavailable, but it no longer treats an ordinarily slow summaries API as if no recorded summaries exist.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-daemon/src/audio.rs`
-  - `crates/caco-cli/src/lib.rs`
-- Tests:
-  - `cargo test -p caco-daemon supported_tts_models_includes_required -- --nocapture`
-  - `cargo test -p caco-daemon tts_model_display_names_cover_supported -- --nocapture`
-  - `cargo test -p caco-daemon standard_voices_compatible_with_openai_models -- --nocapture`
-  - `cargo test -p caco-daemon finetuned_voices_incompatible_with_openai_models -- --nocapture`
-  - `cargo test -p caco-daemon voices_for_model_filters_correctly -- --nocapture`
-- Behavioural delta:
-  - `gpt-audio-1.5` now participates in the normal TTS model enumeration and
-    voice-compatibility flow instead of being invisible to the stack.
+- Commits: `ba9add314`
+- Files touched: `crates/caco-cli/src/summary_cmd.rs`
+- Tests: `cargo test -p caco-cli fetch_daemon_max_summary_index_tolerates_slow_successful_daemon_bd_2c7944 -- --nocapture`; `cargo test -p caco-cli next_summary_index_consults_daemon_max_bd_7436de -- --nocapture`; `cargo test -p caco-cli summaries_next_index_accepts_agent_flag_bd_3186f3 -- --nocapture`
+- Behavioural delta: `caco summaries next-index` now gives the daemon-authoritative summaries lookup enough time to succeed on loaded hosts, preventing false `0000` allocations when summaries already exist for the agent.
 
 ## Operator-takeaway
 
-This was a contained model-surface wiring task, not a new audio architecture
-project. The stack already knew how to handle provider-backed TTS models; it
-just needed `gpt-audio-1.5` added to the same supported-model and voice-policy
-paths so operators can actually select it.
+This protects a sharp recorded-summary footgun: a slow summaries daemon should no longer trick `next-index` into reusing index `0000` or otherwise colliding with existing recorded summaries. The command now better matches the real latency of the summaries surface it depends on.
