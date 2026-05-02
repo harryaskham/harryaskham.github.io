@@ -1,54 +1,32 @@
-# Session summary — bd-5e25ba: persist and polish webapp agents submenu
+# Session summary — bd-3dacb5 sender metadata for TTS effects
 
 ## Goal
 
-Finish the existing webapp agents submenu so the collapsible behavior feels
-complete instead of half-landed: persist its open/closed state across reloads,
-keep the toggle state accessible, and give the submenu a smooth open/close
-animation.
+Fix the daemon-side TTS effect environment so command-template wrappers can see the authenticated speaking sender and announce a meaningful agent/project name instead of falling back to the useless "alpha golf echo" placeholder path.
 
 ## Bead(s)
 
-- `bd-5e25ba` — Make webapp submenu collapsible
+- `bd-3dacb5` — Pass sender metadata to TTS effects so agent-name prefixes are meaningful
 
 ## Before state
 
-- The agents submenu already existed in the webapp, but the toggle state was
-  ephemeral.
-- Reloading or navigating away/resetting the page lost the submenu's expanded
-  state.
-- The submenu used `display: none` / `display: block`, so open/close changes
-  were abrupt rather than animated.
-- The toggle button did not explicitly declare `aria-controls` for the submenu
-  element.
+- Failing tests: none in the targeted path, but the runtime behavior was wrong.
+- Relevant metrics: TTS effect wrappers under `.cacophony/tts/effects/*.yaml` already tried to derive a spoken prefix from `CACO_AGENT_ID`, `CACO_AGENT_KIND`, `CACO_PROJECT`, and `CACO_NODE`, but daemon-side command-template execution never injected the speaking sender metadata. In that path the wrappers fell back to literal `agent` and NATO-spelled the first three characters into `alpha golf echo`.
+- Context: the smallest honest fix was to keep the effect wrappers and command-template mechanism intact, then make the daemon populate the sender metadata they were missing.
 
 ## After state
 
-- The agents submenu open/closed state is persisted in localStorage under a
-  dedicated key and restored on startup.
-- Toggle state now flows through a shared `setAgentsSubmenuOpen(...)` helper,
-  keeping `aria-hidden`, `aria-expanded`, and the chevron text in sync.
-- The toggle button explicitly targets `#agents-submenu` via `aria-controls`.
-- The submenu now animates with `max-height`/opacity/transform transitions
-  instead of hard display toggles.
-- Added a source-contract test pinning the persistence and animation contract.
+- Failing tests: none in the focused caco-daemon lane.
+- Relevant metrics: `crates/caco-daemon/src/audio.rs` now resolves speaking-sender metadata once per TTS request and injects both explicit `CACO_SPEAK_*` env vars and compatibility aliases (`CACO_AGENT_ID`, `CACO_AGENT_KIND`, `CACO_PROJECT`, `CACO_NODE`) into command-template execution. `crates/caco-config/src/model.rs` now documents those env vars in the TTS command-template contract.
+- Context: existing first-party effect wrappers can now prepend a meaningful sender identity from authenticated daemon context instead of dropping to the misleading generic fallback.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-web/static/app.js`
-  - `crates/caco-web/static/index.html`
-  - `crates/caco-web/static/style.css`
-  - `crates/caco-web/src/tests.rs`
-- Tests:
-  - `cargo test -p caco-web agents_submenu_contract_persists_and_animates_bd_5e25ba -- --nocapture`
-- Behavioural delta:
-  - Webapp agents submenu now behaves like a real collapsible UI surface rather
-    than a one-shot in-memory toggle.
+- Commits: `d76876c07`
+- Files touched: `crates/caco-daemon/src/audio.rs`, `crates/caco-config/src/model.rs`
+- Tests: `cargo test -p caco-daemon run_tts_command_template_reads_output_file -- --nocapture`; `cargo test -p caco-daemon run_tts_command_template_injects_sender_metadata_bd_3dacb5 -- --nocapture`; `cargo build -p caco-daemon`
+- Behavioural delta: daemon-owned TTS command-template effects now receive the actual speaking sender’s agent id, project, node, kind, and display-name metadata, so effect-generated prefixes can identify the real speaker instead of announcing `agent` / `alpha golf echo`.
 
 ## Operator-takeaway
 
-This bead turned out to be a polish/completion pass, not a greenfield feature:
-most of the submenu already existed, and the missing pieces were persistence,
-accessibility wiring, and animation quality. Those are now pinned with a test,
-so the web sidebar should stop regressing back to a flimsy toggle.
+The core bug was not in the effect wrappers themselves but in the daemon environment they run under: once the authenticated sender metadata is injected into command-template execution, the existing effect logic has enough context to produce useful spoken prefixes again.
