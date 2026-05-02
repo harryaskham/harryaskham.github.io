@@ -1,62 +1,32 @@
-# Session summary — bd-5278e2: add TUI cluster timeline view
+# Session summary — bd-655352 orphaned agent dirs in retention prune
 
 ## Goal
 
-Land the MVP TUI timeline surface as a real navigable cluster view: one new
-Timeline node under Cluster, a daemon-backed fetch from `/api/v1/timeline`, and
-an operator-readable pane that renders aggregated timeline entries in the same
-bubble/connector style as the existing Events view.
+Fix the prune blind spot where filesystem-resident agent directories could sit on disk outside the daemon-index view and therefore never appear in `caco agent prune` planning, even during disk-pressure triage.
 
 ## Bead(s)
 
-- `bd-5278e2` — Create timeline view for TUI
+- `bd-655352` — Prune misses orphaned agent directories absent from daemon index
 
 ## Before state
 
-- The daemon already exposed `GET /api/v1/timeline`, but the TUI had no
-  corresponding cluster Timeline node or pane.
-- Operators could only see the older feed-derived Events timeline, not the new
-  aggregated commit/changelog/release/bead timeline.
-- No TUI state, event, or client fetch path existed for timeline data.
+- Failing tests: no targeted regression covered this prune-planning blind spot.
+- Relevant metrics: `dispatch_agent_prune(...)` built its retention inventory from `AgentManager::new(...).list_all()`, which excludes discarded agents because manager hydration uses the non-discarded scan path. That meant `--include-discarded` could not actually see discarded disk-only agent records in planning. Separately, directories under `~/.cacophony/agents/<project>/<id>/` with missing or broken `agent.json` were invisible to prune accounting entirely.
+- Context: during disk-pressure triage, operators saw multi-gigabyte agent directories on disk that were absent from prune target/excluded accounting, making it impossible to tell whether they were safe to reclaim or silently orphaned.
 
 ## After state
 
-- Added a new `Cluster > Timeline` nav node and `ContentPane::GlobalTimeline`.
-- Added client/event/state plumbing for fetching and caching the cluster
-  timeline response from `/api/v1/timeline?scope=cluster`.
-- Added `views/timeline.rs`, which flattens per-project timeline payloads into
-  a cluster-sorted timeline and renders them using the existing bubble/
-  connector visual language.
-- Added workspace/tab/breadcrumb/shell-context integration so the new pane is a
-  first-class TUI surface rather than a dangling enum variant.
-- Added targeted tests for the new view plus nav/app regression pins.
+- Failing tests: none in the focused caco-cli prune lane.
+- Relevant metrics: `caco agent prune` now builds retention inventory from `scan_agents_dir_all(...)` so discarded disk records are visible to planning, and it separately scans filesystem-only agent directories not represented in parsed inventory. Missing, unreadable, or unparseable `agent.json` directories are now surfaced in excluded accounting with explicit reasons instead of disappearing from the report.
+- Context: this does not silently auto-delete metadata-less directories; it makes them operator-visible with concrete reasons and byte counts so disk-pressure cleanup can proceed intentionally.
 
 ## Diff summary
 
-- Files touched:
-  - `crates/caco-tui/src/app.rs`
-  - `crates/caco-tui/src/client.rs`
-  - `crates/caco-tui/src/event.rs`
-  - `crates/caco-tui/src/nav.rs`
-  - `crates/caco-tui/src/shell_cwd.rs`
-  - `crates/caco-tui/src/state/mod.rs`
-  - `crates/caco-tui/src/views/mod.rs`
-  - `crates/caco-tui/src/views/nav_tree.rs`
-  - `crates/caco-tui/src/views/pane_tabs.rs`
-  - `crates/caco-tui/src/views/tab_bar.rs`
-  - `crates/caco-tui/src/views/timeline.rs`
-  - `crates/caco-tui/src/workspace.rs`
-- Tests:
-  - `cargo test -p caco-tui timeline -- --nocapture`
-  - `cargo test -p caco-tui empty_tree -- --nocapture`
-  - `cargo test -p caco-tui rebuild_nav_creates_tree -- --nocapture`
-- Behavioural delta:
-  - The TUI now exposes the daemon timeline pipeline directly, instead of only
-    the older feed-derived Events surface.
+- Commits: `f4bc54997`
+- Files touched: `crates/caco-cli/src/audio_cmd.rs`
+- Tests: `cargo test -p caco-cli retention_inventory_agents_includes_discarded_bd_655352 -- --nocapture`; `cargo test -p caco-cli scan_retention_orphan_agent_dirs_reports_missing_and_unparseable_bd_655352 -- --nocapture`
+- Behavioural delta: `caco agent prune --dry-run` no longer silently omits discarded disk-only records or filesystem-only agent dirs with missing/broken metadata; those paths now show up in excluded accounting with byte counts and reasons.
 
 ## Operator-takeaway
 
-This lands the MVP cluster timeline view, not the full multi-surface timeline
-feature set. The important step is that the daemon timeline is now visible and
-navigable in the TUI, which creates a real operator surface to iterate on for
-range controls, polling policy, and richer timeline UX later.
+This makes disk-pressure triage safer and more trustworthy: prune planning now tells you about orphaned agent directories it cannot yet reclaim automatically, instead of pretending they do not exist.
