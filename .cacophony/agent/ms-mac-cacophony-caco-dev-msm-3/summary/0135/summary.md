@@ -1,33 +1,32 @@
-# Session summary — launchd service load diagnostics
+# Session summary — router/narrator observer profile conflict
 
 ## Goal
 
-Fix `bd-2d3244`: the native lifecycle supervisor can be installed but not loaded after ms-mac restart, while first-party `caco service load/start/restart` left operators with launchd bootstrap exit 5 / kickstart exit 113 and insufficient diagnostics.
+Implement `bd-8a4683`: router and narrator persistents were blocked during startup by composite profile conflicts between the worker/endless lifecycle (`reintegration.mode=direct`) and observer roles (`reintegration.mode=none`).
 
 ## Bead(s)
 
-- `bd-2d3244` — Alert and repair when native lifecycle supervisor is installed but not loaded
+- `bd-8a4683` — Router and narrator persistents blocked by reintegration.mode profile conflict
 
 ## Changes
 
-- Updated `crates/caco-cli/src/service_cmd.rs`:
-  - added explicit launchd helpers for canonical plist path, not-loaded detection, and bootstrap/kickstart load steps;
-  - made launchd `caco service start` / `restart` route installed-but-not-loaded supervisors through `caco service load` before a kickstart-only action;
-  - added launchd-specific diagnostics for bootstrap exit 5 (`Input/output error`) and kickstart exit 113 (`service not found in gui/<uid>`), including plist validation and launchd-domain guidance;
-  - included per-step diagnostics in `caco service load --json` and text output.
-- Updated `SPEC.md`, `README.md`, and `AGENTS.md` to preserve the launchd load/start/restart contract and diagnostic expectations.
-- Tightened the orphan-goal reintegration guard so persistent-agent embedded docs guard references such as `bd-20d2dc` are not mistaken for assigned bead goals when the actionable goal section is empty.
-- Added focused unit coverage for the bd-2d3244 launchd not-loaded repair/diagnostic behavior and the embedded-docs guard false-positive case.
+- Updated `.cacophony/config.yaml` so the node-scoped `router` persistent on `ms-mac` imports `agents/persistent-observer.yaml` instead of `agents/persistent.yaml`.
+  - This preserves Pi runtime helpers and the observer guard without composing the `endless` worker lifecycle that sets `reintegration.mode=direct`.
+  - Added an inline comment documenting why router must not use the worker persistent snippet.
+- Added regression coverage in `crates/caco-profile/src/lib.rs`:
+  - `router_and_narrator_observer_stacks_avoid_reintegration_mode_conflict`
+  - Asserts the router declaration imports observer defaults.
+  - Asserts the narrator declaration keeps observer defaults.
+  - Composes `persistent-observer + router` and `persistent-observer + narrator`, verifying both resolve to `reintegration.mode=none` with allowed mode `none`.
 
 ## Validation
 
-- `rustfmt --edition 2021 --check --config skip_children=true crates/caco-cli/src/service_cmd.rs` — passed.
-- `CARGO_BUILD_JOBS=2 cargo test -p caco-cli bd_2d3244 -- --test-threads=1` — passed (3 focused tests).
-- `CARGO_BUILD_JOBS=2 cargo clippy -p caco-cli --lib --no-deps -- -D warnings` — passed.
+- `rustfmt --edition 2021 --check --config skip_children=true crates/caco-profile/src/lib.rs` — passed.
+- `cargo test -p caco-profile router_and_narrator_observer_stacks_avoid_reintegration_mode_conflict -- --test-threads=1` — passed.
+- `caco config validate --config .cacophony/config.yaml` — passed with existing non-fatal warnings.
 - `git diff --check` — passed.
 
-## Coordination notes
+## Coordination
 
-- Claimed `bd-2d3244` only after the local strict board gate turned green.
-- Did not run raw launchctl/service-manager commands; implementation changes use the first-party `caco service` surface.
-- Live `caco service status --json` before the code change showed `health_state=not_loaded` for `com.cacophony.lifecycle`, matching controller evidence.
+- Claimed `bd-8a4683` only after local board status was strict-green and `caco bd claim` succeeded.
+- Avoided claiming `bd-39f452` because it is assigned to `ms-dev-cacophony-project-health`.
