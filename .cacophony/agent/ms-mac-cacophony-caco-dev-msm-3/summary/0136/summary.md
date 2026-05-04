@@ -1,37 +1,48 @@
-# Session summary — launchd disabled-label bootstrap repair
+# Session summary — tmux session creation settle window
 
 ## Goal
 
-Continue reopened `bd-2d3244`: post-install verification showed the previous diagnostics landed, but `caco service load` still failed with launchd bootstrap exit 5 and the supervisor remained `not_loaded`.
+Implement a focused `bd-86a486` repair slice for recurring per-agent tmux socket/startup recovery failures after ms-mac restart/load windows.
 
 ## Bead(s)
 
-- `bd-2d3244` — Alert and repair when native lifecycle supervisor is installed but not loaded
+- `bd-86a486` — Runtime repair reports per-agent tmux socket collapses after socket hardening
+
+## Findings
+
+Current live failures were no longer only the older per-agent socket-collapse counter. Several ms-mac persistent agents were failing at startup/resume with messages like:
+
+- `tmux session creation failed ... exited immediately after creation`
+- `alive sentinel was not written within 60s and tmux is not attachable`
+- `tmux server on socket ... is dead: no server running`
+
+The common path was `tmux new-session` returning success, followed by a very short post-create `has-session` verification window (~700ms total). Under ms-mac load/restart pressure, this can misclassify tmux settle/probe flakiness as immediate init/session death and then feed the retry/failure loop.
 
 ## Changes
 
-- Diagnosed the remaining live blocker with bounded diagnostics:
-  - `launchctl print-disabled gui/501` showed `"com.cacophony.lifecycle" => disabled`.
-  - Source-built `caco service status --json` surfaced `enabled:false` before repair.
-- Updated `crates/caco-daemon/src/native_supervisor.rs` so launchd detection parses `launchctl print-disabled` and reports `enabled:false` / `enabled:true` when available.
-- Updated `crates/caco-cli/src/service_cmd.rs` so launchd `caco service load` runs `launchctl enable gui/<uid>/<label>` before bootstrap and kickstart.
-- Extended launchd diagnostics to explain enable failures and to mention disabled-label state as a cause of bootstrap exit 5.
-- Updated `SPEC.md`, `README.md`, and `AGENTS.md` to document launchd enable + bootstrap + kickstart as the installed-but-not-loaded repair path.
+- Updated `crates/caco-daemon/src/agent/health.rs`:
+  - Added a shared bounded tmux session creation settle loop.
+  - The launcher now waits up to 5 seconds after successful `tmux new-session` for `has-session` to become attachable.
+  - The same settle helper is used for both legacy/default-socket and per-agent-socket session creation paths.
+  - Failure diagnostics now say the session was not attachable within the bounded window and include the last tmux probe error, preserving evidence such as `connection refused` or `no server running`.
+- Added regression coverage in `crates/caco-daemon/src/agent/tests.rs`:
+  - `tmux_session_creation_waits_through_transient_probe_failures_bd_86a486`
+  - Verifies persistent transient probe failures consume the full supplied settle window and include the final probe detail in diagnostics.
+- Updated `SPEC.md` §16.4.5 to require bounded post-create tmux attachability verification and explicit probe diagnostics instead of immediate-exit classification.
 
 ## Validation
 
-- `rustfmt --edition 2021 --check --config skip_children=true crates/caco-cli/src/service_cmd.rs crates/caco-daemon/src/native_supervisor.rs` — passed.
-- `CARGO_BUILD_JOBS=2 cargo test -p caco-cli bd_2d3244 -- --test-threads=1` — passed.
-- `CARGO_BUILD_JOBS=2 cargo clippy -p caco-cli --lib --no-deps -- -D warnings` — passed.
+- `rustfmt --edition 2021 --check --config skip_children=true crates/caco-daemon/src/agent/health.rs crates/caco-daemon/src/agent/tests.rs` — passed.
 - `git diff --check` — passed.
-- Source-built live repair proof: `CARGO_BUILD_JOBS=2 cargo run -p caco -- service load --json` ran `launchctl enable`, `bootstrap`, and `kickstart`; all three exited 0, and follow-up `service status --json` reported `healthy:true`, `active_state:"running"`, `enabled:true`.
-- Installed/current `caco service status --json` after the source-built repair reported `healthy:true` and `active_state:"running"`.
+- `cargo check -p caco-daemon` — passed.
+- `cargo clippy -p caco-daemon --lib --no-deps -- -D warnings` — passed.
 
-## Known validation gap
+## Known validation blocker
 
-- Attempted `CARGO_BUILD_JOBS=2 cargo test -p caco-daemon launchd_print_disabled_parser_reports_disabled_label_bd_2d3244 -- --test-threads=1`, but the existing caco-daemon test target still fails to compile before reaching the new test because multiple pre-existing `Config { ... }` test initializers are missing the newer `macos` field. This is the same pre-existing daemon-test blocker observed in earlier work.
+- Attempted focused daemon test: `cargo test -p caco-daemon tmux_session_creation_waits_through_transient_probe_failures_bd_86a486 -- --test-threads=1`.
+- It did not reach the new test because the caco-daemon test target still fails to compile on the existing broken-on-main `Config { ... }` initializers missing the newer `macos` field. That is tracked by `bd-39f452` and currently owned outside this branch; I did not duplicate the mechanical initializer fix.
 
-## Coordination notes
+## Coordination
 
-- Claimed the reopened bead only after my own local strict board gate turned green.
-- Used first-party `caco service` for repair proof; raw `launchctl` use was limited to bounded diagnostics (`print-disabled` and plist inspection), not recovery.
+- I closed `bd-8a4683` first, then claimed `bd-86a486` only after the local strict board gate and `caco bd claim` succeeded.
+- I spoke progress to the project during implementation.
