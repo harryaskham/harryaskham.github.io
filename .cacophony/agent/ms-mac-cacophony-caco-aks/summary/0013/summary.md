@@ -1,32 +1,31 @@
-# Session summary — AKS nodepool recovery to nine nodes
+# bd-143ca0 — AKS pi-inbox profile drift guard
 
-## Goal
+## Scope
 
-Record and land the operator-facing ledger entry for a live AKS nodepool recovery after one system node entered the shutdown/unreachable NotReady state while the Cacophony workload remained healthy.
+Production AKS partially degraded after recent pod restarts because the live image (`1.2.634`, tag `251aa950c167`) predates the newly introduced repo-owned `pi-inbox` profile while the rendered self-contained AKS ConfigMap included `pi-inbox` in Pi runtime profiles.
 
-## Bead(s)
+## Evidence
 
-- `bd-3a47de` — Record AKS nodepool recovery to nine nodes
+- `kubectl --context caco-aks -n cacophony get pods --no-headers` showed 4/6 Cacophony pods Running.
+- `caco-aks-ca-0` and `caco-aks-relay-0` were `CrashLoopBackOff`.
+- CA/relay logs failed config validation with: `project 'cacophony' agent_defaults.profile 'pi-inbox' does not match any configured profile`.
+- `caco @cluster:caco-aks bd status --json true` still reported `aks-beads` fresh with `ahead: 0` / `behind: 0`.
 
-## Before state
+## Changes
 
-- Failing tests: none; this was a production recovery documentation update.
-- Relevant metrics: AKS had `7/8` nodes Ready because `aks-system-24353107-vmss00000h` was NotReady with shutdown/out-of-service/unreachable taints; Cacophony pods were still `6/6` Running, private `@cluster` status was `ok: true`, beads were fresh, and the in-pod repo checkout matched main.
-- Context: the established recovery policy is to use AKS nodepool operations for shutdown/unreachable nodes instead of Kubernetes-only taint workarounds.
+- Updated `deploy/aks/render-config.sh` so self-contained AKS rendering filters `pi-inbox` along with existing unsupported Pi overlay mixins.
+- Applied the same unsupported-profile filtering to `interactive_defaults.pi.profile`, not only project `agent_defaults.profile`.
+- Extended `deploy/aks/validate-self-contained-config.sh` to assert unsupported Pi-only profiles are absent from both rendered project agent defaults and Pi interactive defaults.
+- Recorded the incident and validation receipts in `deploy/aks/PRODUCTION-ROLLOUT.md`.
 
-## After state
+## Validation
 
-- Failing tests: none; `git diff --check` passed.
-- Relevant metrics: system nodepool was scaled from desired count `8` to `9`; Kubernetes showed `9/9` nodes Ready and `6/6` Cacophony pods Running after replacement nodes joined. Live image stayed `cfde24f94a10`; no Helm or image rollout was performed.
-- Context: `deploy/aks/PRODUCTION-ROLLOUT.md` now records the degraded node, recovery commands, replacement nodes, and post-recovery validation.
+- `./deploy/aks/validate-self-contained-config.sh` — passed.
+- Render smoke confirmed `pi-inbox` and `pi-image-guard` are absent from the self-contained render; rendered config size was 347205 bytes.
+- `git diff --check` — passed.
+- `./deploy/aks/validate-operator-surfaces.sh` — passed, 30 passed / 0 warnings / 0 failed.
+- `CACO_AKS_CONTEXT=caco-aks CACO_AKS_NAMESPACE=cacophony just aks-self-dry-run` — passed; only existing kubectl last-applied annotation warnings.
 
-## Diff summary
+## Production note
 
-- Commits: `8fd01ab1a`
-- Files touched: `deploy/aks/PRODUCTION-ROLLOUT.md`
-- Tests: `git diff --check`, live AKS node/pod/status/bead/repo checks
-- Behavioural delta: no code behaviour changed; the production ledger now captures the nodepool recovery and current steady state.
-
-## Operator-takeaway
-
-When AKS system nodes hit the shutdown/unreachable pattern, the safe recovery remains the hermetic AKS nodepool scale path; this pass restored capacity to nine Ready nodes without touching the Cacophony pods or rolling the image.
+No live production ConfigMap push or StatefulSet restart was performed in this implementation pass. Applying the repaired config remains a production mutation and should go through the standard guarded AKS config rollout path unless the operator treats bd-143ca0 as an emergency repair.
