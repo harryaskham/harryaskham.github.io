@@ -1,0 +1,10 @@
+│ 🕒 Timeline      ││                                                                                                                                                    │
+│ Tools          − ││ Checkout ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│ 📄 Source        ││  ⚠ Status:  CHECKOUT HEALTH ERROR: CHECKOUT HEALTH ERROR: canonical checkout not initialized                                                       │
+│  🗂 Files         ││  Branch:  main  Commit: n/a                                                                                                                        │
+│ 🔗 Links         ││  ⚠ Checkout health: CHECKOUT HEALTH ERROR: canonical checkout not initialized                                                                      │
+│ 🧪 Tests         ││                                                                                                                                                    │
+│ 🔨 Builds        ││                                                                                                                                                    │
+│ 📦 Releases      ││                                                                                                                                                    │
+│  ⛓ Merge Queue   ││ Beads ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│ 📊 Performance   ││  ● 11108 beads  149 open, 31 in progress, 33 blocked, 10577 closed  (offline — no cached data)                                                     │
