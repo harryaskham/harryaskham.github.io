@@ -1,0 +1,31 @@
+bd-68be53 validation — Pico reconnect button after dropped websocket:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_disconnected_state_exposes_reconnect_button_bd_68be53
+- cargo test -p caco-web --lib js_window_exports_are_referenced_somewhere_bd_0525ab
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../reconnect-test/pico-reconnect-observe.log --server-log .../reconnect-test/pico-reconnect-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused reconnect source guard passed.
+- orphan window export guard passed after avoiding an unnecessary `window.reconnectPicoSession` assignment.
+- live mock scenario passed.
+- disconnect subscenario asserts:
+  - first dropped socket status is `disconnected`.
+  - reconnect button is visible and enabled.
+  - native transcript survives, no terminal fallback appears.
+  - clicking Reconnect reopens the same mock websocket path.
+  - after the mock closes again, status is `disconnected`, transcript is visible, reconnect button is visible/enabled, and no terminal fallback appears.
+- main scenario still captures eight outbound frames; select subscenario still captures `dlg-select` value `stable`.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+
+Implementation:
+- Added `agent-pico-reconnect` statusbar button.
+- `setPicoStatus` shows/enables it only when Pico mode is offline.
+- Added `reconnectPicoSession()` to close any old socket and call `initPicoSession(agentId, wsUrlOverride)`.
+- Extended disconnect subscenario assertion to click Reconnect and verify a second dropped-socket cycle.

@@ -1,0 +1,33 @@
+Validation evidence for bd-4ab495:
+
+- Before: chat composer character counter (#chat-counter) was
+  aria-hidden. Screen-reader users typing in chat had NO
+  indication they were approaching or had hit the 2000-character
+  limit. The browser silently caps input at maxlength with no
+  audible feedback -- user just stops being able to type.
+- After:
+  - Added <span class="sr-only" id="chat-counter-announce"
+    aria-live="polite" aria-atomic="true"> next to the visible
+    counter. Reuses the existing .sr-only utility (style.css:8494).
+  - updateChatCounter() now snapshots the prior threshold state
+    from the existing chat-counter-warn/chat-counter-full classes
+    BEFORE mutating them, then announces on cross-into-warn
+    (>85%), cross-into-full (>=100%), and clears on
+    return-below-warn so a future re-cross fires again.
+  - At most 2 announcements per session in typical use. Quiet by
+    default, informative when needed.
+  - Visible counter STAYS aria-hidden -- announcing every
+    keystroke would be a SR firehose.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib chat_counter_announces_threshold_transitions_bd_4ab495
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 444 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test pins both the HTML announcer markup and the JS threshold-
+transition logic, including the warn/full/clear messaging shape
+and a sanity check that exactly one updateChatCounter definition
+exists.

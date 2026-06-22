@@ -1,0 +1,26 @@
+bd-8d9d84 validation — outbound Pico /models HostRequest:
+
+Commands:
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../models-command-test/pico-models-observe.log --server-log .../models-command-test/pico-models-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused observe guard passed.
+- live mock scenario passed and submitted `/models` through the real Pico composer.
+- mock backend received all seven canonical outbound frames:
+  - {"kind":"command","type":"steer","message":"steer while streaming from mock scenario"}
+  - {"kind":"command","type":"abort"}
+  - {"kind":"ui_reply","type":"extension_ui_response","id":"dlg1","confirmed":true}
+  - {"kind":"command","type":"get_available_models"}
+  - {"kind":"command","type":"set_model","provider":"anthropic","modelId":"claude"}
+  - {"kind":"command","type":"prompt","message":"hello from mock scenario"}
+  - {"kind":"command","type":"compact","customInstructions":"keep it concise"}
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+
+Implementation:
+- Added `PICO_SUBMIT_MODELS_EVAL` to the `pico-pane` observe scenario.
+- Mock backend assertion now requires `type=get_available_models` in addition to the prior outbound control frames.

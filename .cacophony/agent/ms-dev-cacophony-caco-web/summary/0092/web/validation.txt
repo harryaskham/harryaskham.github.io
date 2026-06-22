@@ -1,0 +1,39 @@
+Validation evidence for bd-25c6c1:
+
+- Before: three lazy-loaded img classes had max-height
+  but no paired min-height -> 0->420px CLS when images
+  streamed in via SSE or scrolled into view.
+- After: bd-845b8a reservation triplet (min-height +
+  max-height + object-fit: contain) applied to each.
+  Inline icon-sized variant gets a small 40px floor
+  (wrapper caps at 280px). Standalone summary-image
+  and files-preview variants get a larger 160px floor
+  (more disruptive 0->420px shift in long scrollable
+  bodies). The previously-shared selector pair for
+  the two summary-image variants is split because
+  inline vs standalone need different floors.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib img_cls_reservation_pass2_bd_25c6c1
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 510 passed, 0 failed (was 509; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (5 layers):
+- .files-preview-image inline rule has min-height +
+  max-height + object-fit: contain (substring
+  asserts within the inline line per single-line
+  rule shape).
+- .agent-summary-inline-image img has its own rule
+  with the 40px floor + max-height + object-fit
+  (bounded char-window extraction per bd-57c0f5).
+- .agent-summary-standalone-image img has its own
+  rule with the 160px floor + max-height + object-fit
+  (separate rule, larger floor than inline variant).
+- Prior shared selector pair NEGATIVE asserted (the
+  bug was the rule was shared so a single max-height
+  applied to both variants; split is the fix).
+- bd-845b8a canonical reservation triplet on
+  .bead-chat-screenshot img remains (broader CLS-
+  reservation family regression-guard).

@@ -1,0 +1,33 @@
+Validation evidence for bd-fe0419:
+
+- Before: 7 loading-state placeholders in index.html were
+  inconsistent with the 6+ emissions in app.js:
+  - 4 of 7 spinners missing aria-hidden="true" (lines 380, 389,
+    837, 843).
+  - All 7 wrappers missing role="status" aria-live="polite".
+- After:
+  - Migrated all 7 placeholders to the canonical pattern
+    <div class="loading-state" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <span>Loading X...</span>
+    </div>
+  - Pre-existing test dashboard_loading_panels_announce_to_screen_readers_bd_937fbe
+    updated to assert the new canonical wrapper string (it
+    previously matched the bare wrapper). Test rationale and
+    cross-reference to bd-fe0419 added to the assertion message.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib loading_state_placeholders_use_canonical_a11y_pattern_bd_fe0419
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib dashboard_loading_panels_announce_to_screen_readers_bd_937fbe
+      -> 1 passed, 0 failed (pre-existing test, updated to match
+         migrated pattern)
+    cargo test -p caco-web --lib --tests
+      -> 449 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Zero bare `class="loading-state">` wrappers remain.
+- Zero bare `class="loading-spinner"></div>` spinners remain.
+- Exact count of canonical wrappers matches the 7 migrations.

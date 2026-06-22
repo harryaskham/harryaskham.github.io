@@ -1,0 +1,43 @@
+bd-94ee2d validation:
+- DEAD CSS UTILITIES: 6 classes defined in style.css with zero
+  external references and no dynamic `aspect-${X}` / `clamp-${X}`
+  template generators. Removed.
+
+cargo test -p caco-web --lib -> 563 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+DELETED:
+- .aspect-square (aspect-ratio: 1 / 1)
+- .aspect-video (aspect-ratio: 16 / 9)
+- .aspect-4x3 (aspect-ratio: 4 / 3)
+- .aspect-wide (aspect-ratio: 21 / 9)
+- .clamp-2 (-webkit-line-clamp: 2)
+- .clamp-3 (-webkit-line-clamp: 3)
+- /* Aspect ratio utilities */ section comment (orphaned).
+
+VALIDATION METHOD:
+For each class:
+  grep -rE '\bCLASS\b' across crates/caco-web/static/ (except
+  style.css) AND crates/caco-web/src/ -> 0 hits.
+Plus: no `aspect-${...}` or `clamp-${...}` template-literal
+generators detected.
+
+KEPT (utility framework, may be future-used):
+- .truncate (used).
+- .gap-0 .. .gap-8 (utility scale).
+- .block, .flex, .grid, .inline-flex, .inline-block (display).
+- .hidden (used).
+
+REGRESSION TEST (~80 lines):
+- Definition check: assert each of 6 classes NOT defined as
+  `.CLS {` in style.css.
+- External-reference check: 22 scan files (HTML + JS + CSS).
+  For each class: 5 probes ("CLS", 'CLS', ` CLS `, ` CLS"`,
+  ` CLS'`) all absent.
+
+OPERATOR-VISIBLE EFFECT:
+- Identical visual rendering (zero consumers).
+- ~250 bytes uncompressed CSS savings.
+- Cleaner utility section.
+
+NET PASS: 562 -> 563; 0 failures.

@@ -1,0 +1,45 @@
+bd-1982d4 validation:
+- 3 paired-merges (rolled back from 4): .filter-chip.active
+  (byte-identical-subset pure-dead), .data-table tbody tr:hover
+  (strictly-additive bg !important), .chat-message:hover
+  (silent-override mixed survival).
+- 3 canonical merged + 3 dead blocks deleted + 3 marker comments.
+
+cargo test -p caco-web --lib -> 539 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (12 layers): 3x rule-head counts + 3x cascade-
+resolved truth + 1 NEGATIVE on dead bg + 1 pattern-(m)
+preservation pin (bd-c4e2ee count==2) + 3 marker pins +
+bd-45aa52 sibling pin.
+
+PATTERN (m) catch #5: .nav-item.active .nav-icon was originally
+scoped for adjacent additive merge. Pre-edit grep showed two
+heads at adjacent lines 456 and 460. Initial implementation
+ran the merge, which BROKE bd-c4e2ee at test time. Root cause:
+the grep at L456 matched the LAST selector line of a 3-line
+compound rule `.nav-item:hover .nav-icon, .nav-item:hover
+.nav-icon, .nav-item.active .nav-icon { opacity: 1; }`.
+Merging the adjacent filter:drop-shadow block into that
+compound rule would have erroneously applied the active-only
+drop-shadow to :hover states too.
+
+Rollback procedure (NEW for catch #5):
+1. Detected via existing-test break (bd-c4e2ee count==2).
+2. Reverted the .nav-item.active .nav-icon edit using
+   single-target edit.
+3. Scope reduced from 4 paired-merges to 3.
+4. Added defensive pin in bd-1982d4 test asserting bd-c4e2ee
+   count==2 preserved.
+
+NEW LESSON: pattern (m) verification must include READING THE
+ACTUAL LINE TEXT around each grep hit. A grep for `^.selector
+\{$` matches single-selector AND last-line-of-compound-selector
+rules. The fast verification: `sed -n 'L-3,L+1p' file | grep
+-c ','` -- if any comma in the previous 3 lines, the hit is
+LIKELY a compound-rule tail. (Bd-1982d4 grep results showed
+both L456 and L460 as identical-looking heads; only sed inspection
+revealed the L456 compound nature.)
+
+Catalog: pattern (m) now has 5 catches: bd-dfbeca, bd-46f5ea,
+bd-a6c685, bd-de61ec, bd-1982d4.

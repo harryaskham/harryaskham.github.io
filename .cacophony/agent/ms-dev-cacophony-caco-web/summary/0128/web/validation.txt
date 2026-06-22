@@ -1,0 +1,50 @@
+bd-91616b validation:
+- Pruned 2 orphan CSS custom properties (--bg-glow, --transition-
+  bounce) defined alongside their family members but never
+  referenced via var() anywhere in static/.
+- Added permanent regression test that scans all custom-property
+  declarations in style.css and asserts each has at least one
+  var() consumer across 20 static assets (style/summaries/
+  workspace*.css + 14 .js + index.html), with explicit allowlist
+  for documented design-system anchors (--z-base).
+
+cargo test -p caco-web --lib -> 546 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design:
+- Extracts LHS of every `--name:` declaration line.
+- Filters allowlist (documented design-tokens like --z-base).
+- Searches `var(<name> ` / `var(<name>,` / `var(<name>)` patterns
+  across 20 static assets (full caco-web frontend bundle).
+- Asserts orphan list empty.
+- Defensive forward-guard against re-introduction of the two
+  pruned vars (catches sloppy revert/cherry-pick).
+- Marker pin for both pruned vars.
+
+PIVOT FROM CSS DEDUP:
+After 35 cycles (bd-f479b0 -> bd-debc7c) of dup-block audit,
+the post-bd-debc7c remaining duplicates are dominated by
+intentional splits / compound-tails, so further dedup hits
+diminishing returns.
+
+Pivoted to backlog item: prune dead CSS variables.
+2 truly-orphan vars found (--bg-glow, --transition-bounce);
+1 documented design-system anchor preserved (--z-base).
+
+COMPOUND WIN: regression test means the orphan-var ledger is
+now continuously enforced. Any new var introduced in a
+subsequent PR must have at least one consumer or join the
+allowlist with a justification comment, or CI fails.
+
+NEW PATTERN ENTRY (catalog #21): "x" -- continuous-defense-test.
+Prior wins were one-shot fixes; this win establishes ongoing
+test-driven defense that catches regressions in EVERY future
+commit. First instance of this pattern in the audit chain.
+
+OPERATOR-VISIBLE EFFECT:
+Future devs adding a new CSS var with no consumer will see the
+test fail with a clear message:
+  bd-91616b: found N orphan CSS custom properties (declared but
+  never referenced via var()): ["--new-name", ...]. Either remove
+  the declaration, add a consumer, or add the name to
+  ALLOWLIST_DOCUMENTED_DESIGN_TOKENS with a justification comment.

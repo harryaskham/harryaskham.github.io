@@ -1,0 +1,1131 @@
+# caco-web observation helper
+session: caco-web-observe-1781720317
+output: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/reconnect-observation.log
+server: /home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/target/debug/caco-web-dev-server
+target: http://127.0.0.1:63610
+server_log: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/reconnect-server.log
+daemon_url: http://127.0.0.1:11100
+version_skew: web=1.2.1252 daemon=1.2.1264 daemon_url=http://127.0.0.1:11100
+version_skew_warning: caco-web served version 1.2.1252 is observing daemon version 1.2.1264; cross-crate evidence may reflect live-daemon behavior rather than checkout code
+
+--- scenario pico-pane
+mock_pico_ws: ws://127.0.0.1:38613/session
+
+--- playwright open http://127.0.0.1:63610/pico?agent=pico-observe-fixture&ws=ws://127.0.0.1:38613/session
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781720317` opened with pid 1401792.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63610/pico?agent=pico-observe-fixture&ws=ws://127.0.0.1:38613/session');
+```
+### Page
+- Page URL: http://127.0.0.1:63610/pico?agent=pico-observe-fixture&ws=ws://127.0.0.1:38613/session
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-17T18-18-42-464Z.yml)
+
+--- assert mock Pico intermediate streaming state
+
+--- playwright eval () => {
+  const transcript = document.getElementById('agent-pico-transcript');
+  const status = document.getElementById('agent-pico-status');
+  const result = {
+    status: status ? status.textContent : null,
+    hasThinking: !!transcript?.querySelector('.pico-thinking'),
+    hasAssistant: !!transcript?.querySelector('.pico-assistant'),
+    hasTool: !!transcript?.querySelector('.pico-tool'),
+    noTerminalPane: !document.getElementById('agent-tty-pane')
+  };
+  if (!result.noTerminalPane || !result.hasAssistant) {
+    throw new Error(`pico intermediate streaming assertion failed: ${JSON.stringify(result)}`);
+  }
+  return result;
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "status": "live · shared core",
+  "hasThinking": false,
+  "hasAssistant": true,
+  "hasTool": false,
+  "noTerminalPane": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const transcript = document.getElementById(\'agent-pico-transcript\');\n  const status = document.getElementById(\'agent-pico-status\');\n  const result = {\n    status: status ? status.textContent : null,\n    hasThinking: !!transcript?.querySelector(\'.pico-thinking\'),\n    hasAssistant: !!transcript?.querySelector(\'.pico-assistant\'),\n    hasTool: !!transcript?.querySelector(\'.pico-tool\'),\n    noTerminalPane: !document.getElementById(\'agent-tty-pane\')\n  };\n  if (!result.noTerminalPane || !result.hasAssistant) {\n    throw new Error(`pico intermediate streaming assertion failed: ${JSON.stringify(result)}`);\n  }\n  return result;\n}');
+```
+
+--- submit steer while Pico is streaming
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for steer');
+  const transcript = document.getElementById('agent-pico-transcript');
+  if (!transcript?.querySelector('.pico-assistant')) throw new Error('Pico is not visibly streaming before steer');
+  input.value = 'steer while streaming from mock scenario';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  const bodyAfter = document.getElementById('agent-pico-transcript')?.innerText || '';
+  if (!bodyAfter.includes('steer while streaming from mock scenario')) throw new Error('optimistic steer echo missing');
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for steer\');\n  const transcript = document.getElementById(\'agent-pico-transcript\');\n  if (!transcript?.querySelector(\'.pico-assistant\')) throw new Error(\'Pico is not visibly streaming before steer\');\n  input.value = \'steer while streaming from mock scenario\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  const bodyAfter = document.getElementById(\'agent-pico-transcript\')?.innerText || \'\';\n  if (!bodyAfter.includes(\'steer while streaming from mock scenario\')) throw new Error(\'optimistic steer echo missing\');\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- submit abort through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for abort');
+  input.value = '/abort';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`abort command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for abort\');\n  input.value = \'/abort\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`abort command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- answer mock Pico input dialog
+
+--- playwright eval async () => {
+  let input = null;
+  let send = null;
+  for (let i = 0; i < 120; i += 1) {
+    input = document.querySelector('.pico-dialog-panel input.pico-dialog-input');
+    send = Array.from(document.querySelectorAll('.pico-dialog-panel button')).find((b) => b.textContent.trim() === 'Send reply');
+    if (input && send) break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!input || !send) throw new Error('missing pico input dialog controls');
+  input.value = 'ship the polished pico path';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  send.click();
+  const remaining = document.querySelectorAll('.pico-dialog-panel input.pico-dialog-input').length;
+  if (remaining !== 0) throw new Error(`Pico input dialog did not clear after value reply: ${remaining}`);
+  return { replied: true, remaining };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "replied": true,
+  "remaining": 0
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  let input = null;\n  let send = null;\n  for (let i = 0; i < 120; i += 1) {\n    input = document.querySelector(\'.pico-dialog-panel input.pico-dialog-input\');\n    send = Array.from(document.querySelectorAll(\'.pico-dialog-panel button\')).find((b) => b.textContent.trim() === \'Send reply\');\n    if (input && send) break;\n    await new Promise((resolve) => setTimeout(resolve, 100));\n  }\n  if (!input || !send) throw new Error(\'missing pico input dialog controls\');\n  input.value = \'ship the polished pico path\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  send.click();\n  const remaining = document.querySelectorAll(\'.pico-dialog-panel input.pico-dialog-input\').length;\n  if (remaining !== 0) throw new Error(`Pico input dialog did not clear after value reply: ${remaining}`);\n  return { replied: true, remaining };\n}');
+```
+
+--- submit Pico help as local note
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for help note');
+  input.value = '/help';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  const body = document.getElementById('agent-pico-transcript')?.innerText || '';
+  if (input.value || !body.includes('built-in commands:') || !body.includes('/model') || !body.includes('/abort')) {
+    throw new Error(`Pico /help did not render as local note: ${JSON.stringify({ value: input.value, body })}`);
+  }
+  return { noted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "noted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for help note\');\n  input.value = \'/help\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  const body = document.getElementById(\'agent-pico-transcript\')?.innerText || \'\';\n  if (input.value || !body.includes(\'built-in commands:\') || !body.includes(\'/model\') || !body.includes(\'/abort\')) {\n    throw new Error(`Pico /help did not render as local note: ${JSON.stringify({ value: input.value, body })}`);\n  }\n  return { noted: true, valueAfter: input.value };\n}');
+```
+
+--- submit Pico commands as local note
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for commands note');
+  input.value = '/commands';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  const body = document.getElementById('agent-pico-transcript')?.innerText || '';
+  if (input.value || !body.includes('built-in commands:') || !body.includes('/model') || !body.includes('/abort')) {
+    throw new Error(`Pico /commands did not render as local note: ${JSON.stringify({ value: input.value, body })}`);
+  }
+  return { noted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "noted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for commands note\');\n  input.value = \'/commands\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  const body = document.getElementById(\'agent-pico-transcript\')?.innerText || \'\';\n  if (input.value || !body.includes(\'built-in commands:\') || !body.includes(\'/model\') || !body.includes(\'/abort\')) {\n    throw new Error(`Pico /commands did not render as local note: ${JSON.stringify({ value: input.value, body })}`);\n  }\n  return { noted: true, valueAfter: input.value };\n}');
+```
+
+--- assert Pico slash-command suggestions
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const box = document.getElementById('agent-pico-suggestions');
+  if (!input || !box) throw new Error('missing pico composer suggestions');
+  const setValue = (value) => {
+    input.value = value;
+    input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: value }));
+    return Array.from(box.querySelectorAll('.agent-pico-suggestion')).map(b => b.textContent.trim());
+  };
+  const selectedText = () => box.querySelector('.agent-pico-suggestion.is-selected[aria-selected="true"]')?.textContent.trim() || '';
+  const activeText = () => document.getElementById(input.getAttribute('aria-activedescendant') || '')?.textContent.trim() || '';
+  const builtins = setValue('/mo');
+  if (!builtins.includes('/model') || !builtins.includes('/models') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing builtin pico suggestions: ${JSON.stringify({ builtins, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  const arrowInitial = selectedText();
+  const activeInitial = activeText();
+  if (arrowInitial !== '/model' || activeInitial !== '/model') throw new Error(`expected initial active suggestion /model, got selected=${arrowInitial} active=${activeInitial}`);
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+  const arrowDown = selectedText();
+  const activeDown = activeText();
+  if (arrowDown !== '/models' || activeDown !== '/models') throw new Error(`ArrowDown did not select /models: selected=${arrowDown} active=${activeDown}`);
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+  const arrowUp = selectedText();
+  const activeUp = activeText();
+  if (arrowUp !== '/model' || activeUp !== '/model') throw new Error(`ArrowUp did not return to /model: selected=${arrowUp} active=${activeUp}`);
+  setValue('/mo');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  const escapeState = { value: input.value, expanded: input.getAttribute('aria-expanded'), active: input.getAttribute('aria-activedescendant'), hidden: box.hidden, count: box.querySelectorAll('.agent-pico-suggestion').length };
+  if (escapeState.value !== '/mo' || escapeState.expanded !== 'false' || escapeState.active !== null || !escapeState.hidden || escapeState.count !== 0) {
+    throw new Error(`Escape did not dismiss Pico suggestions cleanly: ${JSON.stringify(escapeState)}`);
+  }
+  const commandAliases = setValue('/comm');
+  if (!commandAliases.includes('/commands') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing /commands pico suggestion: ${JSON.stringify({ commandAliases, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  const commandsCompleted = input.value;
+  if (commandsCompleted !== '/commands ') throw new Error(`Tab completion did not fill /commands: ${commandsCompleted}`);
+  setValue('/mo');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  const completed = input.value;
+  if (!completed.startsWith('/model')) throw new Error(`Tab completion did not extend /mo: ${completed}`);
+  const modelAliasCommands = setValue('/m');
+  if (!modelAliasCommands.includes('/m') || !modelAliasCommands.includes('/model') || !modelAliasCommands.includes('/models') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing /m command suggestions: ${JSON.stringify({ modelAliasCommands, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  const modelAliasButton = Array.from(box.querySelectorAll('.agent-pico-suggestion')).find((b) => b.textContent.trim() === '/m');
+  if (!modelAliasButton) throw new Error('missing clickable /m model alias suggestion button');
+  modelAliasButton.click();
+  const modelAliasClicked = input.value;
+  if (modelAliasClicked !== '/m ') throw new Error(`clicking /m suggestion did not fill input: ${modelAliasClicked}`);
+  const modelAliasArgs = setValue('/m anthropic');
+  if (!modelAliasArgs.includes('anthropic/claude') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing /m model argument suggestions: ${JSON.stringify({ modelAliasArgs, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  const modelArgs = setValue('/model anthropic');
+  if (!modelArgs.includes('anthropic/claude') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing model argument suggestions: ${JSON.stringify({ modelArgs, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  const modelArgButton = Array.from(box.querySelectorAll('.agent-pico-suggestion')).find((b) => b.textContent.trim() === 'anthropic/claude');
+  if (!modelArgButton) throw new Error('missing clickable anthropic/claude model argument suggestion');
+  modelArgButton.click();
+  const modelArgClicked = input.value;
+  if (modelArgClicked !== '/model anthropic/claude') throw new Error(`clicking model argument suggestion did not fill input: ${modelArgClicked}`);
+  setValue('/model anthropic');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  const modelArgCompleted = input.value;
+  if (modelArgCompleted !== '/model anthropic/claude') throw new Error(`Tab completion did not fill model arg: ${modelArgCompleted}`);
+  const aborts = setValue('/ab');
+  if (!aborts.includes('/abort') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing abort pico suggestion: ${JSON.stringify({ aborts, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  const abortButton = Array.from(box.querySelectorAll('.agent-pico-suggestion')).find((b) => b.textContent.trim() === '/abort');
+  if (!abortButton) throw new Error('missing clickable /abort suggestion button');
+  abortButton.click();
+  const abortClicked = input.value;
+  if (abortClicked !== '/abort ') throw new Error(`clicking /abort suggestion did not fill input: ${abortClicked}`);
+  setValue('/ab');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  const abortCompleted = input.value;
+  if (abortCompleted !== '/abort ') throw new Error(`Tab completion did not fill /abort: ${abortCompleted}`);
+  const thinking = setValue('/thi');
+  if (!thinking.includes('/think') || !thinking.includes('/thinking') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing thinking pico suggestions: ${JSON.stringify({ thinking, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  setValue('/thinki');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  const thinkingCompleted = input.value;
+  if (thinkingCompleted !== '/thinking ') throw new Error(`Tab completion did not fill /thinking: ${thinkingCompleted}`);
+  const thinkArgs = setValue('/think ');
+  if (!thinkArgs.includes('high') || !thinkArgs.includes('medium') || !thinkArgs.includes('minimal') || input.getAttribute('aria-expanded') !== 'true' || box.hidden) {
+    throw new Error(`missing /think level argument suggestions: ${JSON.stringify({ thinkArgs, expanded: input.getAttribute('aria-expanded'), hidden: box.hidden })}`);
+  }
+  const thinkLevelButton = Array.from(box.querySelectorAll('.agent-pico-suggestion')).find((b) => b.textContent.trim() === 'high');
+  if (!thinkLevelButton) throw new Error('missing clickable high think-level argument suggestion');
+  thinkLevelButton.click();
+  const thinkArgClicked = input.value;
+  if (thinkArgClicked !== '/think high') throw new Error(`clicking think-level argument suggestion did not fill input: ${thinkArgClicked}`);
+  setValue('/think h');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  const thinkArgCompleted = input.value;
+  if (thinkArgCompleted !== '/think high') throw new Error(`Tab completion did not fill think-level arg: ${thinkArgCompleted}`);
+  const dynamic = setValue('/d');
+  if (!dynamic.includes('/deploy')) throw new Error(`missing dynamic /deploy suggestion: ${JSON.stringify(dynamic)}`);
+  const dynamicButton = Array.from(box.querySelectorAll('.agent-pico-suggestion')).find((b) => b.textContent.trim() === '/deploy');
+  if (!dynamicButton) throw new Error('missing clickable /deploy dynamic suggestion button');
+  dynamicButton.click();
+  const dynamicClicked = input.value;
+  if (dynamicClicked !== '/deploy ') throw new Error(`clicking dynamic /deploy suggestion did not fill input: ${dynamicClicked}`);
+  input.value = '';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward', data: '' }));
+  return { builtins, arrowInitial, activeInitial, arrowDown, activeDown, arrowUp, activeUp, escapeState, commandAliases, commandsCompleted, completed, modelAliasCommands, modelAliasClicked, modelAliasArgs, modelArgs, modelArgClicked, modelArgCompleted, aborts, abortClicked, abortCompleted, thinking, thinkingCompleted, thinkArgs, thinkArgClicked, thinkArgCompleted, dynamic, dynamicClicked };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "builtins": [
+    "/model",
+    "/models"
+  ],
+  "arrowInitial": "/model",
+  "activeInitial": "/model",
+  "arrowDown": "/models",
+  "activeDown": "/models",
+  "arrowUp": "/model",
+  "activeUp": "/model",
+  "escapeState": {
+    "value": "/mo",
+    "expanded": "false",
+    "active": null,
+    "hidden": true,
+    "count": 0
+  },
+  "commandAliases": [
+    "/commands"
+  ],
+  "commandsCompleted": "/commands ",
+  "completed": "/model",
+  "modelAliasCommands": [
+    "/m",
+    "/model",
+    "/models"
+  ],
+  "modelAliasClicked": "/m ",
+  "modelAliasArgs": [
+    "anthropic/claude"
+  ],
+  "modelArgs": [
+    "anthropic/claude"
+  ],
+  "modelArgClicked": "/model anthropic/claude",
+  "modelArgCompleted": "/model anthropic/claude",
+  "aborts": [
+    "/abort"
+  ],
+  "abortClicked": "/abort ",
+  "abortCompleted": "/abort ",
+  "thinking": [
+    "/think",
+    "/thinking"
+  ],
+  "thinkingCompleted": "/thinking ",
+  "thinkArgs": [
+    "high",
+    "low",
+    "medium",
+    "minimal",
+    "off",
+    "xhigh"
+  ],
+  "thinkArgClicked": "/think high",
+  "thinkArgCompleted": "/think high",
+  "dynamic": [
+    "/deploy"
+  ],
+  "dynamicClicked": "/deploy "
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const box = document.getElementById(\'agent-pico-suggestions\');\n  if (!input || !box) throw new Error(\'missing pico composer suggestions\');\n  const setValue = (value) => {\n    input.value = value;\n    input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: value }));\n    return Array.from(box.querySelectorAll(\'.agent-pico-suggestion\')).map(b => b.textContent.trim());\n  };\n  const selectedText = () => box.querySelector(\'.agent-pico-suggestion.is-selected[aria-selected="true"]\')?.textContent.trim() || \'\';\n  const activeText = () => document.getElementById(input.getAttribute(\'aria-activedescendant\') || \'\')?.textContent.trim() || \'\';\n  const builtins = setValue(\'/mo\');\n  if (!builtins.includes(\'/model\') || !builtins.includes(\'/models\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing builtin pico suggestions: ${JSON.stringify({ builtins, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  const arrowInitial = selectedText();\n  const activeInitial = activeText();\n  if (arrowInitial !== \'/model\' || activeInitial !== \'/model\') throw new Error(`expected initial active suggestion /model, got selected=${arrowInitial} active=${activeInitial}`);\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'ArrowDown\', bubbles: true, cancelable: true }));\n  const arrowDown = selectedText();\n  const activeDown = activeText();\n  if (arrowDown !== \'/models\' || activeDown !== \'/models\') throw new Error(`ArrowDown did not select /models: selected=${arrowDown} active=${activeDown}`);\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'ArrowUp\', bubbles: true, cancelable: true }));\n  const arrowUp = selectedText();\n  const activeUp = activeText();\n  if (arrowUp !== \'/model\' || activeUp !== \'/model\') throw new Error(`ArrowUp did not return to /model: selected=${arrowUp} active=${activeUp}`);\n  setValue(\'/mo\');\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Escape\', bubbles: true, cancelable: true }));\n  const escapeState = { value: input.value, expanded: input.getAttribute(\'aria-expanded\'), active: input.getAttribute(\'aria-activedescendant\'), hidden: box.hidden, count: box.querySelectorAll(\'.agent-pico-suggestion\').length };\n  if (escapeState.value !== \'/mo\' || escapeState.expanded !== \'false\' || escapeState.active !== null || !escapeState.hidden || escapeState.count !== 0) {\n    throw new Error(`Escape did not dismiss Pico suggestions cleanly: ${JSON.stringify(escapeState)}`);\n  }\n  const commandAliases = setValue(\'/comm\');\n  if (!commandAliases.includes(\'/commands\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing /commands pico suggestion: ${JSON.stringify({ commandAliases, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Tab\', bubbles: true, cancelable: true }));\n  const commandsCompleted = input.value;\n  if (commandsCompleted !== \'/commands \') throw new Error(`Tab completion did not fill /commands: ${commandsCompleted}`);\n  setValue(\'/mo\');\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Tab\', bubbles: true, cancelable: true }));\n  const completed = input.value;\n  if (!completed.startsWith(\'/model\')) throw new Error(`Tab completion did not extend /mo: ${completed}`);\n  const modelAliasCommands = setValue(\'/m\');\n  if (!modelAliasCommands.includes(\'/m\') || !modelAliasCommands.includes(\'/model\') || !modelAliasCommands.includes(\'/models\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing /m command suggestions: ${JSON.stringify({ modelAliasCommands, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  const modelAliasButton = Array.from(box.querySelectorAll(\'.agent-pico-suggestion\')).find((b) => b.textContent.trim() === \'/m\');\n  if (!modelAliasButton) throw new Error(\'missing clickable /m model alias suggestion button\');\n  modelAliasButton.click();\n  const modelAliasClicked = input.value;\n  if (modelAliasClicked !== \'/m \') throw new Error(`clicking /m suggestion did not fill input: ${modelAliasClicked}`);\n  const modelAliasArgs = setValue(\'/m anthropic\');\n  if (!modelAliasArgs.includes(\'anthropic/claude\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing /m model argument suggestions: ${JSON.stringify({ modelAliasArgs, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  const modelArgs = setValue(\'/model anthropic\');\n  if (!modelArgs.includes(\'anthropic/claude\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing model argument suggestions: ${JSON.stringify({ modelArgs, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  const modelArgButton = Array.from(box.querySelectorAll(\'.agent-pico-suggestion\')).find((b) => b.textContent.trim() === \'anthropic/claude\');\n  if (!modelArgButton) throw new Error(\'missing clickable anthropic/claude model argument suggestion\');\n  modelArgButton.click();\n  const modelArgClicked = input.value;\n  if (modelArgClicked !== \'/model anthropic/claude\') throw new Error(`clicking model argument suggestion did not fill input: ${modelArgClicked}`);\n  setValue(\'/model anthropic\');\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Tab\', bubbles: true, cancelable: true }));\n  const modelArgCompleted = input.value;\n  if (modelArgCompleted !== \'/model anthropic/claude\') throw new Error(`Tab completion did not fill model arg: ${modelArgCompleted}`);\n  const aborts = setValue(\'/ab\');\n  if (!aborts.includes(\'/abort\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing abort pico suggestion: ${JSON.stringify({ aborts, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  const abortButton = Array.from(box.querySelectorAll(\'.agent-pico-suggestion\')).find((b) => b.textContent.trim() === \'/abort\');\n  if (!abortButton) throw new Error(\'missing clickable /abort suggestion button\');\n  abortButton.click();\n  const abortClicked = input.value;\n  if (abortClicked !== \'/abort \') throw new Error(`clicking /abort suggestion did not fill input: ${abortClicked}`);\n  setValue(\'/ab\');\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Tab\', bubbles: true, cancelable: true }));\n  const abortCompleted = input.value;\n  if (abortCompleted !== \'/abort \') throw new Error(`Tab completion did not fill /abort: ${abortCompleted}`);\n  const thinking = setValue(\'/thi\');\n  if (!thinking.includes(\'/think\') || !thinking.includes(\'/thinking\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing thinking pico suggestions: ${JSON.stringify({ thinking, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  setValue(\'/thinki\');\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Tab\', bubbles: true, cancelable: true }));\n  const thinkingCompleted = input.value;\n  if (thinkingCompleted !== \'/thinking \') throw new Error(`Tab completion did not fill /thinking: ${thinkingCompleted}`);\n  const thinkArgs = setValue(\'/think \');\n  if (!thinkArgs.includes(\'high\') || !thinkArgs.includes(\'medium\') || !thinkArgs.includes(\'minimal\') || input.getAttribute(\'aria-expanded\') !== \'true\' || box.hidden) {\n    throw new Error(`missing /think level argument suggestions: ${JSON.stringify({ thinkArgs, expanded: input.getAttribute(\'aria-expanded\'), hidden: box.hidden })}`);\n  }\n  const thinkLevelButton = Array.from(box.querySelectorAll(\'.agent-pico-suggestion\')).find((b) => b.textContent.trim() === \'high\');\n  if (!thinkLevelButton) throw new Error(\'missing clickable high think-level argument suggestion\');\n  thinkLevelButton.click();\n  const thinkArgClicked = input.value;\n  if (thinkArgClicked !== \'/think high\') throw new Error(`clicking think-level argument suggestion did not fill input: ${thinkArgClicked}`);\n  setValue(\'/think h\');\n  input.dispatchEvent(new KeyboardEvent(\'keydown\', { key: \'Tab\', bubbles: true, cancelable: true }));\n  const thinkArgCompleted = input.value;\n  if (thinkArgCompleted !== \'/think high\') throw new Error(`Tab completion did not fill think-level arg: ${thinkArgCompleted}`);\n  const dynamic = setValue(\'/d\');\n  if (!dynamic.includes(\'/deploy\')) throw new Error(`missing dynamic /deploy suggestion: ${JSON.stringify(dynamic)}`);\n  const dynamicButton = Array.from(box.querySelectorAll(\'.agent-pico-suggestion\')).find((b) => b.textContent.trim() === \'/deploy\');\n  if (!dynamicButton) throw new Error(\'missing clickable /deploy dynamic suggestion button\');\n  dynamicButton.click();\n  const dynamicClicked = input.value;\n  if (dynamicClicked !== \'/deploy \') throw new Error(`clicking dynamic /deploy suggestion did not fill input: ${dynamicClicked}`);\n  input.value = \'\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'deleteContentBackward\', data: \'\' }));\n  return { builtins, arrowInitial, activeInitial, arrowDown, activeDown, arrowUp, activeUp, escapeState, commandAliases, commandsCompleted, completed, modelAliasCommands, modelAliasClicked, modelAliasArgs, modelArgs, modelArgClicked, modelArgCompleted, aborts, abortClicked, abortCompleted, thinking, thinkingCompleted, thinkArgs, thinkArgClicked, thinkArgCompleted, dynamic, dynamicClicked };\n}');
+```
+
+--- submit models command through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for models command');
+  input.value = '/models';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`models command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for models command\');\n  input.value = \'/models\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`models command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- submit model cycle command through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for model cycle command');
+  input.value = '/model';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`model cycle command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for model cycle command\');\n  input.value = \'/model\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`model cycle command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- submit model alias command through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for model alias command');
+  input.value = '/m openai/gpt';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`model alias command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for model alias command\');\n  input.value = \'/m openai/gpt\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`model alias command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- submit thinking cycle command through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for thinking cycle command');
+  input.value = '/think';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`thinking cycle command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for thinking cycle command\');\n  input.value = \'/think\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`thinking cycle command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- submit thinking command through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for think command');
+  input.value = '/think high';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`think command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for think command\');\n  input.value = \'/think high\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`think command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- choose model through Pico model picker
+
+--- playwright eval () => {
+  const picker = document.querySelector('.pico-model-picker');
+  const option = Array.from(document.querySelectorAll('.pico-model-option')).find((b) => b.textContent.trim() === 'anthropic/claude') || document.querySelector('.pico-model-option');
+  if (!picker || !option) throw new Error('missing pico model picker option');
+  option.click();
+  const remaining = document.querySelectorAll('.pico-model-picker').length;
+  if (remaining !== 0) throw new Error(`Pico model picker did not clear after selection: ${remaining}`);
+  return { selected: option.textContent.trim(), remaining };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "selected": "anthropic/claude",
+  "remaining": 0
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const picker = document.querySelector(\'.pico-model-picker\');\n  const option = Array.from(document.querySelectorAll(\'.pico-model-option\')).find((b) => b.textContent.trim() === \'anthropic/claude\') || document.querySelector(\'.pico-model-option\');\n  if (!picker || !option) throw new Error(\'missing pico model picker option\');\n  option.click();\n  const remaining = document.querySelectorAll(\'.pico-model-picker\').length;\n  if (remaining !== 0) throw new Error(`Pico model picker did not clear after selection: ${remaining}`);\n  return { selected: option.textContent.trim(), remaining };\n}');
+```
+
+--- submit prompt through Pico composer
+
+--- playwright eval async () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer');
+  input.value = 'hello from mock scenario';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  let pending = 0;
+  let body = '';
+  for (let i = 0; i < 20; i += 1) {
+    pending = document.querySelectorAll('.pico-pending').length;
+    body = document.getElementById('agent-pico-transcript')?.innerText || '';
+    if (pending >= 1 && body.includes('hello from mock scenario')) break;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  if (pending < 1 || !body.includes('hello from mock scenario')) throw new Error(`optimistic pico prompt echo missing: pending=${pending}`);
+  return { submitted: true, valueAfter: input.value, pending };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": "",
+  "pending": 2
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer\');\n  input.value = \'hello from mock scenario\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  let pending = 0;\n  let body = \'\';\n  for (let i = 0; i < 20; i += 1) {\n    pending = document.querySelectorAll(\'.pico-pending\').length;\n    body = document.getElementById(\'agent-pico-transcript\')?.innerText || \'\';\n    if (pending >= 1 && body.includes(\'hello from mock scenario\')) break;\n    await new Promise((resolve) => setTimeout(resolve, 50));\n  }\n  if (pending < 1 || !body.includes(\'hello from mock scenario\')) throw new Error(`optimistic pico prompt echo missing: pending=${pending}`);\n  return { submitted: true, valueAfter: input.value, pending };\n}');
+```
+
+--- submit slash command through Pico composer
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer');
+  input.value = '/compact keep it concise';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer\');\n  input.value = \'/compact keep it concise\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+
+--- playwright resize 1440 1000
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.setViewportSize({ width: 1440, height: 1000 });
+```
+
+--- assert streamed mock Pico AgentView parity
+
+--- playwright eval () => {
+  const pane = document.getElementById('agent-pico-pane');
+  const transcript = document.getElementById('agent-pico-transcript');
+  const composer = document.getElementById('agent-pico-composer');
+  const terminal = document.getElementById('agent-tty-pane');
+  const result = {
+    panePresent: !!pane,
+    transcriptPresent: !!transcript,
+    composerPresent: !!composer,
+    noTerminalPane: !terminal,
+    status: document.getElementById('agent-pico-status')?.textContent || null,
+    bubbles: transcript ? transcript.querySelectorAll('.pico-bubble').length : 0,
+    dialogPanels: transcript ? transcript.querySelectorAll('.pico-dialog-panel').length : 0,
+    modelPickers: transcript ? transcript.querySelectorAll('.pico-model-picker').length : 0,
+    images: transcript ? transcript.querySelectorAll('.pico-inline-image img[loading="lazy"][decoding="async"]').length : 0,
+    notices: document.querySelectorAll('.pico-foot-notice').length,
+    widgets: document.querySelectorAll('.pico-foot-widget').length,
+    titleChip: document.querySelector('.pico-foot-title')?.textContent || null,
+    times: transcript ? transcript.querySelectorAll('time.pico-time[datetime]').length : 0,
+    suggestionsHost: !!document.getElementById('agent-pico-suggestions')
+  };
+  if (!result.panePresent || !result.transcriptPresent || !result.composerPresent || !result.noTerminalPane || result.status !== 'session ended' || result.bubbles < 3 || result.images < 1 || result.notices < 1 || result.widgets < 1 || result.titleChip !== 'mock pico' || result.times < 2 || !result.suggestionsHost) {
+    throw new Error(`pico pane fixture assertion failed: ${JSON.stringify(result)}`);
+  }
+  return result;
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "panePresent": true,
+  "transcriptPresent": true,
+  "composerPresent": true,
+  "noTerminalPane": true,
+  "status": "session ended",
+  "bubbles": 7,
+  "dialogPanels": 1,
+  "modelPickers": 1,
+  "images": 1,
+  "notices": 1,
+  "widgets": 1,
+  "titleChip": "mock pico",
+  "times": 4,
+  "suggestionsHost": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const pane = document.getElementById(\'agent-pico-pane\');\n  const transcript = document.getElementById(\'agent-pico-transcript\');\n  const composer = document.getElementById(\'agent-pico-composer\');\n  const terminal = document.getElementById(\'agent-tty-pane\');\n  const result = {\n    panePresent: !!pane,\n    transcriptPresent: !!transcript,\n    composerPresent: !!composer,\n    noTerminalPane: !terminal,\n    status: document.getElementById(\'agent-pico-status\')?.textContent || null,\n    bubbles: transcript ? transcript.querySelectorAll(\'.pico-bubble\').length : 0,\n    dialogPanels: transcript ? transcript.querySelectorAll(\'.pico-dialog-panel\').length : 0,\n    modelPickers: transcript ? transcript.querySelectorAll(\'.pico-model-picker\').length : 0,\n    images: transcript ? transcript.querySelectorAll(\'.pico-inline-image img[loading="lazy"][decoding="async"]\').length : 0,\n    notices: document.querySelectorAll(\'.pico-foot-notice\').length,\n    widgets: document.querySelectorAll(\'.pico-foot-widget\').length,\n    titleChip: document.querySelector(\'.pico-foot-title\')?.textContent || null,\n    times: transcript ? transcript.querySelectorAll(\'time.pico-time[datetime]\').length : 0,\n    suggestionsHost: !!document.getElementById(\'agent-pico-suggestions\')\n  };\n  if (!result.panePresent || !result.transcriptPresent || !result.composerPresent || !result.noTerminalPane || result.status !== \'session ended\' || result.bubbles < 3 || result.images < 1 || result.notices < 1 || result.widgets < 1 || result.titleChip !== \'mock pico\' || result.times < 2 || !result.suggestionsHost) {\n    throw new Error(`pico pane fixture assertion failed: ${JSON.stringify(result)}`);\n  }\n  return result;\n}');
+```
+
+--- assert Pico render coalescing stats
+
+--- playwright eval () => {
+  const stats = window.cacoPicoDebugStats ? window.cacoPicoDebugStats() : null;
+  if (!stats) throw new Error('missing cacoPicoDebugStats');
+  if (!(stats.framesApplied > stats.renderRuns && stats.renderRuns > 0)) {
+    throw new Error(`Pico render coalescing assertion failed: ${JSON.stringify(stats)}`);
+  }
+  return stats;
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "framesApplied": 21,
+  "renderRequests": 21,
+  "renderRuns": 15,
+  "pendingRender": false
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const stats = window.cacoPicoDebugStats ? window.cacoPicoDebugStats() : null;\n  if (!stats) throw new Error(\'missing cacoPicoDebugStats\');\n  if (!(stats.framesApplied > stats.renderRuns && stats.renderRuns > 0)) {\n    throw new Error(`Pico render coalescing assertion failed: ${JSON.stringify(stats)}`);\n  }\n  return stats;\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-06-17T18-19-34-512Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-06-17T18-19-34-512Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-06-17T18-19-34-512Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- playwright network
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+Usage: playwright-cli <command> [args] [options]
+Usage: playwright-cli -s=<session> <command> [args] [options]
+
+Core:
+  open [url]                  open the browser
+  attach [name]               attach to a running playwright browser
+  close                       close the browser
+  detach                      detach from an attached browser
+  goto <url>                  navigate to a url
+  type <text>                 type text into editable element
+  click <target> [button]     perform click on a web page
+  dblclick <target> [button]  perform double click on a web page
+  fill <target> <text>        fill text into editable element
+  drag <startTarget> <endTarget> perform drag and drop between two elements
+  drop <target>               drop files or data onto an element
+  hover <target>              hover over element on page
+  select <target> <val>       select an option in a dropdown
+  upload <file>               upload one or multiple files
+  check <target>              check a checkbox or radio button
+  uncheck <target>            uncheck a checkbox or radio button
+  snapshot [target]           capture page snapshot to obtain element ref
+  eval <func> [target]        evaluate javascript expression on page or element
+  dialog-accept [prompt]      accept a dialog
+  dialog-dismiss              dismiss a dialog
+  resize <w> <h>              resize the browser window
+  delete-data                 delete session data
+
+Navigation:
+  go-back                     go back to the previous page
+  go-forward                  go forward to the next page
+  reload                      reload the current page
+
+Keyboard:
+  press <key>                 press a key on the keyboard, `a`, `arrowleft`
+  keydown <key>               press a key down on the keyboard
+  keyup <key>                 press a key up on the keyboard
+
+Mouse:
+  mousemove <x> <y>           move mouse to a given position
+  mousedown [button]          press mouse down
+  mouseup [button]            press mouse up
+  mousewheel <dx> <dy>        scroll mouse wheel
+
+Save as:
+  screenshot [target]         screenshot of the current page or element
+  pdf                         save page as pdf
+
+Tabs:
+  tab-list                    list all tabs
+  tab-new [url]               create a new tab
+  tab-close [index]           close a browser tab
+  tab-select <index>          select a browser tab
+
+Storage:
+  state-load <filename>       loads browser storage (authentication) state from a file
+  state-save [filename]       saves the current storage (authentication) state to a file
+  cookie-list                 list all cookies (optionally filtered by domain/path)
+  cookie-get <name>           get a specific cookie by name
+  cookie-set <name> <value>   set a cookie with optional flags
+  cookie-delete <name>        delete a specific cookie
+  cookie-clear                clear all cookies
+  localstorage-list           list all localstorage key-value pairs
+  localstorage-get <key>      get a localstorage item by key
+  localstorage-set <key> <value> set a localstorage item
+  localstorage-delete <key>   delete a localstorage item
+  localstorage-clear          clear all localstorage
+  sessionstorage-list         list all sessionstorage key-value pairs
+  sessionstorage-get <key>    get a sessionstorage item by key
+  sessionstorage-set <key> <value> set a sessionstorage item
+  sessionstorage-delete <key> delete a sessionstorage item
+  sessionstorage-clear        clear all sessionstorage
+
+Network:
+  requests                    list all network requests since loading the page. each request is numbered for use with the `request` command.
+  request <index>             show full details (headers, body, response) of a single network request by its number from the `requests` command.
+  request-headers <index>     print only the request headers for a single network request by its number from the `requests` command.
+  request-body <index>        print only the request body for a single network request by its number from the `requests` command.
+  response-headers <index>    print only the response headers for a single network request by its number from the `requests` command.
+  response-body <index>       print the response body for a single network request by its number from the `requests` command. textual bodies are inlined; binary bodies are saved to a file and the path is printed.
+  route <pattern>             mock network requests matching a url pattern
+  route-list                  list all active network routes
+  unroute [pattern]           remove routes matching a pattern (or all routes)
+  network-state-set <state>   set the browser network state to online or offline
+
+DevTools:
+  console [min-level]         list console messages
+  run-code [code]             run playwright code snippet
+  tracing-start               start trace recording
+  tracing-stop                stop trace recording
+  video-start [filename]      start video recording
+  video-stop                  stop video recording
+  video-chapter <title>       add a chapter marker to the video recording
+  video-show-actions          annotate subsequent cli/mcp actions on the page with a callout that names the action and highlights the target element
+  video-hide-actions          stop annotating actions performed on the page
+  show                        show playwright dashboard
+  pause-at <location>         run the test up to a specific location and pause there
+  resume                      resume the test execution
+  step-over                   step over the next call in the test
+  generate-locator <target>   generate a playwright locator for the given element
+  highlight [target]          show (or with --hide, remove) a highlight overlay for an element; `--hide` without a target hides all page highlights.
+
+Install:
+  install                     initialize workspace
+  install-browser [browser]   install browser
+
+Browser sessions:
+  list                        list browser sessions
+  close-all                   close all browser sessions
+  kill-all                    forcefully kill all browser sessions (for stale/zombie processes)
+
+Global options:
+  --help [command]            print help
+  --json                      output response as JSON
+  --raw                       output only the result value, without status and code
+  --version                   print version
+Unknown command: network
+
+WARNING: optional playwright network unavailable in this @playwright/cli build; continuing observation without this artifact (bd-20258e)
+
+--- console
+
+--- playwright console
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+Total messages: 0 (Errors: 0, Warnings: 0)
+
+
+--- final screenshot
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-06-17T18-19-37-388Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-06-17T18-19-37-388Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-06-17T18-19-37-388Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- mock outbound HostRequest assertion
+received_messages: 11
+received: {"kind":"command","type":"steer","message":"steer while streaming from mock scenario"}
+received: {"kind":"command","type":"abort"}
+received: {"kind":"ui_reply","type":"extension_ui_response","id":"dlg-input","value":"ship the polished pico path"}
+received: {"kind":"command","type":"get_available_models"}
+received: {"kind":"command","type":"cycle_model"}
+received: {"kind":"command","type":"set_model","provider":"openai","modelId":"gpt"}
+received: {"kind":"command","type":"cycle_thinking_level"}
+received: {"kind":"command","type":"set_thinking_level","level":"high"}
+received: {"kind":"command","type":"set_model","provider":"anthropic","modelId":"claude"}
+received: {"kind":"command","type":"prompt","message":"hello from mock scenario"}
+received: {"kind":"command","type":"compact","customInstructions":"keep it concise"}
+
+--- pico confirm dialog subscenario
+mock_pico_ws: ws://127.0.0.1:33347/session
+
+--- playwright open http://127.0.0.1:63610/pico?agent=pico-confirm-fixture&ws=ws://127.0.0.1:33347/session
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781720317` opened with pid 1404606.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63610/pico?agent=pico-confirm-fixture&ws=ws://127.0.0.1:33347/session');
+```
+### Page
+- Page URL: http://127.0.0.1:63610/pico?agent=pico-confirm-fixture&ws=ws://127.0.0.1:33347/session
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-17T18-19-40-300Z.yml)
+
+--- answer mock Pico confirm dialog
+
+--- playwright eval async () => {
+  let btn = null;
+  for (let i = 0; i < 60; i += 1) {
+    btn = Array.from(document.querySelectorAll('.pico-dialog-panel button')).find(b => b.textContent.trim() === 'Approve');
+    if (btn) break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!btn) throw new Error('missing approve button');
+  btn.click();
+  return { approved: true };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "approved": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  let btn = null;\n  for (let i = 0; i < 60; i += 1) {\n    btn = Array.from(document.querySelectorAll(\'.pico-dialog-panel button\')).find(b => b.textContent.trim() === \'Approve\');\n    if (btn) break;\n    await new Promise((resolve) => setTimeout(resolve, 100));\n  }\n  if (!btn) throw new Error(\'missing approve button\');\n  btn.click();\n  return { approved: true };\n}');
+```
+confirm_received_messages: 1
+confirm_received: {"kind":"ui_reply","type":"extension_ui_response","id":"dlg1","confirmed":true}
+
+--- pico select dialog subscenario
+mock_pico_ws: ws://127.0.0.1:38943/session
+
+--- playwright open http://127.0.0.1:63610/pico?agent=pico-select-fixture&ws=ws://127.0.0.1:38943/session
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781720317` opened with pid 1405036.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63610/pico?agent=pico-select-fixture&ws=ws://127.0.0.1:38943/session');
+```
+### Page
+- Page URL: http://127.0.0.1:63610/pico?agent=pico-select-fixture&ws=ws://127.0.0.1:38943/session
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-17T18-19-44-689Z.yml)
+
+--- answer mock Pico select dialog
+
+--- playwright eval async () => {
+  let option = null;
+  for (let i = 0; i < 60; i += 1) {
+    option = Array.from(document.querySelectorAll('.pico-dialog-panel button')).find((b) => b.textContent.trim() === 'stable');
+    if (option) break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!option) throw new Error('missing pico select dialog stable option');
+  option.click();
+  const remaining = Array.from(document.querySelectorAll('.pico-dialog-panel button')).some((b) => b.textContent.trim() === 'stable');
+  if (remaining) throw new Error('Pico select dialog did not clear after value reply');
+  return { selected: 'stable' };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "selected": "stable"
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  let option = null;\n  for (let i = 0; i < 60; i += 1) {\n    option = Array.from(document.querySelectorAll(\'.pico-dialog-panel button\')).find((b) => b.textContent.trim() === \'stable\');\n    if (option) break;\n    await new Promise((resolve) => setTimeout(resolve, 100));\n  }\n  if (!option) throw new Error(\'missing pico select dialog stable option\');\n  option.click();\n  const remaining = Array.from(document.querySelectorAll(\'.pico-dialog-panel button\')).some((b) => b.textContent.trim() === \'stable\');\n  if (remaining) throw new Error(\'Pico select dialog did not clear after value reply\');\n  return { selected: \'stable\' };\n}');
+```
+select_received_messages: 1
+select_received: {"kind":"ui_reply","type":"extension_ui_response","id":"dlg-select","value":"stable"}
+
+--- pico cancel dialog subscenario
+mock_pico_ws: ws://127.0.0.1:42049/session
+
+--- playwright open http://127.0.0.1:63610/pico?agent=pico-cancel-fixture&ws=ws://127.0.0.1:42049/session
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781720317` opened with pid 1405419.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63610/pico?agent=pico-cancel-fixture&ws=ws://127.0.0.1:42049/session');
+```
+### Page
+- Page URL: http://127.0.0.1:63610/pico?agent=pico-cancel-fixture&ws=ws://127.0.0.1:42049/session
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-17T18-19-48-794Z.yml)
+
+--- cancel mock Pico dialog
+
+--- playwright eval async () => {
+  let btn = null;
+  for (let i = 0; i < 60; i += 1) {
+    btn = Array.from(document.querySelectorAll('.pico-dialog-panel button')).find((b) => b.textContent.trim() === 'Cancel');
+    if (btn) break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!btn) throw new Error('missing pico cancel dialog button');
+  btn.click();
+  const remaining = Array.from(document.querySelectorAll('.pico-dialog-panel button')).some((b) => b.textContent.trim() === 'Cancel');
+  if (remaining) throw new Error('Pico cancel dialog did not clear after cancel reply');
+  return { cancelled: true };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "cancelled": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  let btn = null;\n  for (let i = 0; i < 60; i += 1) {\n    btn = Array.from(document.querySelectorAll(\'.pico-dialog-panel button\')).find((b) => b.textContent.trim() === \'Cancel\');\n    if (btn) break;\n    await new Promise((resolve) => setTimeout(resolve, 100));\n  }\n  if (!btn) throw new Error(\'missing pico cancel dialog button\');\n  btn.click();\n  const remaining = Array.from(document.querySelectorAll(\'.pico-dialog-panel button\')).some((b) => b.textContent.trim() === \'Cancel\');\n  if (remaining) throw new Error(\'Pico cancel dialog did not clear after cancel reply\');\n  return { cancelled: true };\n}');
+```
+cancel_received_messages: 1
+cancel_received: {"kind":"ui_reply","type":"extension_ui_response","id":"dlg-cancel","cancelled":true}
+
+--- pico dynamic command subscenario
+mock_pico_ws: ws://127.0.0.1:42895/session
+
+--- playwright open http://127.0.0.1:63610/pico?agent=pico-dynamic-fixture&ws=ws://127.0.0.1:42895/session
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781720317` opened with pid 1405658.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63610/pico?agent=pico-dynamic-fixture&ws=ws://127.0.0.1:42895/session');
+```
+### Page
+- Page URL: http://127.0.0.1:63610/pico?agent=pico-dynamic-fixture&ws=ws://127.0.0.1:42895/session
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-17T18-19-52-599Z.yml)
+
+--- submit mock Pico dynamic command
+
+--- playwright eval () => {
+  const input = document.getElementById('agent-pico-input');
+  const form = document.getElementById('agent-pico-composer');
+  if (!input || !form) throw new Error('missing pico composer for dynamic command');
+  input.value = '/deploy canary';
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: input.value }));
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  if (input.value) throw new Error(`dynamic command did not submit/clear: ${input.value}`);
+  return { submitted: true, valueAfter: input.value };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "submitted": true,
+  "valueAfter": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const input = document.getElementById(\'agent-pico-input\');\n  const form = document.getElementById(\'agent-pico-composer\');\n  if (!input || !form) throw new Error(\'missing pico composer for dynamic command\');\n  input.value = \'/deploy canary\';\n  input.dispatchEvent(new InputEvent(\'input\', { bubbles: true, inputType: \'insertText\', data: input.value }));\n  if (typeof form.requestSubmit === \'function\') form.requestSubmit();\n  else form.dispatchEvent(new Event(\'submit\', { bubbles: true, cancelable: true }));\n  if (input.value) throw new Error(`dynamic command did not submit/clear: ${input.value}`);\n  return { submitted: true, valueAfter: input.value };\n}');
+```
+dynamic_received_messages: 1
+dynamic_received: {"kind":"command","type":"prompt","message":"/deploy canary"}
+
+--- pico disconnect subscenario
+mock_pico_ws: ws://127.0.0.1:34215/session
+
+--- playwright open http://127.0.0.1:63610/pico?agent=pico-disconnect-fixture&ws=ws://127.0.0.1:34215/session
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781720317` opened with pid 1406031.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63610/pico?agent=pico-disconnect-fixture&ws=ws://127.0.0.1:34215/session');
+```
+### Page
+- Page URL: http://127.0.0.1:63610/pico?agent=pico-disconnect-fixture&ws=ws://127.0.0.1:34215/session
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-17T18-19-56-443Z.yml)
+
+--- assert mock Pico dropped socket state
+
+--- playwright eval async () => {
+  let sawReconnecting = false;
+  const reconnectState = () => (window.cacoPicoReconnectState ? window.cacoPicoReconnectState() : { mode: null, attempts: 0, max: 0 });
+  const waitForOffline = async () => {
+    for (let i = 0; i < 150; i += 1) {
+      const status = document.getElementById('agent-pico-status')?.textContent || '';
+      if (/^reconnecting/.test(status)) sawReconnecting = true;
+      if (status === 'disconnected') return status;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return document.getElementById('agent-pico-status')?.textContent || null;
+  };
+  await waitForOffline();
+  const firstTranscript = document.getElementById('agent-pico-transcript');
+  const firstState = reconnectState();
+  const first = {
+    status: document.getElementById('agent-pico-status')?.textContent || null,
+    panePresent: !!document.getElementById('agent-pico-pane'),
+    transcriptPresent: !!firstTranscript,
+    noTerminalPane: !document.getElementById('agent-tty-pane'),
+    hasTranscript: (firstTranscript?.innerText || '').includes('This transcript should survive a dropped socket.'),
+    ended: document.getElementById('agent-pico-status')?.textContent === 'session ended',
+    reconnectVisible: !document.getElementById('agent-pico-reconnect')?.hidden,
+    reconnectDisabled: !!document.getElementById('agent-pico-reconnect')?.disabled,
+    sawReconnecting,
+    attempts: firstState.attempts,
+    max: firstState.max
+  };
+  if (first.status !== 'disconnected' || !first.panePresent || !first.transcriptPresent || !first.noTerminalPane || !first.hasTranscript || first.ended || !first.reconnectVisible || first.reconnectDisabled || !first.sawReconnecting || first.attempts !== first.max || first.max < 1) {
+    throw new Error(`pico disconnect assertion failed: ${JSON.stringify(first)}`);
+  }
+  document.getElementById('agent-pico-reconnect').click();
+  const connectingState = reconnectState();
+  const connecting = {
+    status: document.getElementById('agent-pico-status')?.textContent || null,
+    reconnectVisible: !document.getElementById('agent-pico-reconnect')?.hidden,
+    reconnectDisabled: !!document.getElementById('agent-pico-reconnect')?.disabled,
+    attempts: connectingState.attempts
+  };
+  if (connecting.status !== 'connecting…' || connecting.reconnectVisible || !connecting.reconnectDisabled || connecting.attempts !== 0) {
+    throw new Error(`pico reconnect connecting assertion failed: ${JSON.stringify(connecting)}`);
+  }
+  sawReconnecting = false;
+  await waitForOffline();
+  const secondTranscript = document.getElementById('agent-pico-transcript');
+  const secondState = reconnectState();
+  const second = {
+    status: document.getElementById('agent-pico-status')?.textContent || null,
+    hasTranscript: (secondTranscript?.innerText || '').includes('This transcript should survive a dropped socket.'),
+    noTerminalPane: !document.getElementById('agent-tty-pane'),
+    reconnectVisible: !document.getElementById('agent-pico-reconnect')?.hidden,
+    reconnectDisabled: !!document.getElementById('agent-pico-reconnect')?.disabled,
+    sawReconnecting,
+    attempts: secondState.attempts,
+    max: secondState.max
+  };
+  if (second.status !== 'disconnected' || !second.hasTranscript || !second.noTerminalPane || !second.reconnectVisible || second.reconnectDisabled || !second.sawReconnecting || second.attempts !== second.max) {
+    throw new Error(`pico reconnect assertion failed: ${JSON.stringify(second)}`);
+  }
+  return { first, connecting, second };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "first": {
+    "status": "disconnected",
+    "panePresent": true,
+    "transcriptPresent": true,
+    "noTerminalPane": true,
+    "hasTranscript": true,
+    "ended": false,
+    "reconnectVisible": true,
+    "reconnectDisabled": false,
+    "sawReconnecting": true,
+    "attempts": 3,
+    "max": 3
+  },
+  "connecting": {
+    "status": "connecting…",
+    "reconnectVisible": false,
+    "reconnectDisabled": true,
+    "attempts": 0
+  },
+  "second": {
+    "status": "disconnected",
+    "hasTranscript": true,
+    "noTerminalPane": true,
+    "reconnectVisible": true,
+    "reconnectDisabled": false,
+    "sawReconnecting": true,
+    "attempts": 3,
+    "max": 3
+  }
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  let sawReconnecting = false;\n  const reconnectState = () => (window.cacoPicoReconnectState ? window.cacoPicoReconnectState() : { mode: null, attempts: 0, max: 0 });\n  const waitForOffline = async () => {\n    for (let i = 0; i < 150; i += 1) {\n      const status = document.getElementById(\'agent-pico-status\')?.textContent || \'\';\n      if (/^reconnecting/.test(status)) sawReconnecting = true;\n      if (status === \'disconnected\') return status;\n      await new Promise((resolve) => setTimeout(resolve, 100));\n    }\n    return document.getElementById(\'agent-pico-status\')?.textContent || null;\n  };\n  await waitForOffline();\n  const firstTranscript = document.getElementById(\'agent-pico-transcript\');\n  const firstState = reconnectState();\n  const first = {\n    status: document.getElementById(\'agent-pico-status\')?.textContent || null,\n    panePresent: !!document.getElementById(\'agent-pico-pane\'),\n    transcriptPresent: !!firstTranscript,\n    noTerminalPane: !document.getElementById(\'agent-tty-pane\'),\n    hasTranscript: (firstTranscript?.innerText || \'\').includes(\'This transcript should survive a dropped socket.\'),\n    ended: document.getElementById(\'agent-pico-status\')?.textContent === \'session ended\',\n    reconnectVisible: !document.getElementById(\'agent-pico-reconnect\')?.hidden,\n    reconnectDisabled: !!document.getElementById(\'agent-pico-reconnect\')?.disabled,\n    sawReconnecting,\n    attempts: firstState.attempts,\n    max: firstState.max\n  };\n  if (first.status !== \'disconnected\' || !first.panePresent || !first.transcriptPresent || !first.noTerminalPane || !first.hasTranscript || first.ended || !first.reconnectVisible || first.reconnectDisabled || !first.sawReconnecting || first.attempts !== first.max || first.max < 1) {\n    throw new Error(`pico disconnect assertion failed: ${JSON.stringify(first)}`);\n  }\n  document.getElementById(\'agent-pico-reconnect\').click();\n  const connectingState = reconnectState();\n  const connecting = {\n    status: document.getElementById(\'agent-pico-status\')?.textContent || null,\n    reconnectVisible: !document.getElementById(\'agent-pico-reconnect\')?.hidden,\n    reconnectDisabled: !!document.getElementById(\'agent-pico-reconnect\')?.disabled,\n    attempts: connectingState.attempts\n  };\n  if (connecting.status !== \'connecting…\' || connecting.reconnectVisible || !connecting.reconnectDisabled || connecting.attempts !== 0) {\n    throw new Error(`pico reconnect connecting assertion failed: ${JSON.stringify(connecting)}`);\n  }\n  sawReconnecting = false;\n  await waitForOffline();\n  const secondTranscript = document.getElementById(\'agent-pico-transcript\');\n  const secondState = reconnectState();\n  const second = {\n    status: document.getElementById(\'agent-pico-status\')?.textContent || null,\n    hasTranscript: (secondTranscript?.innerText || \'\').includes(\'This transcript should survive a dropped socket.\'),\n    noTerminalPane: !document.getElementById(\'agent-tty-pane\'),\n    reconnectVisible: !document.getElementById(\'agent-pico-reconnect\')?.hidden,\n    reconnectDisabled: !!document.getElementById(\'agent-pico-reconnect\')?.disabled,\n    sawReconnecting,\n    attempts: secondState.attempts,\n    max: secondState.max\n  };\n  if (second.status !== \'disconnected\' || !second.hasTranscript || !second.noTerminalPane || !second.reconnectVisible || second.reconnectDisabled || !second.sawReconnecting || second.attempts !== second.max) {\n    throw new Error(`pico reconnect assertion failed: ${JSON.stringify(second)}`);\n  }\n  return { first, connecting, second };\n}');
+```
+
+--- copied playwright artifacts
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-17T18-18-42-464Z.yml
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/screenshots/page-2026-06-17T18-19-34-512Z.png
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/screenshots/page-2026-06-17T18-19-37-388Z.png
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-17T18-19-40-300Z.yml
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-17T18-19-44-689Z.yml
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-17T18-19-48-794Z.yml
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-17T18-19-52-599Z.yml
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-17T18-19-56-443Z.yml
+
+--- playwright close
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+Browser 'caco-web-observe-1781720317' closed
+
+
+Observation log: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/reconnect-observation.log

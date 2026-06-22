@@ -1,0 +1,25 @@
+bd-454506 validation:
+- 4 paired-merges: .label-tag-system (adjacent additive),
+  .notification-item:hover (additive), ::placeholder (silent-
+  override on color), .pinned-beads-strip (silent-override on
+  border-style + margin + cascade-resolved-shorthand-collapse
+  on padding).
+- 4 canonical merged + 4 late deleted + 4 marker comments.
+
+cargo test -p caco-web --lib -> 533 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (14 layers): 4x rule-head counts + 4x baseline+
+promoted/preserved declaration sets + 2 NEGATIVE assertions on
+declarations-only (strip_comments helper from bd-5264b8) +
+4 marker pins + bd-a6c685 sibling pin.
+
+Pattern combination: adjacent-additive + additive (bd-f0393a) +
+silent-override (bd-3dfff5/bd-238cea) + silent-override +
+cascade-resolved-shorthand-collapse (pattern p from bd-5264b8)
+all in one cycle.
+
+The .pinned-beads-strip merge applied pattern (p) again: late
+padding-bottom:8px against canonical padding:6px 0 10px ->
+collapsed padding:6px 0 8px. Second use of pattern (p)
+confirms generality.

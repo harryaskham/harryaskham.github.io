@@ -1,0 +1,45 @@
+bd-e42fe6 validation:
+- A11Y BUG FIXED: scroll-to-top button hardcoded behavior:'smooth'
+  did NOT respect prefers-reduced-motion. User with reduced-motion
+  preference still got animated smooth-scroll.
+- Lifted `scrollBehavior(requested)` helper from summaries.js
+  closure-private into window.scrollBehavior shared utility.
+- Refactored scroll-to-top button to call window.scrollBehavior('smooth')
+  instead of hardcoded 'smooth' literal.
+
+cargo test -p caco-web --lib -> 552 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+IMPLEMENTATION:
+- New window.scrollBehavior(requested) function in app.js, defined
+  with idempotent typeof guard so summaries.js can keep its local
+  fallback without colliding.
+- Helper returns 'auto' when window.matchMedia('(prefers-reduced-
+  motion: reduce)').matches; otherwise returns the requested behavior.
+- try/catch around matchMedia for environments where it's missing.
+- scroll-to-top onclick uses `(typeof window.scrollBehavior === 'function')
+  ? window.scrollBehavior('smooth') : 'smooth'` -- safe fallback
+  if helper isn't loaded yet.
+
+UPDATED FORWARD-GUARD:
+- bd-34730a test was pinning the literal `behavior: 'smooth'` string.
+  Updated to assert the new structural shape `behavior: beh` so the
+  helper-based pattern is enforced.
+
+NEW FORWARD-GUARDS (bd-e42fe6):
+1. window.scrollBehavior() hoisted under idempotent typeof guard.
+2. Helper consults matchMedia('(prefers-reduced-motion: reduce)').
+3. Helper returns 'auto' when reduced-motion is set.
+4. Scroll-to-top button uses window.scrollBehavior('smooth').
+5. The scroll-to-top onclick block must NOT reintroduce hardcoded
+   `behavior: 'smooth'` (block-scoped check via narrow window.find).
+
+OPERATOR-VISIBLE EFFECT:
+- Users with prefers-reduced-motion: reduce no longer get animated
+  scroll-to-top.
+- Pattern in place for future programmatic smooth-scrolls (use the
+  helper).
+- summaries.js continues using its local helper (idempotent shape
+  -- they return identical results).
+
+NET PASS: 551 -> 552; 0 failures.

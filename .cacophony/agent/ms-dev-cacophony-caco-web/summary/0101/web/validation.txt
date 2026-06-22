@@ -1,0 +1,65 @@
+Validation evidence for bd-238cea:
+
+- Before: style.css had TWO duplicate-selector pairs
+  for the tab-button family.
+  - .tab-btn x2: lines 3361 (canonical structural
+    with transition: all var(--transition)) + 7347
+    (late refinement with specific property-list
+    transition). Same specificity; later wins. 'all'
+    transition silently dropped.
+  - .tab-btn.active x2: lines 3380 (canonical with
+    color:var(--accent) + border-bottom-color:var(
+    --accent)) + 7343 (late refinement with
+    box-shadow + color:var(--text, var(--nord6))).
+    Same specificity; later wins. color:var(--accent)
+    silently overridden -- active tab uses main text
+    color, not accent.
+- After: TWO merged canonical blocks at lines 3361
+  and 3386. Visible-truth declarations promoted:
+  .tab-btn gets specific property-list transition;
+  .tab-btn.active gets var(--text) color + accent
+  border-bottom-color + composed inset/glow
+  box-shadow. Two late dup blocks deleted; replaced
+  with consolidated marker comment pair.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_tab_btn_paired_dedup_bd_238cea
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 519 passed, 0 failed (was 518; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (8 layers):
+- Exactly 1 .tab-btn rule head (was 2) via
+  line-prefix filter.
+- Exactly 1 .tab-btn.active rule head (was 2).
+- Merged .tab-btn block preserves structural
+  baseline + promoted specific-property-list
+  transition.
+- NEGATIVE: dead 'transition: all var(--transition);'
+  must remain removed from .tab-btn block (bounded
+  char-window).
+- Merged .tab-btn.active block contains promoted
+  color (var(--text)) + surviving border-bottom-color
+  + promoted box-shadow.
+- NEGATIVE: dead standalone 'color: var(--accent);'
+  must remain removed from .tab-btn.active block --
+  anchored to leading-whitespace to avoid false-
+  positive substring tail of 'border-bottom-color:
+  var(--accent);' which is the SURVIVING rule.
+- Two replacement marker comments document each
+  merge (defense against re-introduction).
+- bd-f0393a sibling pattern presence pin.
+
+NEGATIVE-assertion anchor lesson: initial assertion
+used unanchored substring 'color: var(--accent);'
+which matched as a SUBSTRING TAIL of the surviving
+'border-bottom-color: var(--accent);' declaration.
+Fixed by anchoring to leading indent
+'\n    color: var(--accent);' which disambiguates
+the standalone color property from the longer
+border-bottom-color property. Per critical context's
+'beware substring collisions in marker comment text
+vs assertion strings' pattern, extended to property-
+name substring collisions where one declaration name
+is a tail of another (color vs border-bottom-color).

@@ -1,0 +1,31 @@
+Validation evidence for bd-0bf8cb:
+
+- Before: style.css L177-178 used the progressive-enhancement
+  pattern (height: 100vh; height: 100dvh;) but 3 more sites were
+  missed:
+  - L6844 (.agent-tty-pane.tty-fullscreen height: 100vh !important)
+  - L6845 (.agent-tty-pane.tty-fullscreen max-height: 100vh !important)
+  - L7525 (body min-height: 100vh)
+- On iOS Safari, 100vh represents the largest viewport (chrome
+  hidden), so the fullscreen TTY pane gets cut off under the URL
+  bar and body forces a tiny scroll just to reach the bottom.
+- After: each site now has a 100dvh follow-up line. Cascade
+  order preserved (!important pairs).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib css_uses_dvh_progressive_enhancement_for_ios_safari_bd_0bf8cb
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 453 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Existing L177-178 pattern preserved (no blanket-rewrite
+  regression risk).
+- .agent-tty-pane.tty-fullscreen block contains both height and
+  max-height declarations in 100vh -> 100dvh order with
+  !important preserved.
+- body has both min-height: 100vh and min-height: 100dvh.
+- Total `height: 100vh` count equals total `height: 100dvh` count
+  (every fallback paired with a dvh follow-up).

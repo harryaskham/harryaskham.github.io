@@ -1,0 +1,6 @@
+Validation evidence for bd-29ad58:
+
+- Local Node smoke probe: verified both omitted-`i=` chunk continuation reassembly and placement-only delete semantics with a fake DOM host.
+- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib kitty_graphics_filter_decodes_apc_under_node" --cwd "$PWD"` -> tj-7bad4f59 passed.
+- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-99f94125 succeeded.
+- Source whitespace check: `git diff --check` passed.

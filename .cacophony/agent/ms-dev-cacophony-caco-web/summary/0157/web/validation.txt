@@ -1,0 +1,38 @@
+bd-20b653 validation:
+- BD-06A1C2 AUTOCOMPLETE EXTENSION TO <SELECT>: 6 <select>
+  elements lacked autocomplete= attribute (browser autofill
+  may inject suggestions).
+
+cargo test -p caco-web --lib -> 574 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- All <select> elements scanned across HTML/JS.
+- Filtered out commented-out and template-literal blocks.
+- Yield: 6 candidates without autocomplete=.
+
+FIX (all 6 gain autocomplete="off"):
+- app.js:4992 move-bead-project-select (move-bead modal).
+- app.js:7599 anonymous voice-select with onchange handler.
+- timeline.js:170 timeline-window.
+- timeline.js:177 timeline-refresh-interval.
+- timeline.js:183 timeline-granularity.
+- workspace.html:97 workspace-agent-select.
+
+PATTERN PARITY (bd-06a1c2):
+- Identifier text inputs: autocomplete=off + full hygiene.
+- Prose textareas: autocomplete=off + sentences+spellcheck.
+- <select>: autocomplete=off only (no spellcheck applicable).
+
+REGRESSION TEST (~70 lines):
+- 6 cases with attribute-anchor (id= or onchange=) inside the
+  <select ... > opening tag.
+- Walk-back algorithm: from anchor pos, rfind "<select" to find
+  containing opening tag; forward-find '>' to bound the tag.
+- Assert tag contains autocomplete="off".
+
+OPERATOR-VISIBLE EFFECT:
+- No browser autofill suggestions on these selects.
+- Default behavior unchanged.
+
+NET PASS: 573 -> 574; 0 failures.

@@ -1,0 +1,220 @@
+{
+  "base": "http://127.0.0.1:18347/",
+  "provenance": {
+    "footerVersion": "Connected\nCtrl\nK\nCOMMANDS",
+    "connection": "Connected",
+    "title": "Cacophony Dashboard"
+  },
+  "helpVisible": {
+    "found": true,
+    "cls": "summaries-shortcuts",
+    "visible": false
+  },
+  "consoleMsgs": [],
+  "pageErrors": [],
+  "netFails": [
+    {
+      "view": "timeline@390",
+      "url": "http://127.0.0.1:18347/api/v1/ui/stream",
+      "err": "net::ERR_ABORTED"
+    },
+    {
+      "view": "timeline@390",
+      "url": "http://127.0.0.1:18347/api/v1/logs/stream?follow=true",
+      "err": "net::ERR_ABORTED"
+    }
+  ],
+  "overflowReports": [
+    {
+      "view": "status",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "agents",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "beads",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": [
+        {
+          "tag": "table",
+          "cls": "data-table",
+          "right": 1621,
+          "docW": 1280
+        },
+        {
+          "tag": "thead",
+          "cls": "",
+          "right": 1621,
+          "docW": 1280
+        },
+        {
+          "tag": "tr",
+          "cls": "",
+          "right": 1621,
+          "docW": 1280
+        },
+        {
+          "tag": "th",
+          "cls": "beads-secondary-col",
+          "right": 1313,
+          "docW": 1280
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "right": 1303,
+          "docW": 1280
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "right": 1303,
+          "docW": 1280
+        }
+      ]
+    },
+    {
+      "view": "feed",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "inbox",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "chat",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "nodes",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "services",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "files",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "links",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "projects",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "choices",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "notifications",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "actions",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "suggestions",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "logs",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "timeline",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "summaries",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "transcription",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "merge-queue",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "workspace",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    },
+    {
+      "view": "tui",
+      "docW": 1280,
+      "scrollW": 1280,
+      "bodyScrollW": 1280,
+      "offenders": []
+    }
+  ]
+}

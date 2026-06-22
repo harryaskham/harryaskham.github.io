@@ -1,0 +1,23 @@
+bd-c5d9cc validation — clickable /m command alias suggestion:
+
+Commands:
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../m-command-suggestion-test/pico-m-command-observe.log --server-log .../m-command-suggestion-test/pico-m-command-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused observe guard passed.
+- live mock scenario passed and asserted:
+  - typing `/m` shows `/m`, `/model`, and `/models` suggestions.
+  - clicking visible `/m` fills `/m `.
+  - `/m anthropic` argument suggestions still show `anthropic/claude`.
+  - `/m openai/gpt` still sends set_model openai/gpt.
+- existing suggestion, outbound HostRequest, dialog/reconnect subscenario, render coalescing, native display, and console-clean assertions all still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+
+Implementation:
+- Extended `PICO_SUGGESTIONS_EVAL` with `/m` command-name suggestion click assertions.
+- Updated observe-helper source guard to pin `/m` command-suggestion coverage.

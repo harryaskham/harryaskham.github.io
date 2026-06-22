@@ -1,0 +1,31 @@
+bd-1620d4 validation — durable caco-web-observe pico-pane scenario:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- node --check crates/caco-web/static/pico-agent-view.js
+- cargo test -p caco-web --lib pico_embeddable_component_and_standalone_route_bd_d38ec2
+- cargo test -p caco-web --lib
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../web/pico-observe.log --server-log .../web/pico-observe-server.log
+
+Results:
+- JS syntax checks: OK.
+- focused caco-web test: passed.
+- caco-web lib tests: 639 passed, 0 failed.
+- pico-pane observe scenario: passed.
+- Scenario assertion result: panePresent=true, transcriptPresent=true, composerPresent=true, noTerminalPane=true, bubbles=4, dialogPanels=1, modelPickers=1, images=1, notices=1, widgets=1, suggestionsHost=true.
+- Browser console: Total messages 0 (Errors 0, Warnings 0).
+
+Artifacts:
+- web/pico-observe.log
+- web/pico-observe-server.log
+- web/screenshots/page-2026-06-15T02-39-50-006Z.png
+- web/screenshots/page-2026-06-15T02-39-52-662Z.png
+- web/page-snapshots/page-2026-06-15T02-39-42-554Z.yml
+
+Implementation:
+- caco-web-observe help now advertises pico-pane.
+- pico-pane scenario opens /pico and mounts a deterministic fixture via CacoPicoAgentView.mountFixture.
+- Fixture includes transcript rows, tool output, pending dialog, model picker, inline image, notification, widget, footer/composer.
+- Scenario asserts native pane present, no terminal pane, dialog/model/image/status/composer present.
+- Scenario captures screenshot, console, and optional network artifact.
+- app.js has renderPicoFixtureSnapshot helper used by the reusable component's mountFixture.

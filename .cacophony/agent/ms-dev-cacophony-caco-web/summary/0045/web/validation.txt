@@ -1,0 +1,27 @@
+Validation evidence for bd-f461ba:
+
+- Before: workspace.css (.workspace-btn transition: border-color
+  0.15s ease, transform 0.15s ease;) and workspace-dnd.css
+  ([data-wsv-pane-id]::after transition: opacity 80ms linear;)
+  had transitions but no prefers-reduced-motion: reduce
+  suppression. Inconsistent with the 22+ targeted blocks in
+  style.css plus blocks in summaries.css, timeline.css,
+  workspace-a11y.css, workspace-chat-pane.css, workspace-mobile.css,
+  workspace-stt-mic.css.
+- After: each file gains a targeted reduced-motion block that
+  sets transition: none on the relevant selector, with a
+  rationale comment cross-referencing bd-f461ba.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib workspace_css_honors_prefers_reduced_motion_bd_f461ba
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 452 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- workspace.css contains a reduced-motion block with the exact
+  .workspace-btn { transition: none; } suppression.
+- workspace-dnd.css contains a reduced-motion block with the
+  exact [data-wsv-pane-id]::after { transition: none; } suppression.

@@ -1,0 +1,44 @@
+Validation evidence for bd-b2b739:
+
+- Before: style.css had THREE
+  `input[type="search"]::-webkit-search-cancel-button`
+  blocks at lines 3198 (early opacity-fade design),
+  7519 (middle dead-override block), and 8690
+  (canonical mask-based winner).
+- Cascade analysis: middle block at 7519 had EVERY
+  property overridden by 8690 -- -webkit-appearance
+  same, width/height same value, background icon URL
+  overridden by mask-based bg, cursor same. Pure
+  dead repeat.
+- After: TWO blocks remain -- early opacity-fade
+  block (contributes still-visible opacity:0.65 +
+  transition driving the :hover opacity:1
+  companion) + late mask-based block (contributes
+  appearance, mask-based bg recolouring, aurora-red
+  hover). Both visually compose: hover triggers
+  opacity:1 AND background→aurora-red
+  simultaneously. Middle dead block replaced with
+  marker comment.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_search_cancel_button_middle_dead_override_bd_b2b739
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 516 passed, 0 failed (was 515; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (6 layers):
+- Exactly 2 top-level rule heads (was 3) via line-
+  prefix filter.
+- Early opacity-fade survivor pin: opacity:0.65 +
+  transition:opacity declarations preserved.
+- Late mask-based survivor pin: background:var(
+  --text-faint) + -webkit-mask declarations
+  preserved.
+- BOTH companion :hover blocks survive (opacity:1
+  hover from early design + aurora-red bg hover from
+  late design) -- distinct visual effects compose.
+- Replacement marker comment documents the deletion
+  (defense against re-introduction).
+- bd-3dfff5 sibling pattern presence pin (broader
+  duplicate-block-merge family regression-guard).

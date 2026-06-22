@@ -1,0 +1,52 @@
+Validation evidence for bd-0cb4d9:
+
+- Before: style.css had FOUR `body { ... }` rule
+  blocks at lines 138, 7621, 7888, 7906. Three were
+  late-appended additions. One (7888) was a pure
+  byte-identical duplicate of the canonical block's
+  font-smoothing / text-rendering properties. Late
+  block at 7621 silently shadowed the canonical
+  block's ambient-glow background-image via `background:`
+  shorthand reset -- visible behavior today is the
+  linear-gradient, not the glow.
+- After: ONE canonical body block at line 138
+  containing: font-family, linear-gradient (current
+  visible truth, dead-glow design intent preserved as
+  marker comment), color, font-size, line-height,
+  font-smoothing pair, text-rendering, min-height
+  100vh + 100dvh (bd-0bf8cb pair), min-width 320px.
+  Three marker comments at 7626/7889/7905 document
+  the deletion of each late block (defense against
+  re-introduction).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_body_rule_dedup_bd_0cb4d9
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 512 passed, 0 failed (was 511; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (8 layers):
+- Exactly ONE top-level `body {` rule head -- line-
+  prefix filter per bd-f479b0 pattern (was 4 before
+  merge); indented `body {` inside @media blocks
+  still allowed.
+- Merged block contains linear-gradient (current
+  visible truth, was the late-shadowing background).
+- min-height: 100vh AND min-height: 100dvh (bd-0bf8cb
+  iOS Safari dynamic-viewport pair preserved).
+- min-width: 320px preserved.
+- font / font-smoothing / text-rendering quartet
+  preserved.
+- bd-0bf8cb comment marker preserved (UX context).
+- Three replacement marker comments document each
+  deletion (defense against re-introduction).
+- bd-f479b0 sibling pattern presence pin (.inline-image
+  merged-canonical block marker).
+
+Sibling test impact:
+- bd-0bf8cb dvh-pair test: passed unchanged (initial
+  failure was because a marker comment string
+  accidentally substring-matched "height: 100vh"
+  one extra time; reworded the marker to avoid the
+  false count).

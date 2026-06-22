@@ -1,0 +1,15 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Pico Session" [level=1] [ref=e4]
+    - generic [ref=e5]:
+      - text: Use
+      - code [ref=e6]: "?agent=<agent-id>"
+      - text: to attach
+  - region "Standalone Pico AgentView" [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]: 🤖
+      - generic [ref=e10]: No pico agent selected
+      - generic [ref=e11]:
+        - text: Add
+        - code [ref=e12]: "?agent=<agent-id>"
+        - text: to open a structured Pico Session.

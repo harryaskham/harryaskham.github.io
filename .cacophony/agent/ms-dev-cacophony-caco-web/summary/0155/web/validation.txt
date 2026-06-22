@@ -1,0 +1,44 @@
+bd-2c535e validation:
+- BD-A10A91 META-TAG COVERAGE EXTENSION: 3 entry HTML files
+  lacked meta description; 2 lacked apple-mobile-web-app tags
+  (SEO/link previews + iOS standalone-mode parity).
+
+cargo test -p caco-web --lib -> 572 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- All 4 entry HTML scanned for meta description, apple-mobile-*.
+- index.html: ✓ description, ✓ apple-mobile-* (canonical entry).
+- workspace.html: ✗ description, ✗ apple-mobile-*.
+- notifications.html: ✗ description, ✗ apple-mobile-*.
+- terminal.html: ✗ description, ✓ apple-mobile-* (partial).
+
+FIX:
+- workspace.html: + description ("workspace dashboard for
+  distributed AI agent orchestration"), + apple-mobile-web-app-
+  capable, + apple-mobile-web-app-status-bar-style.
+- notifications.html: + description ("ambient notifications and
+  chime catalogue"), + apple-mobile-web-app-capable, +
+  apple-mobile-web-app-status-bar-style.
+- terminal.html: + description ("agent terminal viewer").
+
+WHY:
+- meta description: SEO + Slack/social link-preview default copy.
+- apple-mobile-web-app-capable: iOS "Add to Home Screen"
+  standalone mode (no browser chrome).
+- apple-mobile-web-app-status-bar-style="black-translucent":
+  iOS status bar tinted to match dark theme.
+
+REGRESSION TEST EXTENSION (~20 lines added):
+- Extended bd-a10a91 test loop (single combined test).
+- For each of 4 entry HTML: assert meta description,
+  apple-mobile-web-app-capable, apple-mobile-web-app-status-bar-
+  style present (single OR double quotes accepted).
+
+OPERATOR-VISIBLE EFFECT:
+- Better Slack/Discord/Twitter link previews on all entry pages.
+- iOS "Add to Home Screen" works as standalone PWA on
+  workspace/notifications pages too (not just index).
+- iOS standalone status bar matches dark theme.
+
+NET PASS: 572 -> 572; 0 failures (extension to existing test).

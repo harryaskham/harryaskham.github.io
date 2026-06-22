@@ -1,0 +1,41 @@
+Validation evidence for bd-2dab6f:
+
+- Before: 7 of 8 loading-state divs declared aria-live=
+  "polite". The 8th -- the AI quick-bead expansion
+  spinner (app.js:4622, "AI is structuring your beads...")
+  -- was missing it. This is the LONGEST loading wait in
+  the dashboard (bd-eb581e allows 30-60s for the LLM to
+  structure free-text into beads).
+- After: all 8 loading-state divs uniformly declare
+  aria-live="polite". Forward-guard refuses any future
+  loading-state template without it.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib all_loading_state_templates_declare_aria_live_polite_bd_2dab6f
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 485 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design:
+- Positive: full template string assertion (constructed
+  via format!() concatenation per bd-5e0030 defense-in-
+  depth).
+- Forward-guard: walker finds every <div class="loading-
+  state" role="status"> opening tag in app.js and refuses
+  any without aria-live= in the tag body.
+
+Why role="status" alone is insufficient:
+- role="status" is an aria-live=polite implicit container
+  in the WAI-ARIA spec, BUT many assistive-tech setups
+  treat it as a hint, not as guaranteed announcement
+  on DOM mutation. Explicit aria-live="polite" works
+  across more AT configurations.
+
+Notes:
+- bd-29e9b1 (.summaries-row content-visibility) landed
+  at ae5e62dd3d on main earlier this session; close call
+  failed due to helsinki beads-primary backpressure
+  (transient infrastructure issue, unrelated to the
+  work itself). Will close when helsinki recovers.

@@ -1,0 +1,24 @@
+bd-e85328 validation — rAF coalesced Pico websocket renders + intermediate stream assertion:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_websocket_rendering_is_raf_coalesced_bd_e85328
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../raf-mock-test/pico-raf-observe.log --server-log .../raf-mock-test/pico-raf-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused tests passed.
+- mock scenario passed and includes intermediate streaming assertion.
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 641 passed, 0 failed.
+- browser console in scenario: Total messages 0 (Errors 0, Warnings 0).
+
+Implementation:
+- Added `picoRenderRaf` + `schedulePicoRender()`.
+- Shared WebSocket frame path and fallback frame reducer now schedule/coalesce renderPicoSnapshot via requestAnimationFrame.
+- teardown cancels pending Pico render rAF.
+- Fixture/local reply paths continue immediate render.
+- Mock Pico server cadence slowed to 160ms and scenario now asserts intermediate streaming state before final completion.
+- Fixed caco-web-observe timeout helper tests to use /bin/sh so PATH-mutating Chromium tests cannot make them flaky.

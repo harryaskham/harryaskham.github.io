@@ -1,0 +1,32 @@
+Validation evidence for bd-07121d:
+
+- Before: 13 external <script src="..."> tags at the end of
+  index.html had no defer/async, including a 585 KiB app.js bundle
+  and 5 xterm vendor bundles. Each script blocked HTML parsing
+  while it downloaded and executed, so the browser could not paint
+  the page or fire DOMContentLoaded until every script ran.
+- After: every external <script src="..."> tag (now 14 — the python
+  pass also caught a 14th tag I had missed in my mental count)
+  carries `defer`. Document order is preserved (defer is ordered),
+  so the existing dependency chain (xterm bundles before workspace-
+  terminal-pane, workspace-overlay before app, etc.) stays intact.
+  None of these scripts use document.write (grep across all of
+  crates/caco-web/static/*.js), and all init code attaches to
+  DOMContentLoaded (app.js:158, app.js:11930, app.js:12140), which
+  fires after deferred scripts execute.
+
+- Tests: 11 pre-existing failures on main remain unchanged; my
+  change added 1 passing test (`all_external_scripts_have_defer_bd_07121d`)
+  and updated 1 existing test (`caco_web_nodes_renderer_lives_in_focused_static_module_bd_0fe376`)
+  to expect `<script defer src="/nodes.js">` instead of
+  `<script src="/nodes.js">`. Net pass count: 430 -> 431, fail
+  count: 11 -> 11.
+- The new test enforces that ALL future <script src=...> tags
+  carry defer (or async) and that no inline <script> blocks creep
+  in. Static-asset regression evidence in web/script-tags.txt.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib all_external_scripts_have_defer_bd_07121d -> 1 passed
+    cargo test -p caco-web --lib caco_web_nodes_renderer_lives_in_focused_static_module_bd_0fe376 -> 1 passed
+    cargo test -p caco-web --lib --tests -> 431 passed, 11 failed (same 11 that fail on origin/main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.

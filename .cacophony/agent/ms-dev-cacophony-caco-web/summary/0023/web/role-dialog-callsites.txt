@@ -1,0 +1,5 @@
+1717:    overlay.setAttribute('role', 'dialog');
+4209:    ov.setAttribute('role', 'dialog');
+4675:        overlay.setAttribute('role', 'dialog');
+6844:    overlay.setAttribute('role', 'dialog');
+10014:        overlay.setAttribute('role', 'dialog');

@@ -1,0 +1,42 @@
+Validation evidence for bd-faa247:
+
+- Before: 7 decorative <svg> icons in summaries.js +
+  workspace-integrated.js missing aria-hidden="true":
+    summaries.js:501 (refresh icon)
+    workspace-integrated.js:567 (close-pane X)
+    workspace-integrated.js:578 (refresh-pane icon)
+    workspace-integrated.js:594 (pane move-prev arrow)
+    workspace-integrated.js:595 (pane move-next arrow)
+    workspace-integrated.js:606 (split-horizontal icon)
+    workspace-integrated.js:616 (split-vertical icon)
+  Every parent button has aria-label or title already, so
+  the SVG content is decorative. Without aria-hidden,
+  some screen readers walk the SVG and announce stray
+  geometry tokens or double-announce the button label.
+
+- After: all 7 SVG openings now declare aria-hidden="true"
+  (placed first in the attribute list for review clarity).
+  Matches the established pattern of ~140 other
+  decorative SVGs in index.html and app.js.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib decorative_svg_icons_declare_aria_hidden_bd_faa247
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 481 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design:
+- Walks every <svg ...> opening tag in summaries.js +
+  workspace-integrated.js; refuses any unannotated
+  (no aria-hidden / aria-label / role). Future SVG icon
+  additions to these files MUST be annotated.
+- Spot-check pins the 4 distinct innerHTML lead fragments
+  to `<svg aria-hidden="true" width="10"` for the close,
+  refresh, splitH, splitV buttons. The 2 conditional
+  ternary fragments (594/595, pane move-prev/next) and
+  the summaries refresh button are covered by the
+  walker assertion.
+
+Zero visible behavior change. Pure a11y consistency fix.

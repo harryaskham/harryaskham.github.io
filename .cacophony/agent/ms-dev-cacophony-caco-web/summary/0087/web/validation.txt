@@ -1,0 +1,49 @@
+Validation evidence for bd-432c3e:
+
+- Before: setConnectionStatus(status) in app.js:10195
+  unconditionally rewrote dot.className, mobileDot
+  .className, text.textContent, container.title on
+  every call. Multiple call sites (SSE onopen,
+  snapshot success path, the 15s SSE-health probe)
+  re-fire with same status. Because #connection-
+  status has role="status" aria-live="polite", screen
+  readers re-announced "Connected" / "↻ SSE (3)" /
+  "◌ Cached · ↻ 3" repeatedly even when nothing
+  visible changed.
+- After: signature combines status +
+  snapshotPendingReason + sseRetryCount (inputs that
+  actually affect rendered text). Naive
+  `if (status === prev) return` is too aggressive
+  because text varies WITHIN a status (e.g.,
+  disconnected text reads "↻ SSE (N)" depending on
+  retry count). The dot/text/title mutation block is
+  gated behind `if (sigChanged)`. renderStatusHero,
+  awaiting-initial-snapshot side effects, and the
+  transition-toast block (gated separately on
+  `prev !== status`) remain unconditional.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib connection_status_threshold_only_dom_mutation_bd_432c3e
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 505 passed, 0 failed (was 504; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (6 layers):
+- state.lastConnectionRenderSig referenced (state-bag
+  scoped).
+- Signature shape pin via format!() concat per
+  bd-5e0030 (status + snapshotPendingReason + sseRetry-
+  Count).
+- if (sigChanged) guard exists; switch appears AFTER
+  the guard within a bounded char-window (per bd-57c0f5
+  pattern).
+- Transition-toast block remains OUTSIDE the sig
+  guard (toasts must fire on real transitions even
+  when input-variance fields didn't change).
+- bd-98e4ea sibling pattern presence pin
+  (state.lastFreshnessSig) -- broader threshold-only
+  family regression-guard.
+- Sibling role="status" aria-live="polite" declaration
+  in index.html preserved (the live-region semantic
+  that motivated this fix).

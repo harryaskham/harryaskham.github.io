@@ -1,0 +1,78 @@
+bd-81accf validation:
+- PATTERN (m) FAMILY-PAIRED DEDUP WITH CASCADE-TRUTH
+  PROMOTION: 2 `.chat-avatar` blocks at style.css:2181
+  and L8578 set conflicting width / height / display /
+  font-size. Cascade resolved to L8578 (32px / 32px /
+  flex / 13px); L2181's 30px / 30px / inline-flex / 12px
+  were dead.
+
+cargo test -p caco-web --lib -> 600 passed, 0 failed.
+600th test milestone reached.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Python AST Counter on style.css top-level selectors.
+- 12 duplicates discovered total; this is the 2nd Pattern (m)
+  cascade-override case in the family-paired audit list
+  (followed bd-2209dd ::selection dedup).
+
+FIX:
+- Promote L8578 cascade-winning values (width:32, height:32,
+  min-width:32, display:flex, font-size:13) into canonical
+  L2181 block.
+- Preserve surviving-only L2181 props (flex-shrink:0,
+  font-family:var(--font-mono), letter-spacing:0.02em,
+  user-select:none, transition:transform var(--transition)).
+- Remove L8578 dup block; insert rationale comment block
+  referencing bd-81accf.
+
+WHY:
+- Cascade truth preservation: visible behavior unchanged.
+- Dead-code removal: developer editing L2181 to change
+  avatar sizing would see no effect because L8578
+  overrides it.
+- Single source of truth: future avatar-sizing edits
+  touch one block.
+- Pattern (m) family-paired dedup with cascade-truth
+  promotion (extending bd-3dfff5/bd-9b7346/bd-c41f42/
+  bd-2209dd/bd-83a697 family).
+
+REGRESSION TEST (~80 lines):
+- (1) Exactly 1 line-prefix `.chat-avatar {` block.
+- (2) Block must contain 5 cascade-winning props
+  (width:32px, height:32px, min-width:32px, display:flex,
+  font-size:13px).
+- (3) Block must preserve 5 surviving-only L2181 props
+  (flex-shrink:0, font-family:var(--font-mono),
+  letter-spacing:0.02em, user-select:none,
+  transition:transform var(--transition)).
+- (4) Block must NOT contain 4 dead-prop values (width:30px,
+  height:30px, display:inline-flex, font-size:12px).
+
+PATTERN (u) DEEP REINFORCEMENT (2 layers):
+1. First fail: comment text inside `.chat-avatar {` block
+   contained literal `}` (in the embedded
+   `\`.chat-avatar { width: 32px; ... }\`` text and
+   `\`background: ...; }\` block` text); block-bounded
+   substring scan stopped at first `}` in comment.
+2. Fix attempt 1: rewrote comment to remove `{...}` embedded
+   text. Still failed because the meta-discipline note
+   itself contained literal "\`}\`" backtick-brace-backtick.
+3. Fix attempt 2: rewrote meta-note to use
+   "literal close-brace characters" phrasing instead of
+   the actual character. PASS.
+
+This is the deepest Pattern (u) cascade discovered yet:
+even meta-commentary discussing the discipline must avoid
+the literal character. STRENGTHENED RULE: when writing
+context comments inside CSS blocks bounded-scanned by
+forward-guard tests, NEVER include the close-brace
+character anywhere in the comment text, even when
+quoting or referencing it metaphorically.
+
+OPERATOR-VISIBLE EFFECT:
+- None. Cascade truth was already the visible behavior;
+  L2181's dead width:30px / height:30px / display:inline-flex /
+  font-size:12px were silently overridden.
+
+NET PASS: 599 -> 600; 0 failures. 600-test milestone.

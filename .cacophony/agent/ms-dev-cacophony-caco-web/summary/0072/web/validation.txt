@@ -1,0 +1,44 @@
+Validation evidence for bd-874f33:
+
+- Before: 2 of 14 text-input Enter handlers in the dashboard
+  were missing the bd-34d83f IME composition guard:
+    - #agent-nudge-input (Enter sends message to agent)
+    - #agent-tty-search  (Enter runs terminal search)
+  IME users (JP/CN/KR/VN etc.) pressing Enter to commit
+  multi-character compositions would accidentally fire
+  sendAgentNudge / searchAgentTty mid-composition,
+  sending half-typed messages or running incomplete
+  searches.
+- After: both inline onkeydown attributes now declare
+  the full guard:
+    if (event.key === 'Enter'
+        && !event.isComposing
+        && event.keyCode !== 229) {
+  Matches the bd-34d83f pattern used by the TUI sidebar
+  connect handler and the chat-pane slash-suggest handler.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib agent_nudge_and_tty_search_inputs_use_ime_composition_guard_bd_874f33
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 479 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Audit categorization (12 unguarded -> 3 in text-input contexts):
+- KEEP unguarded (button-like activations, NOT text input):
+    - bead row, agent row, feed entry toggle, column header,
+      choice resolve, fleet stat clickables
+- FIXED (2 sites): #agent-nudge-input, #agent-tty-search
+- DELIBERATELY UNCHANGED (1 site): #refineQuickBead textarea
+  uses Cmd/Ctrl+Enter, which IME compositions don't commit
+  with -- leaving as-is preserves the modifier semantics.
+
+Test gotcha sidestepped:
+- The bd-5e0030 footgun (forward-guards against literal
+  antipattern strings must keep the antipattern out of
+  nearby comments) -- this time, used format!() string
+  concatenation in the test to construct the forward-guard
+  needles so the literal antipattern doesn't appear as a
+  contiguous string in tests.rs source. Defense-in-depth
+  for if a future broader-scope test ever scans tests.rs.

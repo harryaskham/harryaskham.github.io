@@ -1,0 +1,49 @@
+bd-cf182b validation:
+- MAIN-LANDMARK COVERAGE PARITY: 2 of 4 entry HTML files lacked
+  <main> landmark (notifications.html, terminal.html). Screen-
+  reader landmark navigation could not jump to main content.
+
+cargo test -p caco-web --lib -> 571 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Inventoried landmark elements/roles across all 4 entry HTML.
+- index.html: <main id="content" role="main"> ✓.
+- workspace.html: <main class="workspace-main" id="workspace-main-region"> ✓.
+- notifications.html: NO <main> (body has .hero-header, sections, .log directly).
+- terminal.html: NO <main> (#term-host was a <div>).
+
+FIX:
+- notifications.html: wrapped .hero-header through .log in
+  <main id="content"> ... </main> (placed before <script>).
+- terminal.html: changed <div id="term-host"></div> to
+  <main id="term-host" role="main" aria-label="Terminal output"></main>.
+  ID preserved so terminal.js getElementById('term-host') still resolves.
+
+WHY:
+- WCAG 2.4.1 Bypass Blocks: screen-reader users need landmark
+  to skip past UI chrome.
+- index.html and workspace.html already follow this pattern
+  (per bd-7da46e skip-link work).
+
+RISK MITIGATION:
+- terminal.js uses getElementById('term-host') -- element type
+  change from div to main preserves id query.
+- notifications.html script uses getElementById for events, log,
+  policy-card, status-pill -- all preserved inside the new main.
+- CSS targets body, .hero-header, #term-host, etc. by class/id
+  -- no direct-body-child selector dependency confirmed.
+
+REGRESSION TEST (~70 lines):
+- 4 entry HTML files iterated.
+- Per file: byte-walk for "<main" followed by ws/'>' (not e.g.
+  <maintenance).
+- Asserts at least 1 <main> landmark.
+- terminal-specific: <main id="term-host" required.
+- notifications-specific: <main id="content"> required.
+
+OPERATOR-VISIBLE EFFECT:
+- Screen-reader users get landmark-navigation on all 4 entry pages.
+- No visual change.
+
+NET PASS: 570 -> 571; 0 failures.

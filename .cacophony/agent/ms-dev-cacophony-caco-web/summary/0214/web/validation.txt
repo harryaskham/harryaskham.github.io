@@ -1,0 +1,20 @@
+bd-f5b97a validation — Pico snapshot title footer chip:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_footer_renders_snapshot_title_bd_f5b97a
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../title-mock-test/pico-title-observe.log --server-log .../title-mock-test/pico-title-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused title-chip test passed.
+- mock scenario final assertion reports titleChip="mock pico".
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+
+Implementation:
+- renderPicoFooter adds a `.pico-foot-title` chip for `snapshot.title`.
+- Added title chip styling using the existing footer-chip family.
+- Mock websocket scenario final assertion now requires the title chip.

@@ -1,0 +1,58 @@
+bd-d78ac4 validation:
+- PATTERN (y) canonical-grouping applied to z-index
+  ladder: 3 magic numbers canonicalised to --z-* tokens.
+
+cargo test -p caco-web --lib -> 606 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Python regex scan for z-index numeric values across
+  style.css (excluded :root).
+- Cross-referenced with --z-* token ladder at L13-35.
+- Found 3 magic numbers with natural token homes:
+  - .image-lightbox: 400  → var(--z-overlay) (1000)
+  - [data-tooltip]::after: 9000 → var(--z-tooltip) (3000)
+  - .ws-help-card scrim: 9999 → var(--z-modal) (1100)
+
+CASCADE PRESERVATION:
+Current high → low:
+  workspace-dnd preview: 99999 (untouched)
+  .ws-help-card: 9999
+  [data-tooltip]::after: 9000
+  .image-lightbox: 400
+After conversion:
+  workspace-dnd preview: 99999 (untouched)
+  [data-tooltip]::after: 3000 (var(--z-tooltip))
+  .ws-help-card: 1100 (var(--z-modal))
+  .image-lightbox: 1000 (var(--z-overlay))
+Relative stacking preserved:
+  dnd > tooltip > modal > overlay > dropdown > sticky > base.
+9000/9999 magic numbers were redundant -- token ladder
+already orders these classes correctly.
+
+FIX:
+- 3 inline replacements with inline rationale comments
+  referencing bd-d78ac4 + Pattern (y).
+- Out of scope: workspace-dnd.css's 99999 (no --z-drag
+  token exists; DnD must beat tooltip class).
+
+WHY:
+- Design-system coherence: --z-* token ladder is the
+  established canonical contract; magic numbers diverge
+  silently.
+- Maintainability: future z-index re-ordering via single
+  token edit reaches all sites; magic numbers are missed.
+- Pattern (y) canonical-grouping discipline: token ladder
+  is the established convention; magic numbers in same
+  conceptual class should map.
+
+REGRESSION TEST (~45 lines):
+- (1) No remaining z-index: 400|9000|9999 literals.
+- (2) Each canonical token form appears at least once.
+
+OPERATOR-VISIBLE EFFECT:
+- None. Relative stacking preserved across all 3 sites;
+  token values were always intended to be the canonical
+  z-index for those classes.
+
+NET PASS: 605 -> 606; 0 failures.

@@ -1,0 +1,143 @@
+{
+  "commandPaletteOpen": true,
+  "commandPaletteTabWraps": [
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "command-palette-input",
+      "cls": ""
+    }
+  ],
+  "commandPaletteAllInside": true,
+  "createBeadOpen": true,
+  "shiftTabFromFirst": {
+    "before": {
+      "tag": "BUTTON",
+      "id": "",
+      "cls": "modal-close"
+    },
+    "after": {
+      "inside": true,
+      "tag": "BUTTON",
+      "id": "",
+      "cls": "btn btn-primary"
+    }
+  },
+  "createBeadTabAllInside": true,
+  "createBeadTabFlow": [
+    {
+      "inside": true,
+      "tag": "BUTTON",
+      "id": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "new-bead-title"
+    },
+    {
+      "inside": true,
+      "tag": "TEXTAREA",
+      "id": "new-bead-description"
+    },
+    {
+      "inside": true,
+      "tag": "SELECT",
+      "id": "new-bead-type"
+    },
+    {
+      "inside": true,
+      "tag": "SELECT",
+      "id": "new-bead-priority"
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "new-bead-labels"
+    },
+    {
+      "inside": true,
+      "tag": "SELECT",
+      "id": "new-bead-project"
+    },
+    {
+      "inside": true,
+      "tag": "BUTTON",
+      "id": ""
+    },
+    {
+      "inside": true,
+      "tag": "BUTTON",
+      "id": ""
+    },
+    {
+      "inside": true,
+      "tag": "BUTTON",
+      "id": ""
+    },
+    {
+      "inside": true,
+      "tag": "INPUT",
+      "id": "new-bead-title"
+    },
+    {
+      "inside": true,
+      "tag": "TEXTAREA",
+      "id": "new-bead-description"
+    }
+  ]
+}

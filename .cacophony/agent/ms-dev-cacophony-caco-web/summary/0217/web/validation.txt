@@ -1,0 +1,28 @@
+bd-731b31 validation — outbound Pico steer while streaming:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_composer_uses_shared_helpers_bd_130ad9
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../steer-streaming-test/pico-steer-observe.log --server-log .../steer-streaming-test/pico-steer-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused source tests passed.
+- live mock scenario passed and submitted plain text during an explicit streaming snapshot.
+- mock backend received all five canonical outbound frames:
+  - {"kind":"command","type":"steer","message":"steer while streaming from mock scenario"}
+  - {"kind":"ui_reply","type":"extension_ui_response","id":"dlg1","confirmed":true}
+  - {"kind":"command","type":"set_model","provider":"anthropic","modelId":"claude"}
+  - {"kind":"command","type":"prompt","message":"hello from mock scenario"}
+  - {"kind":"command","type":"compact","customInstructions":"keep it concise"}
+- scenario also preserved slash suggestions, model picker, render coalescing, native DOM parity, timestamps/images/title/session-ended, and console-clean assertions.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+
+Implementation:
+- Added `picoIsActivelyStreaming()` so the composer treats `is_streaming`, streaming text/thinking, or streaming blocks as active stream state.
+- `picoComposerLine` now uses that helper before choosing shared `steerLine` vs `promptLine`.
+- Mock backend starts with an explicit streaming snapshot and delays `pi_exited` so the scenario can test steer, dialog, model, prompt, and command traffic deterministically before final ended state.

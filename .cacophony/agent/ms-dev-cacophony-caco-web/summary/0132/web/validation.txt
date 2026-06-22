@@ -1,0 +1,84 @@
+bd-9e60ac validation:
+- Pattern (x) FIFTH INSTANCE: continuous-defense-test for JS classList
+  class-name-styled integrity.
+- Audited 89 distinct classList class names across 16 .js files.
+- Conjoined definition space: .css files + inline <style>...</style>
+  blocks in .html files (index.html, terminal.html, notifications.html,
+  workspace.html).
+- 6 orphan classes that are semantic state markers (visual via inline
+  .style.X = Y rather than CSS rules); allowlisted with justifications.
+
+cargo test -p caco-web --lib -> 550 passed, 0 failed.
+
+Test design (~165 lines):
+- Walks classList.add/toggle/remove/contains/replace calls across
+  16 .js files; reads first quoted string argument as class name;
+  skips dynamic (variable) class names.
+- Defines bundled definition text from 14 .css files + 4 .html
+  files (extracts <style>...</style> contents).
+- defined_anywhere() looks for `.classname<token-end>` with leading
+  `.` as the class boundary (does NOT require non-token before `.`
+  because `.` itself is the boundary -- handles compound selectors
+  like `.parent.target` and `.a.b.target` correctly).
+- ALLOWLIST_SEMANTIC_STATE_MARKERS as Vec of (class_name, justification)
+  with 6 entries.
+- Orphans = used - defined - allowlist; assert empty with remediation.
+- Forward-guard: each allowlist entry must still appear in the used
+  set -- otherwise allowlist accumulates dead entries.
+
+ALLOWLIST RATIONALE (6 entries):
+1. terminal-ime-stable-anchor (terminal.js IME state marker; visual
+   via inline styles).
+2. truncated (app.js choices-count state flag; no visual rule).
+3. workspace-terminal-pane (workspace-terminal-pane.js pane base;
+   inline styles).
+4. wt-floating (workspace-terminal-pane.js floating-state marker;
+   inline styles).
+5. wt-ime-stable-anchor (workspace-terminal-pane.js IME-anchor
+   marker; inline styles).
+6. wt-pinned (workspace-terminal-pane.js pinned-state marker;
+   inline styles).
+
+These are NOT dead toggles -- they are semantic state markers where
+the visual effect is applied via inline .style.X = Y. Justifications:
+DevTools inspectability + future CSS hook + semantic state marking.
+
+DEBUGGING JOURNEY:
+First test pass found 43 orphans. Investigation revealed two issues:
+1. notifications.html and workspace.html had inline <style> blocks
+   not in my html_files list -- added.
+2. The `defined_anywhere` lookup had a buggy `before_ok` check that
+   required the char BEFORE the leading `.` to be non-token; this
+   broke compound-selector matching like `.status-pill.is-live`
+   where the `is-live` class is preceded by the `.pill.` boundary.
+   Fixed by removing `before_ok` -- the leading `.` IS the class
+   boundary, so what precedes it is irrelevant.
+
+After fixes, only the 6 true semantic-state markers remained.
+
+PATTERN (x) GENERALIZATION (5 audit categories now covered):
+1. CSS custom properties (bd-91616b -- pruned 2 + defended).
+2. @keyframes (bd-a753e2 -- 0 prune + defended).
+3. ARIA idrefs (bd-cf15b7 -- fixed 1 broken + defended).
+4. Button-type integrity (bd-f54973 -- fixed 129 + defended).
+5. JS classList class-name-styled integrity (bd-9e60ac -- 6
+   allowlisted + defended).
+
+NEW PATTERN (x) SUB-VARIANT: "conjoined-definition-space" -- this
+audit aggregates definitions from MULTIPLE source types (CSS files
++ inline <style> blocks in HTML) before subtraction. First instance
+of the pattern handling multi-source definition aggregation.
+
+OPERATOR-VISIBLE EFFECT:
+- Future PR adding classList.add('foo') without CSS rule for `.foo`
+  fails CI with remediation guidance: add CSS rule, remove dead
+  classList op, or allowlist with justification.
+- Pattern catches both genuine bugs (forgot to write the CSS) and
+  intentional state markers (require explicit allowlist entry).
+
+PATTERN CATALOG SCALE NOTE (5 wins so far):
+- bd-91616b: 2 prunes + defense
+- bd-a753e2: 0 finds + defense (clean baseline)
+- bd-cf15b7: 1 a11y fix + defense
+- bd-f54973: 129 fixes + defense (largest batch)
+- bd-9e60ac: 6 documented + defense (largest justification ledger)

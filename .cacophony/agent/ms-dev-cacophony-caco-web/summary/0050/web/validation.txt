@@ -1,0 +1,33 @@
+Validation evidence for bd-7ff0bf:
+
+- Before: .diff-line, .feed-entry, .notification-item all had no
+  content-visibility / contain-intrinsic-size. Every off-screen
+  row of these high-volume lists participated in layout/paint/
+  style-recalc on every reflow.
+- After: each now declares content-visibility: auto +
+  contain-intrinsic-size: <N>px (bare-length form per bd-eeb79c
+  precedent / Safari 18.0 baseline).
+  - .diff-line:         18px (font 11.5 x 1.5 line-height, no padding)
+  - .feed-entry:        28px (5+5 padding + ~16 content + 2 border)
+  - .notification-item: 80px (14+14 padding + ~32 icon + body)
+- .chat-message intentionally excluded (chatFadeIn animation
+  would re-fire on scroll-back).
+
+- Browser support: same as bd-eeb79c (Chrome/Edge 85+, Firefox
+  125+, Safari 18.0+). Older browsers ignore gracefully.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib long_list_rows_use_content_visibility_bd_7ff0bf
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 457 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Each of 3 declaration blocks contains content-visibility: auto
+  + the exact bare-length contain-intrinsic-size value.
+- None of the 3 use the two-value `auto <length>` form (Safari
+  support-floor guard).
+- .chat-message must NOT contain content-visibility (intentional
+  animation-conflict exclusion guard).

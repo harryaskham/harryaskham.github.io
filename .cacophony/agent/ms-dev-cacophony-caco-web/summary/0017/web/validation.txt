@@ -1,0 +1,14 @@
+Validation evidence for bd-b796ef:
+
+- Tooltip a11y audit before (web/tooltip-a11y-audit.json): 2 of 57
+  data-tooltip elements had no accessible name (no aria-label, no inner
+  text, no title) — `<span class="sse-pulse">` and
+  `<span id="freshness-indicator">`.
+- Tooltip a11y audit after (web/tooltip-a11y-after.json): 0 of 57
+  data-tooltip elements lack an accessible name.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib indicator_spans_have_accessible_name_bd_b796ef
+      -> 1 passed, 0 failed
+    cargo check -p caco-web --all-targets -> Finished `dev` profile target(s)
+- Whitespace: git diff --check origin/main..HEAD -> clean.

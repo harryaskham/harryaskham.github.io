@@ -1,0 +1,62 @@
+bd-a7a861 validation:
+- PRINT FIDELITY for operator reports: existing @media
+  print block hid sidebar/buttons/modals/toasts but was
+  missing real fidelity for printed bead detail / agent
+  diagnostics / status reports.
+
+cargo test -p caco-web --lib -> 595 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- @media print block at style.css:6886.
+- Missing: link URL exposure, pre/code wrapping, table
+  break-inside, page margins, thead repeat.
+
+FIX (5 additions):
+- Top-level @page { margin: 1.5cm; } (page-context rule;
+  browsers reject it nested inside @media print).
+- pre, code: white-space: pre-wrap; word-wrap: break-word;
+  overflow-wrap: anywhere; (long log/code lines wrap).
+- tr, th, td: break-inside: avoid; (rows don't split).
+- thead: display: table-header-group; (headers repeat
+  on each printed page).
+- a[href]:not([href^="#"]):not([href^="javascript:"])::after
+  with content " (" attr(href) ") " (URL exposure on
+  non-noise links).
+
+WHY:
+- Real operator workflow: printing bead detail / agent
+  diagnostics / status reports for offline review or
+  incident reports.
+- Lossless print: URLs survive, code/log lines wrap,
+  table headers repeat across pages.
+- Backward-compatible: only adds rules inside @media print
+  (and one top-level @page rule that only applies during
+  printing); doesn't affect screen rendering.
+
+TWO TEST FAILURES + RESOLUTION:
+1. bare-hex guard: color: #555 -> var(--text-faint, #555)
+   defensive-fallback form per existing convention.
+2. single-@media-print-block guard counted "@media print"
+   text in comment + actual @media print rule = 2 matches.
+   Rewrote comment to avoid the literal string.
+   PATTERN (u): forward-guard string-counting tests
+   require comment text to avoid the searched literal.
+
+REGRESSION TEST (~50 lines):
+- 6 invariants:
+  - Top-level "@page {\n    margin: 1.5cm;\n}" rule.
+  - white-space: pre-wrap inside @media print block.
+  - overflow-wrap: anywhere inside @media print block.
+  - break-inside: avoid for tr/th/td.
+  - thead display: table-header-group.
+  - a[href]:not(hash):not(javascript)::after URL rule.
+  - attr(href) content for the ::after.
+
+OPERATOR-VISIBLE EFFECT:
+- Printed reports preserve hyperlink URLs as suffixes.
+- Long log/code lines wrap instead of truncating.
+- Table headers repeat across pages.
+- No change on screen.
+
+NET PASS: 594 -> 595; 0 failures.

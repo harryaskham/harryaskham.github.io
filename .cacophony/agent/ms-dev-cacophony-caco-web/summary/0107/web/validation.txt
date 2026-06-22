@@ -1,0 +1,44 @@
+bd-dfbeca validation:
+- Before: 4 candidate workspace pairs from awk dup-scan.
+- During: discovered awk false-positive on .ws-split--v >
+  .ws-split-handle::after -- counted as 2 because compound
+  rule `.ws-split--h..., .ws-split--v...` contains the
+  standalone selector substring. Reverted that edit; only
+  3 real strictly-additive paired merges remained:
+  #view-workspace.active, .ws-pane-empty-icon,
+  .ws-pane-tab-label. Bead title updated 4x->3x.
+- During: sibling test bd-980e90 pinned standalone late
+  .ws-pane-tab-label block by exact opening declarations.
+  Flipped to intent-pin (per bd-f0393a sibling-test
+  intent-vs-site pin principle): assertion now checks
+  ellipsis baseline starting from `overflow: hidden;`
+  inside the merged canonical block.
+- After: 3 canonical merged + 3 late deleted + 3 marker
+  comments + sibling-test flipped to intent-pin.
+  @keyframes wsEmptyPulse retained.
+
+cargo test -p caco-web --lib -> 525 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (9 layers): 3x rule-head counts + 3x baseline+
+consolidated declaration preservation + active @keyframes
+pin + 3 marker pins + bd-fd4b2f sibling pin.
+
+Pattern combination: 3x strictly-additive consolidation
+(bd-f0393a) in one triple-paired cycle. Pure no-visible-
+change refactor. Plus first cycle to demonstrate awk-scan
+false-positive detection + recovery: compound-selector
+substring matches require manual verification before
+treating as duplicate-selector pair.
+
+LESSON LEARNED -- awk-scan false-positive on compound
+selectors: awk pattern `/^[a-zA-Z\.#:*][^{},]*\{$/` matches
+a selector LINE that ends in `{`, but compound selectors
+that wrap with `,` continuations across multiple lines
+(e.g. `.ws-split--h > .ws-split-handle::after,\n.ws-split
+--v > .ws-split-handle::after {`) cause the second
+continuation line to match independently of the first. The
+scan reports an inflated duplicate count. Future scans
+must verify each reported duplicate is a TRUE standalone
+rule head, not a compound-rule continuation, before
+attempting paired-merge work.

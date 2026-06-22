@@ -1,0 +1,40 @@
+Validation evidence for bd-34730a:
+
+- Before: scroll-to-top button had two latent bugs:
+  1. window-scroll listener at app.js:183 fired 60-120 times/sec
+     during continuous scroll, did getElementById + classList.toggle
+     each tick.
+  2. AND it was dead code: html, body { overflow: hidden; } so
+     window.scrollY is ALWAYS 0. The button NEVER became visible.
+     Inline onclick="window.scrollTo(...)" was also a no-op for
+     the same reason.
+- After:
+  - Added <div id="scroll-top-sentinel" aria-hidden="true">
+    inside <main id="content">. CSS rule pins it at top:300px,
+    1x1, pointer-events:none.
+  - New setupScrollTopButton() (called during init) uses
+    IntersectionObserver to watch the sentinel; toggles .visible
+    on the button only at threshold transitions, off the main
+    thread.
+  - Click handler rewired to scroll #content (the REAL scroll
+    container) with document.scrollingElement / documentElement
+    fallback chain.
+  - Fallback for browsers without IntersectionObserver listens on
+    #content (not window) with a single cached element reference
+    and rAF debouncing.
+  - The button now actually works AND is much cheaper.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib scroll_top_button_uses_intersection_observer_bd_34730a
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 445 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test pins the sentinel HTML, CSS rule, dead-code removal,
+IO setup, click handler retarget, and fallback path. Scope
+intentionally expanded from "perf-only" to also fix the broken
+visibility and broken click action, because they were inseparable
+symptoms of the same wrong assumption (window scroll vs #content
+scroll).

@@ -1,0 +1,30 @@
+Validation evidence for bd-240857:
+
+- Before: 25 elements had data-tooltip text documenting a keyboard
+  shortcut in a parenthesized suffix (Cluster Status (1), Inbox
+  (i), Keyboard shortcuts (?), Previous (K), Next (J), etc.) but
+  no aria-keyshortcuts. The data-tooltip attribute is custom and
+  invisible to screen readers; SR users had no way to discover
+  the shortcuts.
+- After: 25 sites now have WAI-ARIA 1.1 aria-keyshortcuts="<key>"
+  with lowercase values matching the dashboard's actual key
+  bindings (app.js L1175 binds 'j' and 'k' lowercase, NOT shifted).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib aria_keyshortcuts_on_nav_and_detail_buttons_bd_240857
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 454 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Each of 20 nav-item data-view -> aria-keyshortcuts pairs present
+  on the same <li> (region-scoped match between consecutive <li>).
+- ws-help button has aria-keyshortcuts="?" within its opening tag.
+- Each of 4 detail prev/next buttons (bead + agent) has the correct
+  k/j shortcut within its opening tag (located via the unique
+  navigateDetail('<kind>',-1|1) marker, then walked back to the
+  enclosing <button start).
+- Aggregate count: exactly 25 aria-keyshortcuts attributes in
+  index.html, so future blanket rewrite cannot silently drop any.

@@ -1,0 +1,22 @@
+bd-1e8bc4 validation — outbound slash-command and dialog reply HostRequests:
+
+Commands:
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../outbound-control-test/pico-outbound-control-observe.log --server-log .../outbound-control-test/pico-outbound-control-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- mock scenario passed.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- mock backend received 3 outbound frames:
+  1. {"kind":"command","type":"prompt","message":"hello from mock scenario"}
+  2. {"kind":"command","type":"compact","customInstructions":"keep it concise"}
+  3. {"kind":"ui_reply","type":"extension_ui_response","id":"dlg1","confirmed":true}
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 643 passed, 0 failed.
+
+Implementation:
+- Mock websocket backend records inbound client text frames.
+- Pico scenario submits a normal prompt, submits /compact through the real composer, and clicks the pending confirm dialog approve button.
+- Rust-side assertion checks all three HostRequest shapes.
+- Mock backend stays open long enough after streaming for outbound control frames.

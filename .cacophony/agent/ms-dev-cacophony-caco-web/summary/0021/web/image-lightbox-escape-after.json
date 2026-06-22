@@ -1,0 +1,10 @@
+{
+  "dynamic": {
+    "count": 0,
+    "total_overlays": 5
+  },
+  "static": {
+    "stillInDom": true,
+    "display": "none"
+  }
+}

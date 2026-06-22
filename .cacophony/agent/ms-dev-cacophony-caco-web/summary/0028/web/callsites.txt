@@ -1,0 +1,9 @@
+224:                <div class="connection-status" id="connection-status" role="status" aria-live="polite" data-tooltip="Click to reconnect" onclick="manualReconnectSse()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">
+300:                    <div class="stat-card" onclick="switchView('nodes')" role="listitem" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">
+307:                    <div class="stat-card stat-card-accent" onclick="switchView('agents')" role="listitem" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">
+314:                    <div class="stat-card stat-card-muted" onclick="switchView('agents')" role="listitem" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">
+321:                    <div class="stat-card stat-card-accent" onclick="switchView('beads')" role="listitem" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">
+328:                    <div class="stat-card stat-card-muted" role="listitem">
+335:                    <div class="stat-card" onclick="switchView('services')" role="listitem" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">
+342:                    <div class="stat-card" role="listitem">
+349:                    <div class="stat-card" onclick="switchView('feed')" role="listitem" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" tabindex="0">

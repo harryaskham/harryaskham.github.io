@@ -1,0 +1,27 @@
+Validation evidence for bd-0f3187:
+
+- Before: toasts auto-dismissed after `duration` ms (default 4000)
+  regardless of hover or focus state. Reading a longer toast or
+  trying to click its action button could be cut off mid-action.
+- After: showToast wires 4 listeners:
+    * mouseenter -> pauseToast (clears autoTimer, nulls it)
+    * focusin    -> pauseToast
+    * mouseleave -> maybeResumeToast (only resets timer if neither
+                    :hover nor activeElement is still inside the
+                    toast — so a hover-then-focus handoff keeps the
+                    timer paused)
+    * focusout   -> maybeResumeToast (same guarded resume)
+  All 4 listeners are torn down in finishRemoval so the toast node
+  is fully detached. Existing resetToastTimer plumbing is reused —
+  no new state.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib toast_pauses_auto_dismiss_on_hover_and_focus_bd_0f3187 -> 1 passed
+    cargo test -p caco-web --lib toast_dismiss_removes_dom_and_listener_references_bd_034ab8 -> 1 passed (still covers bd-034ab8 + new tear-downs)
+    cargo test -p caco-web --lib --tests -> 433 passed, 11 failed (net +1 pass; same 11 pre-existing failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Matches de-facto pattern across modern toast libraries (Sonner,
+react-toastify, Material UI Snackbar, Mantine notifications). The
+bd-034ab8 cleanup contract is preserved (toast.replaceChildren()
+still runs before remove).

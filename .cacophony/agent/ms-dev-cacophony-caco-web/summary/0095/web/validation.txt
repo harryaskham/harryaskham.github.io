@@ -1,0 +1,41 @@
+Validation evidence for bd-c4e2ee:
+
+- Before: style.css had THREE `.nav-item.active
+  .nav-icon` blocks (lines 432, 436, 7135). Line 7135
+  was byte-identical to line 436's filter declaration
+  -- pure dead repeat.
+- After: TWO blocks remain: canonical compound at
+  line 432 (`.nav-item:hover .nav-icon, .nav-item.active
+  .nav-icon { opacity: 1; }`) and canonical drop-shadow
+  at line 436 (`.nav-item.active .nav-icon { filter:
+  drop-shadow(...); }`). Dead duplicate at line 7135
+  replaced with marker comment.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_nav_icon_active_dup_removal_bd_c4e2ee
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 513 passed, 0 failed (was 512; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (5 layers):
+- Exactly 2 top-level `.nav-item.active .nav-icon {`
+  rule heads (was 3 before dedup) via line-prefix
+  filter per bd-f479b0 / bd-0cb4d9 pattern.
+- Canonical compound `.nav-item:hover .nav-icon,
+  .nav-item.active .nav-icon { opacity: 1; }` block
+  remains (survivor pin).
+- Canonical drop-shadow `.nav-item.active .nav-icon
+  { filter: drop-shadow(...); }` block remains
+  (unique-property survivor pin).
+- Replacement marker comment documents the deletion
+  (defense against re-introduction).
+- bd-0cb4d9 sibling pattern presence pin (merged-
+  canonical body block marker) -- broader
+  duplicate-block-merge family regression-guard.
+
+Format string note: literal `{` `}` inside assert!
+message format strings must be doubled per critical
+context. Initial compile failed because two messages
+embedded raw CSS-rule braces; fixed by doubling to
+`{{` / `}}`.

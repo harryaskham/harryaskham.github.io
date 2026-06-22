@@ -1,0 +1,58 @@
+bd-f54973 validation:
+- BIGGEST FIX YET via pattern (x): 129 of 169 JS-template <button>
+  tags lacked explicit type= attribute. Default <button> type is
+  `submit` -- accidentally submits enclosing form on click.
+- Mass-corrected to type="button" across 7 .js files via mechanical
+  Python script (each insertion places type="button" immediately
+  after the <button opener).
+- 0 explicit type="submit" cases existed anywhere -- all 129 were
+  unambiguously type="button" intent.
+- Pattern (x) FOURTH INSTANCE: button-type integrity regression test.
+- Updated 2 forward-guard test signatures (bd-e61ef5) to reflect
+  new <button type="button" class="..." ...> shape.
+
+cargo test -p caco-web --lib -> 549 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Files changed:
+- app.js: +79 type="button" insertions.
+- nodes.js: +8.
+- summaries.js: +9.
+- workspace-bead-list-pane.js: +2.
+- workspace-integrated.js: +14.
+- workspace-keyboard.js: +1.
+- workspace-panes.js: +16.
+TOTAL: 129 changes across 7 files.
+
+Test design (bd-f54973):
+- Walks <button> opens across 14 .js files in static asset bundle.
+- Filters out non-tag matches (<button-group>, <button followed by
+  alphanumeric).
+- Bounded `>` lookup (first close-bracket after opener -- attribute
+  values are double-quoted so embedded `>` is escaped).
+- Asserts every tag has type= attribute.
+- Failure message guides remediation.
+- ALLOWLIST not needed -- every static button should declare type=.
+
+PATTERN (x) GENERALIZATION (4 audit categories now covered):
+1. CSS custom properties (bd-91616b -- pruned 2 + defended).
+2. @keyframes (bd-a753e2 -- 0 prune + defended).
+3. ARIA idrefs (bd-cf15b7 -- fixed 1 broken + defended).
+4. Button-type integrity (bd-f54973 -- fixed 129 + defended).
+
+This is the largest single pattern (x) batch fix. 129 buttons
+hardened against accidental form submission in one mechanical pass.
+
+OPERATOR-VISIBLE EFFECT:
+- Defensive hygiene: any future button inserted into a form context
+  via these template literals can no longer accidentally submit.
+- Future devs adding <button> in template literals without type=
+  see CI fail with "found N JS-template <button> tags missing
+  explicit type=" plus remediation guidance.
+
+PATTERN (x) SCALE NOTE:
+- bd-91616b: 2 prunes
+- bd-a753e2: 0 finds
+- bd-cf15b7: 1 fix (a11y)
+- bd-f54973: 129 fixes (defensive hygiene)
+The pattern scales from 0 to 100+ findings per audit category.

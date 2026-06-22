@@ -1,0 +1,42 @@
+Validation evidence for bd-42115c:
+
+- Before: filterAgentLogs() had three perf issues:
+    1. oninput="filterAgentLogs()" fired per keystroke
+       (no debounce). For MB-scale agent logs, each
+       keystroke re-split + re-filtered + re-rendered.
+    2. The highlight regex was compiled fresh INSIDE the
+       per-line .map() callback. 10k matched lines = 10k
+       RegExp allocations + 10k compilations per keystroke.
+       The pattern depends only on `query` (shared across
+       all lines), so this was pure waste.
+    3. Full innerHTML rebuild per keystroke.
+
+- After:
+    - New scheduleFilterAgentLogs() debounce trampoline
+      (60ms, same pattern as bd-5e0030 command-palette
+      debounce). oninput= calls the trampoline.
+    - Regex hoisted out of .map() loop. Compiled exactly
+      once per filter operation. O(matched-lines) RegExp
+      allocations -> O(1).
+    - innerHTML rebuild still happens per (debounced) call,
+      but with regex hoisted, the per-call CPU cost drops
+      proportionally to matched-line count.
+    - filterAgentLogs() kept unwrapped for non-debounced
+      callers (e.g. programmatic logs update).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib agent_logs_filter_debounced_and_regex_hoisted_bd_42115c
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 473 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- scheduleFilterAgentLogs trampoline exists + exposed on window.
+- _filterAgentLogsDebounceId declared + setTimeout + clearTimeout.
+- Inline oninput= on #agent-logs-search calls scheduleFilterAgentLogs.
+- filterAgentLogs declares `const highlightRe = new RegExp(...)`
+  BEFORE the `.map(l => ...)` call (positional check).
+- The bare `const re = new RegExp(` inside the .map() callback
+  body is absent (antipattern guard).

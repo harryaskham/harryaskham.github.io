@@ -1,0 +1,61 @@
+bd-03f8e9 validation:
+- PATTERN (m) FAMILY-PAIRED DEDUP + SHORTHAND-RESET
+  AWARENESS: 2 `.chat-body a` blocks and 2 `.chat-body
+  a:hover` blocks at L2435/L7856 and L2440/L7861 set
+  conflicting color/text-decoration. The text-decoration
+  shorthand ALSO reset text-decoration-color (a non-
+  obvious cascade trap), making the L2435/L2440 text-
+  decoration-color properties dead too.
+
+cargo test -p caco-web --lib -> 601 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Python AST Counter from prior bd audits identified
+  `.chat-body a` as 2x at L2423/L7844 (now shifted to
+  L2435/L7856 after intervening edits).
+- Manual cascade analysis revealed shorthand-reset trap.
+
+FIX:
+- Promote L7856 cascade-winning values (color:accent,
+  text-decoration:underline dotted, text-underline-offset:
+  2px) into L2435 canonical block.
+- Promote L7861 cascade-winning values (color:accent-hover,
+  text-decoration:underline solid) into L2440 canonical
+  hover block.
+- Remove L7856-7864 dup blocks; insert rationale comment
+  referencing bd-03f8e9.
+
+WHY:
+- Cascade truth preservation: visible behavior unchanged.
+- Dead-code removal: developer editing L2435's color:
+  var(--nord8) would see no effect (L7856 overrides).
+- Shorthand-reset trap awareness: L2435's text-decoration-
+  color:rgba(...) LOOKS plausible because shorthand-vs-
+  longhand interaction is non-obvious; actual cascade is
+  shorthand-reset.
+- Single source of truth for chat-body-link styling.
+- Pattern (m) extension.
+
+REGRESSION TEST (~62 lines):
+- (1) Exactly 1 line-prefix `.chat-body a {` block.
+- (2) Exactly 1 line-prefix `.chat-body a:hover` line.
+- (3) Cascade-truth values present in surviving block.
+- (4) Dead var(--nord8) color NOT present in surviving block.
+
+PATTERN (m) EXTENSION NOTE — SHORTHAND-RESET TRAP:
+- Discovery: `text-decoration: underline` shorthand is
+  shorthand for `text-decoration-line + text-decoration-
+  style + text-decoration-color` and RESETS all three.
+  When dedup-ing CSS blocks where one sets the shorthand
+  and another sets a longhand sub-property, the shorthand
+  ALWAYS wins regardless of source-order if it's later
+  in the cascade. Add to Pattern (m) audit: when a late
+  block sets a CSS shorthand, ALL longhand sub-properties
+  in earlier blocks are dead even if not visibly
+  overridden by name.
+
+OPERATOR-VISIBLE EFFECT:
+- None. Cascade truth was already visible.
+
+NET PASS: 600 -> 601; 0 failures.

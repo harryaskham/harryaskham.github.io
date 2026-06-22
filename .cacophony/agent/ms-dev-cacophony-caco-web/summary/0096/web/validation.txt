@@ -1,0 +1,56 @@
+Validation evidence for bd-39161c:
+
+- Before: style.css had THREE `.data-table thead th`
+  blocks: line 3654 (standalone with z-index:5,
+  background:var(--bg-tertiary), inset box-shadow,
+  backdrop-filter), line 7221 (standalone with
+  background:var(--nord1), z-index:2), and line 9178
+  (compound `.table-sticky-header thead th,
+  .data-table thead th` with z-index:1, background:
+  var(--bg-elev, var(--nord1)), non-inset box-shadow,
+  backdrop-filter).
+- Cascade analysis: same specificity for all three;
+  line 9178 wins for every overlapping property. Both
+  standalone rules contribute NOTHING visible -- their
+  unique declarations (z-index:5, z-index:2, var(--bg-
+  tertiary), var(--nord1), inset box-shadow) are all
+  shadowed by 9178's later declarations.
+- After: TWO standalone blocks deleted, replaced
+  with marker comments. `.table-wrapper { position:
+  relative; }` rule (positioning context for sticky
+  headers) preserved alongside the line 3654
+  deletion. Compound rule at 9178 is the sole
+  survivor.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_data_table_thead_th_dup_removal_bd_39161c
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 514 passed, 0 failed (was 513; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (6 layers):
+- Exactly 0 STANDALONE `.data-table thead th {` rule
+  heads remain (was 2); selector-continuation
+  detection via previous-line `,` check excludes the
+  compound rule's second-selector line from the
+  count.
+- Compound rule `.table-sticky-header thead th,
+  .data-table thead th {` survives (survivor pin).
+- Compound rule retains unique-property survivors:
+  box-shadow (only this block has it), backdrop-
+  filter, position:sticky.
+- `.table-wrapper { position: relative; }`
+  positioning-context rule remains intact.
+- Both replacement marker comments document each
+  deletion (defense against re-introduction).
+- bd-c4e2ee sibling pattern presence pin (broader
+  duplicate-block-merge family regression-guard).
+
+Refinement note: initial test counted `.data-table
+thead th {` line-equality which matched the COMPOUND
+rule's second selector line (where the brace opens
+on the same line as the second selector). Fixed by
+checking the previous line does NOT end with `,` --
+i.e., only count rule heads that aren't selector-
+list continuations.

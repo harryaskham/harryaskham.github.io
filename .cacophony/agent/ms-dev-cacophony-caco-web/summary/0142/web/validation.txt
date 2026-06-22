@@ -1,0 +1,48 @@
+bd-a50d37 validation:
+- Pattern (m) family-paired dedup + pattern (p) cascade-resolved-
+  shorthand-collapse: 2 ::-webkit-scrollbar blocks in style.css
+  merged into 1.
+- Cascade analysis showed earlier block (L4770) had transparent
+  track + semi-transparent thumb with border + background-clip
+  inset trick; later block (L7664) had Nord-themed solid colors.
+  Cascade resolved to: Nord colors win for background+border-
+  radius BUT inset-border + background-clip survive from earlier
+  block (only declared there).
+
+cargo test -p caco-web --lib -> 560 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+DEBUGGING JOURNEY (3 issues):
+1. Unicode escape `\u2500` rejected by Rust 2021 -- braced form
+   `\u{2500}` required.
+2. Existing bd-5d2104 test pinned exact one-line `* { scrollbar-
+   width: thin; ... }` form. My merge wrote multi-line. Reverted
+   `*` rule to single-line.
+3. Char-boundary error in 500-byte window slice (mid-multibyte
+   for box-drawing chars). Added char-boundary snap (pattern n).
+
+PATTERN (p) CASCADE-RESOLVED-SHORTHAND-COLLAPSE:
+When two definition blocks for the same selector exist in the
+same stylesheet, cascade resolves into a hybrid where:
+- Properties redeclared in the LATER block win (track bg, thumb
+  bg, thumb border-radius, thumb:hover bg).
+- Properties only declared in the EARLIER block survive (thumb
+  border + background-clip, thumb:hover background-clip).
+Merge MUST preserve the cascade-resolved hybrid, not just take
+one block as authoritative.
+
+REGRESSION TEST (~70 lines):
+- Single bare `::-webkit-scrollbar {` declaration block.
+- Block contains 7 cascade-resolved values: var(--nord0)/track,
+  var(--nord3)/thumb, border 2px solid transparent, background-
+  clip padding-box, var(--nord10)/thumb:hover, scrollbar-width
+  thin, scrollbar-color Nord theme.
+- Orphan `/* Firefox */` comment immediately followed by
+  Responsive section header is removed.
+
+OPERATOR-VISIBLE EFFECT:
+- Identical visual rendering (cascade-equivalent merge).
+- Single canonical scrollbar block reduces cognitive load.
+- Eliminates orphan Firefox comment.
+
+NET PASS: 559 -> 560; 0 failures.

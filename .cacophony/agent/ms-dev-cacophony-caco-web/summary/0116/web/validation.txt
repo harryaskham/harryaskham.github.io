@@ -1,0 +1,25 @@
+bd-ed3d3f validation:
+- Family-triple-paired cycle in .choice-card family.
+- .choice-card x3 -> 1: 6 baseline + 2 additive (position+overflow)
+  + 1 silent-override promoted (transition: border-color
+  var(--transition) -> transform 0.15s, box-shadow 0.15s).
+- .choice-card:hover x2 -> 1: canonical border-color + 2 additive
+  disjoint (transform, box-shadow).
+- 5 dead blocks deleted total; 3 marker comments (3 grouped: 1 in
+  canonical .choice-card, 1 in canonical :hover, 1 standalone).
+- Compound `.action-card::before, .project-card::before,
+  .choice-card::before` rule preserved (pattern o).
+
+cargo test -p caco-web --lib -> 534 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (11 layers): 2x rule-head counts + 2x baseline+
+promoted/preserved + 1 NEGATIVE (dead var-transition) +
+1 explicit compound-rule preservation (pattern o) +
+3 marker pins + bd-454506 sibling pin.
+
+NEW STRUCTURAL PATTERN (s): family-triple-paired -- one family
+selector triple-merge + the family's :hover paired-merge in a
+single cycle. Different from quad-paired (4 unrelated pairs);
+the family relationship lets one consolidated marker block
+describe both consolidations together, reducing marker noise.

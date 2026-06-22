@@ -1,0 +1,55 @@
+Validation evidence for bd-74610b:
+
+- Before: dead keyboard-shortcuts overlay shipped to
+  every load -- dead `?` handler in setupKeyboardShortcuts
+  + ~38-line toggleShortcutsOverlay() function +
+  #shortcuts-overlay CSS rule. Both `?` handlers lived
+  in setupKeyboardShortcuts; canonical bd-e49551 handler
+  ran first and returned, so the duplicate at line 1318
+  was dead-on-arrival. The function it called was
+  reachable only by the dead handler. The CSS rule
+  matched only the element the function created.
+- After: dead `?` handler removed (replaced with
+  bd-74610b marker comment documenting WHY), dead
+  toggleShortcutsOverlay() function removed (replaced
+  with explanatory comment), dead #shortcuts-overlay
+  CSS rule removed. Canonical toggleKeyboardHelp()
+  system fully replaces it. Sibling tests
+  bd-ca8a3a (dialog semantics floor) and bd-bfc59e
+  (modal-close button floor) updated to reflect the
+  new survivor count.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib dead_keyboard_shortcuts_overlay_removed_bd_74610b
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 511 passed, 0 failed (was 510; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (7 layers):
+
+NEGATIVE (dead siblings removed):
+- function toggleShortcutsOverlay() declaration gone.
+- Dead `?` handler body literal call signature gone
+  (precise call+return pair so unrelated future calls
+  don't false-trip).
+- #shortcuts-overlay CSS rule gone.
+- Dead CSS rule introductory comment gone (belt-and-
+  braces).
+
+POSITIVE (canonical survivors remain):
+- function toggleKeyboardHelp() { ... } remains.
+- bd-e49551 `?` handler comment marker + canonical
+  call+return body remain.
+- function setupKeyboardShortcuts() { remains
+  (handler container survives).
+- bd-74610b replacement marker comment exists
+  (defense against future re-introduction of the
+  parallel implementation).
+
+Sibling test updates:
+- bd-ca8a3a: floor lowered from 5 to 4 dialog-
+  semantic calls; shortcuts-overlay block converted
+  to NEGATIVE assertion (must remain removed).
+- bd-bfc59e: floor lowered from 3 to 2 dynamic
+  modal-close buttons in app.js.

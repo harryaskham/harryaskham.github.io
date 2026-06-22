@@ -1,0 +1,55 @@
+bd-bbb945 validation:
+- A11Y AUDIT: 2 visible textareas without accessible name.
+- #bead-desc-textarea (app.js, bead description Markdown editor).
+- #node-message-input (nodes.js, broadcast to node agents).
+
+cargo test -p caco-web --lib -> 561 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+Walks all 10 entry HTML and JS files. For each <input>/<textarea>:
+1. Skip type=hidden/submit/button/reset/image/checkbox/radio/file.
+2. Pass if has aria-label, aria-labelledby, or title.
+3. Pass if has id matching <label for=...>.
+4. Pass if inside an ancestor <label> (open count > close count
+   before position).
+5. Pass if id is on the allowlist (currently empty).
+6. Skip JS comment-line example fragments.
+
+INITIAL AUDIT FOUND 7 CANDIDATES; refined to 2 after adding:
+- Ancestor <label> wrap detection (5 false positives: TTS volume
+  range slider, TTS model text input, TTS speed number input,
+  workspace-project-input -- all wrapped by <label class="..."
+  >Vol/Model/Speed/Project ...</label> as implicit-labeled).
+- JS comment-line skip (1 false positive: workspace-views.js:354
+  was in a comment about parsing files).
+
+GENUINELY UNLABELED: 2.
+- bead-desc-textarea: added aria-label="Bead description editor (Markdown)".
+- node-message-input: added aria-label="Message agents on this node".
+
+DEBUGGING JOURNEY:
+Existing bd-a35f10 test pinned exact contiguous substring
+`<textarea id="bead-desc-textarea" rows="8" oninput="scheduleAutosize(this)">`.
+My aria-label insertion broke that substring (inserted between
+rows="8" and oninput=).
+
+FIX: same forward-guard-test-refactor-on-attribute-extension
+pattern as bd-47364f. Relaxed the wrapped-form anchor to
+`<textarea id="bead-desc-textarea" rows="8" aria-label=`
+(structural prefix). Added a separate explicit
+oninput=scheduleAutosize assertion at the end of bd-a35f10.
+
+REGRESSION TEST (~120 lines):
+- 10 scan files.
+- Per-tag check: type-skip, aria-label, aria-labelledby, title,
+  <label for=>, ancestor <label> wrap, allowlist.
+- Comment-line skip via line-prefix "//" check.
+- Sanity: >=20 visible inputs/textareas to anchor.
+
+OPERATOR-VISIBLE EFFECT:
+- Screen reader users hear "Bead description editor (Markdown)"
+  and "Message agents on this node" instead of generic "edit text".
+- Real a11y win for keyboard/AT users.
+
+NET PASS: 560 -> 561; 0 failures.

@@ -1,0 +1,38 @@
+Validation evidence for bd-8aab6d:
+
+- Before: 10 unguarded `localStorage.setItem(...)` call sites:
+  - line 1381 (TUI agent id), 1650 (recent commands),
+    4081 (pinned beads), 4309 (quick-bead project),
+    5569 (chat channels collapsed), 7391 (TTS client mute),
+    7416 (TTS autoplay), 7422 (TTS volume),
+    8494 (TTY wrap), 8506 (TTY font size).
+  - In Safari private browsing mode every setItem call throws
+    QuotaExceededError (private-mode quota is effectively 0
+    across recent Safari versions). The user-action that
+    triggered the persist would crash with an uncaught exception.
+- After:
+  - Added safeLocalStorageSet(key, value) and
+    safeLocalStorageRemove(key) helpers next to the existing
+    el() utility, with full rationale comment.
+  - Migrated all 10 unguarded sites to the helper.
+  - Existing 14 try/catch-wrapped setItem sites left alone
+    (consistency win is real but not worth the scope creep --
+    they already handle the same error class correctly).
+  - Helpers return bool so future callers can branch on success
+    if needed (current callers don't).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib safe_localstorage_set_helper_covers_unguarded_sites_bd_8aab6d
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 446 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Helpers defined exactly once with the documented signatures.
+- safeLocalStorageSet called at least 11 times (definition + 10
+  migrated call sites).
+- All 10 migrated call sites present in their exact final shape.
+- All 10 bare-setItem versions REMOVED (anchored exact-string
+  match -- generic substring grep can't hide re-introductions).

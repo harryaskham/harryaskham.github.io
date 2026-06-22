@@ -1,0 +1,25 @@
+[caco-web-dev] serving /home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/crates/caco-web/static at http://127.0.0.1:63715 (proxy daemon: http://127.0.0.1:11100)
+[caco-web-dev] pass --port 0 for parallel-safe OS-assigned ports
+2026-06-16T11:18:27.376Z INFO  [caco-web] req=1 GET /health -> 200 0ms
+2026-06-16T11:18:27.410Z INFO  [caco-web] req=2 GET /api/v1/node -> 200 32ms
+2026-06-16T11:18:29.177Z INFO  [caco-web] req=3 GET /pico?agent=pico-observe-fixture&ws=ws://127.0.0.1:43593/session -> 200 0ms
+2026-06-16T11:18:29.194Z INFO  [caco-web] req=4 GET /style.css -> 200 1ms
+2026-06-16T11:18:29.266Z INFO  [caco-web] req=5 GET /pico-view-adapter.js -> 200 0ms
+2026-06-16T11:18:29.268Z INFO  [caco-web] req=7 GET /pico-agent-view.js -> 200 1ms
+2026-06-16T11:18:29.269Z INFO  [caco-web] req=6 GET /app.js -> 200 2ms
+2026-06-16T11:18:29.438Z INFO  [caco-web] req=8 GET /pico_view.js -> 200 1ms
+2026-06-16T11:18:29.496Z INFO  [caco-web] req=9 GET /pico_view_bg.wasm -> 200 0ms
+2026-06-16T11:19:03.794Z INFO  [caco-web] req=10 GET /pico?agent=pico-select-fixture&ws=ws://127.0.0.1:35047/session -> 200 0ms
+2026-06-16T11:19:03.813Z INFO  [caco-web] req=11 GET /style.css -> 200 0ms
+2026-06-16T11:19:03.878Z INFO  [caco-web] req=12 GET /pico-view-adapter.js -> 200 0ms
+2026-06-16T11:19:03.879Z INFO  [caco-web] req=14 GET /pico-agent-view.js -> 200 0ms
+2026-06-16T11:19:03.880Z INFO  [caco-web] req=13 GET /app.js -> 200 1ms
+2026-06-16T11:19:04.052Z INFO  [caco-web] req=15 GET /pico_view.js -> 200 0ms
+2026-06-16T11:19:04.114Z INFO  [caco-web] req=16 GET /pico_view_bg.wasm -> 200 0ms
+2026-06-16T11:19:07.252Z INFO  [caco-web] req=17 GET /pico?agent=pico-disconnect-fixture&ws=ws://127.0.0.1:33523/session -> 200 0ms
+2026-06-16T11:19:07.267Z INFO  [caco-web] req=18 GET /style.css -> 200 0ms
+2026-06-16T11:19:07.346Z INFO  [caco-web] req=19 GET /pico-view-adapter.js -> 200 0ms
+2026-06-16T11:19:07.347Z INFO  [caco-web] req=21 GET /pico-agent-view.js -> 200 0ms
+2026-06-16T11:19:07.347Z INFO  [caco-web] req=20 GET /app.js -> 200 0ms
+2026-06-16T11:19:07.549Z INFO  [caco-web] req=22 GET /pico_view.js -> 200 0ms
+2026-06-16T11:19:07.607Z INFO  [caco-web] req=23 GET /pico_view_bg.wasm -> 200 0ms

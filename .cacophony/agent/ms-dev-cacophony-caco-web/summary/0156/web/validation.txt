@@ -1,0 +1,45 @@
+bd-5f82f4 validation:
+- FAVICON COVERAGE PARITY: 2 of 4 entry HTML (workspace.html,
+  notifications.html) showed default ghost favicon in browser
+  tabs because they had no <link rel="icon">.
+
+cargo test -p caco-web --lib -> 573 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- All 4 entry HTML scanned for <link rel="icon"|"apple-touch-icon".
+- index.html: ✓ rel=icon (SVG C-mark) + ✓ apple-touch-icon.
+- workspace.html: ✗ no favicon.
+- notifications.html: ✗ no favicon.
+- terminal.html: ✓ data:, (intentional suppression -- embedded
+  agent-terminal frame).
+
+FIX:
+- workspace.html: + <link rel="icon"> (Cacophony C-mark SVG
+  data URI from index.html) + <link rel="apple-touch-icon">
+  (PWA Add-to-Home-Screen icon).
+- notifications.html: + <link rel="icon"> (Cacophony C-mark).
+
+WHY:
+- Brand parity: C-mark in browser tabs across all main entry
+  pages.
+- iOS Add-to-Home-Screen for workspace (PWA enabled by bd-2c535e).
+- terminal.html excluded -- intentional data:, suppression for
+  embedded frame.
+
+REGRESSION TEST (~65 lines):
+- 4 entry HTML iterated.
+- Per file: assert <link rel="icon"> present (single OR double
+  quotes accepted, any form including data:,).
+- index.html + workspace.html: additionally assert
+  rel="apple-touch-icon" present.
+- workspace.html + notifications.html: assert rel="icon" links
+  to SVG (Cacophony C-mark), not empty data:, suppression.
+
+OPERATOR-VISIBLE EFFECT:
+- Browser tabs for workspace + notifications show Cacophony
+  C-mark instead of ghost favicon.
+- iOS Add-to-Home-Screen from workspace gets touch icon.
+- No change to index.html or terminal.html.
+
+NET PASS: 572 -> 573; 0 failures.

@@ -1,0 +1,22 @@
+bd-4cb15b partial 2 validation — wasm artifact recipe/devshell:
+
+Commands:
+- node --check crates/caco-web/static/pico-view-adapter.js
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-picophony --lib --no-default-features --features wasm
+- cargo test -p caco-web --lib
+
+Results:
+- pico-view-adapter.js syntax: OK.
+- app.js syntax: OK.
+- caco-picophony pure wasm-feature tests: 77 passed, 0 failed.
+- caco-web lib tests: 634 passed, 0 failed.
+
+Implemented in this partial:
+- flake.nix adds opt-in devShells.caco-web-wasm with rustWasmToolchain (wasm32-unknown-unknown target) + wasm-bindgen-cli.
+- justfile adds `just pico-web-wasm`, which builds caco-picophony for wasm32 and runs wasm-bindgen with --target web --out-name pico_view, then copies pico_view.js and pico_view_bg.wasm into crates/caco-web/static.
+- bd-4cb15b source test now pins adapter, app seam, cdylib crate type, just recipe, and flake devshell.
+
+Not done yet / bead remains open:
+- Generated artifacts are not committed in this slice because this node lacks wasm32 target + wasm-bindgen in the active shell; the new .#caco-web-wasm shell is the first-party path for that next step.
+- Once artifacts are generated and committed, caco-web can make the shared PicoView path authoritative and demote/remove the JS subset reducer fallback.

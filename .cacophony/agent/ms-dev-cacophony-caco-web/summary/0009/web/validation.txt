@@ -1,0 +1,8 @@
+Validation evidence for bd-55c6bf:
+
+- Probe: web/mobile-services-after.json records visible #services-table headers as exactly [NODE, SERVICE, STATUS]; hidden [In-Process, Port] at 390x844.
+- Screenshot: web/screenshots/mobile-services-after.png shows simplified mobile Services header.
+- Direct foreground validation (per revival nudge — bd-368eaf/bd-1bd973 — not queued, not backgrounded):
+  - cargo test -p caco-web --lib mobile_services_table_hides_secondary_columns_bd_55c6bf -> 1 passed, 0 failed
+  - cargo check -p caco-web --all-targets -> Finished `dev` profile target(s)
+- Whitespace check: git diff --check origin/main..HEAD -> clean

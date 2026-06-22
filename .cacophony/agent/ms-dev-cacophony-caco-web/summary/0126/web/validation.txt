@@ -1,0 +1,49 @@
+bd-360942 validation:
+- HEXA-paired cycle: .kbd-hint (silent-override mixed survival
+  on color + font-size), .badge (strictly-additive font-variant-
+  numeric for tabular badge counts), .bead-detail-meta dt+dd
+  family-paired (s) (dt silent-override font-size 11->12 + 1
+  byte-id; dd pure-dead byte-identical-subset), .agent-detail-
+  hero (silent-override mixed survival margin-bottom 12->16 +
+  3 byte-id), .chat-slash-suggest (3 silent-overrides + 1
+  additive vendor-prefix lockstep + 1 byte-id).
+- 6 canonical merged + 6 dead blocks deleted + 6 marker comments.
+
+cargo test -p caco-web --lib -> 544 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (24 layers): 6x rule-head counts + 6x cascade-
+resolved truth + 5 NEGATIVE on declarations-only + 6 marker
+pins + bd-231a34 sibling pin.
+
+Pattern (m) preflight applied per bd-231a34 catch #6 lesson:
+- Source-file check: 0 commas in 3 prev lines for selected 6.
+- Test-pin grep: no count pins on selected 6 (badge mentioned in
+  unrelated bead-cb6576 string match; nav-key/freshness-indicator
+  in print media compound -- skipped already).
+
+3 candidates SKIPPED:
+- .freshness-indicator (compound 4-selector tail at L8644;
+  pattern m source-file catch).
+- .chat-body a (text-decoration shorthand cascade -- late's
+  `text-decoration: underline solid` would reset canonical's
+  text-decoration-color:rgba(136,192,208,0.4); risk regression).
+- .chat-avatar (display:inline-flex -> flex direction change in
+  late; could affect inline-flow contexts; risk regression).
+
+PATTERN (v) NOTE on .kbd-hint: color change from var(--text-dim)
+to var(--text-muted, #888) is a cascade-dead-elaborate-canonical
+sub-variant -- both vars are similarly dim but late explicitly
+provides a hex fallback for var resolution failures. Marker
+documents this so future readers don't restore text-dim under
+the assumption that the explicit hex fallback was unintended.
+
+PATTERN COMBINATION TALLY (this cycle):
+- 2x silent-override mixed survival (.kbd-hint, .agent-detail-hero).
+- 1x strictly-additive (.badge).
+- 1x silent-override single + 1 byte-id (.bead-detail-meta dt).
+- 1x pure-dead byte-identical-subset (.bead-detail-meta dd).
+- 1x silent-override + vendor-prefix lockstep + byte-id (.chat-
+  slash-suggest).
+
+Family-paired (s) coverage: .bead-detail-meta dt+dd.

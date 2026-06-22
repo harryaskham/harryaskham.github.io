@@ -1,0 +1,41 @@
+Validation evidence for bd-2b16d9:
+
+- Before: Shift+P was documented as a global shortcut in
+  TWO places (workspace-badge button title at app.js:972
+  + KEYBOARD_BINDINGS registry at app.js:1879) but NO
+  handler implemented it. Users who saw the hint pressed
+  the key and got no feedback.
+- After: Shift+P handler wired at app.js:~1306 (right
+  next to its sibling Shift+X handler), calling
+  switchView('projects') with the same pre-condition
+  shape (not in INPUT/TEXTAREA/SELECT, badge visible
+  via state.workspaceProject, no other modifiers).
+- KEYBOARD_BINDINGS description updated from "Focus
+  workspace project badge" (described non-existent
+  behavior) to "Open workspace project view" (matches
+  badge title + wired handler).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib shift_p_workspace_project_view_shortcut_wired_bd_2b16d9
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 488 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (4 layers):
+- Positive handler signature via format!() concatenation
+  per bd-5e0030 defense-in-depth.
+- KEYBOARD_BINDINGS description string + stale-string
+  refusal (negative assertion ensures old text is gone).
+- Sibling Shift+X handler presence pin (the matching
+  pattern this implements against).
+- Badge title presence pin (the user-facing promise the
+  handler now honors).
+
+Coordination note:
+- Spotted during a broader shortcuts-overlay drift audit
+  (app.js:4435 toggleShortcutsOverlay hardcodes a list
+  that doesn't match KEYBOARD_BINDINGS). The drift
+  surface is bigger -- left for a future cycle. This
+  cycle ships only the user-visible Shift+P fix.

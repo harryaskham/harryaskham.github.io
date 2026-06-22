@@ -1,0 +1,20 @@
+{
+  "rect": {
+    "x": 1317.515625,
+    "y": 14,
+    "w": 104.484375,
+    "h": 30,
+    "right": 1422
+  },
+  "style": {
+    "position": "fixed",
+    "right": "18px",
+    "left": "1317.52px",
+    "top": "14px",
+    "display": "flex"
+  },
+  "viewport": {
+    "w": 1440,
+    "h": 950
+  }
+}

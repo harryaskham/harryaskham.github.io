@@ -1,0 +1,43 @@
+bd-8ac00b validation:
+- HISTORY.SCROLLRESTORATION = 'MANUAL': caco-web maintains
+  per-view scroll positions via _viewScrollPositions; the
+  browser's default 'auto' raced with that on back/forward
+  navigation, producing brief scroll-jump flash before the
+  app's setActiveView() RAF restoration ran.
+
+cargo test -p caco-web --lib -> 594 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- grep scrollRestoration crates/caco-web/static/*.js -> 0 hits.
+- _viewScrollPositions code path at app.js:1424,1496.
+- setActiveView() RAF restoration at app.js:1494-1510.
+- Default 'auto' redundant + racy.
+
+FIX:
+- app.js DOMContentLoaded handler: feature-detect
+  'scrollRestoration' in history; try/catch assignment to
+  'manual'.
+- Placed FIRST inside the handler so it runs before
+  setupHashRouting() etc. trigger any view changes.
+
+WHY:
+- Eliminates back/forward flash: app's setActiveView()
+  RAF restoration becomes the single source of truth.
+- No regression: _viewScrollPositions already handles
+  restoration; browser's 'auto' was redundant.
+- Modern browser support: Chrome 46+, Firefox 46+,
+  Safari 11+ -- feature-detect guard handles edge cases.
+
+REGRESSION TEST (~25 lines):
+- Assert app.js contains "'scrollRestoration' in history"
+  feature-detect literal.
+- Assert app.js contains
+  "history.scrollRestoration = 'manual'" assignment.
+
+OPERATOR-VISIBLE EFFECT:
+- Smoother back/forward navigation across views.
+- No brief scroll jump before app restores remembered
+  scroll position.
+
+NET PASS: 593 -> 594; 0 failures.

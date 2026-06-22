@@ -1,0 +1,34 @@
+Validation evidence for bd-2dd15c:
+
+- Before: Create Bead submit button (index.html:1055) had
+  aria-label="Cmd/Ctrl+Enter". Per ARIA name computation, this
+  OVERRODE the visible "Create Bead" text -- screen-reader users
+  heard "Cmd slash Ctrl plus Enter, button" with NO indication
+  this is the create/submit action. Confirmed only occurrence in
+  the codebase via regex sweep for shortcut-only aria-labels
+  across index.html and app.js.
+- After:
+  - aria-label rewritten to "Create bead, keyboard shortcut Cmd
+    or Ctrl plus Enter" -- action verb leads, shortcut hint
+    follows in spelled-out form (more SR-friendly than `+` and
+    `/`).
+  - <kbd class="btn-kbd-hint" id="create-bead-kbd"> gains
+    aria-hidden="true" so the visible ⌘↵ symbols are not
+    pronounced as gibberish when SRs fall back to text content.
+  - data-tooltip="Cmd/Ctrl+Enter" preserved -- sighted-hover hint
+    unchanged.
+  - Visible "Create Bead ⌘↵" unchanged.
+- An inline comment documents the rationale so future edits do
+  not accidentally re-introduce the shortcut-only aria-label.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib create_bead_submit_aria_label_includes_action_verb_bd_2dd15c
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 443 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts the old shortcut-only aria-label is gone, the
+new action-verb-led aria-label is present, the kbd is aria-hidden,
+and the data-tooltip is preserved.

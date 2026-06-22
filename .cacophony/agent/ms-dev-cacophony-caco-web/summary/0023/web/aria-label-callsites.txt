@@ -1,0 +1,20 @@
+294:        btn.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+1719:    overlay.setAttribute('aria-label', 'Keyboard shortcuts');
+2657:        agentNavItem.setAttribute('aria-label', runningAgents.length > 0
+2662:    agentBadge.setAttribute('aria-label', runningAgents.length > 0 ? agentCountLabel : 'No running agents');
+2672:        beadNavItem.setAttribute('aria-label', openBeads > 0
+2677:    beadBadge.setAttribute('aria-label', openBeads > 0 ? beadCountLabel : 'No open beads');
+2961:        value.setAttribute('aria-label', title);
+4043:    input.setAttribute('aria-label', 'Edit bead title');
+4211:    ov.setAttribute('aria-label', 'Keyboard shortcuts');
+4677:        overlay.setAttribute('aria-label', `Move bead ${beadId}`);
+6846:    overlay.setAttribute('aria-label', caption ? `Image preview: ${caption}` : 'Image preview');
+7572:        navItem.setAttribute('aria-label', unread > 0
+7579:        badge.setAttribute('aria-label', unreadLabel);
+7582:        badge.setAttribute('aria-label', 'No unread notifications');
+9394:    input.setAttribute('aria-label', 'Rename agent');
+10016:        overlay.setAttribute('aria-label', opts.title || 'Confirmation');
+11235:            badge.setAttribute('aria-label', `${pending} pending operator choice${pending === 1 ? '' : 's'}`);
+11245:        navItem.setAttribute('aria-label', pending > 0
+11257:            inboxBadge.setAttribute('aria-label', `${activeInbox} active inbox item${activeInbox === 1 ? '' : 's'}`);
+11264:        inboxNavItem.setAttribute('aria-label', activeInbox > 0

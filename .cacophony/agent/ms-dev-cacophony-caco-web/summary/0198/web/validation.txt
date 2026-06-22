@@ -1,0 +1,33 @@
+bd-4cb15b final validation — generated shared PicoView artifacts:
+
+Commands:
+- nix develop .#caco-web-wasm --command wasm-bindgen --version
+- nix develop .#caco-web-wasm --command just pico-web-wasm
+- node --check crates/caco-web/static/pico-view-adapter.js
+- node --check crates/caco-web/static/pico_view.js
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-picophony --lib --no-default-features --features wasm
+- cargo test -p caco-web --lib
+
+Results:
+- wasm-bindgen CLI: 0.2.114.
+- `just pico-web-wasm` generated:
+  - crates/caco-web/static/pico_view.js (~17 KiB)
+  - crates/caco-web/static/pico_view_bg.wasm (~440 KiB)
+- JS syntax checks: OK.
+- caco-picophony wasm-feature tests: 79 passed, 0 failed.
+- caco-web lib tests: 635 passed, 0 failed.
+
+Implementation:
+- Pinned workspace wasm-bindgen to =0.2.114, matching the Nix shell's wasm-bindgen-cli schema.
+- Updated Cargo.lock to 0.2.114 wasm-bindgen/js-sys/web-sys family.
+- Generated and embedded pico_view.js + pico_view_bg.wasm.
+- Extended bd-4cb15b source test to assert generated artifacts are embedded and expose the PicoView surface.
+
+Outcome:
+- The adapter path from prior partial now finds real generated artifacts in ordinary caco-web static serving.
+- app.js applies raw /session lines through PicoView.apply_line and renders snapshot_json before falling back to JS reducer.
+- Prompt send uses PicoView.prompt_line when module loaded.
+
+Post-rebase guardrail fix:
+- Converted newly-landed .pico-card `border-radius: 8px;` to `var(--radius);` so bd-922835 caco-web radius guard remains green.

@@ -1,0 +1,20 @@
+{
+  "visibleHeaders": [
+    "ID",
+    "TITLE",
+    "STATUS"
+  ],
+  "hiddenHeaders": [
+    "Priority",
+    "Type",
+    "Assignee",
+    "Labels",
+    "Project",
+    "Created"
+  ],
+  "count": 3,
+  "viewport": {
+    "w": 390,
+    "h": 844
+  }
+}

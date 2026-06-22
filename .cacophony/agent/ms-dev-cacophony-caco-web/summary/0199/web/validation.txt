@@ -1,0 +1,44 @@
+bd-130ad9 validation — shared pico composer/slash-command/autocomplete parity:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-picophony --lib --no-default-features --features wasm
+- cargo test -p caco-web --lib
+
+Results:
+- app.js syntax: OK.
+- caco-picophony wasm-feature tests: 79 passed, 0 failed.
+- caco-web lib tests: 636 passed, 0 failed.
+
+Implementation:
+- Pico composer textarea now has aria-controls/aria-expanded and oninput wiring for suggestions.
+- Added accessible `agent-pico-suggestions` listbox with button options and selected state styling.
+- Added `picoSharedAdapterReady`, `picoComposerInput`, `renderPicoSuggestions`, `selectPicoSuggestion`, `picoAppendNote`, and `picoComposerLine`.
+- Suggestions come from `adapter.commandSuggestionsJson(text, picoState.sharedView)`.
+- Tab completion uses `adapter.commandCompletion(input.value, picoState.sharedView)`.
+- Submit uses `adapter.parseComposer(text)`:
+  - prompt -> `promptLine` or `steerLine` when streaming
+  - command -> `commandLine(JSON.stringify(action.command))`
+  - note -> local transcript note (e.g. /help)
+- Fallback remains the baseline prompt JSON envelope if PicoView wasm is unavailable.
+- Source test pins shared-helper composer path and suggestion CSS.
+
+Outcome:
+- Built-in pico commands no longer leak to the model as plain text in caco-web when the shared PicoView module is loaded.
+- caco-web composer behavior now follows the same shared parser/autocomplete core used by Android/iPhone/native bindings.
+
+Post-rebase merge-gate fix:
+- caco-picophony TranscriptItem::Tool gained a `rich` field from another pico slice; render.rs ratatui renderer pattern now ignores `rich: _` so default caco-picophony compiles while web can render rich cards natively.
+- Additional validation: `cargo check -p caco-picophony --features ratatui` passed.
+
+Final merge-gate fixture fix:
+- Updated remaining caco-picophony render.rs Tool test fixtures to include `rich: None` after the typed RichResult field landed.
+- Additional validation: `cargo test -p caco-picophony --lib -- --test-threads=2` passed (93 passed, 2 ignored).
+
+Final gate validation:
+- Fixed cargo test-small alias compatibility: removed baked libtest trailer so `cargo test-small -- --test-threads=2` no longer filters all tests to zero.
+- Classified `required_spawn_env` in caco-config profile frontmatter exhaustiveness test.
+- Regenerated docs/profiles.html.
+- Updated caco-tui pico click test to current AgentDetailTab::Pico and release timestamp test to display-timezone behavior.
+- Added RUST_MIN_STACK default for caco-tui stack-heavy tests.
+- Gate-shaped command `CARGO_BUILD_JOBS=2 cargo test-small -- --test-threads=2` passed end-to-end.

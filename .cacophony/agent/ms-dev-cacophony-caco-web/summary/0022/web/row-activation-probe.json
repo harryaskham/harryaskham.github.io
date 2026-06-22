@@ -1,0 +1,14 @@
+{
+  "beforeScroll": 0,
+  "afterSpace": {
+    "activations": [
+      "agent-a"
+    ],
+    "scroll": 0
+  },
+  "afterEnter": {
+    "activations": [
+      "agent-a"
+    ]
+  }
+}

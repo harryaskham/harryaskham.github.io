@@ -1,0 +1,55 @@
+bd-cf15b7 validation:
+- BUG FIXED: aria-controls="cluster-pulse-expanded-overlay" idref
+  on the cluster-pulse expand button (index.html L301) pointed at
+  an element that was lazy-created in app.js openClusterPulseOverlay().
+  Screen readers couldn't navigate via aria-controls until first open.
+- Pre-rendered empty placeholder in index.html before </body>.
+- Modified app.js: dual-path branch detects empty pre-rendered shell
+  and populates innerHTML lazily on first open (preserves cold-load
+  deferral while making the idref resolve from page load).
+- Pattern (x) THIRD INSTANCE: aria-idref integrity regression test.
+
+cargo test -p caco-web --lib -> 548 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design:
+- Scans index.html for aria-(controls|labelledby|describedby|owns)
+  ="<id>" refs. Also handles space-separated id-list values
+  (aria-labelledby supports multiple ids).
+- For each id token, looks up id="<token>" in static index.html.
+- ALLOWLIST_DYNAMIC_ARIA_TARGETS placeholder for genuinely-dynamic
+  targets that cannot be pre-rendered.
+- Failure message guides remediation.
+- Forward-guards: cluster-pulse-expanded-overlay must remain
+  pre-rendered AND must remain empty (children lazy-injected).
+- Cross-checks app.js retains the `!overlay.children.length`
+  branch so the dual-path lazy-populate stays intact.
+
+PATTERN (x) GENERALIZATION (3 audit categories now covered):
+1. CSS custom properties (bd-91616b -- pruned 2 + defended).
+2. @keyframes (bd-a753e2 -- 0 prune + defended).
+3. ARIA idrefs (bd-cf15b7 -- fixed 1 broken + defended).
+
+The pattern is now solidly established as a generalizable
+audit-policy enforcement mechanism. Each instance:
+- Aggregates DEFINITIONS across declarative space.
+- Aggregates CONSUMERS across consumer space.
+- Subtracts: orphans/broken = consumers - defs - allowlist.
+  (Inverted from bd-91616b/bd-a753e2 which subtract defs - consumers;
+  here we subtract consumers - defs because the declarative space
+  is the id="..." set and the consumer space is aria-* idrefs.)
+- Asserts empty with helpful failure message.
+- Forward-guards against re-introduction of fixed cases.
+
+OPERATOR-VISIBLE EFFECT:
+- Screen-reader users navigating the cluster pulse expand button
+  via aria-controls now successfully reach the controlled overlay
+  from page load instead of waiting for first click.
+- Future devs adding aria-* refs to non-existent ids see CI fail
+  with "found N broken aria idrefs in index.html..." and
+  remediation guidance.
+
+A11Y NOTE: aria-controls is technically valid even when the target
+doesn't exist YET (the spec allows forward references), but most
+screen readers (NVDA, JAWS) report broken refs as "no target" and
+skip them. Pre-rendering a placeholder is the robust fix.

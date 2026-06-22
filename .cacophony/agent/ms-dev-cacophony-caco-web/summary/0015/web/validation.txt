@@ -1,0 +1,24 @@
+Validation evidence for bd-aba11f:
+
+- Static asset audit (before):
+  - L209: `setInterval(updateRelativeTimes, 30000);` — DOM walk every
+    30s regardless of tab visibility.
+  - L2405 installSseLivenessProbe(): `setInterval(...)` issues
+    /api/v1/node fetch every 15s after SSE drop, regardless of tab
+    visibility.
+
+- Static asset audit (after):
+  - L209 wrapped: callback checks
+    `document.visibilityState === 'visible'` before calling
+    updateRelativeTimes().
+  - visibilitychange handler additionally calls updateRelativeTimes()
+    once on return so stamps catch up immediately.
+  - L2405 probe early-returns when
+    `document.visibilityState !== 'visible'`; explanatory comment
+    notes the visibilitychange handler covers reconnect-on-return.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib periodic_timers_guarded_by_visibility_bd_aba11f
+      -> 1 passed, 0 failed
+    cargo check -p caco-web --all-targets -> Finished `dev` profile target(s)
+- Whitespace: git diff --check origin/main..HEAD -> clean.

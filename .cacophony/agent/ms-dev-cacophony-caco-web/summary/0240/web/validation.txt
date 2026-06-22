@@ -1,0 +1,22 @@
+bd-5dbde3 validation — Pico /help local note, no backend traffic:
+
+Commands:
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../help-note-test/pico-help-note-observe.log --server-log .../help-note-test/pico-help-note-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused observe guard passed.
+- live mock scenario passed and asserted:
+  - submitting `/help` through the real Pico composer clears the input.
+  - native transcript contains `built-in commands:` plus `/model` and `/abort`.
+  - mock backend does not receive any `/help` prompt/command traffic.
+- existing outbound HostRequests, suggestion coverage, dialog/reconnect subscenarios, render coalescing, native display, and console-clean checks all still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+
+Implementation:
+- Added `PICO_SUBMIT_HELP_EVAL` to submit `/help` and assert local note rendering.
+- Added a backend negative assertion for `/help` leakage in `assert_mock_received_outbound_frames`.

@@ -1,0 +1,26 @@
+bd-fc1a00 validation — Pico reconnect immediately shows connecting state:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_disconnected_state_exposes_reconnect_button_bd_68be53
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../reconnect-connecting-test/pico-reconnect-connecting-observe.log --server-log .../reconnect-connecting-test/pico-reconnect-connecting-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused reconnect source guard passed.
+- focused observe guard passed.
+- live mock scenario passed.
+- dropped-socket reconnect subscenario asserts:
+  - first dropped socket: disconnected, reconnect visible/enabled, transcript survives, no terminal fallback.
+  - immediately after clicking Reconnect: status is `connecting…`, reconnect hidden/disabled.
+  - second dropped socket: disconnected, reconnect visible/enabled, transcript survives, no terminal fallback.
+- main outbound-frame proof and select-dialog subscenario still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+
+Implementation:
+- `initPicoSession()` now calls `setPicoStatus('connecting', 'connecting…')` instead of only mutating internal mode.
+- Reconnect assertion now verifies the in-flight connecting state hides/disables the reconnect button.

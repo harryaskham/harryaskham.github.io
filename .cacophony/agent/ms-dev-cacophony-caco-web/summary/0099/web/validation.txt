@@ -1,0 +1,55 @@
+Validation evidence for bd-20aee5:
+
+- Before: style.css had TWO `.view` blocks. Line 913
+  (canonical structural) declared `animation: viewIn
+  0.32s cubic-bezier(...)` with a sophisticated
+  entry effect (translateY + scale). Line 7424
+  silently overrode with `animation: view-fade
+  0.15s ease-out` (simple opacity fade). The
+  `@keyframes viewIn` definition at line 924 was
+  therefore ORPHANED -- zero references in the
+  entire codebase (verified by cross-codebase grep).
+- After: ONE merged canonical block at line 913 with
+  promoted visible-truth animation (view-fade).
+  Dead `@keyframes viewIn` deleted. Late dup `.view`
+  block at 7424 deleted. Both deletions replaced
+  with marker comments. The `@keyframes view-fade`
+  at line 7427 remains (still the active animation
+  source).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_view_dedup_and_orphan_viewin_keyframe_bd_20aee5
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 517 passed, 0 failed (was 516; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (7 layers):
+- Exactly 1 top-level `.view {` rule head (was 2)
+  via line-prefix filter.
+- Merged block contains promoted `animation:
+  view-fade 0.15s ease-out;` (visible truth) +
+  structural baseline (display/padding/overflow-y).
+- NEGATIVE: `animation: viewIn 0.32s` declaration
+  must remain removed.
+- NEGATIVE: `@keyframes viewIn` block must remain
+  removed (orphan after silent override).
+- `@keyframes view-fade` definition remains (active
+  animation source).
+- Three replacement marker comments document each
+  deletion (defense against re-introduction).
+- bd-b2b739 sibling pattern presence pin (broader
+  duplicate-block-merge family regression-guard).
+
+Marker-text NEGATIVE-assertion lesson: initial
+marker comments contained the literal substring
+`animation: viewIn 0.32s cubic-bezier(...)` and
+`@keyframes viewIn { from ...}` for documentation
+clarity. The NEGATIVE assertion against the dead
+declaration substring then failed because the
+marker comment was matched. Resolved by rewording
+markers to use prose ("the prior viewIn animation",
+"viewIn @keyframes block") rather than embedded
+literal substrings. Pattern: NEGATIVE-asserting
+dead substrings forbids them from appearing in
+marker text too; phrase markers descriptively.

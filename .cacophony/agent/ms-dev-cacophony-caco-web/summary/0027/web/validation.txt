@@ -1,0 +1,33 @@
+Validation evidence for bd-bfc59e:
+
+- Before: 6 modal-close buttons relied on the implicit default button
+  type — `<button>` defaults to `type="submit"` inside any <form>
+  context. The create-bead modal contains <form id="create-bead-form"
+  onsubmit="createBead(event)">. Today the close button sits in
+  modal-header just above the form, so it does not submit; but any
+  future markup change that nests the close button inside the form
+  (or templates the same markup elsewhere) would silently submit on
+  click. Defensive type="button" prevents that whole class of bug.
+- After: all 6 close buttons now carry explicit `type="button"`:
+    * index.html:940  (#quick-bead-modal)
+    * index.html:979  (#bead-detail-modal)
+    * index.html:992  (#create-bead-modal -- the highest-risk one)
+    * index.html:1056 (#agent-detail-modal)
+    * app.js:4238     (#shortcuts-overlay dynamic)
+    * app.js:6876     (.image-lightbox dynamic)
+- The already-correct examples (keyboard-help close at app.js:1725,
+  toast-action button at app.js:1776) establish the in-tree
+  convention.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib modal_close_buttons_have_explicit_type_button_bd_bfc59e
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 434 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+The new test walks every <button class="modal-close ..."> in both
+index.html and app.js and asserts each carries type="button", with
+count floors (>=4 in index.html, >=3 in app.js) so a future addition
+without type cannot slip through.

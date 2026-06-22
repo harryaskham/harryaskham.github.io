@@ -1,0 +1,178 @@
+[
+  {
+    "view": "status",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "agents",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "beads",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "feed",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "inbox",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "chat",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "nodes",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "services",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "files",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "links",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "projects",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "choices",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "notifications",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "actions",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "suggestions",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "logs",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "timeline",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "summaries",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "transcription",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "merge-queue",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "workspace",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  },
+  {
+    "view": "tui",
+    "docW": 390,
+    "scrollW": 390,
+    "bodyScrollW": 390,
+    "docOverflow": false,
+    "offenders": []
+  }
+]

@@ -1,0 +1,34 @@
+bd-2e59b2 validation:
+- Quad-paired cycle in projects-grid family.
+- .project-stat x2: silent-override on padding (8px 4px -> 4px 8px),
+  border-radius (6px -> 4px), transition timing. text-align:center
+  survives (only in canonical).
+- .project-stat:hover x2: byte-identical dup (single background:hover).
+- .project-card x2: silent-override on transition (border-color +
+  transform var-timing -> transform + box-shadow 0.15s). PRESERVED
+  .project-card:hover, .project-card:focus-within compound rule
+  during the dead-block deletion.
+- .project-bead-bar x2: byte-identical SUBSET dup (3-prop subset of
+  7-prop canonical).
+- 4 canonical merged + 4 late deleted + 4 marker comments.
+
+cargo test -p caco-web --lib -> 529 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (14 layers): 4x rule-head counts + 4x baseline+
+promoted/preserved declaration sets + 2 NEGATIVE assertions
+(silent-override dead) + 1 explicit compound-rule preservation
++ 4 marker pins + bd-3cb20a sibling pin.
+
+Pattern combination: 2x silent-override (bd-3dfff5/bd-238cea)
++ 2x byte-identical SUBSET dup (bd-c4e2ee/bd-f0d094) +
+COMPOUND-RULE-ADJACENT preservation (NEW pattern o:
+explicit-compound-sibling-protection) in one quad-paired
+cycle. Largest paired-merge cycle yet.
+
+NEW PATTERN (o): when a late block to delete is immediately
+followed by a compound-rule sibling (e.g. `.project-card:hover,
+.project-card:focus-within { ... }`) that should remain active,
+the deletion edit MUST include the compound rule in oldText and
+re-emit it in newText to prove preservation. Test must
+explicitly assert the compound rule survives the deletion.

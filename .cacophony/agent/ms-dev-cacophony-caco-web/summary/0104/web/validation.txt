@@ -1,0 +1,20 @@
+bd-f0d094 validation:
+- Before: .version-tag x2 (subset dup) + .workspace-badge x2 (additive merge).
+  .version-tag line 7925 = subset of line 333 (3 of 5 declarations,
+  no new props). .workspace-badge line 7019 had only animation:
+  workspace-pop, disjoint from canonical line 6577.
+- After: 1 .version-tag rule head + 1 .workspace-badge rule head.
+  Canonical .version-tag unchanged (already superset). Canonical
+  .workspace-badge merged with consolidated animation declaration.
+  @keyframes workspace-pop retained.
+
+cargo test -p caco-web --lib -> 522 passed, 0 failed (was 521).
+git diff --check origin/main..HEAD -> clean.
+
+Test design (7 layers): 2x rule-head counts + .version-tag full
+5-declaration superset + .workspace-badge 11-declaration baseline
++ consolidated animation + active @keyframes pin + 2 marker pins
++ bd-ae85f4 sibling pin.
+
+Pattern combination: byte-identical subset dup (bd-c4e2ee) +
+strictly-additive consolidation (bd-f0393a) in one paired cycle.

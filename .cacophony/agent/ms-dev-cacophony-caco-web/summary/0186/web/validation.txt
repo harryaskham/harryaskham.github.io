@@ -1,0 +1,48 @@
+bd-5e097d validation:
+- DEFERRED -- PATTERN (x) DISCOVERED: pinned-count tests
+  act as architectural guard rails. Prior bd-b2b739 +
+  bd-231a34 INTENTIONALLY pinned count=2 for design-era
+  separation. Attempted Pattern (m) merge into count=1
+  was reverted to defer to the prior architectural pin.
+
+cargo test -p caco-web --lib -> 601 passed, 0 failed (unchanged).
+git diff --check origin/main..HEAD -> clean.
+
+ATTEMPT:
+- Identified 2 design-era `input[type="search"]::-webkit-
+  search-cancel-button` blocks at L3489 (opacity-based) and
+  L9297 (mask-based).
+- Implemented full Pattern (m) merge into single block
+  preserving all surviving properties.
+
+DISCOVERED CONFLICT:
+- 2 pinned tests asserted count==2:
+  - style_css_search_cancel_button_middle_dead_override_bd_b2b739
+  - style_css_agent_action_bead_bar_batch_hexa_paired_dedup_bd_231a34
+- Pin rationale: preserve documentation/maintenance separation
+  of two distinct design eras.
+
+REVERT:
+- git checkout to restore L3489 + L9297 separation.
+- Added explanatory comment in bd-b2b739's pinned test
+  documenting the deferral + Pattern (x) discovery.
+
+PATTERN (x) DISCOVERED -- PINNED-COUNT ARCHITECTURAL GUARD RAILS:
+- When a prior bead pinned a selector count specifically
+  for design-era separation (count==N where N>1), future
+  Pattern (m) merges that would change that count must
+  either:
+  (a) Defer to the prior design choice and skip the merge.
+  (b) Explicitly supersede with an updated bead AND update
+      both pinned tests in a coordinated commit.
+- Defaulted to (a) -- defer.
+- Pin enforcement mechanism: test failure was the signal
+  to back out.
+- Sibling pin (count=2 in bd-231a34) is LOAD-BEARING,
+  not incidental.
+
+OPERATOR-VISIBLE EFFECT:
+- None. Reverted; no behavior change.
+- Pattern catalog gained 1 entry (Pattern (x)).
+
+NET PASS: 601 -> 601 (unchanged).

@@ -1,0 +1,41 @@
+bd-563b44 validation:
+- 3 paired-merges in triple-paired cycle: .node-card family
+  (body silent-override on transition + :hover/:focus-within
+  compound silent-override on transform + box-shadow with
+  mixed-survival border-color) + .logo-mark silent-override
+  on background gradient (3-stop frost->aurora-purple ->
+  2-stop accent simplification).
+- 3 canonical merged + 3 dead blocks deleted + 3 marker comments.
+
+cargo test -p caco-web --lib -> 541 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (15 layers): 3x rule-head counts + 3x cascade-
+resolved truth (with explicit compound-selector pin) +
+3 NEGATIVE on declarations-only (1 per merge, incl 3-stop
+gradient defense) + 3 marker pins + bd-a18fda sibling pin.
+
+Pattern (m) preflight: .node-card and .logo-mark heads all
+0 commas in preceding 3 lines. The .node-card:hover, .node-
+card:focus-within compound rules at L2519 (canonical) and
+L7360 (late) have IDENTICAL 2-selector lists -- safe to
+merge across the same compound preserves both states.
+
+DOCUMENTED INTENTIONAL VISIBLE-EQUIVALENT REFACTOR: .logo-
+mark gradient simplification (3-stop frost->blue->aurora->
+2-stop accent). The 3-stop richer gradient was in the
+canonical text but NEVER rendered because the late block
+silently overrode it. Merge eliminates the misleading dead
+3-stop gradient string from style.css. Marker explicitly
+documents this so future readers don't think they're seeing
+an out-of-date late override and "restore" the dead 3-stop
+gradient.
+
+This is the FIRST time the audit chain has eliminated a
+visually-rich dead canonical declaration. The pattern -- a
+DEAD ELABORATE declaration silently overridden by a SIMPLER
+late declaration -- is a sub-variant of pattern (m) byte-
+identical-subset, but inverted: instead of late being subset
+of canonical, the canonical's RICHER form is subset (in
+visible effect) of the late's SIMPLER form. Call this
+pattern (v): cascade-dead-elaborate-canonical. Catalog #19.

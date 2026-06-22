@@ -1,0 +1,35 @@
+Validation evidence for bd-f8d959:
+
+- Before: setupCardHoverEffects (app.js:10451) registered a
+  mousemove handler on document that fired for EVERY mouse
+  movement (60-120 Hz). Each event:
+    1. e.target.closest(...) -- DOM walk
+    2. getBoundingClientRect() -- forces synchronous layout!
+    3. setProperty('--mx'), setProperty('--my')
+  Combined: synchronous reflow potentially 120 times/second
+  while cursor was over any card.
+
+- After: rAF-throttled. Cursor event cached in `lastEvent`,
+  one rAF callback per frame applies the latest position to
+  the spotlight. Max 60 Hz layout reads. Listener uses
+  { passive: true } options form for explicit intent.
+
+- Spotlight effect visually identical: 60 Hz vs 120 Hz cursor
+  tracking is imperceptible; 1-frame lag is well below 200ms
+  perception threshold.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib setup_card_hover_effects_raf_throttles_mousemove_bd_f8d959
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 468 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- requestAnimationFrame used for rAF throttle.
+- `if (rafId) return;` short-circuit on pending frame.
+- { passive: true } options form on listener.
+- Bare `e.target.closest()...getBoundingClientRect()` per-event
+  pattern absent (would re-introduce sync layout).
+- Sanity: spotlight still sets --mx and --my custom properties.

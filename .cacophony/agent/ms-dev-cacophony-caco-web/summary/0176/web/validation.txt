@@ -1,0 +1,53 @@
+bd-1232b8 validation:
+- 26 RAW `border-radius: 999px;` -> var(--radius-pill)
+  consolidation. --radius-pill already declared at :root
+  and used by 18 existing selectors; refactor extends to
+  44 total usages, removing all raw literals from selector
+  bodies.
+
+cargo test -p caco-web --lib -> 592 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- grep "border-radius: 999px;" -> 29 hits.
+- 26 in actual selector bodies (4-space indent).
+- 3 in comment blocks documenting prior states.
+- 5 "border-radius: 50%" (circle, different intent).
+
+FIX:
+- sed-replace `^    border-radius: 999px;$`
+  -> `    border-radius: var(--radius-pill);`
+  on style.css.
+- Test invariants for 3 existing forward-guards
+  (bd-f0d094, bd-3cb20a, bd-ef0924) updated to expect
+  var(--radius-pill) instead of literal.
+
+WHY:
+- Behavior preserved (var resolves to 999px).
+- Single source of truth.
+- Discoverability via :root convention.
+- Consistency with 18 existing var() usages.
+
+OUT OF SCOPE:
+- border-radius: 50% (circle intent).
+- Comment-block literals (documenting prior states).
+
+REGRESSION TEST (~45 lines):
+- Iterate every line; assert no LINE starts with whitespace
+  + "border-radius:" containing "999px;" (excluding lines
+  inside comments by checking trim_start doesn't begin
+  with "*", and the line doesn't contain backtick-quoted
+  prior-state text).
+- Future selector bodies cannot regress.
+
+EXISTING-FORWARD-GUARD UPDATES:
+- bd-f0d094 .workspace-badge: expects var(--radius-pill).
+- bd-3cb20a .quick-bead-chip: expects var(--radius-pill).
+- bd-ef0924 .agent-meta-chip: expects var(--radius-pill).
+- bd-a6c685 .meter-track/.meter-fill ABSENCE checks: NO
+  update needed -- they still assert literal absence.
+
+OPERATOR-VISIBLE EFFECT:
+- None. Pure refactor / DRY consolidation.
+
+NET PASS: 591 -> 592; 0 failures.

@@ -1,0 +1,8 @@
+Validation evidence for bd-d3a96e:
+
+- Before evidence: `web/screenshots/mobile-agents.png` showed the mobile Agents table exposing `ID`, `PROJECT`, `NODE`, `STATE`, `BEAD`, and `RUNTIME` in a 390px viewport.
+- After Playwright probe: `web/mobile-agents-after.json` records visible headers as exactly `ID`, `STATE`, `BEAD`, with `Project`, `Node`, `Runtime`, `Profile`, `Started`, and `Actions` hidden.
+- After screenshot: `web/screenshots/mobile-agents-after.png` shows the simpler three-column mobile Agents table header.
+- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib mobile_agents_table_hides_secondary_columns_bd_d3a96e" --cwd "$PWD"` -> tj-36e0f0ff passed.
+- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-44d780d2 succeeded.
+- Source whitespace check: `git diff --check` passed.

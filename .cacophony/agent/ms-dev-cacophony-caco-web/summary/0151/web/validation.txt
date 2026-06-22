@@ -1,0 +1,40 @@
+bd-06a1c2 validation:
+- AUTOCOMPLETE HYGIENE: 4 form-input elements lacked explicit
+  autocomplete= attribute (browser autofill-suggestion noise).
+
+cargo test -p caco-web --lib -> 569 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- All <input>/<textarea> elements scanned across all HTML/JS.
+- Filtered out type=checkbox/radio/range/file/hidden/submit/reset/button.
+- Yield: 5 candidates; 1 false positive (JS comment).
+
+FIX:
+- workspace.html:58 workspace-project-input -> identifier pattern
+  (autocomplete=off, autocorrect=off, autocapitalize=off, spellcheck=false).
+- app.js:4504 bead-desc-textarea -> description pattern
+  (autocomplete=off, autocapitalize=sentences, spellcheck=true).
+- app.js:4618 quick-bead-refine-text -> description pattern.
+- nodes.js:233 node-message-input -> description pattern.
+
+PATTERN PARITY (bd-9316ad):
+- Identifier inputs: full hygiene (off/off/off/false).
+- Prose textareas: autocomplete=off only (preserve sentence-case
+  + spellcheck for prose).
+
+REGRESSION TEST (~80 lines):
+- 4 anchors (one per element).
+- Per element: locates anchor, inspects 600-char window bounded
+  to next '>'.
+- Asserts autocomplete="off" present.
+- workspace-project-input: additionally asserts autocorrect/
+  autocapitalize/spellcheck full hygiene set.
+
+OPERATOR-VISIBLE EFFECT:
+- No browser autofill suggestions on these fields.
+- Mobile users: prose retains sentence-case + spellcheck.
+- Mobile users: identifier input gets no auto-correct/capitalize
+  (typeable lowercase identifiers without backspace dance).
+
+NET PASS: 568 -> 569; 0 failures.

@@ -1,0 +1,46 @@
+bd-243151 validation:
+- SEMANTIC HEADING HIERARCHY: notifications.html declared 3
+  section headings as <div class="section-header"> instead
+  of <h2>. Page had <h1>Notifications only, with no <h2>
+  for screen-reader heading-rotor navigation between sections.
+
+cargo test -p caco-web --lib -> 579 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Search "section-header" in notifications.html.
+- 3 div-based section headings found (Policy / Event catalogue /
+  Preview log).
+- Page heading inventory: 1 <h1> + 0 <h2> = broken outline.
+
+FIX (all 3 div -> h2):
+- <div class="section-header">Policy</div> ->
+  <h2 class="section-header">Policy</h2>.
+- <div class="section-header">Event catalogue</div> ->
+  <h2 class="section-header">Event catalogue</h2>.
+- <div class="section-header">Preview log</div> ->
+  <h2 class="section-header">Preview log</h2>.
+
+VISUAL PRESERVATION:
+- .section-header class sets font-size:13px, margin:24px 0 8px,
+  font-weight:600, text-transform:uppercase, letter-spacing:0.08em,
+  color:var(--muted). Comprehensive enough to override browser-
+  default h2 typography. Visual rendering unchanged.
+
+WHY:
+- WCAG 1.3.1 Info and Relationships.
+- WCAG 2.4.6 Headings and Labels.
+- Screen-reader heading-rotor (Ins+F6 / VO+Cmd+H) jumps section-to-section.
+- Document outline algorithm produces meaningful TOC.
+
+REGRESSION TEST (~50 lines):
+- Assert all 3 expected <h2 class="section-header"> strings.
+- Assert NO <div class="section-header"> remains.
+- Sanity: <h1>Notifications</h1> preserved.
+
+OPERATOR-VISIBLE EFFECT:
+- Screen-reader heading rotor lists Policy / Event catalogue /
+  Preview log.
+- Visual rendering identical.
+
+NET PASS: 578 -> 579; 0 failures.

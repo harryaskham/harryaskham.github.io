@@ -1,0 +1,23 @@
+bd-da325e validation:
+- 3 strictly-additive paired merges (disjoint property sets):
+  .status-dot.connected (bg+box-shadow / animation),
+  .sse-pulse.active (opacity+animation / bg+box-shadow),
+  .sidebar-header (padding+border+position / gradient bg).
+- 3 canonical merged + 3 late deleted + 3 marker comments.
+  dot-breathe + sseBlink keyframes retained.
+
+cargo test -p caco-web --lib -> 527 passed, 0 failed.
+
+LESSON LEARNED -- char-boundary safety in test slicing:
+fixed-byte windows like &css[start..start+1000] panic at
+multi-byte UTF-8 char boundaries (the box-drawing chars in
+section banners are 3 bytes each). Pattern fix: find the
+closing `\n}` from `start` directly (`css[start..].find`)
+and use absolute offsets. New test-writing rule:
+prefer `css[start..].find("\n}")` over fixed-width windows
+when ANY chance the block could land near multi-byte
+chars; or compute char-safe boundaries via
+`floor_char_boundary`/`get`. Pattern (n): char-boundary
+safety in style.css block-extraction tests.
+
+git diff --check origin/main..HEAD -> clean.

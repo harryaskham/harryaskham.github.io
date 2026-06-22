@@ -1,0 +1,108 @@
+{
+  "initial": [
+    {
+      "col": "id",
+      "ariaSort": "ascending",
+      "scope": "col",
+      "role": "button",
+      "tabindex": "0",
+      "text": "ID"
+    },
+    {
+      "col": "project",
+      "ariaSort": "none",
+      "scope": "col",
+      "role": "button",
+      "tabindex": "0",
+      "text": "Project"
+    },
+    {
+      "col": "node",
+      "ariaSort": "none",
+      "scope": "col",
+      "role": "button",
+      "tabindex": "0",
+      "text": "Node"
+    },
+    {
+      "col": "state",
+      "ariaSort": "none",
+      "scope": "col",
+      "role": "button",
+      "tabindex": "0",
+      "text": "State"
+    },
+    {
+      "col": "",
+      "ariaSort": null,
+      "scope": "col",
+      "role": null,
+      "tabindex": null,
+      "text": "Bead"
+    },
+    {
+      "col": "",
+      "ariaSort": null,
+      "scope": "col",
+      "role": null,
+      "tabindex": null,
+      "text": "Runtime"
+    },
+    {
+      "col": "profile",
+      "ariaSort": "none",
+      "scope": "col",
+      "role": "button",
+      "tabindex": "0",
+      "text": "Profile"
+    },
+    {
+      "col": "started_at",
+      "ariaSort": "none",
+      "scope": "col",
+      "role": "button",
+      "tabindex": "0",
+      "text": "Started"
+    },
+    {
+      "col": "",
+      "ariaSort": null,
+      "scope": "col",
+      "role": null,
+      "tabindex": null,
+      "text": "Actions"
+    }
+  ],
+  "afterEnter": [
+    {
+      "col": "id",
+      "ariaSort": "none"
+    },
+    {
+      "col": "project",
+      "ariaSort": "none"
+    },
+    {
+      "col": "node",
+      "ariaSort": "none"
+    },
+    {
+      "col": "state",
+      "ariaSort": "ascending"
+    },
+    {
+      "col": "profile",
+      "ariaSort": "none"
+    },
+    {
+      "col": "started_at",
+      "ariaSort": "none"
+    }
+  ],
+  "afterSpace": [
+    {
+      "col": "state",
+      "ariaSort": "descending"
+    }
+  ]
+}

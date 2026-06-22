@@ -1,0 +1,35 @@
+bd-5264b8 validation:
+- 3 modal-chrome paired-merges.
+- .modal-overlay x2: byte-identical SUBSET (canonical 11-prop;
+  late just 2 backdrop-filter declarations already present).
+- .modal-header x2: additive (gap) + partial-shorthand-override
+  (late padding-bottom:12px on canonical `padding: 16px 22px`).
+  Cascade-resolved as `padding: 16px 22px 12px` (top/right/left
+  16/22/22, bottom 12). NEW PATTERN (p): cascade-resolved-
+  shorthand-collapse.
+- .modal-footer x2: additive (align-items, flex-wrap) + no-op-
+  shorthand-override (late padding-top:12px against canonical
+  `padding: 12px 22px` where top was already 12px). Visible
+  padding unchanged; redundant declaration dropped.
+
+cargo test -p caco-web --lib -> 531 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (11 layers): 3x rule-head counts + 3x baseline+
+promoted/preserved + 2 NEGATIVE assertions on declarations-
+only (after marker-comment stripping helper) + 3 marker pins +
+bd-46f5ea sibling pin.
+
+NEW PATTERN (p): cascade-resolved-shorthand-collapse. When a late
+block uses padding-bottom / padding-top / margin-left / etc. to
+partially override a canonical shorthand, the visible-truth value
+is the 4-arg shorthand form. Merge collapses both into one
+explicit `padding: a b c d` (or 3-arg short form `a b c` if
+left==right). Tracks the cascade resolution transparently in the
+canonical block without preserving cascade machinery.
+
+NEW HELPER (q): strip_comments() block-extractor for NEGATIVE
+assertions. Marker comment prose can contain the same string a
+NEGATIVE assertion is looking for; the helper removes /* ... */
+spans from the extracted block before substring matching.
+Reusable across future cascade-resolved tests.

@@ -1,0 +1,39 @@
+Validation evidence for bd-037c9c:
+
+- Before: updateDocumentTitle() reflected only unread badge counts.
+  Title was either `(N) Cacophony Dashboard` or plain
+  `Cacophony Dashboard`. Multiple dashboard tabs (a common
+  operator pattern: one for Beads, one for Workspace, one for
+  Status, one for Inbox) were indistinguishable in the browser
+  tab list, the Cmd+Shift+A tab switcher, and Cmd+Tab.
+- After: updateDocumentTitle() resolves a readable view label from
+  the active nav-item's data-tooltip (well-curated labels like
+  "Cluster Status"), strips the trailing parenthesized shortcut
+  via regex `/\s*\([^)]*\)\s*$/`, falls back to title-cased
+  state.currentView for dynamic sub-views, and renders as
+  `{badge}{view} · Cacophony Dashboard`. The default `status`
+  landing keeps a plain `Cacophony Dashboard` title to avoid
+  noise on fresh opens.
+- View-switching trigger is free: _switchViewImpl already
+  schedules `setTimeout(() => updateDocumentTitle(), 0)` (app.js
+  line ~1284) after setting state.currentView.
+- Tab text leftmost = most distinguishing info: most browsers
+  truncate tab text from the right when many tabs are open, so
+  putting the view name first means it survives narrow tabs.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib document_title_includes_current_view_bd_037c9c
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 442 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+One snag during test authoring: Rust string literals don't accept
+bare `\u00b7`; switched to `\u{00b7}` braced form for the middle
+dot. The actual source uses the literal middle-dot character so
+runtime behavior is correct.
+
+New test pins 8 key code lines, asserts exactly one
+updateDocumentTitle definition, and asserts the old hardcoded
+view-less title assignment is gone.

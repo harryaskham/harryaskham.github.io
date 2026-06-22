@@ -1,0 +1,52 @@
+Validation evidence for bd-3dfff5:
+
+- Before: style.css had THREE `textarea` blocks at
+  lines 3212 (resize, width, font-family:
+  var(--font-mono)), 8398 (caret-color), and 8403
+  (line-height, resize-dup, min-height,
+  font-family: inherit). Cascade analysis: same
+  specificity for all three; later wins for
+  overlapping properties. font-family:
+  var(--font-mono) from 3212 was silently overridden
+  to `inherit` by 8403 -- textareas in the dashboard
+  do not render in monospace despite line 3212's
+  intent.
+- After: ONE merged canonical block at line 3212 with
+  cascade-resolved survivors: resize, width,
+  line-height, min-height, font-family: inherit
+  (visible truth preserved), caret-color. Dead
+  `font-family: var(--font-mono)` declaration dropped
+  (silent-override design intent documented in marker
+  comment for future explicit decision). Two
+  replacement marker comments at the former 8398/8403
+  locations document the merge.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_textarea_dedup_bd_3dfff5
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 515 passed, 0 failed (was 514; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (5 layers):
+- Exactly 1 top-level `textarea {` rule head (was 3
+  before merge) via line-prefix filter.
+- Merged block contains all cascade-resolved
+  survivors (resize, width, line-height, min-height,
+  font-family: inherit, caret-color) via bounded
+  char-window extraction per bd-57c0f5.
+- NEGATIVE: dead `font-family: var(--font-mono);`
+  declaration must remain removed (visible truth was
+  always `inherit`).
+- Two replacement marker comments document each
+  deletion (defense against re-introduction).
+- bd-39161c sibling pattern presence pin (broader
+  duplicate-block-merge family regression-guard).
+
+Notable: this is the first dedup cycle that
+explicitly NEGATIVE-asserts a silent-override bug
+fix. The dead `var(--font-mono)` declaration is
+preserved as documentation in the merged block's
+marker comment, so the design intent isn't lost in a
+`grep` if someone later wants to restore monospace
+textareas explicitly.

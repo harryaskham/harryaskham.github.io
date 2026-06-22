@@ -1,0 +1,48 @@
+Validation evidence for bd-98e4ea:
+
+- Before: #freshness-indicator has role="status" (implies
+  aria-live="polite"). On every snapshot apply,
+  applySnapshot unconditionally:
+    fi.classList.remove(...) / .add(...)
+    fi.style.color = ''
+    fi.innerHTML / fi.textContent = ...
+    fi.title = ...
+  Snapshots arrive every few seconds. So for Case A
+  (snapshot partial, no SSE) and Case C (all fresh) --
+  where text is byte-identical across snapshots --
+  screen readers re-announced the same status every
+  few seconds (classic live-region noise).
+- After: target state (class + text/html + title) is
+  computed first, hashed into a signature, compared
+  against state.lastFreshnessSig. DOM mutations only
+  run when signature changes. Case B (Live SSE · Ns ago
+  countdown) still updates per snapshot because Ns
+  changes -- that's correct.
+- Bonus latent bug fixed: added `if (fi)` null guard.
+  Previously, if #freshness-indicator was ever removed
+  from the DOM, the whole applySnapshot pipeline would
+  throw.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib freshness_indicator_threshold_only_dom_mutation_bd_98e4ea
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 504 passed, 0 failed (was 492 passing + 11 failing on
+         previous cycle; baseline pre-existing failures appear to
+         have landed elsewhere on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (5 layers):
+- state.lastFreshnessSig referenced (state-bag scoped,
+  survives across snapshots).
+- Signature combines class+text/html+title via concat
+  per bd-5e0030.
+- DOM mutations gated behind `if (state.lastFreshness-
+  Sig !== sig)` block (signature includes
+  state.lastFreshnessSig=sig assignment + classList
+  remove/add + style.color + innerHTML).
+- Defensive null check via bounded char-window search
+  (per bd-57c0f5 pattern).
+- Sibling role="status" declaration in index.html
+  preserved (the live-region semantic that motivated
+  the fix).

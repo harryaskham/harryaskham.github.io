@@ -1,0 +1,31 @@
+bd-66e871 validation — visible Pico /commands slash suggestion:
+
+Commands:
+- cargo test -p caco-picophony command_suggestions_match_prefix --lib
+- cargo test -p caco-picophony command_completion_fills_single_and_common_prefix --lib
+- cargo test -p caco-picophony help_lists_builtin_commands --lib
+- nix develop .#caco-web-wasm --command just pico-web-wasm
+- cargo test -p caco-web --lib pico_wasm_adapter_and_shared_view_seam_bd_4cb15b
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../commands-suggestion-test/pico-commands-suggest-observe.log --server-log .../commands-suggestion-test/pico-commands-suggest-server.log
+- cargo test -p caco-picophony --lib
+- cargo test -p caco-picophony --lib --features wasm
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- caco-picophony default lib tests: 103 passed, 0 failed, 2 ignored.
+- caco-picophony wasm-feature lib tests: 104 passed, 0 failed, 2 ignored.
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+- live mock scenario passed and asserted:
+  - `/comm` shows visible `/commands` suggestion.
+  - Tab completion fills `/commands `.
+  - existing `/commands` local-note proof still passes.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+
+Implementation:
+- Added `/commands` to shared BUILTIN_COMMANDS/help.
+- Added shared suggestion/completion tests for `/commands`.
+- Regenerated caco-web Pico wasm.
+- Extended live observe scenario suggestion assertions.

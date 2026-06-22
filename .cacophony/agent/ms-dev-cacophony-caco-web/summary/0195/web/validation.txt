@@ -1,0 +1,39 @@
+bd-88b0b6 validation:
+
+Commands:
+- cargo test -p caco-web --lib
+
+Result:
+- 633 passed, 0 failed.
+
+Browser/visual evidence:
+- Created a bounded Chromium fixture using the real crates/caco-web/static/style.css.
+- Screenshot: web/screenshots/pico-style-fixture.png (1100x900, ~106 KiB).
+- Fixture covers statusbar, user/thinking/tool/assistant bubbles, footer chips, composer textarea/button, and dark native panel chrome.
+
+Implementation notes:
+- Added dedicated CSS for the native pico pane: panel, statusbar, state dot, transcript, bubbles, user/inter-agent/system/assistant/thinking/tool/note/custom variants, tool status pills, preformatted command/output, footer chips, composer, focus-visible states, empty state, and narrow responsive layout.
+- Added JS state reflection for connection state: data-pico-state on pane, mode-specific dot class, and disabled Send button while not attached.
+- Added accessible labels/live-region roles for statusbar, transcript, footer, and composer textarea.
+- Used existing global bd-3bfc72 end-of-cascade reduced-motion safety net rather than adding a local reduced-motion block.
+- Fixed mainline guardrail drift found by caco-web tests while validating this slice:
+  - index.html native title= -> data-tooltip + aria-label.
+  - chat search input enterkeyhint/autocomplete attributes.
+  - raw radius values -> --radius tokens.
+  - moved bd-3bfc72 reduced-motion safety net back to true end-of-cascade after newer Suggestions CSS.
+  - updated stale exact tests for connection signature sync fields and loading-state wrapper count.
+  - removed internal-only window exports reported by bd-0525ab guard.
+
+Beads filed/spec'd this cycle:
+- bd-4cb15b promoted to open/P2 — shared wasm PicoView reducer path.
+- bd-88b0b6 claimed/implemented — styling + accessibility polish.
+- bd-130ad9 — composer/slash-command/autocomplete parity.
+- bd-020324 — pending dialog + model picker parity.
+- bd-963b81 — inline images + notifications/status/widgets parity.
+- bd-d38ec2 — embeddable component + standalone /pico route.
+- bd-1620d4 — live observe scenario + screenshots.
+- bd-e21549 — parity docs update after implementation slices land.
+- bd-ec8c46 umbrella updated with child list.
+
+Loop:
+- Replaced generic frontend-polish /loop with pico-parity /loop every 10m.

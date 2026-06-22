@@ -1,0 +1,40 @@
+Validation evidence for bd-e61ef5:
+
+- Before: 16 nav-item aria-keyshortcuts declarations in
+  index.html + 3 chat composer declarations in
+  workspace-chat-pane.js / workspace-integrated.js. The
+  workspace badge buttons (with two working shortcuts:
+  Shift+P just wired by bd-2b16d9 + the existing
+  Shift+X) had NO aria-keyshortcuts. Screen-reader
+  users had to scan title prose for "(Shift+P)" /
+  "(Shift+X)" fragments to discover them.
+- After: workspace-badge-name declares aria-
+  keyshortcuts="P" and workspace-clear declares aria-
+  keyshortcuts="X" (uppercase = Shift+key per the
+  Critical Context lesson and the established
+  lowercase=bare-key convention used by all 16 nav
+  items). Now AT can:
+  - announce "Shift+P keyboard shortcut" / "Shift+X
+    keyboard shortcut" on focus
+  - expose the shortcuts via NVDA input help / VoiceOver
+    rotor keyboard-shortcut directories
+- Family count: 19 declarations -> 21.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib workspace_badge_declares_aria_keyshortcuts_bd_e61ef5
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 489 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (4 layers):
+- Positive badge button signature via format!()
+  concatenation per bd-5e0030.
+- Positive clear button signature.
+- Established nav-item declarations remain (5 spot-
+  checked lowercase bare-key declarations from
+  index.html).
+- Cross-asset family-count floor (>=16 across 4 files)
+  so a sweep that strips the broader attribute family
+  fails clearly.

@@ -1,0 +1,25 @@
+bd-d3f631 validation — dropped Pico websocket disconnect state:
+
+Commands:
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../disconnect-test/pico-disconnect-observe.log --server-log .../disconnect-test/pico-disconnect-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused observe guard passed.
+- live mock scenario passed.
+- main scenario still received eight outbound frames: confirm ui_reply, steer, abort, input ui_reply, get_available_models, set_model, prompt, compact.
+- select subscenario still received `dlg-select` value `stable`.
+- new disconnect subscenario sent one snapshot then closed the websocket without `pi_exited`; browser asserted:
+  - status is `disconnected` (not `session ended`).
+  - native transcript remains visible with `This transcript should survive a dropped socket.`
+  - no `agent-tty-pane` terminal fallback appears.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+
+Implementation:
+- Added configurable mock server close delay.
+- Added `mock_disconnect_frames()` and `run_pico_disconnect_subscenario()`.
+- Added `PICO_DISCONNECT_ASSERT_EVAL` and source guard coverage.

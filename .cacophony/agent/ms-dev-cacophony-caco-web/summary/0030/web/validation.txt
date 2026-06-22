@@ -1,0 +1,32 @@
+Validation evidence for bd-f39538:
+
+- Before: setMobileSidebarOpen (app.js ~1382) toggled the .open
+  class, fade-in overlay, hamburger aria-expanded, and body scroll
+  lock — but did NOT manage focus. Screen-reader users tapping the
+  hamburger got no announcement that the navigation drawer slid in.
+  Keyboard users had to Tab through the rest of the page chrome to
+  reach the first nav item.
+- After: setMobileSidebarOpen captures the active element on the
+  open transition and restores focus to it on the close transition.
+  On open it moves focus to the in-drawer #sidebar-close button via
+  requestAnimationFrame so the focus shift happens after layout
+  settles. On close it falls back to the hamburger button if the
+  remembered focus target has gone away. State-idempotent calls
+  (open->open or close->close) do nothing — focus only moves on a
+  real transition.
+- Focus trap is intentionally out of scope: Escape already closes
+  the sidebar (app.js:1028), overlay-click closes it (line 1378),
+  and on desktop the sidebar is always-open so the trap only
+  matters in narrow mobile breakpoints.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib mobile_sidebar_manages_focus_on_open_close_bd_f39538
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 437 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test pins the 9 key code lines that implement the open/close
+focus management and asserts exactly one setMobileSidebarOpen
+definition exists.

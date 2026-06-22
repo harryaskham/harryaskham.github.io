@@ -1,0 +1,46 @@
+bd-1a5356 validation:
+- PREFERS-CONTRAST: MORE COVERAGE PARITY: workspace-a11y.css
+  already had this block for workspace scope; style.css (the
+  dashboard-wide stylesheet loaded by all entry HTML) did not.
+
+cargo test -p caco-web --lib -> 572 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Scanned all CSS for @media (prefers-*) blocks.
+- workspace-a11y.css: prefers-contrast: more (workspace scope)
+  bumps outline-width to 3px + outline-offset 3px for .wsv/
+  .workspace-view scope. (bd-09f314 cycle 2.)
+- style.css: NO prefers-contrast: more block.
+- style.css universal :focus-visible at line 6438 = 2px solid
+  var(--accent) + 2px offset + soft glow box-shadow.
+
+FIX (style.css):
+- Added @media (prefers-contrast: more) block right after the
+  universal :focus-visible declaration.
+- :focus-visible -> outline-width: 3px; outline-offset: 3px;
+  box-shadow: none.
+- input/select/textarea/.btn :focus-visible -> outline-offset: 0
+  (preserving existing offset-zero convention for form inputs).
+
+WHY:
+- Windows High Contrast / macOS Increase Contrast users get
+  more pronounced focus ring.
+- Operators on flattened/low-quality displays where the soft
+  glow is washed out get a sharper 3px outline.
+- Pattern parity with workspace-a11y.css bd-09f314 cycle 2.
+
+REGRESSION TEST (~70 lines):
+- Locates @media (prefers-contrast: more) in style.css.
+- Brace-balances the block body.
+- Asserts contains :focus-visible.
+- Asserts outline-width: 3px present.
+- Asserts box-shadow: none (strip glow).
+- Sanity: default 2px outline preserved elsewhere.
+
+OPERATOR-VISIBLE EFFECT:
+- Default: no change.
+- prefers-contrast: more users: thicker (3px) focus rings,
+  cleaner (no glow), better visible on flat/contrast displays.
+
+NET PASS: 571 -> 572; 0 failures.

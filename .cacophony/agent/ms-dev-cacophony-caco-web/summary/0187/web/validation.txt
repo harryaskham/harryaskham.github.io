@@ -1,0 +1,65 @@
+bd-93be3d validation:
+- PATTERN (y) NEW: CANONICAL-GROUPING DISCIPLINE.
+  Outlier [data-accent="workspace"] rule at style.css:10396
+  promoted into canonical .nav-item[data-accent="X"] sibling
+  group at L8727-8740.
+
+cargo test -p caco-web --lib -> 602 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Python regex audit for raw hex colors outside :root and
+  not in var(--, fallback) form.
+- Found 6 raw hex hits; 2 false positives (comment text),
+  2 in mask radial-gradient (#000 alpha), 1 print-context
+  intentional (#ccc print-only border), 1 ACTIONABLE
+  outlier (--view-accent: #88c0d0 at L10396).
+- Cross-reference with established pattern: 13 sibling
+  rules at L8727-8739 all use var(--nordN) token form +
+  set --view-accent-soft explicitly + use .nav-item-
+  prefixed selector for specificity consistency.
+
+FIX:
+- Move workspace declaration into canonical sibling group
+  at L8740 (alphabetical order with logs).
+- Convert raw #88c0d0 to var(--nord8) token form.
+- Add explicit --view-accent-soft: rgba(136,192,208,0.12).
+- Use .nav-item[data-accent="workspace"] selector form.
+- L10396 rationale comment block referencing bd-93be3d.
+
+WHY:
+- Token consistency: every other view uses var(--nordN)
+  form; raw hex hides the design relationship.
+- Specificity consistency: prevents future cascade
+  surprises from differing selector strength.
+- Explicit > implicit: setting --view-accent-soft
+  explicitly removes silent dependency on inline fallback
+  values matching nord8.
+- Single source of truth: all view-accent declarations
+  live in one canonical block.
+
+REGRESSION TEST (~55 lines):
+- (1) Exactly 14 line-prefix .nav-item[data-accent=
+  rules (was 13 before promotion).
+- (2) Workspace rule contains var(--nord8) AND --view-
+  accent-soft.
+- (3) No data-accent rule contains raw #88c0d0.
+
+PATTERN (y) NEW: CANONICAL-GROUPING DISCIPLINE.
+- Definition: when a CSS pattern is established (group of
+  N sibling selectors using one form), outliers using
+  different form / specificity / completeness should be
+  promoted into the canonical group.
+- Triggers: raw hex when siblings use var(--token)
+  form; missing companion properties; lower-specificity
+  selector for the same conceptual entity.
+- Enforcement: count-pinned test on the canonical group
+  size + assertion that outlier-form values do not appear
+  in any matching rule.
+
+OPERATOR-VISIBLE EFFECT:
+- None. Visible behavior unchanged: same nord8 accent color,
+  same soft fallback (was implicit via inline fallback,
+  now explicit).
+
+NET PASS: 601 -> 602; 0 failures.

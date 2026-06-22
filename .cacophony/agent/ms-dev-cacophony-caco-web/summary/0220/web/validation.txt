@@ -1,0 +1,29 @@
+bd-7af724 validation — shared /abort composer parser for caco-web Pico:
+
+Commands:
+- cargo test -p caco-picophony abort_maps_to_abort_command_bd_7af724 --lib
+- cargo test -p caco-picophony applies_lines_and_builds_request_lines --lib --features wasm
+- nix develop .#caco-web-wasm --command just pico-web-wasm
+- cargo test -p caco-web --lib pico_composer_uses_shared_helpers_bd_130ad9
+- cargo test -p caco-web --lib pico_wasm_adapter_and_shared_view_seam_bd_4cb15b
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../shared-abort-test/pico-shared-abort-observe.log --server-log .../shared-abort-test/pico-shared-abort-server.log
+- cargo test -p caco-picophony --lib
+- cargo test -p caco-picophony --lib --features wasm
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- caco-picophony default lib tests: 102 passed, 0 failed, 2 ignored.
+- caco-picophony wasm-feature lib tests: 103 passed, 0 failed, 2 ignored.
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+- live mock scenario passed after removing the caco-web local `/abort` special-case.
+- mock backend received the canonical shared abort frame:
+  - {"kind":"command","type":"abort"}
+- scenario also preserved steer, ui_reply, get_available_models, set_model, prompt, compact, slash suggestions, render coalescing, native DOM, and console-clean assertions.
+
+Implementation:
+- Added `/abort` to shared `BUILTIN_COMMANDS`, `/help`, and `parse_composer_line` as `RpcCommand::Abort`.
+- Added shared parser and wasm parse-composer tests for `/abort`.
+- Removed caco-web's local exact-string `/abort` branch; browser routing now goes through shared `parseComposer` + `commandLine`.
+- Regenerated `crates/caco-web/static/pico_view_bg.wasm` with `nix develop .#caco-web-wasm --command just pico-web-wasm`.

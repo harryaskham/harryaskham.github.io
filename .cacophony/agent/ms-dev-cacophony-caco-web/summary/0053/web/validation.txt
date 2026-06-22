@@ -1,0 +1,32 @@
+Validation evidence for bd-fc7a23:
+
+- Before: 2 sites used the `.innerHTML +=` antipattern:
+  - app.js:3162 (container bead-stats append)
+  - workspace-panes.js:224 (feedWrap empty-state append)
+  The += operator on innerHTML forces the browser to
+  serialize+reparse the entire existing content, destroying
+  any event listeners and focus/selection state on existing
+  children.
+- After: both use Element.insertAdjacentHTML('beforeend', ...)
+  which appends only the new HTML without touching existing
+  children. Same final DOM, no re-parse, no listener destruction.
+
+- Defensive forward-test: assertion that NO static JS file in
+  caco-web contains `.innerHTML +=` (literal substring) so a
+  future copy-paste regression that re-introduces the antipattern
+  at any site immediately fails the test.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib no_innerhtml_append_antipattern_bd_fc7a23
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 460 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- app.js bead-stats append uses insertAdjacentHTML('beforeend', ...).
+- workspace-panes.js feed empty-state append uses insertAdjacentHTML.
+- Both bare `innerHTML +=` antipattern strings absent at those sites.
+- NO `.innerHTML +=` literal anywhere in app.js or workspace-panes.js
+  (broader forward-guard via iteration).

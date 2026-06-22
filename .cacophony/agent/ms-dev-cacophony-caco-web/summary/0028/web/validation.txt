@@ -1,0 +1,36 @@
+Validation evidence for bd-b2b954:
+
+- Before: after bd-31d275 fixed the 6 sidebar role=button elements,
+  a sweep showed 7 remaining `tabindex="0"` + `onclick` elements
+  in index.html with no `onkeydown`:
+    * #connection-status (sidebar footer, role=status, click triggers
+      manual SSE reconnect)
+    * 6 stat-cards on the Cluster Status hero (role=listitem, each
+      navigates to a view: Nodes, Agents (active), Agents (failed),
+      Beads, Services, Feed)
+  Keyboard users could Tab to all 7 (focus ring visible) but
+  Enter/Space did nothing. Mouse users got full functionality.
+- After: each of the 7 elements gains the canonical inline handler
+  `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"`.
+  Using this.click() ensures keyboard activation always tracks
+  whatever the inline onclick does (matches bd-31d275, bd-7b1fcd,
+  bd-d0ab29 pattern).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib all_tabindex_clickable_elements_have_keyboard_handler_bd_b2b954
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 435 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+The new test enforces every tabindex="0" element in index.html with
+onclick also has onkeydown, asserts a canonical-handler floor of 13
+(6 from bd-31d275 + 7 new), and spot-checks the 5 most
+operator-visible anchors (#connection-status + 4 stat-cards).
+
+Bead filing note: this bead was filed during a transient daemon
+beads-primary backpressure window. The initial `caco bd create`
+request silently succeeded server-side despite a transport timeout
+response; a later retry surfaced "duplicate of open bead bd-b2b954"
+which was then claimed.

@@ -1,0 +1,25 @@
+bd-7d524a validation — outbound Pico model-picker HostRequest:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_dialog_and_model_picker_parity_bd_020324
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../model-picker-test/pico-model-observe.log --server-log .../model-picker-test/pico-model-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused source tests passed.
+- live mock scenario passed and clicked visible `.pico-model-option` with selected="anthropic/claude".
+- mock backend received the canonical shared HostRequest:
+  - {"kind":"command","type":"set_model","provider":"anthropic","modelId":"claude"}
+- existing outbound prompt, compact, and ui_reply assertions still pass.
+- existing slash suggestions, render coalescing, native DOM, timestamp/image/title/session-ended, and console-clean assertions still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+
+Implementation:
+- Added stable `.pico-model-option` class to model picker buttons.
+- `pico-pane` scenario now clicks `anthropic/claude` through the real native model picker.
+- Mock backend assertion now requires the outbound `set_model` HostRequest alongside prompt/compact/ui_reply.

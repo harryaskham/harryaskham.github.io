@@ -1,0 +1,20 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Pico Session" [level=1] [ref=e4]
+    - generic [ref=e5]:
+      - text: Use
+      - code [ref=e6]: "?agent=<agent-id>"
+      - text: to attach
+  - region "Standalone Pico AgentView" [ref=e7]:
+    - generic [ref=e8]:
+      - status [ref=e9]:
+        - generic [ref=e11]: connecting…
+        - button "Reconnect" [disabled]
+      - generic "Pico transcript" [ref=e12]
+      - generic "Pico session status" [ref=e13]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - textbox "Message pico agent" [ref=e16]:
+            - /placeholder: Message pico-dialog-objopts-fixture…
+          - listbox "Pico slash command suggestions" [ref=e17]
+        - button "Send" [disabled]

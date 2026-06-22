@@ -1,0 +1,21 @@
+bd-931b16 validation — clean Pico session completion status:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_clean_session_completion_preserves_ended_state_bd_931b16
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../ended-mock-test/pico-ended-observe.log --server-log .../ended-mock-test/pico-ended-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused completion-state test passed.
+- mock scenario final assertion passed with status="session ended".
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 642 passed, 0 failed.
+
+Implementation:
+- `pi_exited` / shared PicoView exited status now sets `setPicoStatus('ended', 'session ended')`.
+- `ws.onclose` preserves ended state instead of overwriting it with offline/disconnected.
+- Added `.agent-pico-dot--ended` neutral/cyan completion style.
+- Mock scenario streams a `pi_exited` frame and asserts final status is session ended.

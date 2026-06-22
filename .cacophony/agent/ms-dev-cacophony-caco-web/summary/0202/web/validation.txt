@@ -1,0 +1,27 @@
+bd-d38ec2 validation — reusable caco-web Pico AgentView + standalone /pico:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- node --check crates/caco-web/static/pico-agent-view.js
+- cargo test -p caco-web --lib pico_embeddable_component_and_standalone_route_bd_d38ec2
+- cargo test -p caco-web --lib
+
+Results:
+- JS syntax checks: OK.
+- focused embeddable/standalone test: passed.
+- caco-web lib tests: 639 passed, 0 failed.
+
+Browser evidence:
+- Temporary static server served pico.html directly.
+- Chromium screenshot: web/screenshots/pico-standalone-empty.png.
+- Verified no /api or /health requests fired from standalone /pico page after PICO_STANDALONE guard.
+
+Implementation:
+- Added static/pico-agent-view.js exposing window.CacoPicoAgentView.mount(container, {agentId, wsUrl, label, chrome}).
+- Added static/pico.html standalone shell with ?agent=<agent-id> guidance.
+- Added /pico route serving pico.html.
+- Dashboard loads pico-agent-view.js after app.js.
+- Workspace picoSession pane uses CacoPicoAgentView.mount with chrome:'workspace'.
+- app.js render/init path accepts explicit pico_ws_url/wsUrl for session-source override.
+- app.js skips dashboard bootstrap/merge-queue polling on standalone pico page.
+- ID-reference audit now includes pico-agent-view.js and pico.html.

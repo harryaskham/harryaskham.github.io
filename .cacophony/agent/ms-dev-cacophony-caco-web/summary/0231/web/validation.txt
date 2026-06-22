@@ -1,0 +1,32 @@
+bd-cb3a3f validation — caco-web Pico model argument autocomplete:
+
+Commands:
+- cargo test -p caco-picophony applies_lines_and_builds_request_lines --lib --features wasm
+- nix develop .#caco-web-wasm --command just pico-web-wasm
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_wasm_adapter_and_shared_view_seam_bd_4cb15b
+- cargo test -p caco-web --lib pico_composer_uses_shared_helpers_bd_130ad9
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../model-arg-completion-test/pico-model-arg-observe.log --server-log .../model-arg-completion-test/pico-model-arg-server.log
+- cargo test -p caco-picophony --lib
+- cargo test -p caco-picophony --lib --features wasm
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- caco-picophony default lib tests: 103 passed, 0 failed, 2 ignored.
+- caco-picophony wasm-feature lib tests: 104 passed, 0 failed, 2 ignored.
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+- live mock scenario passed and asserted:
+  - typing `/model anthropic` shows `anthropic/claude` from shared argument suggestions.
+  - Tab completion fills `/model anthropic/claude`.
+  - existing model picker and outbound set_model proof still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+
+Implementation:
+- Added wasm `PicoView.argument_suggestions_json()` and `PicoView.argument_completion()`.
+- Exposed those via `pico-view-adapter.js`.
+- caco-web Pico composer now prefers argument suggestions when the input has command args and falls back to command suggestions otherwise.
+- Tab completion now falls back from command completion to argument completion.
+- Regenerated `pico_view.js` and `pico_view_bg.wasm`.

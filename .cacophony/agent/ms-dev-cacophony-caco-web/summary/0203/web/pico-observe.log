@@ -1,0 +1,300 @@
+# caco-web observation helper
+session: caco-web-observe-1781491175
+output: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/pico-observe.log
+
+--- cargo build caco-web-dev-server
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.38
+   Compiling rustls-webpki v0.103.12
+   Compiling tokio-rustls v0.26.4
+   Compiling tungstenite v0.29.0
+   Compiling hyper-rustls v0.27.9
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.1225 (/home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.02s
+server: /home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/target/debug/caco-web-dev-server
+target: http://127.0.0.1:62973
+server_log: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/pico-observe-server.log
+daemon_url: http://127.0.0.1:11100
+version_skew: web=1.2.1225 daemon=1.2.1225 daemon_url=http://127.0.0.1:11100
+
+--- scenario pico-pane
+
+--- playwright open http://127.0.0.1:62973/pico
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1781491175` opened with pid 1516840.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:62973/pico');
+```
+### Page
+- Page URL: http://127.0.0.1:62973/pico
+- Page Title: Cacophony Pico Session
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-06-15T02-39-42-554Z.yml)
+
+--- playwright resize 1440 1000
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.setViewportSize({ width: 1440, height: 1000 });
+```
+
+--- mount fixture Pico AgentView
+
+--- playwright eval () => {
+  const root = document.getElementById('pico-standalone-root') || document.body;
+  const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
+  const snapshot = {
+    transcript: [
+      { User: 'Can you inspect the dashboard?' },
+      { Thinking: 'Checking routes and console state.' },
+      { Tool: { name: 'bash', command: 'cargo test -p caco-web --lib', status: 'Ok', output: '639 passed' } },
+      { Assistant: 'The native Pico pane fixture rendered successfully.' }
+    ],
+    current_model: 'openai/gpt',
+    context_percent: 42,
+    activity: 'fixture',
+    queue_depth: 2,
+    status: { session: 'attached' },
+    widgets: { queue: ['2 pending', '1 running'] },
+    notifications: [['warning', 'token budget high']],
+    pending_dialog: { id: 'dlg1', method: 'confirm', raw: { prompt: 'Proceed with deployment?' } },
+    pending_model_picker: ['openai/gpt', 'anthropic/claude'],
+    streaming_blocks: [],
+    is_streaming: false
+  };
+  window.CacoPicoAgentView.mountFixture(root, {
+    agentId: 'pico-observe-fixture',
+    label: 'pico-observe-fixture',
+    snapshot,
+    images: [{ mime_type: 'image/png', data: png }],
+    chrome: 'standalone'
+  });
+  return 'mounted pico fixture';
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+"mounted pico fixture"
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const root = document.getElementById(\'pico-standalone-root\') || document.body;\n  const png = \'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=\';\n  const snapshot = {\n    transcript: [\n      { User: \'Can you inspect the dashboard?\' },\n      { Thinking: \'Checking routes and console state.\' },\n      { Tool: { name: \'bash\', command: \'cargo test -p caco-web --lib\', status: \'Ok\', output: \'639 passed\' } },\n      { Assistant: \'The native Pico pane fixture rendered successfully.\' }\n    ],\n    current_model: \'openai/gpt\',\n    context_percent: 42,\n    activity: \'fixture\',\n    queue_depth: 2,\n    status: { session: \'attached\' },\n    widgets: { queue: [\'2 pending\', \'1 running\'] },\n    notifications: [[\'warning\', \'token budget high\']],\n    pending_dialog: { id: \'dlg1\', method: \'confirm\', raw: { prompt: \'Proceed with deployment?\' } },\n    pending_model_picker: [\'openai/gpt\', \'anthropic/claude\'],\n    streaming_blocks: [],\n    is_streaming: false\n  };\n  window.CacoPicoAgentView.mountFixture(root, {\n    agentId: \'pico-observe-fixture\',\n    label: \'pico-observe-fixture\',\n    snapshot,\n    images: [{ mime_type: \'image/png\', data: png }],\n    chrome: \'standalone\'\n  });\n  return \'mounted pico fixture\';\n}');
+```
+
+--- assert fixture Pico AgentView parity
+
+--- playwright eval () => {
+  const pane = document.getElementById('agent-pico-pane');
+  const transcript = document.getElementById('agent-pico-transcript');
+  const composer = document.getElementById('agent-pico-composer');
+  const terminal = document.getElementById('agent-tty-pane');
+  const result = {
+    panePresent: !!pane,
+    transcriptPresent: !!transcript,
+    composerPresent: !!composer,
+    noTerminalPane: !terminal,
+    bubbles: transcript ? transcript.querySelectorAll('.pico-bubble').length : 0,
+    dialogPanels: transcript ? transcript.querySelectorAll('.pico-dialog-panel').length : 0,
+    modelPickers: transcript ? transcript.querySelectorAll('.pico-model-picker').length : 0,
+    images: transcript ? transcript.querySelectorAll('.pico-inline-image img[loading="lazy"][decoding="async"]').length : 0,
+    notices: document.querySelectorAll('.pico-foot-notice').length,
+    widgets: document.querySelectorAll('.pico-foot-widget').length,
+    suggestionsHost: !!document.getElementById('agent-pico-suggestions')
+  };
+  if (!result.panePresent || !result.transcriptPresent || !result.composerPresent || !result.noTerminalPane || result.bubbles < 3 || result.dialogPanels < 1 || result.modelPickers < 1 || result.images < 1 || result.notices < 1 || result.widgets < 1 || !result.suggestionsHost) {
+    throw new Error(`pico pane fixture assertion failed: ${JSON.stringify(result)}`);
+  }
+  return result;
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "panePresent": true,
+  "transcriptPresent": true,
+  "composerPresent": true,
+  "noTerminalPane": true,
+  "bubbles": 4,
+  "dialogPanels": 1,
+  "modelPickers": 1,
+  "images": 1,
+  "notices": 1,
+  "widgets": 1,
+  "suggestionsHost": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const pane = document.getElementById(\'agent-pico-pane\');\n  const transcript = document.getElementById(\'agent-pico-transcript\');\n  const composer = document.getElementById(\'agent-pico-composer\');\n  const terminal = document.getElementById(\'agent-tty-pane\');\n  const result = {\n    panePresent: !!pane,\n    transcriptPresent: !!transcript,\n    composerPresent: !!composer,\n    noTerminalPane: !terminal,\n    bubbles: transcript ? transcript.querySelectorAll(\'.pico-bubble\').length : 0,\n    dialogPanels: transcript ? transcript.querySelectorAll(\'.pico-dialog-panel\').length : 0,\n    modelPickers: transcript ? transcript.querySelectorAll(\'.pico-model-picker\').length : 0,\n    images: transcript ? transcript.querySelectorAll(\'.pico-inline-image img[loading="lazy"][decoding="async"]\').length : 0,\n    notices: document.querySelectorAll(\'.pico-foot-notice\').length,\n    widgets: document.querySelectorAll(\'.pico-foot-widget\').length,\n    suggestionsHost: !!document.getElementById(\'agent-pico-suggestions\')\n  };\n  if (!result.panePresent || !result.transcriptPresent || !result.composerPresent || !result.noTerminalPane || result.bubbles < 3 || result.dialogPanels < 1 || result.modelPickers < 1 || result.images < 1 || result.notices < 1 || result.widgets < 1 || !result.suggestionsHost) {\n    throw new Error(`pico pane fixture assertion failed: ${JSON.stringify(result)}`);\n  }\n  return result;\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-06-15T02-39-50-006Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-06-15T02-39-50-006Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-06-15T02-39-50-006Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- playwright network
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+Usage: playwright-cli <command> [args] [options]
+Usage: playwright-cli -s=<session> <command> [args] [options]
+
+Core:
+  open [url]                  open the browser
+  attach [name]               attach to a running playwright browser
+  close                       close the browser
+  detach                      detach from an attached browser
+  goto <url>                  navigate to a url
+  type <text>                 type text into editable element
+  click <target> [button]     perform click on a web page
+  dblclick <target> [button]  perform double click on a web page
+  fill <target> <text>        fill text into editable element
+  drag <startTarget> <endTarget> perform drag and drop between two elements
+  drop <target>               drop files or data onto an element
+  hover <target>              hover over element on page
+  select <target> <val>       select an option in a dropdown
+  upload <file>               upload one or multiple files
+  check <target>              check a checkbox or radio button
+  uncheck <target>            uncheck a checkbox or radio button
+  snapshot [target]           capture page snapshot to obtain element ref
+  eval <func> [target]        evaluate javascript expression on page or element
+  dialog-accept [prompt]      accept a dialog
+  dialog-dismiss              dismiss a dialog
+  resize <w> <h>              resize the browser window
+  delete-data                 delete session data
+
+Navigation:
+  go-back                     go back to the previous page
+  go-forward                  go forward to the next page
+  reload                      reload the current page
+
+Keyboard:
+  press <key>                 press a key on the keyboard, `a`, `arrowleft`
+  keydown <key>               press a key down on the keyboard
+  keyup <key>                 press a key up on the keyboard
+
+Mouse:
+  mousemove <x> <y>           move mouse to a given position
+  mousedown [button]          press mouse down
+  mouseup [button]            press mouse up
+  mousewheel <dx> <dy>        scroll mouse wheel
+
+Save as:
+  screenshot [target]         screenshot of the current page or element
+  pdf                         save page as pdf
+
+Tabs:
+  tab-list                    list all tabs
+  tab-new [url]               create a new tab
+  tab-close [index]           close a browser tab
+  tab-select <index>          select a browser tab
+
+Storage:
+  state-load <filename>       loads browser storage (authentication) state from a file
+  state-save [filename]       saves the current storage (authentication) state to a file
+  cookie-list                 list all cookies (optionally filtered by domain/path)
+  cookie-get <name>           get a specific cookie by name
+  cookie-set <name> <value>   set a cookie with optional flags
+  cookie-delete <name>        delete a specific cookie
+  cookie-clear                clear all cookies
+  localstorage-list           list all localstorage key-value pairs
+  localstorage-get <key>      get a localstorage item by key
+  localstorage-set <key> <value> set a localstorage item
+  localstorage-delete <key>   delete a localstorage item
+  localstorage-clear          clear all localstorage
+  sessionstorage-list         list all sessionstorage key-value pairs
+  sessionstorage-get <key>    get a sessionstorage item by key
+  sessionstorage-set <key> <value> set a sessionstorage item
+  sessionstorage-delete <key> delete a sessionstorage item
+  sessionstorage-clear        clear all sessionstorage
+
+Network:
+  requests                    list all network requests since loading the page. each request is numbered for use with the `request` command.
+  request <index>             show full details (headers, body, response) of a single network request by its number from the `requests` command.
+  request-headers <index>     print only the request headers for a single network request by its number from the `requests` command.
+  request-body <index>        print only the request body for a single network request by its number from the `requests` command.
+  response-headers <index>    print only the response headers for a single network request by its number from the `requests` command.
+  response-body <index>       print the response body for a single network request by its number from the `requests` command. textual bodies are inlined; binary bodies are saved to a file and the path is printed.
+  route <pattern>             mock network requests matching a url pattern
+  route-list                  list all active network routes
+  unroute [pattern]           remove routes matching a pattern (or all routes)
+  network-state-set <state>   set the browser network state to online or offline
+
+DevTools:
+  console [min-level]         list console messages
+  run-code [code]             run playwright code snippet
+  tracing-start               start trace recording
+  tracing-stop                stop trace recording
+  video-start [filename]      start video recording
+  video-stop                  stop video recording
+  video-chapter <title>       add a chapter marker to the video recording
+  video-show-actions          annotate subsequent cli/mcp actions on the page with a callout that names the action and highlights the target element
+  video-hide-actions          stop annotating actions performed on the page
+  show                        show playwright dashboard
+  pause-at <location>         run the test up to a specific location and pause there
+  resume                      resume the test execution
+  step-over                   step over the next call in the test
+  generate-locator <target>   generate a playwright locator for the given element
+  highlight [target]          show (or with --hide, remove) a highlight overlay for an element; `--hide` without a target hides all page highlights.
+
+Install:
+  install                     initialize workspace
+  install-browser [browser]   install browser
+
+Browser sessions:
+  list                        list browser sessions
+  close-all                   close all browser sessions
+  kill-all                    forcefully kill all browser sessions (for stale/zombie processes)
+
+Global options:
+  --help [command]            print help
+  --json                      output response as JSON
+  --raw                       output only the result value, without status and code
+  --version                   print version
+Unknown command: network
+
+WARNING: optional playwright network unavailable in this @playwright/cli build; continuing observation without this artifact (bd-20258e)
+
+--- console
+
+--- playwright console
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+Total messages: 0 (Errors: 0, Warnings: 0)
+
+
+--- final screenshot
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-06-15T02-39-52-662Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-06-15T02-39-52-662Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-06-15T02-39-52-662Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- copied playwright artifacts
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/page-snapshots/page-2026-06-15T02-39-42-554Z.yml
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/screenshots/page-2026-06-15T02-39-50-006Z.png
+.cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/screenshots/page-2026-06-15T02-39-52-662Z.png
+
+--- playwright close
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+Browser 'caco-web-observe-1781491175' closed
+
+
+Observation log: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/pico-observe.log

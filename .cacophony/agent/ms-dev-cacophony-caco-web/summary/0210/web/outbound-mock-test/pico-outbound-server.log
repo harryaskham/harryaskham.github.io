@@ -1,0 +1,11 @@
+[caco-web-dev] serving /home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/crates/caco-web/static at http://127.0.0.1:63461 (proxy daemon: http://127.0.0.1:11100)
+[caco-web-dev] pass --port 0 for parallel-safe OS-assigned ports
+2026-06-16T08:40:34.600Z INFO  [caco-web] req=1 GET /health -> 200 0ms
+2026-06-16T08:40:34.632Z INFO  [caco-web] req=2 GET /api/v1/node -> 200 31ms
+2026-06-16T08:40:36.382Z INFO  [caco-web] req=3 GET /pico?agent=pico-observe-fixture&ws=ws://127.0.0.1:36825/session -> 200 0ms
+2026-06-16T08:40:36.405Z INFO  [caco-web] req=4 GET /style.css -> 200 1ms
+2026-06-16T08:40:36.477Z INFO  [caco-web] req=5 GET /pico-view-adapter.js -> 200 0ms
+2026-06-16T08:40:36.478Z INFO  [caco-web] req=7 GET /pico-agent-view.js -> 200 0ms
+2026-06-16T08:40:36.479Z INFO  [caco-web] req=6 GET /app.js -> 200 2ms
+2026-06-16T08:40:36.664Z INFO  [caco-web] req=8 GET /pico_view.js -> 200 0ms
+2026-06-16T08:40:36.723Z INFO  [caco-web] req=9 GET /pico_view_bg.wasm -> 200 0ms

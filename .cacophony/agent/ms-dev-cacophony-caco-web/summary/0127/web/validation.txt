@@ -1,0 +1,55 @@
+bd-debc7c validation:
+- TRI-paired cycle: .ws-stat-card (strictly-additive position:
+  relative + overflow:hidden), .ws-chat-msg (strictly-additive
+  animation:wsMsgIn entry effect), .nav-key (silent-override 5/9
+  with major design-shift on opacity 0->0.5 -- visible-by-default
+  vs hidden-until-hover; canonical hover companion rule preserved
+  separately).
+- 3 canonical merged + 3 dead blocks deleted + 3 marker comments.
+
+cargo test -p caco-web --lib -> 545 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (15 layers): 3x rule-head counts + 3x cascade-
+resolved truth + 1 NEGATIVE-cluster (5 dead canonical decls
+defended on .nav-key) + bd-1982d4 preservation pin (.nav-item.
+active .nav-icon count==2) + 3 marker pins + bd-360942 sibling.
+
+Pattern (m) preflight: 4 of 7 remaining duplicates SKIPPED:
+- .ws-split--v > .ws-split-handle::after (intentional split:
+  L11412 compound .ws-split--h + .ws-split--v shares 5 base
+  decls, L11433 standalone v-only adds variant decls).
+- .node-detail-card-title (L2683 3-selector compound-tail).
+- .node-agent-row (L2676 4-selector compound-tail).
+- .node-agent-main (L2668 4-selector compound-tail).
+
+The 3 selected: source-file 0-comma + test-pin grep clean.
+
+DESIGN-SHIFT NOTE on .nav-key opacity 0->0.5:
+Canonical's pattern was hidden-until-hover (opacity:0 + transition
++ companion `.nav-item:hover .nav-key, .nav-item.active .nav-key
+{ opacity: 0.7 }` rule below). Late shifted to visible-at-0.5
+with brighter 0.8 hover.
+
+The cascade-resolved visible truth: 0.5 default + 0.8 hover (NOT
+the canonical hidden-until-hover). The canonical 0.7-on-active
+companion rule is overridden separately by the 0.8 hover-only rule.
+
+Marker explicitly documents that the hidden-until-hover affordance
+is dead, and that the .nav-item:hover .nav-key separate rule
+remains in place because it operates on a separately-cascaded
+canonical compound rule (.nav-item:hover .nav-key, .nav-item.active
+.nav-key { opacity: 0.7; }).
+
+TRI-paired smaller than recent hexa cycles -- pattern (m) preflight
+correctly identified that the post-bd-360942 audit pool was
+dominated by intentional split / compound-tail patterns. Smaller
+cycle, cleaner safety margin.
+
+PATTERN COMBINATION (this cycle):
+- 2x strictly-additive (.ws-stat-card, .ws-chat-msg).
+- 1x silent-override mixed survival (.nav-key) with explicit
+  pattern (v) sub-variant on opacity (cascade-dead-elaborate-
+  canonical -- canonical's hidden-until-hover affordance pattern
+  was the elaborate one; late's visible-at-0.5 simpler form is
+  the cascade winner).

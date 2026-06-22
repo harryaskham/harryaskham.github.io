@@ -1,0 +1,37 @@
+bd-46f5ea validation:
+- Originally scoped 4x nav family pairs.
+- 3 real paired-merges landed: .nav-list (additive), .nav-item
+  (silent-override on transition: all var(--transition) ->
+  narrow background/color/border-color 0.15s), .nav-item:focus-
+  visible (var-equivalent dup; --accent: var(--nord8) confirmed).
+- 1 false-positive detected: .nav-item.active .nav-icon looked
+  like adjacent-duplicate but was actually 1 compound rule
+  (.nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity:
+  1; }) + 1 standalone (.nav-item.active .nav-icon { filter:
+  drop-shadow }). Reverted. Same pattern as bd-dfbeca .ws-split--v
+  false positive (compound-selector continuation matching).
+- 3 canonical merged + 3 late deleted + 3 marker comments. Bead
+  title updated 4x -> 3x.
+
+cargo test -p caco-web --lib -> 530 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (11 layers): 3x rule-head counts + 3x baseline+
+promoted/preserved + 1 NEGATIVE (dead all-transition) + 3 marker
+pins + bd-2e59b2 sibling pin + bd-c4e2ee sibling-test
+unchanged (kept original 2-standalone assertion intact).
+
+NOTE on var-equivalent dup: late `.nav-item:focus-visible { outline:
+2px solid var(--nord8); }` block referenced var(--nord8) directly
+where canonical used var(--accent). The custom property indirection
+chain `--accent: var(--nord8);` at line 78 makes both resolve to the
+same #88c0d0 token. Pure dead block; visible color identical. New
+SUB-VARIANT of bd-c4e2ee byte-identical-subset pattern.
+
+PATTERN LEARNING: awk-scan false-positive detection (bd-dfbeca
+pattern m) caught the .nav-item.active .nav-icon compound-vs-
+standalone case. Same root cause: awk's `^selector {$` line
+pattern matches both standalone heads AND compound-rule
+continuation lines that happen to end with that selector + `{`.
+Pattern m's manual-verification step prevented an incorrect
+edit that would have lost .nav-item:hover .nav-icon behavior.

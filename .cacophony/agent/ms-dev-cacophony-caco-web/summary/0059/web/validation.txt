@@ -1,0 +1,32 @@
+Validation evidence for bd-916b85:
+
+- Before: 2 setInterval callbacks in app.js fired even when the
+  tab was hidden:
+    L8565 TTY polling fallback (1s, payload up to 200 KB/tick)
+       = 60 req/min, up to 12 MB/min on a hidden tab
+    L7151 TTS status refresh (10s) = 6 req/min
+  Combined: 66 req/min wasted on idle hidden tabs.
+
+- After: each callback short-circuits on visibilityState !== 'visible'.
+  TTY polling additionally registers a visibilitychange listener (stored
+  on ttyState._vizListener) that fires one immediate tick() on tab return
+  so the terminal buffer is fresh the moment the operator looks.
+  teardownAgentTty removes the listener to avoid leaking across agent
+  switches. TTS interval already self-clears when navigating away from
+  services view, so no return-handler needed.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib tty_polling_and_tts_status_intervals_skip_hidden_tabs_bd_916b85
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 466 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- TTY polling tick() short-circuits on hidden.
+- TTY polling registers a visibilitychange listener stored on ttyState._vizListener.
+- listener wired to document.
+- teardownAgentTty removes listener and nulls _vizListener.
+- TTS callback short-circuits on hidden.
+- TTS callback still calls loadTtsStatus() (sanity).

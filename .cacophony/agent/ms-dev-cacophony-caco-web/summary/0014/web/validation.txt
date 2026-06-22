@@ -1,0 +1,18 @@
+Validation evidence for bd-0e0149:
+
+- Static asset audit (before): 7 type=search filter inputs + 1 free-form
+  technical text input (#tui-terminal-agent-id) declared none of
+  autocomplete/autocorrect/autocapitalize/spellcheck. Mobile keyboards
+  would autocorrect bead/agent identifier text mid-typing,
+  autocapitalise the first letter, and underline valid IDs as
+  misspellings.
+- Static asset audit (after): each of the 8 technical-identifier inputs
+  carries `autocomplete="off" autocorrect="off" autocapitalize="off"
+  spellcheck="false"`. Natural-language inputs (chat textarea, bead
+  title/description, bead labels) remain untouched.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib technical_filter_inputs_disable_mobile_autocorrect_bd_0e0149
+      -> 1 passed, 0 failed
+    cargo check -p caco-web --all-targets -> Finished `dev` profile target(s)
+- Whitespace: git diff --check origin/main..HEAD -> clean.

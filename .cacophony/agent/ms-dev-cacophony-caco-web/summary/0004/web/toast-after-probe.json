@@ -1,0 +1,33 @@
+{
+  "toast": {
+    "rect": {
+      "x": 1127.375,
+      "y": 58,
+      "w": 296.625,
+      "h": 46.140625,
+      "right": 1424
+    },
+    "style": {
+      "position": "fixed",
+      "top": "58px",
+      "right": "16px",
+      "left": "1127.38px"
+    }
+  },
+  "fullscreen": {
+    "rect": {
+      "x": 1317.515625,
+      "y": 14,
+      "w": 104.484375,
+      "h": 30,
+      "right": 1422,
+      "bottom": 44
+    },
+    "style": {
+      "position": "fixed",
+      "top": "14px",
+      "right": "18px"
+    }
+  },
+  "separated": true
+}

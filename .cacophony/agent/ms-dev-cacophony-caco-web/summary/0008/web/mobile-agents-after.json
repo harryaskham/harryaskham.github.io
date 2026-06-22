@@ -1,0 +1,20 @@
+{
+  "visibleHeaders": [
+    "ID",
+    "STATE",
+    "BEAD"
+  ],
+  "hiddenHeaders": [
+    "Project",
+    "Node",
+    "Runtime",
+    "Profile",
+    "Started",
+    "Actions"
+  ],
+  "count": 3,
+  "viewport": {
+    "w": 390,
+    "h": 844
+  }
+}

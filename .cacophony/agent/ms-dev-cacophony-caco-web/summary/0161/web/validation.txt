@@ -1,0 +1,42 @@
+bd-eda8f5 validation:
+- SEMANTIC <header> COVERAGE: notifications.html declared
+  page header container as <div class="hero-header"> instead
+  of <header>. workspace.html already uses <header> pattern.
+
+cargo test -p caco-web --lib -> 578 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- <header> usage across entry HTML inventoried.
+- index.html: 0 <header> (page-level title sections use <div>).
+- workspace.html: 1 <header class="workspace-topbar"> ✓.
+- notifications.html: 0 <header> -- hero-header was <div>.
+- terminal.html: 0 <header> -- toolbar div has role="toolbar".
+
+FIX:
+- notifications.html:145 <div class="hero-header"> ->
+  <header class="hero-header"> (and matching </div> -> </header>).
+
+WHY:
+- Native <header> provides proper sectioning semantics.
+- Inside <main> the <header> acts as a section header (not a
+  top-level banner landmark -- main scoping prevents that).
+- Screen-readers navigate to/from section header via landmark
+  rotor.
+- No visual change -- CSS class preserved.
+
+REGRESSION TEST (~30 lines):
+- Assert notifications.html contains <header class="hero-header">.
+- Assert notifications.html does NOT contain <div class=
+  "hero-header"> (regression defense).
+
+OUT OF SCOPE:
+- terminal.html toolbar div (role="toolbar" already correct).
+- index.html .hero / .topbar (different layout, different scope).
+
+OPERATOR-VISIBLE EFFECT:
+- Screen-reader landmark navigation now includes Notifications
+  section header.
+- No visual change.
+
+NET PASS: 577 -> 578; 0 failures.

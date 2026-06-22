@@ -1,0 +1,26 @@
+bd-963b81 validation — caco-web pico inline images + notifications/widgets:
+
+Commands:
+- node --check crates/caco-web/static/app.js
+- cargo test -p caco-web --lib pico_images_notifications_widgets_parity_bd_963b81
+- cargo test -p caco-picophony --lib --no-default-features --features wasm
+- cargo test -p caco-web --lib
+
+Results:
+- app.js syntax: OK.
+- focused caco-web image/status test: passed.
+- caco-picophony wasm-feature tests: 79 passed, 0 failed.
+- caco-web lib tests: 638 passed, 0 failed.
+
+Visual evidence:
+- Chromium fixture using real style.css:
+  web/screenshots/pico-images-status-fixture.png
+
+Implementation:
+- picoState tracks a bounded `images` list.
+- applyPicoSharedLine reads `adapter.imagesJson(view)` after `apply_line` and stores the latest six image refs.
+- renderPicoSnapshot prepends renderPicoImages output when images exist.
+- renderPicoImages creates a native image strip with data URLs, `loading="lazy"`, and `decoding="async"`.
+- renderPicoFooter now surfaces recent notifications and widget lines in bounded footer chips.
+- Added CSS for image strip, image cards, notification chips, and widget chips.
+- Added source test pinning JS + CSS contracts.

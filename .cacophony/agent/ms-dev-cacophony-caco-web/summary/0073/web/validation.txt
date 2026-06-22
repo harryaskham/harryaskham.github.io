@@ -1,0 +1,37 @@
+Validation evidence for bd-5d2104:
+
+- Before: style.css had TWO `* {...}` global selectors:
+    4392: scrollbar-width: thin; scrollbar-color: rgba(216,222,233,0.1) transparent;
+    7064: * { scrollbar-width: thin; scrollbar-color: var(--nord3) var(--nord0); }
+  Identical specificity, identical properties, source-
+  later wins: the 4392 block was fully dead.
+- After: dead 4392 block removed. Surviving 7059 rule
+  preserves the visible behavior (theme-token scrollbar
+  tint, unchanged).
+- Confirmed nothing in between mutates global scrollbar-*:
+    - 4561 scrollbar-width:none is .filter-chip-row scoped
+    - 7391 scrollbar-color value is scoped to a specific
+      selector
+  Both win by specificity, not source order.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib no_dead_cascade_duplicate_global_scrollbar_block_bd_5d2104
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 480 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design:
+- bare_global_count uses line-prefix filter for the bare
+  `* {` selector at start-of-line, so scoped `.foo *` or
+  `:where(*)` etc. aren't accidentally counted.
+- Forward-guard uses format!() concatenation for the
+  dead literal value (bd-5e0030 defense-in-depth pattern).
+
+Visible behavior: ZERO change. The scrollbar tint the user
+sees today (--nord3 thumb on --nord0 track) is what they
+keep seeing tomorrow.
+
+Bytes saved: ~120 (3 declarations + selector + braces +
+blank-line separator).

@@ -1,0 +1,15 @@
+bd-fd4b2f validation:
+- Before: .ws-status-bar x2 (additive: backdrop-filter pair) +
+  .ws-status-segment x2 (silent-override: explicit 0.12s ease
+  silently overridden by var(--transition) token).
+- After: 2 canonical merged + 2 late deleted + 2 marker comments.
+
+cargo test -p caco-web --lib -> 524 passed, 0 failed (was 523).
+git diff --check origin/main..HEAD -> clean.
+
+Test design (6 layers): 2x rule-head counts + 2x baseline+promoted
+declarations + 1 NEGATIVE explicit-timing assertion + 2 marker
+pins + bd-03a8cc sibling pin.
+
+Pattern combination: additive (bd-f0393a) + silent-override
+(bd-238cea/bd-3dfff5) in one paired cycle.

@@ -1,0 +1,47 @@
+bd-ef0924 validation:
+- HEXA-paired cycle (densest to date; previous max 5):
+  3 family-paired (s) groups.
+  - .agent-meta-chips (additive margin-top) + .agent-meta-chip
+    (silent-override mixed survival on padding + bg).
+  - .agent-summary-card (silent-override transition) + :hover
+    (silent-override transform DIRECTION CHANGE + additive
+    box-shadow; pattern v catch #2).
+  - .agent-nudge-input (silent-override font-size + additive
+    font-family) + :focus (silent-override box-shadow).
+- 6 canonical merged + 6 dead blocks deleted + 6 marker comments
+  (4 individual + 2 family-paired markers).
+
+cargo test -p caco-web --lib -> 542 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (24 layers): 6x rule-head counts (iterated array
++ for-loop) + 5x cascade-resolved truth + 5 NEGATIVE on
+declarations-only (incl pattern-v dead-direction defense) +
+3 marker pins + bd-563b44 sibling pin.
+
+Pattern (m) preflight: all 12 candidate canonical+late blocks
+verified. L7415 .agent-summary-card:hover preceding 1-comma was
+inside a `transition: transform 0.15s, box-shadow 0.15s` value
+list (not a selector list) -- safe.
+
+NEW INFRASTRUCTURE: `block()` closure helper added to the test
+to deduplicate block-extraction logic across 6 selectors. Uses
+format!() to construct unique find-needles. This is the FIRST
+test that needed local helper FN for block-extraction in this
+session -- prior tests inlined the css.find/css[start..].find
+pattern per-selector. With 6 selectors that boilerplate would
+have been ~30 lines; the helper makes it 4-line per-selector.
+
+OBSERVATION: hexa-paired cycles benefit from per-selector
+extraction helper. Catalog this as helper (w): block-extractor
+function closure (sibling of helper (q) strip_comments).
+Catalog #20.
+
+The .agent-nudge-input merge included a noteworthy CSS cascade
+note in the marker comment: `font-family: var(--font-mono);`
+declared AFTER `font: inherit;` wins for the font-family
+component (long-form wins over shorthand component when
+declared later in the SAME RULE). This preserves the visible
+monospace behavior; the merge documents it explicitly so future
+readers don't think font-family is redundant alongside font:
+inherit.

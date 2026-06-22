@@ -1,0 +1,23 @@
+bd-6c2e0c validation — live Pico slash suggestions in mock websocket scenario:
+
+Commands:
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../suggestions-mock-test/pico-suggestions-observe.log --server-log .../suggestions-mock-test/pico-suggestions-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- mock scenario passed.
+- scenario assertion covers:
+  - `/mo` shows built-in `/model` and `/models` suggestions.
+  - Tab completion extends `/mo` to `/model`.
+  - `/d` shows dynamic `/deploy` from AgentViewSnapshot.available_commands.
+  - existing inbound/outbound assertions still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- mock backend receives prompt, compact command, and ui_reply frames.
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 644 passed, 0 failed.
+
+Implementation:
+- Added PICO_SUGGESTIONS_EVAL to caco-web-observe scenario.
+- Scenario now exercises visible suggestion list, aria-expanded, hidden state, and Tab completion during live mock websocket connection.
+- Source guard pins the suggestion assertion.

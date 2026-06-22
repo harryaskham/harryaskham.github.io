@@ -1,0 +1,13 @@
+Validation evidence for bd-4e0fa1:
+
+- Static asset audit (before): 9 inline <img> templates in app.js; 7 missing
+  loading=, 9 missing decoding=.
+- Static asset audit (after, see web/img-attr-counts.txt): all 9 carry
+  loading= (8 lazy, 1 explicit eager for the click-opened image lightbox)
+  and all 9 carry decoding="async".
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib inline_img_templates_have_loading_and_decoding_bd_4e0fa1
+      -> 1 passed, 0 failed
+    cargo check -p caco-web --all-targets -> Finished `dev` profile target(s)
+- Whitespace: git diff --check origin/main..HEAD -> clean.

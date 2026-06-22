@@ -1,0 +1,69 @@
+Validation evidence for bd-ae85f4:
+
+- Before: style.css had THREE duplicate-selector
+  pairs for the toast component family + 1 orphan
+  keyframe.
+  - .toast x2 (silent-override): line 4329
+    canonical (toastIn 0.4s cubic-bezier with
+    translateX 110% + scale 0.95) + line 7315 late
+    (toast-slide 0.25s ease-out with translateX
+    30px). toastIn animation silently overridden.
+    @keyframes toastIn at line 4408 became
+    ORPHANED (zero references after override).
+  - .toast-action x2 (hybrid cascade-resolved
+    merger): line 5360 iteration A (accent pill --
+    accent-soft bg, 999px radius, 3x12 padding,
+    11.5px font, all-transition) + line 7868
+    iteration B (minimal transparent button --
+    transparent bg, currentColor border, 4px
+    radius, 2x8 padding, 11px font,
+    background-transition). B wins on 6 overlapping
+    properties; A survives on 5 non-overlapping
+    properties. Visible truth = transparent button
+    with accent color/border via currentColor.
+  - .toast-action:hover x2 (silent-override): line
+    5374 (accent fill bg + bg-deep color) + line
+    7877 (rgba(255,255,255,0.1) overlay bg). B wins
+    bg; A color survives.
+- After: THREE merged canonical blocks + orphan
+  toastIn @keyframes deleted + 3 late blocks
+  deleted + 4 marker comments.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib style_css_toast_triple_dedup_and_orphan_toastin_keyframe_bd_ae85f4
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib
+      -> 521 passed, 0 failed (was 520; net +1 from new test).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+Test design (11 layers):
+- 3x rule-head counts (was 6 total, now 3 -- one
+  per .toast / .toast-action / .toast-action:hover).
+- Merged .toast block: promoted toast-slide
+  animation + structural baseline preserved.
+- NEGATIVE: dead 'animation: toastIn 0.4s'
+  declaration must remain removed.
+- NEGATIVE: '@keyframes toastIn' block must remain
+  removed (orphan after override; bd-20aee5
+  pattern).
+- '@keyframes toast-slide' retained (active source).
+- Merged .toast-action: all 11 hybrid cascade-
+  resolved declarations (A survivors + B winners).
+- Merged .toast-action:hover: rgba-overlay bg + bg-
+  deep color (B winner + A survivor).
+- 3 replacement marker comments document each
+  merge/deletion.
+- bd-341650 sibling pattern presence pin.
+
+Pattern combination: this cycle uses 4 distinct
+patterns simultaneously -- (a) silent-override
+NEGATIVE assertion from bd-3dfff5, (b) orphan-
+@keyframes cleanup from bd-20aee5, (c) paired-
+selector atomic merge from bd-238cea, (d) hybrid
+cascade-resolved merger of two competing design
+iterations (NEW). Iteration B's design (transparent
+button) won on visual properties while A's design
+(accent pill) survives on structural properties;
+the visible truth is a hybrid that neither
+iteration explicitly described. Future cycles must
+preserve this hybrid composition.

@@ -1,0 +1,26 @@
+Validation evidence for bd-98df43:
+
+- Before: 28 of 28 <select> filter elements in index.html
+  lacked autocomplete= attribute, allowing the browser's
+  default form-restore behavior across reload / back-forward
+  to override application state hydration (URL hash +
+  localStorage). Could leave visible filter value out of
+  sync with actual filter state on bfcache restore.
+- After: all 28 declare autocomplete="off", matching the
+  existing convention on <input type="search"> filters.
+  Application's own hydration code is the single source of
+  truth.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib all_selects_in_index_html_declare_autocomplete_bd_98df43
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 467 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Every <select> in index.html declares autocomplete= attribute.
+- Sanity check: at least 28 selects present.
+- Iterates all opening <select> tags and reports missing-attr
+  sites with line + snippet for easy debugging.

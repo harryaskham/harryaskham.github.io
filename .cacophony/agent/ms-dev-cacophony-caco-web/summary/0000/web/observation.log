@@ -1,0 +1,1140 @@
+# caco-web observation helper
+session: caco-web-observe-1779240130
+output: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/observation.log
+
+--- cargo build caco-web-dev-server
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.38
+   Compiling rustls-webpki v0.103.12
+   Compiling tokio-rustls v0.26.4
+   Compiling tungstenite v0.29.0
+   Compiling hyper-rustls v0.27.9
+   Compiling tokio-tungstenite v0.29.0
+   Compiling reqwest v0.12.28
+   Compiling axum v0.8.9
+   Compiling caco-web v1.2.927 (/home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/crates/caco-web)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 33.84s
+server: /home/harryaskham/.cacophony/agents/cacophony/ms-dev-cacophony-caco-web/checkout/target/debug/caco-web-dev-server
+target: http://127.0.0.1:63903
+server_log: .cacophony/agent/ms-dev-cacophony-caco-web/summary/pending/web/server.log
+daemon_url: http://127.0.0.1:11100
+version_skew: web=1.2.927 daemon=1.2.931 daemon_url=http://127.0.0.1:11100
+version_skew_warning: caco-web served version 1.2.927 is observing daemon version 1.2.931; cross-crate evidence may reflect live-daemon behavior rather than checkout code
+
+--- playwright open http://127.0.0.1:63903/#status
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Browser `caco-web-observe-1779240130` opened with pid 3915877.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#status');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#status
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-24-04-633Z.yml)
+npm notice
+npm notice New minor version of npm available! 11.11.1 -> 11.14.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.14.1
+npm notice To update run: npm install -g npm@11.14.1
+npm notice
+
+--- comprehensive viewport narrow 390x844
+
+--- playwright resize 390 844
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.setViewportSize({ width: 390, height: 844 });
+```
+
+--- comprehensive route status (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#status
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#status');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#status
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-24-26-541Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#status",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-status",
+  "h1": "Cluster Status",
+  "connection": "Snapshot delayed",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Cluster Status Refresh LIVE ORCHESTRATION Cluster pulse at a glance Snapshot proxy timed out · no usable data returned before the dashboard snapshot budget Snapshot delayed… Snapshot proxy timed out ⌘K command palette / focus search · 1–0 switch views — NODES — RUNNING AGENTS — OPEN BEADS — SERVICES — COMPLETIONS — FEED EVENTS RECENT ACTIVITY Recent activity unavailable The dashboard snapshot timed out before activity data was available. Retrying automatically. ACTIVE AGENTS Active agents unavailable The dashboard snapshot timed out before agent data was available. Retrying automatically. PERSISTENT AGENTS BEAD STATS",
+  "overflow": [
+    {
+      "tag": "SPAN",
+      "id": "freshness-indicator",
+      "cls": "freshness-indicator",
+      "text": "",
+      "w": 22,
+      "sw": 71,
+      "h": 10,
+      "sh": 8,
+      "overflowX": "visible",
+      "overflowY": "visible"
+    },
+    {
+      "tag": "SECTION",
+      "id": "",
+      "cls": "status-hero",
+      "text": "LIVE ORCHESTRATION Cluster pulse at a glance Snapshot proxy timed out · no usable data returned befo",
+      "w": 358,
+      "sw": 411,
+      "h": 330,
+      "sh": 328,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "BUTTON",
+      "id": "cluster-pulse-height-btn",
+      "cls": "cluster-pulse-expand-btn cluster-pulse-height-toggle-btn",
+      "text": "",
+      "w": 44,
+      "sw": 97,
+      "h": 44,
+      "sh": 42,
+      "overflowX": "visible",
+      "overflowY": "visible"
+    },
+    {
+      "tag": "BUTTON",
+      "id": "cluster-pulse-expand-btn",
+      "cls": "cluster-pulse-expand-btn cluster-pulse-overlay-toggle-btn",
+      "text": "",
+      "w": 44,
+      "sw": 108,
+      "h": 44,
+      "sh": 42,
+      "overflowX": "visible",
+      "overflowY": "visible"
+    },
+    {
+      "tag": "DIV",
+      "id": "recent-events",
+      "cls": "event-list",
+      "text": "Recent activity unavailable The dashboard snapshot timed out before activity data was available. Ret",
+      "w": 324,
+      "sw": 324,
+      "h": 135,
+      "sh": 280,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    },
+    {
+      "tag": "DIV",
+      "id": "active-agents-summary",
+      "cls": "agent-summary",
+      "text": "Active agents unavailable The dashboard snapshot timed out before agent data was available. Retrying",
+      "w": 320,
+      "sw": 320,
+      "h": 131,
+      "sh": 276,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-24-36-280Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-24-36-280Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-24-36-280Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route agents (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#agents
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#agents');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#agents
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-24-39-551Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#agents",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-agents",
+  "h1": "Agents",
+  "connection": "Snapshot delayed",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Agents All Projects Active 0 All 0 Running 0 Starting 0 Waiting 0 Blocked 0 Paused 0 Stopped 0 Failed 0 Completed 0 ID PROJECT NODE STATE BEAD RUNTIME Active agents unavailable The dashboard snapshot timed out before agent data was available. Retrying automatically.",
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "agent-state-chips",
+      "cls": "filter-chip-row",
+      "text": "Active 0 All 0 Running 0 Starting 0 Waiting 0 Blocked 0 Paused 0 Stopped 0 Failed 0 Completed 0",
+      "w": 358,
+      "sw": 946,
+      "h": 56,
+      "sh": 56,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    },
+    {
+      "tag": "DIV",
+      "id": "",
+      "cls": "table-wrapper",
+      "text": "ID PROJECT NODE STATE BEAD RUNTIME Active agents unavailable The dashboard snapshot timed out before",
+      "w": 358,
+      "sw": 541,
+      "h": 530,
+      "sh": 528,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-24-55-385Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-24-55-385Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-24-55-385Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route beads (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#beads
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#beads');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#beads
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-25-16-170Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#beads",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-beads",
+  "h1": "Beads 415 of 8096 ×",
+  "connection": "Connected",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Beads 415 of 8096 × All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer kittui life lifetail mcp-cli midi2hid mono picasso ring-mods tendril ws-health-scratch All Types Task Bug Feature Epic + New Bead Active 415 All 8096 Open 344 In Progress 52 Blocked 19 Closed 7308 Permanent 14 Draft 359 ID TITLE STATUS PRIORITY TYPE bd-602cef Fix messages disappearing without delivery feedback cacophony · bug fix message delivery feedback IN PROGRESS P0 bug bd-f6b45b [P0] caco msg send still returns msg_send_backpressured while daemon is healthy cacophony · bug caco msg send backpressured IN PROGRESS P0 bug bd-be7fcb Optimize caco PI startup performance cacophony · task optimize caco startup IN PROGRESS P0 task bd-fa79bc Profile agent startup bottlenecks cacophony · task profile agent startup bottlenecks IN PROGRESS P0 task bd-cfa0dd Fix ms-mac daemon launcher rooted in ",
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "bead-status-chips",
+      "cls": "filter-chip-row",
+      "text": "Active 415 All 8096 Open 344 In Progress 52 Blocked 19 Closed 7308 Permanent 14 Draft 359",
+      "w": 358,
+      "sw": 833,
+      "h": 56,
+      "sh": 56,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    },
+    {
+      "tag": "DIV",
+      "id": "",
+      "cls": "table-wrapper",
+      "text": "ID TITLE STATUS PRIORITY TYPE bd-602cef Fix messages disappearing without delivery feedback cacophon",
+      "w": 358,
+      "sw": 688,
+      "h": 463,
+      "sh": 30612,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Fix messages disappearing without delivery feedback cacophony · bug fix message delivery feedback",
+      "w": 300,
+      "sw": 318,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "[P0] caco msg send still returns msg_send_backpressured while daemon is healthy cacophony · bug caco",
+      "w": 300,
+      "sw": 489,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Fix ms-mac daemon launcher rooted in managed worker checkout cacophony · bug fix mac daemon launcher",
+      "w": 300,
+      "sw": 392,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "[regression] Agent control endpoints time out while /node stays healthy cacophony · bug agent discar",
+      "w": 300,
+      "sw": 416,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "[regression] caco msg send endpoint backpressures while node health is green cacophony · bug fix msg",
+      "w": 300,
+      "sw": 465,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "[regression] Agent spawn/create APIs need bounded healthy-node behavior cacophony · bug bound agent ",
+      "w": 300,
+      "sw": 445,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Fix shift+tab and shift+return keyboard passthrough in TUI collective · bug fix keyboard shortcuts t",
+      "w": 300,
+      "sw": 345,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Prevent Health side effects from side-by-side comparison branches picasso · bug prevent health side ",
+      "w": 300,
+      "sw": 396,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Make confirmed Health Profile clear delete prior profile versions picasso · bug clear health profile",
+      "w": 300,
+      "sw": 376,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Block or redaction-gate sharing of Health conversations and delete existing shares picasso · bug blo",
+      "w": 300,
+      "sw": 484,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Disable ads generation for Health-scoped conversation history picasso · bug disable health ads gener",
+      "w": 300,
+      "sw": 368,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Make Cosmos scoped container access fail closed for Health instead of AllowedScopes.All picasso · bu",
+      "w": 300,
+      "sw": 531,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Add central route allowlist for X-Copilot-Scope health picasso · bug add central route allowlist",
+      "w": 300,
+      "sw": 314,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Add Health allowlist for chat command handling and side effects picasso · bug add health allowlist c",
+      "w": 300,
+      "sw": 378,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Expand Health Space deletion coverage for generic stores reachable from Health scope picasso · bug e",
+      "w": 300,
+      "sw": 516,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Prevent Health attachments from indexing into generic Memory/Infinity search without Health tags pic",
+      "w": 300,
+      "sw": 571,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Strengthen HealthcareSpaceToolGuard beyond scope-only checks picasso · bug strengthen healthcare gua",
+      "w": 300,
+      "sw": 394,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Reject Health scope on generic Memory Import durable-fact pipeline picasso · bug reject health scope",
+      "w": 300,
+      "sw": 402,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Add Health-specific message-part allowlist for history/API conversion picasso · bug health message p",
+      "w": 300,
+      "sw": 406,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Block generic scheduled tasks and proactivity for Health scope picasso · bug block health scheduled ",
+      "w": 300,
+      "sw": 371,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Validate conflicting manual HealthcareSpace feature flags after assignment picasso · bug validate he",
+      "w": 300,
+      "sw": 442,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Route HealthSpaceDataUse consent revocation through Health Space deletion picasso · bug health space",
+      "w": 300,
+      "sw": 465,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Route or block Health scope on SSE /chat/events endpoint picasso · bug health scope sse chat events",
+      "w": 300,
+      "sw": 348,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Make HealthcareSpace critical pre-turn plugin timeouts fail closed picasso · bug healthcare pre turn",
+      "w": 300,
+      "sw": 387,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Fix HTTP error when recreating ms-dev-picasso-picasso-dev-alpha agent picasso · bug fix http error a",
+      "w": 300,
+      "sw": 432,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Build configurable app automation surface for API-less web apps agent-utils · epic web app automatio",
+      "w": 300,
+      "sw": 382,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Fix kitty graphics Pi mode rendering inside tmux/caco agent-utils · bug fix kitty graphics rendering",
+      "w": 300,
+      "sw": 317,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "TD",
+      "id": "",
+      "cls": "truncate max-w-lg bead-title-cell",
+      "text": "Play Console grants needed for android-utils draft uploads: caller lacks permission android-utils · ",
+      "w": 300,
+      "sw": 483,
+      "h": 74,
+      "sh": 73,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-25-33-649Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-25-33-649Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-25-33-649Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route feed (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#feed
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#feed');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#feed
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-25-43-944Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#feed",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-feed",
+  "h1": "Feed 50",
+  "connection": "Connected",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Feed 50 All Types Agent Bead Message Speech Health Last 24h Last 7d Last 30d All Auto-scroll 50 events 02:24:28 [ms-mac] cacophony BUILD_JOB_RUNNING build_job_running 02:24:28 [ms-mac] cacophony BUILD_JOB_QUEUED build_job_queued 02:23:48 [ms-mac] cacophony MSG:SPEAK Acknowledged msm-1 coordination: msg-send is owned separately, and I will keep bd-a3a0dc scoped to spawn/create unless a shared root cause needs a coordination bead. 02:23:46 [ms-mac] cacophony MSG:SENT Ack, thanks. I will keep bd-a3a0dc scoped to spawn/create and will file/coordinate before any shared request/backpressure helper changes. 02:23:30 [ms-dev] cacophony MSG:SPEAK bd-a0ffa1 reintegration hit stale main during active churn; rebasing once more and retrying direct reintegration. 02:23:28 [ms-mac] cacophony MSG:SPEAK All three AKS pool PVCs now report 100Gi and pool daemons remain healthy. Running source validation fo",
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "feed-container",
+      "cls": "feed-container",
+      "text": "02:24:28 [ms-mac] cacophony BUILD_JOB_RUNNING build_job_running 02:24:28 [ms-mac] cacophony BUILD_JO",
+      "w": 358,
+      "sw": 356,
+      "h": 586,
+      "sh": 6934,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-25-57-822Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-25-57-822Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-25-57-822Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route chat (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#chat
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#chat');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#chat
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-26-04-289Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#chat",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-chat",
+  "h1": "Chat 250",
+  "connection": "Connected",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Chat 250 All Projects a.skh.am agent-utils android-utils cacophony collective gfx-replacer kittui life lifetail mcp-cli midi2hid mono picasso ring-mods tendril ws-health-scratch All Types Chat Speech Broadcast Last 24h Last 7d Last 30d All P pocket4/pocket4-ca SPEAK 00:29:26 Auto-claimed bd-9e020b, but I saw ms-mac had announced the same broken-on-main nav tests; I’m hydrating and checking ownership before editing. M ms-mac/ms-mac-pic SPEAK 00:30:23 Scanning the scratch repo copy for Picasso health branch assumptions in flake, whitepaper, and helper tooling before making it self-contained. M ms-mac/ms-mac-pic SPEAK 00:38:56 Finished the portability scan and patched the scratch copy so core helpers, flake shells, static artefact export, and whitepaper links no longer require a Picasso health branch checkout. M ms-mac/ms-mac-cac SPEAK 00:40:05 log-monitor ms-mac starting the next bounded s",
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "chat-container",
+      "cls": "chat-container",
+      "text": "P pocket4/pocket4-ca SPEAK 00:29:26 Auto-claimed bd-9e020b, but I saw ms-mac had announced the same ",
+      "w": 356,
+      "sw": 356,
+      "h": 438,
+      "sh": 44463,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-26-16-878Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-26-16-878Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-26-16-878Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route nodes (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#nodes
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#nodes');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#nodes
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-26-23-595Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#nodes",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-nodes",
+  "h1": "Nodes",
+  "connection": "Snapshot delayed",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Nodes 11 NODES 53 AGENTS 33 RUNNING 1 SERVICES Refresh All msm SETTLING ms-mac · 31 agents · 19 running msd SELF ms-dev · 11 agents · 8 running hel SETTLING helsinki · 2 agents · 2 running pl0 SETTLING pool-0 · 0 agents · 0 running pl1 SETTLING pool-1 · 0 agents · 0 running pl2 SETTLING pool-2 · 0 agents · 0 running po4 SETTLING pocket4 · 6 agents · 3 running wmi SETTLING winmini · 1 agents · 0 running bee SETTLING beelink · 1 agents · 0 running sgu MISMATCH sgu24 · 1 agents · 1 running ast SETTLING astra · 0 agents · 0 running msd ms-dev SELF Refresh Agents Chat DAEMON AGENTS 11 (8 running) SERVICES 1 HOST 100.66.53.117 ROUTING private TRANSPORT direct_mesh VERSION 1.2.931 CONFIG e642272982e5d6a1097fa9115bf8a7b862323012096baeaf28371718e96f5764 PKI client · helsinki LAST SEEN 2026-05-19T22:46:25.541844537+00:00 QUEUE 0 TELEMETRY LOAD PRESSURE (1M) 29.99 / 16 cores MEMORY 44.3 GB / 49.8 G",
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "",
+      "cls": "node-card node-detail-card",
+      "text": "DAEMON AGENTS 11 (8 running) SERVICES 1 HOST 100.66.53.117 ROUTING private TRANSPORT direct_mesh VER",
+      "w": 358,
+      "sw": 515,
+      "h": 360,
+      "sh": 358,
+      "overflowX": "hidden",
+      "overflowY": "hidden"
+    },
+    {
+      "tag": "DIV",
+      "id": "",
+      "cls": "node-detail",
+      "text": "CONFIG e642272982e5d6a1097fa9115bf8a7b862323012096baeaf28371718e96f5764",
+      "w": 324,
+      "sw": 499,
+      "h": 30,
+      "sh": 29,
+      "overflowX": "visible",
+      "overflowY": "visible"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-26-38-722Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-26-38-722Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-26-38-722Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route services (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#services
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#services');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#services
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-26-46-093Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+{
+  "url": "http://127.0.0.1:63903/#services",
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "version": "v1.2.927",
+  "activeView": "view-services",
+  "h1": "Services 1",
+  "connection": "Connected",
+  "activeBox": {
+    "w": 390,
+    "h": 792
+  },
+  "text": "Services 1 All Nodes ms-mac ms-dev helsinki pool-0 pool-1 pool-2 pocket4 winmini beelink sgu24 astra Text-to-Speech Refresh Browser Affects only this browser tab. Daemon keeps generating; nothing is duplicated. Mute browser Autoplay new TTS Vol Test sound Daemon Cluster-wide setting. Mute here stops generation entirely. Mute daemon Voice — Model Speed Filter: OFF Per-Agent Audio Resolved audio state for running agents. Mute/voice from config. Global mute: off · Default agent mute: off Agent Project Mute Voice Silenced caco-android cacophony on — 🔊 msd-1 cacophony on — 🔊 msd-3 cacophony on — 🔊 msd-4 cacophony on — 🔊 msd-5 cacophony on — 🔊 caco-web cacophony on — 🔊 changelog-manager cacophony on — 🔊 project-health cacophony on — 🔊 NODE SERVICE STATUS IN-PROCESS PORT ms-dev caco-daemon RUNNING — —",
+  "overflow": [
+    {
+      "tag": "DIV",
+      "id": "tts-per-agent-list",
+      "cls": "tts-per-agent-list",
+      "text": "Global mute: off · Default agent mute: off Agent Project Mute Voice Silenced caco-android cacophony ",
+      "w": 300,
+      "sw": 349,
+      "h": 267,
+      "sh": 267,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    },
+    {
+      "tag": "DIV",
+      "id": "",
+      "cls": "table-wrapper",
+      "text": "NODE SERVICE STATUS IN-PROCESS PORT ms-dev caco-daemon RUNNING — —",
+      "w": 358,
+      "sw": 398,
+      "h": 288,
+      "sh": 286,
+      "overflowX": "auto",
+      "overflowY": "auto"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const active = document.querySelector(\'.view.active\');\n  const box = active?.getBoundingClientRect();\n  const root = active || document.body;\n  const overflow = Array.from(root.querySelectorAll(\'*\'))\n    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || \'\', cls: String(el.className || \'\').slice(0, 80), text: (el.innerText || el.textContent || \'\').trim().replace(/\\s+/g, \' \').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })\n    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))\n    .slice(0, 30);\n  return {\n    url: location.href,\n    viewport: { w: innerWidth, h: innerHeight },\n    version: document.body.innerText.match(/v\\d+\\.\\d+\\.\\d+/)?.[0] || null,\n    activeView: active?.id,\n    h1: active?.querySelector(\'h1,h2\')?.textContent?.trim(),\n    connection: document.querySelector(\'#connection-status\')?.textContent?.trim(),\n    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,\n    text: active?.innerText?.trim().replace(/\\s+/g, \' \').slice(0, 900),\n    overflow\n  };\n}');
+```
+
+--- playwright screenshot
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Result
+- [Screenshot of viewport](.playwright-cli/page-2026-05-20T01-26-54-950Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as .playwright-cli/page-2026-05-20T01-26-54-950Z.png
+await page.screenshot({
+  path: '.playwright-cli/page-2026-05-20T01-26-54-950Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+
+--- comprehensive route projects (narrow)
+
+--- playwright goto http://127.0.0.1:63903/#projects
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:63903/#projects');
+```
+### Page
+- Page URL: http://127.0.0.1:63903/#projects
+- Page Title: Cacophony Dashboard
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-05-20T01-26-58-842Z.yml)
+
+--- route audit
+
+--- playwright eval () => {
+  const active = document.querySelector('.view.active');
+  const box = active?.getBoundingClientRect();
+  const root = active || document.body;
+  const overflow = Array.from(root.querySelectorAll('*'))
+    .map(el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { tag: el.tagName, id: el.id || '', cls: String(el.className || '').slice(0, 80), text: (el.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100), w: Math.round(r.width), sw: el.scrollWidth, h: Math.round(r.height), sh: el.scrollHeight, overflowX: cs.overflowX, overflowY: cs.overflowY }; })
+    .filter(x => x.w > 0 && x.h > 0 && (x.sw > x.w + 4 || x.sh > x.h + 4))
+    .slice(0, 30);
+  return {
+    url: location.href,
+    viewport: { w: innerWidth, h: innerHeight },
+    version: document.body.innerText.match(/v\d+\.\d+\.\d+/)?.[0] || null,
+    activeView: active?.id,
+    h1: active?.querySelector('h1,h2')?.textContent?.trim(),
+    connection: document.querySelector('#connection-status')?.textContent?.trim(),
+    activeBox: box ? { w: Math.round(box.width), h: Math.round(box.height) } : null,
+    text: active?.innerText?.trim().replace(/\s+/g, ' ').slice(0, 900),
+    overflow
+  };
+}
+chromium: using system binary at /home/harryaskham/.nix-profile/bin/chromium

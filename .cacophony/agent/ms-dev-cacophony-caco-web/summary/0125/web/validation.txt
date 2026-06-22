@@ -1,0 +1,63 @@
+bd-231a34 validation:
+- HEXA-paired cycle (rolled back from octa-paired at edit time;
+  pattern m catch #6 protected bd-b2b739's intentional 2-block
+  preservation of the input cancel-button "design eras").
+- Selectors: .agent-type-chip (strictly-additive 3 add + 1
+  byte-id), .agent-goal-text (additive 2 disjoint), .action-card
+  body (silent-override transition), .bead-description (pure-
+  dead byte-id-subset), .bar-segment (silent-override
+  transition mixed survival), .batch-action-bar (silent-override
+  blur 8->12 + additive -webkit-prefix vendor-lockstep + 1
+  byte-id).
+- 6 canonical merged + 6 dead blocks deleted + 6 marker comments.
+
+cargo test -p caco-web --lib -> 543 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (24 layers): 6x rule-head counts (iterated for-loop)
++ 6x cascade-resolved truth + 4 NEGATIVE on declarations-only
++ 1 pattern-m preservation pin (bd-b2b739 count==2) + 6 marker
+pins + bd-ef0924 sibling pin.
+
+PATTERN (m) CATCH #6 (second rollback during implementation):
+input[type="search"]::-webkit-search-cancel-button + :hover
+were initially scoped for family-paired (s) silent-override
+merges. Pre-edit grep showed two heads each at adjacent line
+ranges -- looked like clean dedup candidates. Initial implem
+ran the merge, which BROKE bd-b2b739 at test time (count==2
+became count==1 for both heads).
+
+Root cause: bd-b2b739 INTENTIONALLY preserved the two input-
+cancel blocks as separate "design eras" -- early opacity-fade
+design at file top + late mask-recolouring design at file
+bottom -- for visual documentation in the source even though
+cascade-resolved truth is one merged design (both contribute
+to render).
+
+Rollback procedure (repeated from bd-1982d4 catch #5):
+1. Detected via existing-test break (bd-b2b739 count==2).
+2. Reverted the input cancel-button + :hover edits using
+   single-target edits (3 reverts: body, hover, late stub).
+3. Scope reduced from 8 paired-merges (octa) to 6 (hexa).
+4. Added defensive pin in bd-231a34 test.
+
+NEW VERIFICATION LESSON (extends bd-1982d4 catch #5 lesson):
+pattern (m) check must include not just the SOURCE FILE
+verification (preceding line text), but ALSO a search of
+EXISTING TESTS for any rule-head count pin on the candidate
+selector. Fast check: `grep -nE "(count|2|3).*<selector>"
+crates/caco-web/src/tests.rs`. If a test pins the count > 1,
+the prior author had a reason (design preservation, cascade
+ordering, separation-of-concerns) and the merge must be
+SKIPPED.
+
+Pattern (m) catalog now: 6 catches (bd-dfbeca, bd-46f5ea,
+bd-a6c685, bd-de61ec, bd-1982d4, bd-231a34). Two of the six
+were rollbacks during implementation -- demonstrates the
+test-driven defense-in-depth value of the audit chain.
+
+Catalog refinement: pattern (m) sub-variant "intentional
+preserved duplicates" -- when a prior dedup pinned count > 1
+because separation-of-concerns / design-era / cascade-ordering
+mattered, the rule is OFF-LIMITS for further merge regardless
+of grep results. Document and skip.

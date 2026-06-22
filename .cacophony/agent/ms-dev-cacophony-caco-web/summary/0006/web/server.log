@@ -1,0 +1,111 @@
+127.0.0.1 - - [26/May/2026 00:32:35] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /vendor/xterm/xterm.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /timeline.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /summaries.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /vendor/xterm/xterm.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /vendor/xterm/xterm-addon-fit.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /vendor/xterm/xterm-addon-attach.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /vendor/xterm/xterm-addon-search.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /vendor/xterm/xterm-addon-web-links.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /workspace-overlay.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /nodes.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /workspace-terminal-pane.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /kitty-graphics.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /timeline.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /workspace-integrated.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /summaries.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:35] "GET /workspace-panes.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:32:36] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:36] "GET /api/v1/ui/snapshot HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:36] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:36] "GET /health HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:36] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:36] "GET /api/v1/merge-queue?since=24h HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:36] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:36] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:36] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:36] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:37] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:37] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:38] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:38] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:39] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:39] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:40] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:40] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:32:41] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:32:41] "GET /api/v1/ui/snapshot HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /vendor/xterm/xterm.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /summaries.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /timeline.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /vendor/xterm/xterm-addon-fit.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /vendor/xterm/xterm.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /vendor/xterm/xterm-addon-attach.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /vendor/xterm/xterm-addon-search.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /vendor/xterm/xterm-addon-web-links.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /workspace-overlay.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /kitty-graphics.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /nodes.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /workspace-terminal-pane.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /timeline.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /summaries.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /workspace-integrated.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:33] "GET /workspace-panes.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:33:34] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:34] "GET /health HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:34] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:34] "GET /api/v1/ui/snapshot HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:34] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:34] "GET /api/v1/merge-queue?since=24h HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:34] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:34] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:34] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:34] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:35] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:35] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:36] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:36] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:37] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:37] "GET /api/v1/summaries?limit=10&offset=0 HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:38] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:38] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:38] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:38] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:33:39] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:33:39] "GET /api/v1/ui/snapshot HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /vendor/xterm/xterm.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /vendor/xterm/xterm.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /timeline.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /summaries.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /vendor/xterm/xterm-addon-fit.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /vendor/xterm/xterm-addon-attach.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /vendor/xterm/xterm-addon-search.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /vendor/xterm/xterm-addon-web-links.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /workspace-overlay.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /nodes.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /kitty-graphics.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /timeline.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /workspace-terminal-pane.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /summaries.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /workspace-integrated.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:34:59] "GET /workspace-panes.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/May/2026 00:35:00] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:35:00] "GET /health HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:35:00] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:35:00] "GET /api/v1/ui/snapshot HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:35:00] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:35:00] "GET /api/v1/merge-queue?since=24h HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:35:00] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:35:00] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:35:00] "GET /api/v1/ui/stream HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:35:00] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -
+127.0.0.1 - - [26/May/2026 00:35:01] code 404, message File not found
+127.0.0.1 - - [26/May/2026 00:35:01] "GET /api/v1/logs/stream?follow=true HTTP/1.1" 404 -

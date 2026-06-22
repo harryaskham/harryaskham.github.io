@@ -1,0 +1,26 @@
+Validation evidence for bd-0f167b:
+
+- Before: 35 <button> elements in index.html lacked an explicit
+  type= attribute. HTML default is type="submit", which would
+  trigger form submission if any were later moved into a <form>.
+- After: type="button" added to all 35. The 12 buttons that
+  already declared type="button" or type="submit" unchanged.
+
+- Today: only one <form> exists (create-bead-form L1018-1080)
+  and its 2 buttons correctly use explicit type=. So no
+  live behavior bug -- this is defensive correctness.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib all_buttons_in_index_html_declare_explicit_type_bd_0f167b
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 464 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- Every <button> in index.html declares explicit type= attribute.
+- Sanity check: at least 35 <button> elements present (catches
+  template gutting that would mask the negative assertion).
+- Iterates all opening <button> tags and reports missing-type
+  sites with line + snippet for easy debugging.

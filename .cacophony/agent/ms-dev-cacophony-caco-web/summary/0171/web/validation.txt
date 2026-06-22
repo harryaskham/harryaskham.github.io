@@ -1,0 +1,41 @@
+bd-2abe23 validation:
+- ROBOTS NOINDEX,NOFOLLOW META SEO-SAFETY: 4 entry
+  HTML files lacked <meta name="robots"> declarations;
+  caco-web is an operator dashboard that should not be
+  indexed when accidentally exposed.
+
+cargo test -p caco-web --lib -> 587 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- grep robots/referrer meta across 4 entry HTML files.
+- All 4 missing robots meta.
+
+FIX (all 4 entry HTML files gain robots noindex,nofollow):
+- index.html / workspace.html / notifications.html /
+  terminal.html: + <meta name="robots" content=
+  "noindex, nofollow"> after color-scheme/theme-color
+  meta, with bd-2abe23 rationale comment.
+
+WHY:
+- caco-web is an operator dashboard.
+- If accidentally exposed publicly (dev tunnel,
+  misconfigured ingress, brief public-internet preview),
+  search engines should skip it.
+- noindex: blocks page from search results.
+- nofollow: prevents crawlers from walking internal
+  navigation links -- avoids session/state-leak
+  follow-on requests.
+- No effect on direct operator navigation.
+
+REGRESSION TEST (~30 lines):
+- Iterates all 4 entry HTML files.
+- Asserts literal <meta name="robots" content=
+  "noindex, nofollow"> present.
+
+OPERATOR-VISIBLE EFFECT:
+- None for operators (direct navigation unaffected).
+- Search engines that crawl misconfigured deploys skip
+  the dashboard.
+
+NET PASS: 586 -> 587; 0 failures.

@@ -1,0 +1,44 @@
+bd-509348 validation:
+- SEMANTIC INPUT TYPE: workspace command palette input used
+  type="text" for what is semantically a search box.
+
+cargo test -p caco-web --lib -> 566 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- Inspected 31 <input> opening tags across all HTML/JS.
+- Type counts: text=11, search=10, checkbox=8, range=1, number=1.
+- Filtered type=text by placeholder/name/id keyword (search,
+  filter, email, url, phone, number).
+- Yield: 1 candidate (workspace-keyboard.js:307).
+
+FIX:
+- workspace-keyboard.js:307: type="text" -> type="search".
+
+CONTEXT:
+The element already declared `enterkeyhint="search"`,
+`aria-label="Search commands"`, `placeholder="Type to search
+commands…"`, autocomplete=off, autocorrect=off, autocapitalize=off,
+spellcheck=false. Authoring intent was unambiguous; type="text"
+was the wrong semantic.
+
+TYPE=SEARCH BENEFITS:
+1. Mobile search-hint keyboard (magnifying glass).
+2. Browser search-history affordances.
+3. Native clear-button (×) on supporting browsers.
+4. "Search field" screen reader announcement (vs "edit text").
+
+REGRESSION TEST (~50 lines):
+- Locates .wsv-palette__input class declaration.
+- Inspects opening tag (including self-closing variant).
+- Asserts type="search" present.
+- Asserts type="text" NOT present.
+- Asserts aria-label="Search commands", enterkeyhint="search",
+  autocomplete="off" preserved.
+
+OPERATOR-VISIBLE EFFECT:
+- Mobile users get search-hint keyboard.
+- Native clear-button on supporting browsers.
+- Screen readers announce "search field".
+
+NET PASS: 565 -> 566; 0 failures.

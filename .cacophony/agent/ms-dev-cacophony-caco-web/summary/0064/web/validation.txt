@@ -1,0 +1,30 @@
+Validation evidence for bd-d09c97:
+
+- Before: app.js table-column-resize onMove wrote
+  th.style.width + th.style.minWidth on every mousemove
+  (60-120 Hz). Layout-sensitive on a <th>, may cascade-
+  recalculate sibling columns. 120-240 style writes/sec
+  during column drag.
+- After: rAF-throttled. Cache lastEvent, apply once per
+  frame. onUp cancels any pending rAF before persisting
+  final widths via saveColumnWidths (already correct).
+  Listener uses { passive: true } options form.
+
+- This completes the drag-handler audit: 4 of 4 drag
+  handlers are now uniformly rAF-throttled.
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib table_column_resize_drag_is_raf_throttled_bd_d09c97
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 471 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- rafId + lastEvent cache pair.
+- onMove uses requestAnimationFrame + short-circuit-on-pending.
+- onUp cancels pending rAF before persistence.
+- onUp still calls saveColumnWidths exactly once.
+- mousemove listener uses { passive: true }.
+- Bare per-event th.style.width writes inside onMove absent.

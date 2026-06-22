@@ -1,0 +1,41 @@
+Validation evidence for bd-3cc202:
+
+- Before: attachFilterChipOverflowAffordance bound both
+  scroll listener AND window.resize listener to call
+  update() directly per event. Each call:
+    - reads scrollWidth + clientWidth + scrollLeft
+      (forces synchronous layout reflow)
+    - mutates classList 4 times (remove 4, add 0-1)
+  Modern hardware fires scroll at 60-120 Hz; browser
+  resize during window drag at ~60 Hz. With N wired
+  chip-wraps on the page (typically 2: agent + bead
+  status chips), each resize event = N updates.
+
+- After: rAF-coalesced via per-wrap rAF id stored on
+  wrap.__chipAffordanceRaf. Burst scroll/resize events
+  collapse to at most one layout-read + classList-write
+  per frame instead of per event. Matches the drag-handler
+  audit pattern (bd-f8d959, bd-1f50c9, bd-171bcc, bd-d09c97).
+
+- Direct foreground validation (per revival nudge; not queued/backgrounded):
+    cargo test -p caco-web --lib filter_chip_overflow_affordance_raf_coalesces_bd_3cc202
+      -> 1 passed, 0 failed
+    cargo test -p caco-web --lib --tests
+      -> 476 passed, 11 failed (net +1 pass; same 11 pre-existing
+         failures on main).
+- Whitespace: git diff --check origin/main..HEAD -> clean.
+
+New test asserts:
+- wrap.__chipAffordanceRaf cache + zero at frame start
+  (update body) + assigned in scheduleUpdate.
+- scheduleUpdate short-circuits when an rAF is pending.
+- Both scroll and resize listeners route through
+  scheduleUpdate (rAF-coalesced).
+- Bare wrap.scroll-with-update + window.resize-with-update
+  antipatterns absent.
+
+Implementation note: the per-wrap rAF id is stored ON the
+wrap (not as a closure local) so the `__chipAffordanceWired`
+short-circuit still finds the right cache when attach is
+called multiple times against the same wrap from re-renders
+of the chip row's innerHTML.

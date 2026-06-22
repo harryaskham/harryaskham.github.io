@@ -1,0 +1,45 @@
+bd-a753e2 validation:
+- Pattern (x) continuous-defense-test SECOND INSTANCE (after
+  bd-91616b for CSS custom properties).
+- Audit category: orphan @keyframes definitions.
+- 70 @keyframes declared across 5 CSS files (style.css x66 +
+  summaries.css/workspace-a11y.css/workspace-chat-pane.css/
+  workspace-stt-mic.css x1 each).
+- 0 currently orphan -- clean baseline; no prune needed.
+- Test added as continuous defense against future bloat.
+
+cargo test -p caco-web --lib -> 547 passed, 0 failed.
+
+Test design (~120 lines):
+- Aggregates @keyframes <name> { } blocks across 13 .css files.
+- Token-bounded substring match: prevents `slide` from matching
+  `slideIn` (defends against false-positive matches with prefixes/
+  suffixes).
+- Bundle of 28 static assets searched for `animation:` and
+  `animation-name:` value contents.
+- Conservative value extraction (bounded by ; } or newline)
+  prevents matching across rule boundaries.
+- ALLOWLIST_RESERVED_KEYFRAMES placeholder (currently empty)
+  for future intentional reservations.
+- Failure message guides remediation (per bd-91616b precedent).
+
+PATTERN (x) GENERALIZATION:
+First confirmed extension of pattern (x). Demonstrates that the
+pattern is generalizable to multiple audit categories:
+1. CSS custom properties (bd-91616b -- pruned 2 + defended).
+2. @keyframes (bd-a753e2 -- 0 prune + defended).
+3. (Future targets) JS exports / ARIA targets / named media /
+   z-index hierarchy entries / theme tokens / etc.
+
+Each pattern (x) extension follows the same shape:
+- Aggregate definitions across declarative space.
+- Aggregate consumers across consumer space.
+- Subtract: orphans = defs - consumers - allowlist.
+- Assert orphans empty with helpful failure message.
+- Optional: forward-guard against re-introduction of any pruned
+  members.
+
+Pure no-visible-change addition (clean baseline). Test
+infrastructure value > immediate impact.
+
+Net pass: 546 -> 547; 0 failures.

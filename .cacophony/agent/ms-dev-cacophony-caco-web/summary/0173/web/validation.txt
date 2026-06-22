@@ -1,0 +1,52 @@
+bd-9b7346 validation:
+- SCROLLBAR-GUTTER: STABLE on #content: reserves scrollbar
+  gutter always so transitions between "fits viewport"
+  (no scrollbar) and "overflows viewport" (scrollbar
+  appears, ~12px) do not shift layout horizontally.
+
+cargo test -p caco-web --lib -> 589 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+AUDIT METHODOLOGY:
+- grep scrollbar-gutter across CSS files -> 0 hits.
+- #content at style.css:912 is canonical main scroller.
+
+FIX:
+- style.css #content block: + scrollbar-gutter: stable;
+  with rationale comment.
+
+WHY:
+- Layout stability: scrollbar appearing/disappearing
+  causes ~12-15px horizontal layout shift.
+- Even small content-height changes (toast appears,
+  agent count drops, error clears) trigger perceptible
+  shift and CLS metric impact.
+- Backward-compatible: Chrome 94+, Firefox 97+, Safari
+  18.2+; older browsers ignore (graceful degradation).
+
+SCOPE:
+- Apply only to #content (main scroller).
+- Per-view containers don't usually toggle overflow
+  because parent (#content) handles it.
+- Do NOT apply globally; many small panes use overlay
+  scrollbars intentionally.
+
+REGRESSION TEST (~35 lines):
+- Find bd-9b7346 marker.
+- Look back ~600 bytes for "#content {" preface.
+- Look forward ~800 bytes for "scrollbar-gutter: stable;"
+  declaration.
+- Window-bounded ensures marker stays inside intended
+  selector and declaration stays attached.
+
+TEST CALIBRATION:
+- Initial 400-byte forward window failed because the
+  ~450-char rationale comment block consumed it.
+- Increased to 800-byte window.
+
+OPERATOR-VISIBLE EFFECT:
+- No horizontal layout shift when notification badge
+  counts change, toasts appear/dismiss, lists grow/shrink.
+- Subtle but measurable on cumulative-layout-shift metrics.
+
+NET PASS: 588 -> 589; 0 failures.

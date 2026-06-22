@@ -1,0 +1,22 @@
+bd-0f5b7a validation — clickable Pico slash suggestions:
+
+Commands:
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../suggestion-click-test/pico-suggestion-click-observe.log --server-log .../suggestion-click-test/pico-suggestion-click-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused observe guard passed.
+- live mock scenario passed and asserted:
+  - typing `/ab` shows visible `/abort` suggestion.
+  - clicking the visible `/abort` suggestion fills `/abort ` in the composer.
+  - retyping `/ab` and pressing Tab also fills `/abort `.
+- existing `/mo` built-in suggestions, dynamic `/deploy`, outbound steer/abort/ui_reply/get_available_models/set_model/prompt/compact, render coalescing, native DOM, timestamp/image/title/session-ended, and console-clean assertions all still pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 645 passed, 0 failed.
+
+Implementation:
+- Extended `PICO_SUGGESTIONS_EVAL` with a real `.agent-pico-suggestion` button click assertion.
+- Updated observe-helper source guard to pin clickable suggestion coverage.

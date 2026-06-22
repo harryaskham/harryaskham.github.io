@@ -1,0 +1,44 @@
+bd-e03e60 validation:
+- REAL UX win, not pattern (x). Pivot to user-visible improvement.
+- BEFORE: scrolling down on agents view (e.g. scrollTop=2400),
+  switching to beads, then back -- scroll resets to 0. User has to
+  scroll back to where they were.
+- AFTER: per-view scroll-position memory restores the saved offset
+  on return.
+
+cargo test -p caco-web --lib -> 551 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+IMPLEMENTATION:
+- window._viewScrollPositions: Map keyed by view-name string,
+  session-scoped (no sessionStorage/localStorage to avoid stale-
+  offset drift against a different list size after data churn).
+- Save: in _switchViewImpl(), before state.currentView mutates,
+  capture outgoing #content.scrollTop. Save guard requires
+  state.currentView !== view (skip no-op switches).
+- Restore: after view-specific renders dispatch, restore via
+  requestAnimationFrame so the new view's renderers have committed
+  their DOM (any auto-scroll like logs/chat scroll-to-bottom runs
+  first; only restore if a saved entry exists).
+- First visit defaults to 0 (top).
+
+EDGE CASE: logs/chat views auto-scroll-to-bottom on render. If
+their auto-scroll runs in the same tick as restoreScroll, the rAF
+ordering means the saved offset wins -- this is the desired behavior
+for "go back to where you were", overriding "always show latest".
+For first visit (no saved entry), the auto-scroll wins.
+
+TESTS (5 forward-guards):
+1. window._viewScrollPositions lazy Map init.
+2. Save outgoing view scrollTop BEFORE state.currentView mutates.
+3. Save guard requires state.currentView !== view.
+4. Restore inside requestAnimationFrame with `saved = map.get(view) || 0`.
+5. Storage discipline: NO sessionStorage / localStorage in block.
+
+OPERATOR-VISIBLE EFFECT:
+- Switching views and returning preserves scroll position.
+- Reduces fatigue on long-list views (agents, beads, feed, logs).
+- No flash/jump (rAF wraps restoration so layout settles first).
+- Reload still resets all views to top (avoids stale offset).
+
+NET PASS: 550 -> 551; 0 failures.

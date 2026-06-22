@@ -1,0 +1,2 @@
+crates/caco-web/static/index.html: total=75 with_aria_hidden=73 missing=2
+crates/caco-web/static/app.js: total=122 with_aria_hidden=122 missing=0

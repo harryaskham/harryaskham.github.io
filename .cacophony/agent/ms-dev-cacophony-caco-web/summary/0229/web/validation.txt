@@ -1,0 +1,24 @@
+bd-ee7901 validation — visible Pico /think slash suggestion:
+
+Commands:
+- cargo test -p caco-web --bin caco-web-observe pico_pane_scenario_uses_mock_websocket_not_dom_injection_bd_09efe2
+- cargo run -p caco-web --bin caco-web-observe -- --scenario pico-pane --out .../think-suggestion-test/pico-think-suggest-observe.log --server-log .../think-suggestion-test/pico-think-suggest-server.log
+- cargo test -p caco-web --bin caco-web-observe
+- cargo test -p caco-web --lib
+
+Results:
+- focused observe guard passed.
+- live mock scenario passed and asserted:
+  - typing `/th` shows visible `/think` suggestion.
+  - suggestion host is expanded/visible.
+  - Tab completion fills `/think `.
+- scenario still submits `/think high` and receives:
+  - {"kind":"command","type":"set_thinking_level","level":"high"}
+- existing `/model`, `/abort`, dynamic `/deploy`, clickable suggestion, outbound HostRequest, reconnect, dialog, render coalescing, native display, and console-clean assertions all pass.
+- browser console: Total messages 0 (Errors 0, Warnings 0).
+- caco-web-observe bin tests: 12 passed, 0 failed.
+- caco-web lib tests: 646 passed, 0 failed.
+
+Implementation:
+- Extended `PICO_SUGGESTIONS_EVAL` with `/th` suggestion and Tab-completion assertions.
+- Updated observe-helper source guard to pin `/think` suggestion coverage.

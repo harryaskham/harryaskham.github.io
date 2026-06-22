@@ -1,0 +1,26 @@
+bd-a6c685 validation:
+- 4 paired-merges: .modal-body (additive max-height), .meter-track
+  (silent-override border-radius 999px -> 3px), .meter-fill (same),
+  .logo-accent (byte-identical dup).
+- 4 canonical merged + 4 late deleted + 4 marker comments.
+- Pattern (m) protection: dropped .node-detail-card-title,
+  .node-agent-row, .node-agent-main from scope after verifying their
+  "duplicates" were compound-rule continuation lines (the awk-scan
+  pattern matches `^selector {$` for both standalone heads AND the
+  last selector in a multi-line compound rule). Same root cause as
+  bd-dfbeca .ws-split--v false positive and bd-46f5ea .nav-item.
+  active .nav-icon false positive. Confirmed via direct file
+  inspection before edit.
+
+cargo test -p caco-web --lib -> 532 passed, 0 failed.
+git diff --check origin/main..HEAD -> clean.
+
+Test design (12 layers): 4x rule-head counts + 4x baseline+
+promoted/preserved + 2 NEGATIVE assertions on declarations-only
+(using strip_comments helper from bd-5264b8) + 4 marker pins +
+bd-5264b8 sibling pin.
+
+NOTE on .meter-* visual outcome: late border-radius:3px was already
+cascade-resolved truth (no visible change). Canonical 999px was a
+pill shape; the late 3px makes meters square-cornered. Merging
+preserves the existing visible square-cornered behavior.

@@ -1,0 +1,5 @@
+Validation evidence for bd-3e7343:
+
+- Local Node smoke probe: `node - <<'NODE' ...` verified an `m=0` continuation with omitted `i=` reassembles under the original image id 1234.
+- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib kitty_graphics_filter_decodes_apc_under_node" --cwd "$PWD"` -> tj-9c26e8f9 passed.
+- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-56b50699 succeeded.
