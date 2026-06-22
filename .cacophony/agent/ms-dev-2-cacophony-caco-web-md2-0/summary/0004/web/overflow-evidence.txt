@@ -1,0 +1,3 @@
+# Overflow probe evidence (caco-web-observe, narrow 390px, live notification data)
+notification-body: w=221 sw=405 overflowX=visible (long unbreakable tokens overflow); notification-item: w=348 sw=467; notification-main: w=221 sw=405.
+Fix: overflow-wrap: break-word on .notification-body + .notification-title.

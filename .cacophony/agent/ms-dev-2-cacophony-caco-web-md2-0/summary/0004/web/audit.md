@@ -1,0 +1,44 @@
+# caco-web comprehensive route audit
+
+- Target: `http://127.0.0.1:63407`
+- Viewports: narrow `390x844`, wide `1440x1000`
+- Main routes inspected:
+  - `#status`
+  - `#agents`
+  - `#beads`
+  - `#feed`
+  - `#chat`
+  - `#nodes`
+  - `#services`
+  - `#projects`
+  - `#choices`
+  - `#notifications`
+  - `#actions`
+  - `#logs`
+  - `#timeline`
+  - `#summaries`
+  - `#merge-queue`
+  - `#workspace`
+- Workspace pane types inspected:
+  - `terminal`
+  - `agents`
+  - `beads`
+  - `chat`
+  - `logs`
+  - `feed`
+  - `source`
+  - `status`
+  - `services`
+  - `nodes`
+  - `projects`
+  - `notifications`
+  - `actions`
+  - `timeline`
+  - `choices`
+  - `mergeQueue`
+  - `speech`
+  - `beadDetail`
+  - `agentDetail`
+  - `hooks`
+  - `crons`
+- Review the sibling observation log for route snapshots, overflow probes, console output, and network output.
