@@ -1,6 +1,0 @@
-# duplicate search for summary raw asset 404
-2026-04-27T22:41:32+01:00
-## search: summary raw
-error: unknown --status value 'open,in_progress'. Allowed: open, in_progress, closed, deleted, draft, permanent, blocked
-## search caco-web open/in_progress
-error: unknown --status value 'open,in_progress'. Allowed: open, in_progress, closed, deleted, draft, permanent, blocked

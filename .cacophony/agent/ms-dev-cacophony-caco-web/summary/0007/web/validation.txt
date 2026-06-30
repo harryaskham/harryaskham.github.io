@@ -1,8 +1,0 @@
-Validation evidence for bd-e0c728:
-
-- Before evidence: `web/screenshots/mobile-beads.png` showed the mobile Beads table exposing `ID`, `TITLE`, `STATUS`, `PRIORITY`, `TYPE`, and `ASSIGNEE` in a 390px viewport.
-- After Playwright probe: `web/mobile-beads-after.json` records visible headers as exactly `ID`, `TITLE`, `STATUS`, with `Priority`, `Type`, `Assignee`, `Labels`, `Project`, and `Created` hidden.
-- After screenshot: `web/screenshots/mobile-beads-after.png` shows the simpler three-column mobile Beads table header.
-- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib mobile_beads_table_hides_secondary_columns_bd_e0c728" --cwd "$PWD"` -> tj-59e1eb20 passed.
-- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-aadccd7d succeeded.
-- Source whitespace check: `git diff --check` passed.

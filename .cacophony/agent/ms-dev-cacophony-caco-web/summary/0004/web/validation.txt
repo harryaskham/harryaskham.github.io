@@ -1,7 +1,0 @@
-Validation evidence for bd-e84e43:
-
-- After screenshot: `web/screenshots/toast-desktop-after.png` shows the toast stack shifted below the fullscreen/top chrome lane.
-- After DOM probe: `web/toast-after-probe.json` records toast y=58, fullscreen bottom=44, and `separated: true`.
-- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib css_has_toast_styling" --cwd "$PWD"` -> tj-83cf3f32 passed.
-- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-b22f4457 succeeded.
-- Source whitespace check: `git diff --check` passed.

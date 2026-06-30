@@ -1,1 +1,0 @@
-[  100904ms] [ERROR] Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING @ http://127.0.0.1:64961/api/v1/logs/stream?follow=true:0

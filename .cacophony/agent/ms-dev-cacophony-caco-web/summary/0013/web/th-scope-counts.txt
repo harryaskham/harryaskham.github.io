@@ -1,3 +1,0 @@
-agents-table: th_total=9 with_scope_col=9 missing=0
-beads-table: th_total=9 with_scope_col=9 missing=0
-services-table: th_total=5 with_scope_col=5 missing=0

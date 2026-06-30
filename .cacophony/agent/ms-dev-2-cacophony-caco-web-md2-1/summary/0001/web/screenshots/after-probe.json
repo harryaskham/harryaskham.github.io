@@ -1,9 +1,0 @@
-{
-  "cls": {
-    "classes": "table-wrapper scroll-hint-x at-start",
-    "hasMask": true,
-    "maskImage": "linear-gradient(to right, rgb(0, 0, 0) 0px, rgb(0, 0, 0) cal"
-  },
-  "clsEnd": "table-wrapper scroll-hint-x at-end",
-  "consoleTail": []
-}

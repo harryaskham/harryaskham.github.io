@@ -1,2 +1,0 @@
-screenshots=54
-page_snapshots=34

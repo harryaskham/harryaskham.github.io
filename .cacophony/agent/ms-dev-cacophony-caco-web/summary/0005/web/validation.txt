@@ -1,8 +1,0 @@
-Validation evidence for bd-706248:
-
-- Visual probe: `web/screenshots/mobile-workspace.png` and `web/visual-probe.json` captured duplicate reconnect toasts stacking over mobile Workspace controls before the fix.
-- Playwright after-probe: injected the same reconnect toast three times on mobile and desktop; `web/toast-dedupe-mobile.json` and `web/toast-dedupe-desktop.json` both record `count: 1`.
-- After screenshots: `web/screenshots/toast-dedupe-mobile.png` and `web/screenshots/toast-dedupe-desktop.png` show one coalesced reconnect toast rather than a stack of duplicates.
-- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib toast_dismiss_removes_dom_and_listener_references_bd_034ab8" --cwd "$PWD"` -> tj-bb23ba4e passed.
-- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-ce9708e3 succeeded.
-- Source whitespace check: `git diff --check` passed.

@@ -1,5 +1,0 @@
-1718:    overlay.setAttribute('aria-modal', 'true');
-4210:    ov.setAttribute('aria-modal', 'true');
-4676:        overlay.setAttribute('aria-modal', 'true');
-6845:    overlay.setAttribute('aria-modal', 'true');
-10015:        overlay.setAttribute('aria-modal', 'true');

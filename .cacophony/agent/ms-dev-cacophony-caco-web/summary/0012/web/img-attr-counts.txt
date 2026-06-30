@@ -1,1 +1,0 @@
-app.js: total=9 with_loading=9 with_decoding=9

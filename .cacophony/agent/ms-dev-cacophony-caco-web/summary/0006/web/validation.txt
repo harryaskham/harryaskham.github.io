@@ -1,8 +1,0 @@
-Validation evidence for bd-15213f:
-
-- Before mobile screenshots: `web/screenshots/mobile-status.png` and `web/screenshots/mobile-beads.png` show the single reconnect toast anchored near the top and covering primary Status/Beads controls.
-- After Playwright probe: `web/mobile-toast-bottom-after.json` records the toast container at y=758/bottom=828 in a 390x844 viewport, with `topbarClear: true` and `toastCount: 1`.
-- After screenshot: `web/screenshots/mobile-toast-bottom-after.png` shows the reconnect toast bottom-anchored instead of covering the topbar, Refresh button, or hero controls.
-- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib css_has_toast_styling" --cwd "$PWD"` -> tj-fc9bb83e passed.
-- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-fdbd0693 succeeded.
-- Source whitespace check: `git diff --check` passed.

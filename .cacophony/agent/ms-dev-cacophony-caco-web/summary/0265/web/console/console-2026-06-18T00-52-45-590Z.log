@@ -1,2 +1,0 @@
-[    2547ms] [ERROR] WebSocket connection to 'ws://127.0.0.1:43679/session' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:63975/app.js:9727
-[    3550ms] [ERROR] WebSocket connection to 'ws://127.0.0.1:43679/session' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:63975/app.js:9727

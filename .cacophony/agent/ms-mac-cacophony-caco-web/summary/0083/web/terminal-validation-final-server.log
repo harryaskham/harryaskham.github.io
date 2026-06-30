@@ -1,9 +1,0 @@
-[caco-web-dev] serving /Users/harryaskham/.cacophony/agents/cacophony/ms-mac-cacophony-caco-web/checkout/crates/caco-web/static at http://127.0.0.1:41880 (proxy daemon: http://127.0.0.1:11100)
-[caco-web-dev] pass --port 0 for parallel-safe OS-assigned ports
-[caco-web] req=1 GET /health -> 200 0ms
-[caco-web] req=2 GET /agent/ms-mac-cacophony-caco-web/terminal -> 200 10ms
-[caco-web] req=3 GET /vendor/xterm/xterm.min.css -> 200 6ms
-[caco-web] req=4 GET /vendor/xterm/xterm.min.js -> 200 0ms
-[caco-web] req=5 GET /vendor/xterm/xterm-addon-fit.min.js -> 200 0ms
-[caco-web] req=6 GET /terminal.js -> 200 1ms
-[caco-web] req=7 GET /api/v1/agents/ms-mac-cacophony-caco-web/pty -> 101 0ms

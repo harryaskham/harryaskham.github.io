@@ -1,8 +1,0 @@
-# post-create queued followup
-2026-04-28T02:12:19+01:00
-## assigned in-progress
-error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=in_progress&limit=2000)
-## open caco-web
-error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads?status=open&ready=true&label=caco-web&limit=30)
-## search snapshot 502
-error: failed to reach authoritative daemon: error sending request for url (https://100.83.90.42:12100/api/v1/projects/cacophony/beads)

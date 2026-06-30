@@ -1,9 +1,0 @@
-claimed: bd-ead437 — Add first-party comprehensive caco-web route audit helper (assignee: cacophony:ms-mac-cacophony-caco-web)
-[35mbd-ead437[0m  [1mAdd first-party comprehensive caco-web route audit helper[0m
-  [34mstatus:[0m       [32min_progress[0m
-  [34mpriority:[0m     P3
-  [34mtype:[0m         task
-  [34massignee:[0m     cacophony:ms-mac-cacophony-caco-web
-  [34mlabels:[0m       caco-web, playwright, tests, workflow
-  [34mcreated:[0m      [2m2026-04-27T23:33:56.549913156Z (5m ago)[0m
-  [34mdescription:[0m  During bd-f02d90 / caco-web duty cycle 0111, Harry asked caco-web to navigate basically every webapp screen, file claimed beads for all issues, and then fix the batch. I updated the profile, but the actual comprehensive pass required a long ad-hoc shell loop and had a brittle pane-type parsing bug: the first and last Workspace pane type were parsed as '"terminal' and 'crons"' from a JSON string. This should become a first-party caco-web-observe mode or script that visits all main routes and Workspace pane types, writes structured audit.json/audit.md, copies screenshots into the summary dir, and avoids fragile shell quoting. Evidence: .cacophony/agent/ms-mac-cacophony-caco-web/summary/0111/web/comprehensive-audit.log around the workspace pane sweep. Filed via reflect-session mixin from bd-f02d90 session.

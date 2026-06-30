@@ -1,9 +1,0 @@
-Validation evidence for bd-37abab:
-
-- Before screenshot: `web/screenshots/sidebar-desktop.png` shows the desktop fullscreen toggle clipped at the sidebar/content seam.
-- Before DOM probe: `web/sidebar-probe.json` records `#app-fullscreen-toggle` computed as `position: relative`, x=222, y=14, because the generic `[data-tooltip]` rule overrode fixed positioning.
-- After screenshot: `web/screenshots/sidebar-desktop-after.png` shows the toggle restored to the top-right viewport corner.
-- After DOM probe: `web/sidebar-after-probe.json` records `position: fixed`, right=18px, x=1317.5 at 1440px viewport.
-- Queued targeted test: `caco test run --wait --command "cargo test -p caco-web --lib style_css_keeps_status_hero_expand_button_absolute_after_tooltip_rule_bd_8c4e7e" --cwd "$PWD"` -> tj-b143abf5 passed.
-- Queued build smoke: `caco build run --wait --command "cargo check -p caco-web --all-targets" --cwd "$PWD"` -> bj-e0a82d79 succeeded.
-- Source whitespace check: `git diff --check` passed.
