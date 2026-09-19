@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101010">
+  <meta name="description" content="All-Star Pars. On repeat.">
+  <meta property="og:title" content="All-Star Pars">
+  <meta property="og:description" content="The mixtape. On repeat.">
+  <meta property="og:type" content="music.song">
+  <meta property="og:url" content="https://a.skh.am/par/">
+  <meta property="og:image" content="https://a.skh.am/par/artwork.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>All-Star Pars</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="player.js" type="module"></script>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+  <main class="record" aria-labelledby="title">
+    <h1 id="title" class="visually-hidden">All-Star Pars</h1>
+    <img class="artwork" src="artwork.png" width="1024" height="1024"
+      alt="Black-and-white All-Star Pars mixtape cover, with red lettering and a man holding a microphone."
+      fetchpriority="high">
+    <audio id="audio" src="par.mp3" controls loop preload="metadata" aria-label="All-Star Pars"></audio>
+    <section id="player" class="player" aria-label="Audio player" hidden>
+      <button id="toggle" type="button" aria-label="Play" data-playing="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="play-icon" d="M6 3 21 12 6 21Z"/>
+          <path class="pause-icon" d="M5 3H10V21H5ZM14 3H19V21H14Z"/>
+        </svg>
+        <span id="play-label">Play</span>
+      </button>
+      <div class="timeline">
+        <div class="readout" aria-hidden="true">
+          <span id="elapsed">0:00</span>
+          <span class="repeat">
+            <svg viewBox="0 0 24 24"><path d="m16 2 4 4-4 4M4 11V9a3 3 0 0 1 3-3h13M8 22l-4-4 4-4m12-1v2a3 3 0 0 1-3 3H4"/></svg>
+            On repeat
+          </span>
+          <span id="duration">—:——</span>
+        </div>
+        <input id="seek" type="range" min="0" max="100" step="0.1" value="0"
+          aria-label="Playback position" aria-valuetext="0:00" disabled>
+      </div>
+      <div class="feedback" hidden>
+        <p id="status" role="status"></p>
+        <a id="download" href="par.mp3" hidden>Open MP3</a>
+      </div>
+    </section>
+    <span class="visually-hidden">Audio repeats automatically.</span>
+  </main>
+</body>
+</html>

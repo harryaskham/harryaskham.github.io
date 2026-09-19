@@ -6,16 +6,13 @@ import hashlib
 import json
 import re
 
-ROOT = Path(__file__).resolve().parents[1] / "alex"
+ROOT = Path(__file__).resolve().parents[1] / "static" / "alex"
 
 
 class Links(HTMLParser):
     def handle_starttag(self, tag, attrs):
         for key, value in attrs:
             if key not in ("src", "href", "srcset") or not value or value.startswith("data:"):
-                continue
-            if tag == "base":
-                assert value == "/alex/"
                 continue
             assert not value.startswith(("/", "http:", "https:")), value
             assert (ROOT / value).is_file(), value

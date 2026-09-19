@@ -3,7 +3,7 @@
 from pathlib import Path
 from PIL import Image, ImageDraw
 
-OUT = Path(__file__).resolve().parents[1] / "alex" / "images"
+OUT = Path(__file__).resolve().parents[1] / "static" / "alex" / "images"
 OUT.mkdir(exist_ok=True)
 BG = (7, 4, 37)
 PINK, CYAN, GOLD, WHITE = "#ff5cce", "#62f5ff", "#fff568", "#ffffff"

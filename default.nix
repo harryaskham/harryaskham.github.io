@@ -12,7 +12,7 @@ let jekyll_env = bundlerEnv rec {
 in
   stdenv.mkDerivation rec {
     name = "harryaskham.gs";
-    buildInputs = [ jekyll_env bundler ruby ];
+    buildInputs = [ jekyll_env bundler ruby python3 ];
 
     shellHook = ''
       echo "Jekyll dev environment ready. Run 'make dev' or './scripts/dev' to start."
