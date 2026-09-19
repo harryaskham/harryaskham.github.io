@@ -41,5 +41,7 @@ desktop/mobile finals are also in the Pi image preview gallery.
   so relative assets also work in branch previews.
 - Nix Jekyll production build passed; every static file matched its root-mounted
   output byte-for-byte, with no `/static/` duplicate. Routing tests covered preview
-  base URLs, changes, deletion cleanup, and rejection of output collisions.
+  base URLs, same-second edits, deletion cleanup, and rejection of output collisions.
+  CI exposed Jekyll 4's whole-second mtime cache; the mapping preserves timestamp
+  precision, and a deterministic regression test fails under the old behavior.
 - Safari/WebKit was not tested: its Playwright browser is not installed locally.

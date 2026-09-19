@@ -2,6 +2,12 @@
 # Applies to both `jekyll build` and `jekyll serve` (including branch previews).
 module RootStatic
   class File < Jekyll::StaticFile
+    # Jekyll 4 truncates mtimes to seconds; retain sub-second edits on rebuild.
+    # Time is also accepted by the parent's File.utime call when copying.
+    def mtime
+      modified_time
+    end
+
     def destination(dest)
       ::File.join(dest, relative_path.sub(%r{\A/static/}, ''))
     end

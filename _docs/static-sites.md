@@ -28,7 +28,9 @@ python3 scripts/check-static.py # source, media budgets, local links + Alex hash
 
 The build script and deployment validate the root mapping and compare every
 static asset byte-for-byte against the generated site. Routing tests also cover
-branch-preview base URLs, edits, deletion cleanup and output collisions.
+branch-preview base URLs, same-second edits, deletion cleanup and output collisions.
+The static-file mapping retains sub-second mtimes so fast local edits are not lost
+to Jekyll 4's whole-second modification-time cache.
 
 The Nix environment uses `<nixpkgs>` from your Nix configuration. If that configured
 registry is unavailable, `nix-shell -I nixpkgs=/path/to/a/cached/nixpkgs --run ...`

@@ -18,6 +18,11 @@ Dir.mktmpdir('root-static-test-') do |root|
   write.call('static/beta/index.html', '<h1>Beta</h1>')
   write.call('statically/keep.txt', 'Not a static/ subsite')
   write.call('index.html', "---\n---\nHome")
+  alpha = File.join(source, 'static/alpha/index.html')
+  # Distinct sub-second mtimes make the fast-rebuild regression deterministic.
+  before = Time.at(1_600_000_000, 100_000)
+  after = Time.at(1_600_000_000, 900_000)
+  File.utime(before, before, alpha)
 
   build = lambda do |baseurl = ''|
     Jekyll::Site.new(Jekyll.configuration(
@@ -39,6 +44,7 @@ Dir.mktmpdir('root-static-test-') do |root|
 
   File.delete(File.join(source, 'static/beta/index.html'))
   write.call('static/alpha/index.html', '<h1>Updated</h1>')
+  File.utime(after, after, alpha)
   build.call
   raise 'Deleted page survived rebuild' if File.exist?(File.join(destination, 'beta/index.html'))
   raise 'Changed page was not rebuilt' unless File.read(File.join(destination, 'alpha/index.html')) == '<h1>Updated</h1>'
@@ -51,4 +57,4 @@ Dir.mktmpdir('root-static-test-') do |root|
     raise unless error.message.include?('Static site output collision')
   end
 end
-puts 'Static routing: root + preview URLs, byte preservation, rebuild cleanup and collision checks passed'
+puts 'Static routing: root + preview URLs, byte preservation, same-second edits, rebuild cleanup and collision checks passed'
