@@ -3,8 +3,12 @@
 The live source branch is **main**, not the old master branch. GitHub Pages serves
 `gh-pages`, which the existing Jekyll deployment rebuilds from source.
 
-Keep each standalone page in `static/<name>/index.html`, with its own relative
-CSS, scripts, images and audio links:
+For the complete add/test/publish workflow, use the repository skill
+[**root-spa**](../.agents/skills/root-spa/SKILL.md).
+
+**No registry or per-page configuration is required.** Keep each standalone page
+in `static/<name>/index.html`, with its own relative CSS, scripts, images and audio
+links; the plugin and validator discover new directories automatically:
 
 | Source | Live URL |
 | --- | --- |
@@ -17,6 +21,8 @@ both `jekyll build` and `jekyll serve`. It does not add redirects or a second
 files work under `/preview/<branch>/<name>/` because all asset links are relative.
 Keep standalone HTML free of Jekyll front matter; these files are copied verbatim.
 Hidden/underscore paths and symlinks are intentionally disallowed by validation.
+This is static hosting, not a server-side SPA fallback: use hash routing or create
+real static entrypoints for deep links such as `/foo/settings/`.
 
 ## Local development and checks
 
