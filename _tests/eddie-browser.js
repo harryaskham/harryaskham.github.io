@@ -5,7 +5,10 @@ async page => {
   const failed = [];
   let stage = 'initial load';
   const onError = error => errors.push(error.message);
-  const onFailed = request => failed.push(request.url());
+  const onFailed = request => {
+    // Closing a disposable no-JS context can cancel Chromium's low-priority favicon fetch.
+    if (!(request.url().endsWith('/images/favicon.png') && request.failure()?.errorText === 'net::ERR_ABORTED')) failed.push(request.url());
+  };
   const check = (condition, message) => { if (!condition) throw new Error(message); };
   const state = () => page.evaluate(() => {
     const slides = [...document.querySelectorAll('.slide')];
