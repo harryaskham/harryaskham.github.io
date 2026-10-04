@@ -64,7 +64,7 @@ async page => {
       const src = new URL(frame.src);
       return { host: src.host, path: src.pathname, params: Object.fromEntries(src.searchParams), title: frame.title, allow: frame.allow };
     });
-    check(video.host === 'www.youtube-nocookie.com' && video.path === '/embed/VkTVM8ywdTo' && video.params.autoplay === '1' && video.params.mute === '1' && video.params.loop === '1' && video.params.playlist === 'VkTVM8ywdTo' && video.params.playsinline === '1' && video.title && video.allow.includes('autoplay'), `Video embed ${JSON.stringify(video)}`);
+    check(video.host === 'www.youtube-nocookie.com' && video.path === '/embed/VkTVM8ywdTo' && !('autoplay' in video.params) && !('mute' in video.params) && video.params.loop === '1' && video.params.playlist === 'VkTVM8ywdTo' && video.params.playsinline === '1' && video.title && video.allow.includes('autoplay'), `Video embed ${JSON.stringify(video)}`);
 
     stage = 'layout';
     for (const [width, height, fit, backdrop] of [[1920, 1080, 'cover', false], [1440, 900, 'cover', false], [390, 844, 'contain', true], [360, 640, 'contain', true], [1024, 768, 'contain', true], [844, 390, 'contain', true], [2560, 1080, 'contain', true]]) {
@@ -145,7 +145,7 @@ async page => {
     const unexpected = failed.filter(request => !request.includes('02-pub-mirrorverse'));
     check(errors.length === 0, `JavaScript errors: ${errors.join('; ')}`);
     check(unexpected.length === 0, `Failed requests: ${unexpected.join('; ')}`);
-    return { passed: true, slides: names.length, viewports: 7, checks: ['all images', 'YouTube loop embed', 'video placement', 'responsive fit', '10s loop', 'fade cleanup', 'wrap', 'pause/resume', 'keyboard', 'reduced motion', 'broken image skip', 'no-JS'] };
+    return { passed: true, slides: names.length, viewports: 7, checks: ['all images', 'click-to-play looping YouTube embed', 'video placement', 'responsive fit', '10s loop', 'fade cleanup', 'wrap', 'pause/resume', 'keyboard', 'reduced motion', 'broken image skip', 'no-JS'] };
   } catch (error) {
     throw new Error(`${stage}: ${error.message}`);
   } finally {
