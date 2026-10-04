@@ -6,6 +6,8 @@ async page => {
   let stage = 'initial load';
   const onError = error => errors.push(error.message);
   const onFailed = request => {
+    // Third-party player telemetry is outside this page's contract.
+    if (new URL(request.url()).origin !== new URL(url).origin) return;
     // Closing a disposable no-JS context can cancel Chromium's low-priority favicon fetch.
     if (!(request.url().endsWith('/images/favicon.png') && request.failure()?.errorText === 'net::ERR_ABORTED')) failed.push(request.url());
   };
@@ -58,21 +60,36 @@ async page => {
     let s = await state();
     check(s.count === names.length && s.current === 1 && s.index === 0, `Initial state ${JSON.stringify(s)}`);
     check(await page.getByRole('button', { name: 'Pause slideshow' }).isVisible(), 'Pause control missing');
+    const video = await page.locator('#video-slot iframe').evaluate(frame => {
+      const src = new URL(frame.src);
+      return { host: src.host, path: src.pathname, params: Object.fromEntries(src.searchParams), title: frame.title, allow: frame.allow };
+    });
+    check(video.host === 'www.youtube-nocookie.com' && video.path === '/embed/VkTVM8ywdTo' && video.params.autoplay === '1' && video.params.mute === '1' && video.params.loop === '1' && video.params.playlist === 'VkTVM8ywdTo' && video.params.playsinline === '1' && video.title && video.allow.includes('autoplay'), `Video embed ${JSON.stringify(video)}`);
 
     stage = 'layout';
-    for (const [width, height, fit, backdrop] of [[1920, 1080, 'cover', false], [1440, 900, 'cover', false], [390, 844, 'contain', true], [1024, 768, 'contain', true], [844, 390, 'contain', true], [2560, 1080, 'contain', true]]) {
+    for (const [width, height, fit, backdrop] of [[1920, 1080, 'cover', false], [1440, 900, 'cover', false], [390, 844, 'contain', true], [360, 640, 'contain', true], [1024, 768, 'contain', true], [844, 390, 'contain', true], [2560, 1080, 'contain', true]]) {
       await page.setViewportSize({ width, height });
       const layout = await page.evaluate(() => {
         const slide = document.querySelector('.slide.is-current');
         const photo = slide.querySelector('.photo').getBoundingClientRect();
+        const video = document.querySelector('#video-slot').getBoundingClientRect();
+        const toggle = document.querySelector('#toggle').getBoundingClientRect();
+        const portrait = innerWidth <= innerHeight;
+        const bandHeight = (portrait ? innerWidth * 1.1 : photo.width) * 9 / 16;
+        const bandTop = innerHeight / 2 - bandHeight / 2;
         return {
           overflow: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight,
           fills: photo.left <= 0 && photo.top <= 0 && photo.right >= innerWidth && photo.bottom >= innerHeight,
           fit: getComputedStyle(slide.querySelector('.photo')).objectFit,
           backdrop: getComputedStyle(slide.querySelector('.backdrop')).display !== 'none',
+          videoInside: video.left >= 0 && video.top >= 0 && video.right <= innerWidth && video.bottom <= innerHeight,
+          videoRatio: Math.abs(video.width / video.height - 16 / 9) < .02,
+          videoTarget: portrait || Math.abs(video.height - innerHeight * .3) < 2,
+          clearsHeadline: portrait ? video.top >= bandTop + bandHeight / 2 : video.top >= innerHeight * .3,
+          clearsToggle: video.bottom <= toggle.top || video.right <= toggle.left,
         };
       });
-      check(!layout.overflow && layout.fills && layout.fit === fit && layout.backdrop === backdrop, `Layout ${width}x${height}: ${JSON.stringify(layout)}`);
+      check(!layout.overflow && layout.fills && layout.fit === fit && layout.backdrop === backdrop && layout.videoInside && layout.videoRatio && layout.videoTarget && layout.clearsHeadline && layout.clearsToggle, `Layout ${width}x${height}: ${JSON.stringify(layout)}`);
       await page.screenshot({ path: `eddie-${width}x${height}.png`, animations: 'disabled' });
     }
 
@@ -121,13 +138,14 @@ async page => {
       await fallback.waitForFunction(() => document.querySelector('.photo').complete && document.querySelector('.photo').naturalWidth);
       check(await fallback.locator('.slide').count() === 1, 'No-JS slide count');
       check(await fallback.locator('#toggle').isHidden(), 'No-JS control visible');
+      check(await fallback.locator('#video-slot iframe').isVisible(), 'No-JS video missing');
       await fallback.screenshot({ path: 'eddie-no-js-390x844.png' });
     } finally { await fallbackContext.close(); }
 
     const unexpected = failed.filter(request => !request.includes('02-pub-mirrorverse'));
     check(errors.length === 0, `JavaScript errors: ${errors.join('; ')}`);
     check(unexpected.length === 0, `Failed requests: ${unexpected.join('; ')}`);
-    return { passed: true, slides: names.length, viewports: 6, checks: ['all images', 'responsive fit', '10s loop', 'fade cleanup', 'wrap', 'pause/resume', 'keyboard', 'reduced motion', 'broken image skip', 'no-JS'] };
+    return { passed: true, slides: names.length, viewports: 7, checks: ['all images', 'YouTube loop embed', 'video placement', 'responsive fit', '10s loop', 'fade cleanup', 'wrap', 'pause/resume', 'keyboard', 'reduced motion', 'broken image skip', 'no-JS'] };
   } catch (error) {
     throw new Error(`${stage}: ${error.message}`);
   } finally {

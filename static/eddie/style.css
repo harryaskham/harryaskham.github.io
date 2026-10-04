@@ -61,9 +61,13 @@ body { font-family: ui-sans-serif, system-ui, sans-serif; }
   }
 }
 
-.video-slot { position: absolute; z-index: 4; top: 50%; left: 50%; height: var(--video-height); max-width: 92vw; aspect-ratio: 16 / 9; transform: translate(-50%, -50%); overflow: hidden; border-radius: 6px; background: #000; box-shadow: 0 22px 60px rgb(0 0 0 / 50%); }
+.video-slot { --video-width: min(92vw, calc(var(--video-height) * 16 / 9)); --video-box-height: calc(var(--video-width) * 9 / 16); position: absolute; z-index: 4; top: 50%; left: 50%; width: var(--video-width); aspect-ratio: 16 / 9; transform: translate(-50%, -50%); overflow: hidden; border-radius: 6px; background: #000; box-shadow: 0 22px 60px rgb(0 0 0 / 50%); }
 .video-slot[hidden] { display: none; }
 .video-slot iframe { display: block; width: 100%; height: 100%; border: 0; }
+/* The artwork headline sits mid-screen on phones, so the video moves below it. */
+@media (max-aspect-ratio: 1/1) {
+  .video-slot { top: min(calc(50% + 30.9375vw + 18px), calc(100% - var(--video-box-height) - 76px - env(safe-area-inset-bottom))); transform: translateX(-50%); }
+}
 
 .toggle { position: absolute; z-index: 5; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 1px solid var(--edge); border-radius: 50%; background: var(--glass); color: var(--ink); cursor: pointer; opacity: .38; backdrop-filter: blur(8px); transition: opacity .2s ease, background-color .2s ease, transform .2s ease; }
 .toggle[hidden] { display: none; }
