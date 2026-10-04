@@ -61,9 +61,9 @@ build output before publication; final verification must also check live HTTPS.
 Eddie's birthday page crossfades ten 4K WebP montages every 10 seconds. Phones
 and very wide displays use the whole image over a blurred backdrop so the headline
 stays visible. A click-to-play, looping YouTube embed with sound sits centred at
-30% viewport height on landscape screens and below the headline on portrait phones. Its browser check
-uses a fake clock to cover the full loop, pause/resume, reduced motion, image
-failure, video placement and no-JS fallback:
+30% viewport height on landscape screens and below the headline on portrait
+phones. Its browser check uses a fake clock to cover the full loop, pause/resume,
+reduced motion, image failure, video placement and no-JS fallback:
 
 ```sh
 playwright-cli -s=eddie-check run-code --filename=/absolute/path/to/_tests/eddie-browser.js
