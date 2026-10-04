@@ -14,6 +14,7 @@ links; the plugin and validator discover new directories automatically:
 | --- | --- |
 | `static/alex/` | <https://a.skh.am/alex/> |
 | `static/par/` | <https://a.skh.am/par/> |
+| `static/eddie/` | <https://a.skh.am/eddie/> |
 
 `_plugins/root_static.rb` strips `static/` from static-file destinations during
 both `jekyll build` and `jekyll serve`. It does not add redirects or a second
@@ -56,3 +57,13 @@ playwright-cli -s=par-check run-code --filename=/absolute/path/to/_tests/par-bro
 This verifies playback, pause/resume, looping, seeking, rapid input, network error
 recovery, reduced motion, and representative viewport sizes. Run it against local
 build output before publication; final verification must also check live HTTPS.
+
+Eddie's birthday page crossfades ten 4K WebP montages every 10 seconds. Phones
+and very wide displays use the whole image over a blurred backdrop so the headline
+stays visible. A hidden, centred `#video-slot` is already sized to 30% of viewport
+height for a later YouTube iframe. Its browser check uses a fake clock to cover
+the full loop, pause/resume, reduced motion, image failure and no-JS fallback:
+
+```sh
+playwright-cli -s=eddie-check run-code --filename=/absolute/path/to/_tests/eddie-browser.js
+```
