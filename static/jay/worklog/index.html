@@ -191,6 +191,8 @@ bare test page, 4 busy workers, no Jay code: clock 0.30–0.67× realtime (headl
 <span class="ok">✓</span> interrupted dictation recovered after a reload mid-recording
 <span class="ok">✓</span> deleted-while-transcribing clip stays deleted after reload
 <span class="ok">✓</span> full backup → erase everything → restore: audio plays, sonograms regenerated
+<span class="ok">✓</span> edit suggests a correction · correction applied to the next transcript · WebVTT export
+<span class="ok">✓</span> hung engine detected; clip failed cleanly · Try again transcribes on the restarted engine
 <b>speed in the browser</b> (8-core-class laptop)
 Moonshine Tiny  28 s of audio in 2.2 s  (≈13× realtime) · model warm in &lt;1 s from cache
 MedASR          43.8 s radiology in 5.1 s (≈9× realtime) · 108 MB download + compile ≈ 4.4 s
@@ -209,6 +211,15 @@ cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
 <div class="bug"><h3>WebKit could not store audio at all</h3><p>Putting a <code>Blob</code> into IndexedDB failed outright, as it does on older Safari. Every upload stalled on “queued”.</p><p class="fix">probe once; where Blobs fail, store audio as an <code>ArrayBuffer</code> + type + name and rebuild the Blob on read. No other code needed to change.</p></div>
 <div class="bug"><h3><code>decodeAudioData</code> never resolved</h3><p>In the Linux WebKit build, decoding hung forever, leaving an endless “Transcribing…”.</p><p class="fix">a native RIFF/WAVE reader (PCM 8/16/24/32, float, extensible) with a windowed-sinc resampler. Jay’s own 16 kHz recordings now skip the codec entirely. Anything else gets a timeout and a clear error instead of a spinner.</p></div>
 
+<h2>Working like a clinician would</h2>
+<p>Fix a misheard term once and Jay offers to remember it. Every later transcript, live or uploaded, comes out corrected, and existing notes can be fixed in one click:</p>
+<pre><b>edit</b>   "The diagnosis includes <span class="bad">colesus-itis</span> gastritis…" → "<span class="ok">cholecystitis</span>"
+<b>toast</b>  Always write “colesus-itis” as “cholecystitis”?  [Remember]
+<b>rules</b>  word-boundary, case-aware: "Colesus-itis noted. PE suspected; rule out PE."
+       → "Cholecystitis noted. Pulmonary embolism suspected; rule out pulmonary embolism."</pre>
+<p class="dim">Also new: copy pastes into notes and EHR fields as formatted paragraphs with bold report headings. Exports add WebVTT subtitles. The screen stays awake while dictating. A muted or wrong microphone is flagged after a few seconds of silence. A full disk keeps the transcript and says so.</p>
+<div class="bug"><h3>A transcription that never finishes</h3><p>In one test run the engine went quiet mid-job and the clip sat on “Transcribing…”. It never happened again in dozens of runs, but a clinical note must never be stranded.</p><p class="fix">a watchdog: if the engine says nothing about a job for 2 minutes (outside model downloads), Jay restarts it. The clip fails with “Try again”, or, for a finished dictation, is re-transcribed from its saved audio. The test suite hangs the engine on purpose and checks this.</p></div>
+
 <h2>Timeline</h2>
 <ol class="time">
   <li><span class="t">09:20</span><span>Brief. Read the repo’s static-SPA process; sized Parakeet, MedASR, Moonshine, Whisper and the ORT builds.</span></li>
@@ -218,6 +229,7 @@ cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
   <li><span class="t">10:22</span><span><b>v1 live</b> on main → GitHub Pages. Live HTTPS run passed, MedASR included.</span></li>
   <li><span class="t">11:30</span><span><b>v2</b>: audio-starvation recovery, crash recovery, report sections, accessibility fixes, this log.</span></li>
   <li><span class="t">11:40</span><span><b>v3</b>: Firefox and WebKit pass end-to-end; Safari-safe audio storage and WAV decoding.</span></li>
+  <li><span class="t">12:10</span><span><b>v4</b>: corrections learned from your edits, paste-ready rich copy, WebVTT, screen wake lock, no-mic warning, storage-full handling, keyboard sheet, and a stall watchdog.</span></li>
 </ol>
 
 <footer>Built by an AI coding agent in pi, working in this repo · audio in screenshots is from public MedASR test clips · not linked from the app</footer>

@@ -539,6 +539,8 @@ onmessage = async ({ data: d }) => {
       case "cache-status": post({ type: "cache-status", status: await cacheStatus(d.specs) }); break;
       case "delete-model": await deleteModel(d.spec); post({ type: "cache-status", status: await cacheStatus(d.specs || []) }); break;
       case "runtime": post({ type: "runtime", info: await initRuntime() }); break;
+      case "debug-hang": enqueue(0, () => new Promise(() => {})); break;
+      case "debug": post({ type: "debug", busy, queue: queue.map((q) => [q.prio, q.tag ? "partial" : "job"]), model: model?.id || null, loading: loading?.id || null, lives: [...lives.keys()] }); break;
     }
   } catch (e) {
     const msg = String(e?.message || e);

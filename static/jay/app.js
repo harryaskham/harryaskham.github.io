@@ -59,10 +59,35 @@ const BUILTIN = [
 // ── Preferences ──────────────────────────────────────────────────────────
 const PREF_KEY = "jay.prefs";
 const prefs = Object.assign(
-  { model: "moonshine-tiny", theme: "system", mic: "", noise: true, pause: 0.6, commands: false, timestamps: true, preload: true, custom: [], rate: 1 },
+  { model: "moonshine-tiny", theme: "system", mic: "", noise: true, pause: 0.6, commands: false, timestamps: true, preload: true, custom: [], rate: 1, corrections: [] },
   JSON.parse(localStorage.getItem(PREF_KEY) || "{}"),
 );
 const savePrefs = () => localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+
+// ── Corrections: "heard → write" rules applied to every new transcript ──────
+let corrCache = { key: "", rules: [] };
+function correctionRules() {
+  const key = JSON.stringify(prefs.corrections);
+  if (key === corrCache.key) return corrCache.rules;
+  const rules = prefs.corrections.filter((r) => r.from?.trim() && r.to != null).map((r) => ({
+    re: new RegExp(`(?<![\\p{L}\\p{N}])${r.from.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}(?![\\p{L}\\p{N}])`, "giu"),
+    to: r.to,
+  }));
+  corrCache = { key, rules };
+  return rules;
+}
+function applyCorrections(text) {
+  for (const { re, to } of correctionRules()) {
+    // Capitalise only where a sentence starts (or the heard word was Title-case), never for mid-sentence acronyms.
+    text = text.replace(re, (m, off, all) => {
+      const start = off === 0 || /[.?!:]\s*$|\n\s*$/.test(all.slice(Math.max(0, off - 3), off));
+      const title = /^\p{Lu}\p{Ll}/u.test(m);
+      return (start || title) && /^\p{Ll}/u.test(to) ? to[0].toUpperCase() + to.slice(1) : to;
+    });
+  }
+  return text;
+}
+const correctSegs = (segs) => (prefs.corrections.length ? segs.map((x) => ({ ...x, text: applyCorrections(x.text) })) : segs);
 const allModels = () => [...BUILTIN, ...prefs.custom];
 const modelById = (id) => allModels().find((m) => m.id === id) || BUILTIN[0];
 const current = () => modelById(prefs.model);
@@ -82,17 +107,20 @@ const saveSession = (s) => db.put("sessions", s);
 // ── Worker ───────────────────────────────────────────────────────────────
 let W;
 const jobs = new Map();
+const jobSeen = new Map(); // job → last time the engine said anything about it
 function worker() {
   if (W) return W;
   W = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
   const debug = localStorage.getItem("jay.debug");
+  if (debug) self.jayWorker = () => W;
   W.onmessage = ({ data: m }) => {
-    if (debug && m.type !== "model") console.debug("[jay]", m.type, m.job || "", m.text ?? m.segments?.map((x) => x.text).join(" | ") ?? m.error ?? "");
+    if (debug) console.debug("[jay]", m.type, m.job || "", m.text ?? m.segments?.map((x) => x.text).join(" | ") ?? m.error ?? "");
     if (m.type === "model") onModel(m);
     else if (m.type === "runtime") { S.runtime = m.info; renderSettingsIfOpen(); }
     else if (m.type === "fatal") restartWorker(m.error);
+    else if (m.type === "debug") console.debug("[jay] worker", JSON.stringify(m));
     else if (m.type === "cache-status") { Object.assign(S.cache, m.status); renderSettingsIfOpen(); renderEmptyIfShown(); }
-    else if (m.job && jobs.has(m.job)) jobs.get(m.job)(m);
+    else if (m.job && jobs.has(m.job)) { jobSeen.set(m.job, Date.now()); jobs.get(m.job)(m); }
   };
   if (localStorage.getItem("jay.threads")) W.postMessage({ type: "config", threads: +localStorage.getItem("jay.threads") });
   W.onerror = (e) => { e.preventDefault?.(); restartWorker(e.message || "engine error"); };
@@ -104,15 +132,16 @@ function restartWorker(reason) {
   try { W?.terminate(); } catch {}
   W = null;
   for (const id of Object.keys(S.model)) if (S.model[id].state !== "error") delete S.model[id];
-  const live = S.rec?.job;
+  const live = S.rec && !S.rec.stopping ? S.rec.job : null;
   for (const [job, fn] of [...jobs]) {
     if (job === live) { S.rec.crashed = true; continue; }
+    if (S.recStopping?.job === job) { S.recStopping.crashed = true; fn({ type: "live-done", job }); continue; }
     fn({ type: "job-error", job, error: "The transcription engine restarted — try again" });
     jobs.delete(job);
   }
   toast("Transcription engine restarted");
   renderChip();
-  if (S.rec) { worker().postMessage({ type: "live-start", job: live, spec: specOf(modelById(S.rec.turn.model)), opts: S.rec.opts }); }
+  if (live) { worker().postMessage({ type: "live-start", job: live, spec: specOf(modelById(S.rec.turn.model)), opts: S.rec.opts }); }
 }
 function onModel(m) {
   m.at = Date.now();
@@ -131,6 +160,17 @@ function ensureModel(m = current()) {
   renderChip();
 }
 // A load that goes silent (no progress for 3 min) becomes a retryable error, never an endless spinner.
+// Likewise a transcription the engine stops talking about for 2 min restarts the engine; the clip
+// fails with "Try again" (or, for a stopped dictation, re-transcribes from its saved audio).
+setInterval(() => {
+  const loadingAny = Object.values(S.model).some((m) => m.state === "loading");
+  if (!W || loadingAny) { for (const j of jobs.keys()) jobSeen.set(j, Date.now()); return; }
+  for (const j of jobs.keys()) {
+    if (S.rec?.job === j && !S.rec.stopping) { jobSeen.set(j, Date.now()); continue; }
+    if (!jobSeen.has(j)) jobSeen.set(j, Date.now());
+    if (Date.now() - jobSeen.get(j) > (+localStorage.getItem("jay.stall") || 120000)) { jobSeen.clear(); restartWorker("transcription stalled"); return; }
+  }
+}, localStorage.getItem("jay.stall") ? 1000 : 10000);
 setInterval(() => {
   for (const st of Object.values(S.model)) {
     if (st.state === "loading" && Date.now() - (st.at || 0) > 180000) {
@@ -535,6 +575,18 @@ function route() {
 addEventListener("hashchange", route);
 
 // ── Recording ────────────────────────────────────────────────────────────
+let wakeLock = null;
+/** Keep the screen on while dictating so phones don't sleep mid-sentence. */
+async function wake(on) {
+  try {
+    if (!on) { await wakeLock?.release(); wakeLock = null; return; }
+    if ("wakeLock" in navigator && !wakeLock && document.visibilityState === "visible") {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    }
+  } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (S.rec && document.visibilityState === "visible") wake(true); });
 async function startRec() {
   if (S.rec || S.starting) return;
   if (!navigator.mediaDevices?.getUserMedia) return toast("Microphone access isn’t available in this browser");
@@ -565,6 +617,7 @@ async function startRec() {
     ctx.opts = { pause: prefs.pause, commands: prefs.commands, maxSeg: m.kind === "moonshine" ? 15 : 24 };
     worker().postMessage({ type: "live-start", job, spec: specOf(m), opts: ctx.opts });
     ctx.flushTimer = setInterval(() => flushPcm(ctx), 4000);
+    wake(true);
     appendTurn(t);
     setRecUI(true);
     renderSidebar(); renderHeaderMeta();
@@ -584,9 +637,9 @@ async function flushPcm(ctx) {
 }
 function onLive(ctx, m) {
   const t = ctx.turn;
-  if (m.type === "partial") { t._partial = m.text; updateTurn(t); keepBottom(); }
+  if (m.type === "partial") { t._partial = prefs.corrections.length ? applyCorrections(m.text) : m.text; updateTurn(t); keepBottom(); }
   else if (m.type === "segments") {
-    t.segments.push(...m.segments);
+    t.segments.push(...correctSegs(m.segments));
     if (m.ms) { ctx.ms = (ctx.ms || 0) + m.ms; ctx.audio = (ctx.audio || 0) + m.audioSec; }
     t._partial = ""; updateTurn(t); saveTurn(t); keepBottom();
   } else if (m.type === "job-error") ctx.errors.push(m.error);
@@ -602,10 +655,12 @@ async function stopRec() {
   if (!ctx || ctx.stopping) return;
   ctx.stopping = true;
   clearInterval(ctx.flushTimer);
+  wake(false);
   if (ctx.paused) ctx.rec.resume();
   ctx.paused = false;
   await ctx.rec.stop(); // flushes the worklet's tail into onPcm before closing
   S.rec = null;
+  S.recStopping = ctx;
   const st = ctx.rec.stats;
   if (localStorage.getItem("jay.debug")) console.debug("[jay] capture", JSON.stringify({ ...st, samples16k: ctx.samples, wall: (performance.now() - ctx.t0) / 1000 }));
   setRecUI(false);
@@ -634,9 +689,9 @@ async function stopRec() {
       }
     } catch (e) { if (localStorage.getItem("jay.debug")) console.debug("[jay] backup failed", e?.message || e); }
   }
-  await db.put("audio", wavBlob(pcm), t.id);
-  t.hasAudio = true;
-  await db.delByIndex("pcm", "turn", t.id);
+  try { await db.put("audio", wavBlob(pcm), t.id); t.hasAudio = true; }
+  catch (e) { t.hasAudio = false; toast(e?.name === "QuotaExceededError" ? "Storage is full — the transcript is kept but this audio couldn’t be saved" : "Couldn’t save this audio"); }
+  if (t.hasAudio) await db.delByIndex("pcm", "turn", t.id);
   updateTurn(t); await saveTurn(t);
   worker().postMessage({ type: "sonogram", job: t.id, pcm: sonoPcm.buffer, i16: isI16 }, [sonoPcm.buffer]);
   worker().postMessage({ type: "live-stop", job: t.id });
@@ -645,7 +700,8 @@ async function stopRec() {
 }
 async function finishLive(ctx) {
   const t = ctx.turn;
-  jobs.delete(t.id);
+  if (S.recStopping === ctx) S.recStopping = null;
+  jobs.delete(t.id); jobSeen.delete(t.id);
   if ((ctx.crashed || ctx.recovered) && t.hasAudio) {
     if (t.segments.length) t.prev = { model: t.model, segments: t.segments, edited: false, live: true };
     t.segments = []; t.status = "queued"; S.queue.push(t.id);
@@ -677,7 +733,7 @@ function setRecUI(on) {
   $("#pause").innerHTML = icon("pause");
   $("#rec").setAttribute("aria-label", on ? "Stop (R)" : "Record (R)");
   $("#rec").title = on ? "Stop (R)" : "Record (R)";
-  if (!on) { $("#rec").style.setProperty("--lvl", 0); $("#clock").textContent = "0:00"; idleStrip(); }
+  if (!on) { $("#rec").style.setProperty("--lvl", 0); $("#clock").textContent = "0:00"; $("#strip-warn").hidden = true; idleStrip(); }
 }
 
 let sonoRaf;
@@ -701,8 +757,13 @@ function liveSono() {
     last = now;
     an.getFloatTimeDomainData(time);
     let s = 0; for (const v of time) s += v * v;
-    const lvl = ctx.paused ? 0 : Math.min(1, Math.max(0, (10 * Math.log10(s / time.length + 1e-9) + 55) / 40));
+    const db = 10 * Math.log10(s / time.length + 1e-12);
+    const lvl = ctx.paused ? 0 : Math.min(1, Math.max(0, (db + 55) / 40));
     $("#rec").style.setProperty("--lvl", lvl.toFixed(2));
+    // A silent input for the first few seconds usually means a muted or wrong microphone.
+    if (!ctx.paused) { ctx.peakDb = Math.max(ctx.peakDb ?? -200, db); ctx.liveMs = (ctx.liveMs || 0) + 28; }
+    const mute = !ctx.paused && ctx.liveMs > 3500 && ctx.peakDb < -72;
+    if (mute !== ctx.muteShown) { ctx.muteShown = mute; $("#strip-warn").hidden = !mute; }
     if (cv.width !== Math.round(cv.getBoundingClientRect().width * devicePixelRatio)) fit();
     const W = cv.width, H = cv.height, dx = Math.max(2, Math.round(2 * devicePixelRatio));
     ctx2.globalCompositeOperation = "copy";   // shift without re-blending old ink
@@ -759,7 +820,8 @@ async function addFiles(files) {
   for (const f of files) {
     const t = { id: uid(), sessionId: s.id, createdAt: Date.now(), kind: "upload", name: f.name, mime: f.type, size: f.size, model: prefs.model, status: "queued", segments: [], duration: 0, hasAudio: true };
     S.turns.set(t.id, t);
-    await db.put("audio", f, t.id);
+    try { await db.put("audio", f, t.id); }
+    catch (e) { S.turns.delete(t.id); toast(e?.name === "QuotaExceededError" ? `Storage is full — couldn’t add ${f.name}` : `Couldn’t store ${f.name}`); continue; }
     await saveTurn(t);
     S.queue.push(t.id);
     if (S.sid === s.id) appendTurn(t);
@@ -796,12 +858,12 @@ async function transcribeTurn(t) {
     jobs.set(t.id, (msg) => {
       if (msg.type === "sonogram") { t.sono = msg.sono; updateTurnStatus(t); }
       else if (msg.type === "progress") { t._progress = msg.total ? msg.done / msg.total : 0; updateTurnStatus(t); }
-      else if (msg.type === "segments") { t.segments.push(...msg.segments); updateTurn(t); }
+      else if (msg.type === "segments") { t.segments.push(...correctSegs(msg.segments)); updateTurn(t); }
       else if (msg.type === "file-done") { if (msg.ms) t.rtf = msg.audioSec / (msg.ms / 1000); resolve(); }
       else if (msg.type === "job-error") reject(new Error(msg.error));
     });
     worker().postMessage({ type: "file", job: t.id, spec: specOf(m), pcm: pcm.buffer, opts: { commands: prefs.commands } }, [pcm.buffer]);
-  }).finally(() => { jobs.delete(t.id); t._busy = false; });
+  }).finally(() => { jobs.delete(t.id); jobSeen.delete(t.id); t._busy = false; });
   t.status = "done"; t._progress = 0;
   await saveTurn(t);
   updateTurn(t);
@@ -889,16 +951,32 @@ async function finishEdit() {
   const el = $(`#t-${t.id}`);
   if (el) {
     let changed = false;
+    let learn = null;
     $$(".seg", el).forEach((s) => {
       const seg = t.segments[+s.dataset.i];
       const v = s.textContent.replace(/\s+/g, " ").trim();
-      if (seg && seg.text !== v) { seg.text = v; changed = true; }
+      if (seg && seg.text !== v) { learn ||= suggestRule(seg.text, v); seg.text = v; changed = true; }
     });
+    if (learn && !prefs.corrections.some((r) => r.from.toLowerCase() === learn.from.toLowerCase())) {
+      toast(`Always write “${learn.from}” as “${learn.to}”?`, { label: "Remember", run: () => { prefs.corrections.push(learn); savePrefs(); toast("Added to corrections"); } }, 8000);
+    }
     t.segments = t.segments.filter((s) => s.text);
     if (changed) { t.edited = true; await saveTurn(t); touch(t.sessionId); }
     el.outerHTML = turnHtml(t);
     drawSono(t);
   }
+}
+
+/** A small word-level edit (1–3 words) is a candidate correction rule. */
+function suggestRule(before, after) {
+  const a = before.split(/\s+/), b = after.split(/\s+/);
+  let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  let j = 0; while (j < a.length - i && j < b.length - i && a[a.length - 1 - j] === b[b.length - 1 - j]) j++;
+  const strip = (w) => w.join(" ").replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+  const from = strip(a.slice(i, a.length - j)), to = strip(b.slice(i, b.length - j));
+  const n = (x) => x.split(/\s+/).length;
+  if (!from || !to || from.toLowerCase() === to.toLowerCase() || n(from) > 3 || n(to) > 4) return null;
+  return { from, to };
 }
 
 // ── Deleting with undo ───────────────────────────────────────────────────
@@ -956,13 +1034,29 @@ function download(name, blob) {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
-async function copy(text, what = "Copied") {
-  try { await navigator.clipboard.writeText(text); toast(what); }
-  catch { toast("Clipboard unavailable"); }
+async function copy(text, what = "Copied", html) {
+  try {
+    if (html && window.ClipboardItem && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ "text/plain": new Blob([text], { type: "text/plain" }), "text/html": new Blob([html], { type: "text/html" }) })]);
+    } else await navigator.clipboard.writeText(text);
+    toast(what);
+  } catch { try { await navigator.clipboard.writeText(text); toast(what); } catch { toast("Clipboard unavailable"); } }
 }
+/** Paste-friendly HTML (paragraphs, bold report section labels) for notes/EHR fields. */
+function turnHtmlCopy(t) {
+  return paragraphs(t).map((p) => `<p>${p.segs.map(([x]) => (x.sec ? esc(x.text).replace(/^([^:]{2,40}:)/, "<b>$1</b>") : esc(x.text))).join(" ")}</p>`).join("");
+}
+const sessionHtmlCopy = (s) => turnsOf(s.id).map(turnHtmlCopy).join("");
 function exportSession(s, kind) {
   if (kind === "md") download(`${slug(s.title)}.md`, new Blob([sessionMarkdown(s)], { type: "text/markdown" }));
   if (kind === "txt") download(`${slug(s.title)}.txt`, new Blob([sessionText(s)], { type: "text/plain" }));
+  if (kind === "vtt") {
+    const ts = (x) => { const h = Math.floor(x / 3600), m = Math.floor((x % 3600) / 60), sec = (x % 60).toFixed(3).padStart(6, "0"); return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${sec}`; };
+    let n = 0;
+    const body = turnsOf(s.id).map((t) => `NOTE ${t.kind === "upload" ? t.name : "Dictation"} · ${new Date(t.createdAt).toLocaleString()}\n\n` +
+      (t.segments || []).map((x) => `${++n}\n${ts(x.start)} --> ${ts(Math.max(x.end, x.start + 0.5))}\n${x.text}\n`).join("\n")).join("\n");
+    download(`${slug(s.title)}.vtt`, new Blob([`WEBVTT\n\n${body}`], { type: "text/vtt" }));
+  }
   if (kind === "json") download(`${slug(s.title)}.json`, new Blob([JSON.stringify({ session: s, turns: turnsOf(s.id).map(cleanTurn) }, null, 2)], { type: "application/json" }));
 }
 const cleanTurn = (t) => { const o = strip(t); delete o.sono; return o; };
@@ -1147,9 +1241,13 @@ function prefsHtml() {
   ${sw("noise", "Noise suppression", "Browser echo/noise filtering on the mic")}
   ${sw("commands", "Spoken punctuation", "“comma”, “full stop”, “new paragraph” → , . ¶ (always on for MedASR)")}
   <div class="row"><div class="grow"><div class="name">Playback speed</div></div>${segc("rate", [[1, "1×"], [1.25, "1.25×"], [1.5, "1.5×"], [2, "2×"]])}</div>
+  <h3>Corrections</h3>
+  <div id="corrections">${prefs.corrections.map((r, i) => corrRow(r, i)).join("")}</div>
+  <div class="btns"><button class="btn" data-act="corr-add">${icon("plus")}Add</button>${prefs.corrections.length ? `<button class="btn" data-act="corr-apply">${icon("redo")}Apply to existing notes</button>` : ""}</div>
   <h3>Startup</h3>
   ${sw("preload", "Warm up model on open")}`;
 }
+const corrRow = (r, i) => `<div class="corr" data-i="${i}"><input type="text" value="${esc(r.from)}" placeholder="heard" data-corr="from" aria-label="Heard"><span>→</span><input type="text" value="${esc(r.to)}" placeholder="write" data-corr="to" aria-label="Write"><button class="icon-btn" data-act="corr-del" aria-label="Remove">${icon("x")}</button></div>`;
 async function fillMics() {
   const sel = $("#mic-select");
   if (!sel || !navigator.mediaDevices?.enumerateDevices) return;
@@ -1299,26 +1397,41 @@ document.addEventListener("click", async (e) => {
     case "upload": $("#file").click(); break;
     case "use-medasr": selectModel("medasr"); break;
     case "play": togglePlay(t); break;
-    case "copy": copy(plainText(t), "Transcript copied"); break;
+    case "copy": copy(plainText(t), "Transcript copied", turnHtmlCopy(t)); break;
     case "edit": startEdit(t); break;
     case "edit-done": finishEdit(); break;
     case "retry": retranscribe(t, t.model); break;
     case "retry-tiny": retranscribe(t, "moonshine-tiny"); break;
     case "retry-model": delete S.model[prefs.model]; ensureModel(); break;
+    case "corr-add": prefs.corrections.push({ from: "", to: "" }); savePrefs(); renderSettings().then(() => $$("#corrections input[data-corr=from]").at(-1)?.focus()); break;
+    case "corr-del": prefs.corrections.splice(+el.closest(".corr").dataset.i, 1); savePrefs(); renderSettings(); break;
+    case "corr-apply": {
+      let n = 0;
+      for (const x of S.turns.values()) {
+        if (!x.segments?.length || x.status === "recording") continue;
+        let changed = false;
+        for (const seg of x.segments) { const v = applyCorrections(seg.text); if (v !== seg.text) { seg.text = v; changed = true; } }
+        if (changed) { n++; await saveTurn(x); }
+      }
+      renderPage(); renderSidebar();
+      toast(n ? `Corrected ${n} clip${n === 1 ? "" : "s"}` : "Nothing to correct");
+      break;
+    }
     case "restore": if (t.prev) { [t.segments, t.model, t.edited] = [t.prev.segments, t.prev.model, t.prev.edited]; t.prev = null; await saveTurn(t); turnEl.outerHTML = turnHtml(t); drawSono(t); } break;
     case "turn-more": menu(el, [
-      { label: "Copy text", icon: "copy", run: () => copy(plainText(t), "Transcript copied") },
+      { label: "Copy text", icon: "copy", run: () => copy(plainText(t), "Transcript copied", turnHtmlCopy(t)) },
       { label: "Edit text", icon: "edit", run: () => startEdit(t) },
       ...(t.hasAudio && !S.rec && t.status !== "recording" ? [{ label: `Re-transcribe with ${current().name}`, icon: "redo", run: () => retranscribe(t) }] : []),
       ...(t.hasAudio ? [{ label: "Download audio", icon: "download", run: async () => { const b = await db.get("audio", t.id); if (b) download(t.kind === "upload" ? t.name : `${slug(s?.title || "dictation")}-${fmtTime(t.createdAt).replace(":", "")}.wav`, b); } }] : []),
       "-",
       ...(t.status === "recording" ? [] : [{ label: "Delete clip", icon: "trash", danger: true, run: () => removeTurn(t) }]),
     ]); break;
-    case "copy-session": if (s) copy(sessionText(s), "Session copied"); break;
+    case "copy-session": if (s) copy(sessionText(s), "Session copied", sessionHtmlCopy(s)); break;
     case "export-session": if (s) menu(el, [
       { label: "Markdown", sub: ".md", icon: "file", run: () => exportSession(s, "md") },
       { label: "Plain text", sub: ".txt", icon: "file", run: () => exportSession(s, "txt") },
       { label: "JSON with timings", sub: ".json", icon: "file", run: () => exportSession(s, "json") },
+      { label: "Subtitles", sub: ".vtt", icon: "file", run: () => exportSession(s, "vtt") },
     ]); break;
     case "session-more": if (s) menu(el, [
       { label: "Rename", icon: "edit", run: () => title.click() },
@@ -1355,12 +1468,20 @@ document.addEventListener("click", async (e) => {
     case "clear-all": armed(el, async () => {
       if (S.rec) await stopRec();
       player.pause(); S.playing = null;
+      for (const j of jobs.keys()) W?.postMessage({ type: "cancel", job: j });
       for (const st of ["turns", "sessions", "audio", "pcm"]) await db.clear(st);
       S.turns.clear(); S.sessions.clear(); S.queue = [];
       history.replaceState(null, "", "#/"); openSession(null);
       renderSettings(); updateStorage(); toast("Everything erased");
     }); break;
   }
+});
+document.addEventListener("input", (e) => {
+  const f = e.target.dataset?.corr;
+  if (!f) return;
+  const i = +e.target.closest(".corr").dataset.i;
+  prefs.corrections[i][f] = e.target.value;
+  savePrefs();
 });
 document.addEventListener("change", (e) => {
   if (e.target.dataset.act === "restore-file" && e.target.files[0]) importBackup(e.target.files[0]);
@@ -1405,6 +1526,7 @@ addEventListener("keydown", (e) => {
   else if (k === "u") { e.preventDefault(); $("#file").click(); }
   else if (k === "n") { e.preventDefault(); newSession(); }
   else if (k === "/") { e.preventDefault(); $("#app").classList.add("drawer"); $("#search").focus(); }
+  else if (e.key === "?") { e.preventDefault(); $("#keys").showModal(); }
   else if (k === " " && S.playing && !e.target.closest("button, a, summary")) { e.preventDefault(); player.paused ? player.play() : player.pause(); }
 });
 

@@ -106,6 +106,7 @@
         <canvas id="live-sono" aria-hidden="true"></canvas>
         <span class="clock" id="clock">0:00</span>
         <span class="strip-status" id="strip-status"></span>
+        <span class="strip-warn" id="strip-warn" hidden>No sound from the microphone</span>
         <button class="icon-btn pause" id="pause" aria-label="Pause (P)" title="Pause (P)"><svg><use href="#i-pause"/></svg></button>
       </div>
       <button class="dock-btn" id="upload" title="Transcribe audio files (U)"><svg><use href="#i-upload"/></svg><span>Upload</span></button>
@@ -130,6 +131,19 @@
     <button class="icon-btn" value="close" aria-label="Close"><svg><use href="#i-x"/></svg></button>
   </form>
   <div class="sheet-body" id="sheet-body"></div>
+</dialog>
+
+<dialog class="sheet keys" id="keys">
+  <form method="dialog" class="sheet-head"><b>Keyboard</b><button class="icon-btn" value="close" aria-label="Close"><svg><use href="#i-x"/></svg></button></form>
+  <dl class="sheet-body">
+    <dt><kbd>R</kbd></dt><dd>Start / stop dictation</dd>
+    <dt><kbd>P</kbd></dt><dd>Pause / resume</dd>
+    <dt><kbd>U</kbd></dt><dd>Upload audio</dd>
+    <dt><kbd>N</kbd></dt><dd>New session</dd>
+    <dt><kbd>/</kbd> <kbd>⌘K</kbd></dt><dd>Search notes</dd>
+    <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Finish editing · close</dd>
+  </dl>
 </dialog>
 
 <noscript><p class="noscript">Jay runs entirely in your browser and needs JavaScript enabled.</p></noscript>
