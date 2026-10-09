@@ -79,7 +79,7 @@ await page.click('.toast button:has-text("Remember")');
 await page.setInputFiles('#file', '/tmp/jay-browser-check/upload.wav');
 await page.waitForFunction(() => [...document.querySelectorAll('.turn .chip')].every((c) => !/transcrib|queued/.test(c.textContent)), null, { timeout: 120000 });
 const newest = await page.locator('.turn').last().locator('.text').textContent();
-ok(/Pulse is 72/.test(newest) && !/Heart rate/.test(newest), 'correction applied to the next transcript');
+ok(/Pulse is 72/.test(newest) && !/Heart rate/.test(newest), 'correction applied to the next transcript: ' + newest.slice(0, 120));
 const [vtt] = await Promise.all([page.waitForEvent('download'), (async () => { await page.click('[data-act=export-session]'); await page.click('#menu button:has-text("Subtitles")'); })()]);
 const vttText = fs.readFileSync(await vtt.path(), 'utf8');
 ok(/^WEBVTT/.test(vttText) && /\d\d:\d\d:\d\d\.\d{3} --> /.test(vttText), 'WebVTT export');

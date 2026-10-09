@@ -1,3 +1,4 @@
+// jay-build:bd5c91a424
 // Jay · main-thread audio: mic recorder, file decode, WAV packing.
 export const SR = 16000;
 
@@ -62,6 +63,27 @@ export class Recorder {
     this.stream?.getTracks().forEach((t) => t.stop());
     try { await this.ctx.close(); } catch {}
   }
+}
+
+/**
+ * Debug/test microphone: plays a 16 kHz Float32Array (window.jayFakeMic) into the live
+ * pipeline at realtime pace, bypassing the AudioContext, then silence until stopped.
+ */
+export class FakeRecorder {
+  constructor() { this.ctx = { sampleRate: SR, close() {} }; this.analyser = null; }
+  async start({ onPcm }) {
+    const src = window.jayFakeMic || new Float32Array(0);
+    let o = 0;
+    this.timer = setInterval(() => {
+      if (this.paused) return;
+      const f = new Float32Array(1600);
+      f.set(src.subarray(o, o + 1600)); o += 1600;
+      onPcm(f);
+    }, 100);
+  }
+  pause() { this.paused = true; }
+  resume() { this.paused = false; }
+  async stop() { clearInterval(this.timer); this.backupBlob = null; }
 }
 
 /** Minimal RIFF/WAVE reader (PCM 8/16/24/32, float 32/64) → {rate, channels: Float32Array[]}. */

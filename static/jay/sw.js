@@ -1,17 +1,42 @@
-// Jay · service worker. Offline app shell + cross-origin isolation headers
-// (COOP/COEP) so ONNX Runtime can use WebAssembly threads on static hosting.
-const SHELL = "jay-shell-v2";
+// jay-build:bd5c91a424
+// Jay · service worker. Serves one complete, consistent build of the app shell
+// from a per-build cache (never a mix of old and new files), keeps working
+// offline, and adds COOP/COEP so ONNX Runtime can use WebAssembly threads.
+const BUILD = "jay-build:bd5c91a424";
+const SHELL = "jay-shell-" + BUILD.split(":")[1];
 const SCOPE = new URL("./", self.location.href).pathname;
-const FILES = ["./", "index.html", "style.css", "app.js", "db.js", "audio.js", "dsp.js", "worker.js", "capture-worklet.js",
-  "runtime/ort.js", "runtime/manifest.json", "models/moonshine-tiny/manifest.json", "icon.svg", "icon-192.png", "manifest.webmanifest"];
+const STAMPED = ["index.html", "style.css", "app.js", "db.js", "audio.js", "dsp.js", "worker.js", "capture-worklet.js"];
+const FILES = [...STAMPED, "runtime/ort.js", "runtime/manifest.json", "models/moonshine-tiny/manifest.json",
+  "manifest.webmanifest", "icon.svg", "icon-192.png"];
+const abs = (f) => new URL(f, self.location.href).href;
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" })))).catch(() => {}).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const cache = await caches.open(SHELL);
+    try {
+      for (const f of FILES) {
+        const res = await fetch(new Request(abs(f), { cache: "no-cache" }));
+        if (!res.ok) throw new Error(`${f}: HTTP ${res.status}`);
+        // A deploy still propagating through the CDN can mix builds; refuse it and retry later.
+        if (STAMPED.includes(f) && !(await res.clone().text()).includes(BUILD)) throw new Error(`${f} is from another build`);
+        await cache.put(abs(f), res);
+      }
+    } catch (err) {
+      await caches.delete(SHELL);
+      throw err;
+    }
+    await self.skipWaiting();
+  })());
 });
+
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith("jay-shell-") && k !== SHELL) await caches.delete(k);
+    const keys = await caches.keys();
+    // Builds before stamping (jay-shell-v1/v2) could serve stale HTML with new scripts; move their pages over now.
+    const legacy = keys.some((k) => /^jay-shell-v\d+$/.test(k));
+    for (const k of keys) if (k.startsWith("jay-shell-") && k !== SHELL) await caches.delete(k);
     await self.clients.claim();
+    if (legacy) for (const c of await self.clients.matchAll({ type: "window" })) c.navigate(c.url).catch(() => {});
   })());
 });
 
@@ -24,19 +49,15 @@ function isolate(res) {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
-async function shell(req) {
+async function serve(req, url) {
+  const rel = url.pathname.slice(SCOPE.length);
+  const key = req.mode === "navigate" && (rel === "" || rel === "index.html") ? abs("index.html") : url.origin + url.pathname;
   const cache = await caches.open(SHELL);
-  const url = new URL(req.url);
-  const root = url.pathname === SCOPE || url.pathname === SCOPE + "index.html";
-  const key = req.mode === "navigate" ? (root ? "./" : url.origin + url.pathname) : req;
-  const net = fetch(req, { cache: "no-cache" }).then((res) => {
-    if (res.ok && !res.redirected) cache.put(key, res.clone());
-    return res;
-  });
-  const hit = await cache.match(key, { ignoreSearch: true });
-  if (!hit) return net;
-  // Network first, but never make the user wait long on a flaky connection.
-  return Promise.race([net.catch(() => hit), new Promise((r) => setTimeout(() => r(hit), 2500))]).then((r) => r || hit);
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok && !res.redirected && req.mode !== "navigate") cache.put(key, res.clone());
+  return res;
 }
 
 self.addEventListener("fetch", (e) => {
@@ -50,5 +71,7 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(fetch(req).then(isolate));
     return;
   }
-  e.respondWith(shell(req).then(isolate).catch(() => new Response("Offline", { status: 503 })));
+  e.respondWith(serve(req, url).then(isolate).catch(() => new Response("Offline", { status: 503 })));
 });
+
+self.addEventListener("message", (e) => { if (e.data === "build") e.source?.postMessage({ build: BUILD }); });

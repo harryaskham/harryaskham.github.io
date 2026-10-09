@@ -80,7 +80,14 @@ downloads cached in Cache Storage. Regenerate or verify the vendored bytes with:
 ```sh
 python3 _tools/jay-assets.py          # rebuild static/jay/{runtime,models}
 python3 _tools/jay-assets.py --check  # verify committed shards
+python3 _tools/jay-stamp.py           # REQUIRED after editing static/jay: restamp the build id
 ```
+
+Every Jay shell file carries one content-derived `jay-build:<id>` stamp. The
+service worker caches each build atomically (refusing a half-propagated deploy),
+serves it consistently offline, and the page reloads onto a new build only when
+idle; HTML/script mismatches heal with one reload. `scripts/check-static.py` runs
+each `_tools/*.py --check`, so CI fails if the stamp is stale.
 
 On-device model weights and runtimes under `static/<name>/models/` or
 `static/<name>/runtime/` use a separate reviewed 40 MB budget so they do not
@@ -90,5 +97,9 @@ threads and caches the app shell for offline use. It never handles requests
 outside `/jay/`, and it bypasses `/jay/worklog/`.
 
 ```sh
-JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-browser.mjs
+JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-browser.mjs      # end-to-end (fake mic)
+JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-reliability.mjs  # recovery, backup, watchdog
+JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-update.mjs       # deploy consistency, self-heal
+JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-streaming.mjs    # clean-audio live streaming
+JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-crossbrowser.mjs # Firefox + WebKit
 ```

@@ -1,3 +1,4 @@
+// jay-build:bd5c91a424
 // Jay · IndexedDB persistence: sessions, turns, audio blobs, in-flight PCM.
 const NAME = "jay", VERSION = 1;
 let dbp;

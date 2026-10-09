@@ -79,6 +79,9 @@ def main():
     if args.built:
         assert not (args.built / "static").exists(), "Unexpected /static/ output"
     subprocess.run([sys.executable, str(REPO / "scripts/check-alex.py")], check=True)
+    # App-specific consistency checks (e.g. Jay's build stamp and vendored model shards).
+    for tool in sorted((REPO / "_tools").glob("*.py")):
+        subprocess.run([sys.executable, str(tool), "--check"], check=True)
     print(f"Static sites: {count} files; {total:,} media + {models:,} model bytes; links and budgets valid" +
           ("; all files published unchanged at root" if args.built else ""))
 

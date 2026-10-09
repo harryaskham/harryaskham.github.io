@@ -1,3 +1,4 @@
+// jay-build:bd5c91a424
 // Jay · signal processing shared by the ASR worker: FFT, log-mel features,
 // sonograms, energy VAD/segmentation and transcript formatting.
 
@@ -278,7 +279,8 @@ export function formatMedasr(s) {
     const t = w.toLowerCase().replace(/(^|\s)\w/g, (c) => c.toUpperCase());
     return `\n${t}: `;
   });
-  return tidy(s.replace(/:\s*:/g, ":"));
+  // Unpaired brackets/braces (a token split across a streaming cut) are never meant as text.
+  return tidy(s.replace(/:\s*:/g, ":").replace(/[[\]{}]/g, ""));
 }
 
 /** Optional spoken punctuation for general models ("comma", "new paragraph"…). */

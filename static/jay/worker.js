@@ -101,7 +101,7 @@ function initRuntime() {
 // No busy-spinning: idle ORT threads must not starve the real-time audio thread or the UI.
 const session = (buf) => ort.InferenceSession.create(new Uint8Array(buf), {
   executionProviders: ["wasm"], graphOptimizationLevel: "all",
-  extra: { session: { "intra_op.allow_spinning": "0", "inter_op.allow_spinning": "0" } },
+  extra: { session: { "intra_op.allow_spinning": self.jaySpin ? "1" : "0", "inter_op.allow_spinning": "0" } },
 });
 
 // ── Models ───────────────────────────────────────────────────────────────
@@ -228,7 +228,10 @@ function detok(vocab, ids) {
 
 async function moonshine(m, audio) {
   if (audio.length < SR / 2) { const p = new Float32Array(SR / 2); p.set(audio, (p.length - audio.length) >> 1); audio = p; }
+  const tE = performance.now();
   const { last_hidden_state: h } = await m.enc.run({ input_values: new ort.Tensor("float32", audio, [1, audio.length]) });
+  prof.enc += performance.now() - tE; prof.n++;
+  const tD = performance.now();
   const past = {};
   const empty = new Float32Array(0);
   for (let i = 0; i < m.layers; i++) for (const a of ["decoder", "encoder"]) for (const b of ["key", "value"])
@@ -257,8 +260,10 @@ async function moonshine(m, audio) {
       past[k.replace("present", "past_key_values")] = v;
     }
   }
+  prof.dec += performance.now() - tD; prof.steps += toks.length + 1;
   return detok(m.vocab, toks);
 }
+const prof = { enc: 0, dec: 0, n: 0, steps: 0 };
 
 const PAD = 0.25;
 async function ctc(m, audio) {
@@ -292,17 +297,21 @@ async function ctc(m, audio) {
     }
     prev = id;
   }
+  // A window that starts just after a cut can begin with the tail of the previous token ("]", "}.", "paragraph}").
+  while (words.length && /^([\]}).,;:]+|(paragraph|line)\}[.,]?)$/i.test(words[0].text)) words.shift();
   return words.map((w) => ({ text: w.text, start: Math.max(0, w.t0 * sec - PAD), end: Math.max(0, (w.t1 + 1) * sec - PAD) }));
 }
 
 /** CTC words → sentence-ish segments with timestamps and paragraph breaks. */
-function ctcSegments(words, offset, fmt) {
+function ctcSegments(words, offset, fmt, cont = false) {
   const segs = [];
   let cur = [], brk = 0;
   const flush = (nextBrk) => {
     if (cur.length) {
       const raw = cur.map((w) => w.text).join(" ");
-      const text = fmt(raw);
+      let text = fmt(raw);
+      // A chunk that continues an unfinished sentence keeps its original lower-case start.
+      if (cont && !segs.length && /^\p{Ll}/u.test(raw)) text = text.charAt(0).toLowerCase() + text.slice(1);
       const seg = { start: offset + cur[0].start, end: offset + cur[cur.length - 1].end, text, brk };
       if (/^\[/.test(raw) && /^[^:]{2,40}:/.test(text)) seg.sec = 1;
       if (text) segs.push(seg);
@@ -335,11 +344,15 @@ async function moonshineSafe(m, audio, final) {
   return joined.split(/\s+/).length > words * 1.25 ? joined : text;
 }
 
-async function transcribe(m, audio, offset, opts, final = true) {
+const continues = (text) => !!text && !/[.?!:]$/.test(text.trim());
+const ctcFmt = (m, opts) => (m.format === "medasr" ? formatMedasr : opts.commands ? spokenCommands : plain);
+async function transcribe(m, audio, offset, opts, final = true, cont = false, minStart = null) {
   if (m.kind === "moonshine") {
     let text = await moonshineSafe(m, audio, final);
     if (/^[\s.,!?-]*$/.test(text)) return [];
     text = opts.commands ? spokenCommands(text) : plain(text);
+    // A phrase that continues an unfinished sentence shouldn't start with a capital ("…includes Colsa…").
+    if (cont && /^\p{Lu}\p{Ll}/u.test(text) && !/^I\b/.test(text)) text = text.charAt(0).toLowerCase() + text.slice(1);
     // Sentence-level segments with time spread by character share, so playback can follow along.
     const dur = audio.length / SR, out = [];
     const parts = [];
@@ -355,9 +368,10 @@ async function transcribe(m, audio, offset, opts, final = true) {
     }
     return out;
   }
-  const words = await ctc(m, audio);
-  const fmt = m.format === "medasr" ? formatMedasr : opts.commands ? spokenCommands : plain;
-  return ctcSegments(words, offset, fmt);
+  let words = await ctc(m, audio);
+  // Leading audio was context only (already committed): keep words that start after the cut.
+  if (minStart != null) words = words.filter((w) => offset + w.start >= minStart - 0.05);
+  return ctcSegments(words, offset, ctcFmt(m, opts), cont);
 }
 
 // ── Serial inference queue (finals before partials) ──────────────────────
@@ -434,28 +448,88 @@ class Live {
         this.finalize(cut); this.segStart = cut; this.lastPartial = cut;
       } else if (end - this.lastPartial > SR * (this.opts.partialEvery ?? 0.9) && !this.partialQueued && end - this.segStart > SR * 0.6) {
         this.lastPartial = end; this.partialQueued = true;
-        const seg = this.segIndex, from = this.segStart;
+        const seg = this.segIndex;
         enqueue(2, async () => {
           this.partialQueued = false;
           if (seg !== this.segIndex) return null;
           const m = await loadModel(this.spec);
-          const to = Math.min(this.pos, this.base + this.len);
+          const from = this.segStart, to = Math.min(this.pos, this.base + this.len);
+          if (m.kind === "ctc") return this.ctcPartial(m, seg, from, to);
           const segs = await transcribe(m, this.slice(from, to), from / SR, this.opts, false);
-          if (seg === this.segIndex) post({ type: "partial", job: this.id, text: segs.map((s) => s.text).join(" ") });
+          if (seg === this.segIndex) post({ type: "partial", job: this.id, segments: segs });
         }, this).catch(() => { this.partialQueued = false; });
       }
     }
   }
+  /**
+   * CTC streaming: words two consecutive decodes agree on, and that ended >1.2 s ago, are
+   * committed as final text (preferably at a sentence end) and decoding moves past them, so
+   * long uninterrupted dictation grows as ink instead of one ever-rewritten partial line.
+   */
+  async ctcPartial(m, seg, from, to) {
+    const ctxFrom = this.ctxStart ?? from;
+    const words = (await ctc(m, this.slice(ctxFrom, to)))
+      .map((w) => ({ ...w, start: w.start + ctxFrom / SR, end: w.end + ctxFrom / SR }))
+      .filter((w) => w.start >= from / SR - 0.05);
+    if (seg !== this.segIndex || from !== this.segStart) return;
+    const fmt = ctcFmt(m, this.opts), end = to / SR;
+    const norm = (w) => w.text.toLowerCase().replace(/[^\p{L}\p{N}{}[\]]/gu, "");
+    const prev = this.prevWords || [];
+    let k = 0;
+    while (k < words.length && k < prev.length && norm(words[k]) === norm(prev[k])) k++;
+    let c = 0;
+    while (c < k && words[c].end < end - 1.2) c++;
+    // Never cut inside a {command} or [SECTION] token: check only the words around the boundary.
+    const inside = (n) => { const t = words.slice(Math.max(0, n - 3), n).map((w) => w.text).join(" "); return t.lastIndexOf("{") > t.lastIndexOf("}") || t.lastIndexOf("[") > t.lastIndexOf("]") || /^[\]}]/.test(words[n]?.text || ""); };
+    // Prefer the latest sentence end whose gap is genuinely silent; a long run with no sentence end
+    // may commit mid-sentence, but only at a silent gap. Otherwise wait: the tail stays live.
+    const SENT = /([.?!]|(period|mark|paragraph|line)\})$/i;
+    const silent = this.floor + 9;
+    let cut = null;
+    for (let i = c; i >= 4 && !cut; i--) {
+      if (!SENT.test(words[i - 1].text) || inside(i)) continue;
+      const q = this.quietCut(words[i - 1].end, words[i] ? words[i].start : end);
+      if (q.db < silent) { cut = q; c = i; }
+    }
+    if (!cut && c >= 12 && words[c - 1].end - words[0].start > 8 && !inside(c)) {
+      const q = this.quietCut(words[c - 1].end, words[c] ? words[c].start : end);
+      if (q.db < silent - 3) cut = q;
+    }
+    if (!cut) c = 0;
+    let committed = [];
+    if (c > 0) {
+      committed = ctcSegments(words.slice(0, c), 0, fmt, continues(this.lastText));
+      if (committed.length) this.lastText = committed.at(-1).text;
+      this.segStart = Math.max(this.segStart, cut.at);
+      this.ctxStart = Math.max(this.base, this.segStart - Math.round(1.5 * SR));
+    }
+    this.prevWords = words.slice(c);
+    const rest = ctcSegments(words.slice(c), 0, fmt, continues(this.lastText));
+    if (committed.length) post({ type: "segments", job: this.id, segments: committed, partial: rest, commit: true });
+    else post({ type: "partial", job: this.id, segments: rest });
+  }
+  /** Quietest 10 ms frame (absolute sample) between two times, so cuts land in the gap between words. */
+  quietCut(a, b) {
+    let best = Math.round(a * SR), bv = Infinity;
+    for (let x = Math.max(this.base, Math.round(a * SR)); x + FRAME <= Math.min(Math.round(b * SR), this.base + this.len); x += FRAME / 2) {
+      const v = frameDb(this.buf, x - this.base);
+      if (v < bv) { bv = v; best = x + FRAME / 2; }
+    }
+    return { at: best, db: bv };
+  }
   finalize(endAbs) {
     const from = this.segStart, to = Math.min(endAbs, this.base + this.len);
+    const ctxFrom = this.ctxStart != null ? Math.max(this.base, this.ctxStart) : from;
+    this.prevWords = []; this.ctxStart = null;
     this.segIndex++;
     dropPartials(this); this.partialQueued = false;
     if (to - from < SR * 0.25) { post({ type: "partial", job: this.id, text: "" }); return; }
-    const audio = this.slice(from, to);
+    const audio = this.slice(ctxFrom, to);
     const p = enqueue(1, async () => {
       const m = await loadModel(this.spec);
       const t0 = performance.now();
-      const segs = await transcribe(m, audio, from / SR, this.opts);
+      const segs = await transcribe(m, audio, ctxFrom / SR, this.opts, true, continues(this.lastText), ctxFrom < from ? from / SR : null);
+      if (segs.length) this.lastText = segs.at(-1).text;
       post({ type: "segments", job: this.id, segments: segs, ms: performance.now() - t0, audioSec: audio.length / SR });
     }).catch((e) => post({ type: "job-error", job: this.id, error: String(e.message || e) }));
     this.finals.push(p);
@@ -483,12 +557,13 @@ async function fileJob({ job, spec, pcm, opts }) {
   post({ type: "progress", job, done: 0, total });
   if (!chunks.length) { post({ type: "file-done", job, empty: true }); return; }
   const m = await enqueue(0, () => loadModel(spec));
-  let compute = 0;
+  let compute = 0, lastText = "";
   for (const c of chunks) {
     if (cancelled.has(job)) { cancelled.delete(job); post({ type: "file-done", job, cancelled: true }); return; }
     const segs = await enqueue(1, async () => {
       const t0 = performance.now();
-      const s = await transcribe(m, audio.subarray(c.start, c.end), c.start / SR, opts);
+      const s = await transcribe(m, audio.subarray(c.start, c.end), c.start / SR, opts, true, continues(lastText));
+      if (s.length) lastText = s.at(-1).text;
       compute += performance.now() - t0;
       return s;
     });
@@ -526,6 +601,7 @@ async function deleteModel(spec) {
 // ── Messages ─────────────────────────────────────────────────────────────
 onmessage = async ({ data: d }) => {
   if (d.threads) self.jayThreads = d.threads;
+  if (d.spin) self.jaySpin = true;
   try {
     switch (d.type) {
       case "load": await enqueue(0, () => loadModel(d.spec)); break;
@@ -540,7 +616,7 @@ onmessage = async ({ data: d }) => {
       case "delete-model": await deleteModel(d.spec); post({ type: "cache-status", status: await cacheStatus(d.specs || []) }); break;
       case "runtime": post({ type: "runtime", info: await initRuntime() }); break;
       case "debug-hang": enqueue(0, () => new Promise(() => {})); break;
-      case "debug": post({ type: "debug", busy, queue: queue.map((q) => [q.prio, q.tag ? "partial" : "job"]), model: model?.id || null, loading: loading?.id || null, lives: [...lives.keys()] }); break;
+      case "debug": post({ type: "debug", prof, busy, queue: queue.map((q) => [q.prio, q.tag ? "partial" : "job"]), model: model?.id || null, loading: loading?.id || null, lives: [...lives.keys()] }); break;
     }
   } catch (e) {
     const msg = String(e?.message || e);
@@ -548,4 +624,5 @@ onmessage = async ({ data: d }) => {
     if (/abort|out of memory|RuntimeError|unreachable|memory access/i.test(msg)) post({ type: "fatal", error: msg });
   }
 };
-post({ type: "hello" });
+const BUILD = "jay-build:bd5c91a424";
+post({ type: "hello", build: BUILD });

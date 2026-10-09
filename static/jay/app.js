@@ -1,8 +1,9 @@
 // Jay · on-device medical transcription. UI, sessions, recording, uploads,
 // search, history and export. All audio and transcripts stay in this browser.
 import * as db from "./db.js";
-import { Recorder, decodeFile, f32ToI16, concatI16, wavBlob, SR } from "./audio.js";
+import { Recorder, FakeRecorder, decodeFile, f32ToI16, concatI16, wavBlob, SR } from "./audio.js";
 
+const BUILD = "jay-build:bd5c91a424";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -114,6 +115,7 @@ function worker() {
   const debug = localStorage.getItem("jay.debug");
   if (debug) self.jayWorker = () => W;
   W.onmessage = ({ data: m }) => {
+    if (m.type === "hello" && m.build && m.build !== BUILD) heal("worker " + m.build);
     if (debug) console.debug("[jay]", m.type, m.job || "", m.text ?? m.segments?.map((x) => x.text).join(" | ") ?? m.error ?? "");
     if (m.type === "model") onModel(m);
     else if (m.type === "runtime") { S.runtime = m.info; renderSettingsIfOpen(); }
@@ -122,7 +124,7 @@ function worker() {
     else if (m.type === "cache-status") { Object.assign(S.cache, m.status); renderSettingsIfOpen(); renderEmptyIfShown(); }
     else if (m.job && jobs.has(m.job)) { jobSeen.set(m.job, Date.now()); jobs.get(m.job)(m); }
   };
-  if (localStorage.getItem("jay.threads")) W.postMessage({ type: "config", threads: +localStorage.getItem("jay.threads") });
+  if (localStorage.getItem("jay.threads") || localStorage.getItem("jay.spin")) W.postMessage({ type: "config", threads: +localStorage.getItem("jay.threads") || 0, spin: !!localStorage.getItem("jay.spin") });
   W.onerror = (e) => { e.preventDefault?.(); restartWorker(e.message || "engine error"); };
   return W;
 }
@@ -376,10 +378,10 @@ function renderEmptyIfShown() {
   if (sug && (prefs.model === "medasr" || S.cache.medasr?.state === "cached")) sug.remove();
 }
 
-function paragraphs(t) {
+function paragraphs(t, list = t.segments || []) {
   const out = [];
   let cur = null, prevEnd = 0, prevText = "";
-  (t.segments || []).forEach((s, i) => {
+  list.forEach((s, i) => {
     const gap = s.start - prevEnd;
     const long = cur && s.start - cur.start > 40 && /[.?!]$/.test(prevText);
     if (!cur || (s.brk ?? 0) >= 1 || gap > 1.0 || long) { cur = { start: s.start, segs: [] }; out.push(cur); }
@@ -391,13 +393,16 @@ function paragraphs(t) {
 const secLabel = (h) => h.replace(/^([^:<]{2,40}:)/, '<b class="sec">$1</b>');
 function textHtml(t) {
   const ts = terms();
-  const paras = paragraphs(t);
+  const live = Array.isArray(t._partial) ? t._partial.filter((x) => x.text) : [];
+  const final = t.segments || [];
+  const paras = paragraphs(t, live.length ? final.concat(live.map((x) => ({ ...x, _p: 1 }))) : final);
   const editing = S.editing === t.id;
+  const lastP = final.length + live.length - 1;
   let html = paras.map((p) => `<p><button class="ts" data-seek="${p.start}" aria-label="Play from ${fmtDur(p.start)}" tabindex="${editing ? -1 : 0}">${fmtDur(p.start)}</button>${p.segs
-    .map(([s, i]) => `<span class="seg" data-i="${i}" data-t="${s.start}"${editing ? ' contenteditable="true" spellcheck="true"' : ""}>${editing ? esc(s.text) : s.sec ? secLabel(highlight(s.text, ts)) : highlight(s.text, ts)}</span>`)
+    .map(([s, i]) => s._p
+      ? `<span class="partial${i === lastP ? " tail" : ""}">${s.sec ? secLabel(esc(s.text)) : esc(s.text)}</span>`
+      : `<span class="seg" data-i="${i}" data-t="${s.start}"${editing ? ' contenteditable="true" spellcheck="true"' : ""}>${editing ? esc(s.text) : s.sec ? secLabel(highlight(s.text, ts)) : highlight(s.text, ts)}</span>`)
     .join(" ")}</p>`).join("");
-  if (t._partial) html += paras.length ? "" : "<p></p>";
-  if (t._partial) html = html.replace(/<\/p>$/, ` <span class="partial">${esc(t._partial)}</span></p>`);
   if (!html) {
     if (t.status === "recording") html = `<p class="muted"><span class="caret">Listening</span></p>`;
     else if (t.status === "done") html = `<p class="muted">No speech detected.</p>`;
@@ -441,6 +446,7 @@ function turnHtml(t) {
       <span class="when">${fmtTime(t.createdAt)}</span>
       <span class="chipbox">${chipHtml(t)}</span>
       <span class="turn-tools">
+        ${/transcribing|queued/.test(t.status) && t.kind === "upload" ? `<button class="icon-btn stop" data-act="stop-turn" title="Stop transcribing" aria-label="Stop transcribing">${icon("stop")}</button>` : ""}
         ${S.editing === t.id
           ? `<button class="icon-btn" data-act="edit-done" title="Done editing" aria-label="Done editing">${icon("check")}</button>`
           : `<button class="icon-btn" data-act="copy" title="Copy" aria-label="Copy">${icon("copy")}</button>
@@ -463,6 +469,8 @@ function updateTurn(t, { text = true } = {}) {
 function updateTurnStatus(t) {
   const el = $(`#t-${t.id}`);
   if (!el) return;
+  const busy = /transcribing|queued/.test(t.status) && t.kind === "upload";
+  if (!!$(".stop", el) !== busy && S.editing !== t.id) { el.outerHTML = turnHtml(t); drawSono(t); return; }
   $(".chipbox", el).innerHTML = chipHtml(t);
   $(".statusbox", el).innerHTML = statusHtml(t);
   $(".footbox", el).innerHTML = footHtml(t);
@@ -593,7 +601,7 @@ async function startRec() {
   S.starting = true;
   let rec;
   try {
-    rec = new Recorder();
+    rec = window.jayFakeMic && localStorage.getItem("jay.debug") ? new FakeRecorder() : new Recorder();
     const job = uid();
     const ctx = { job, chunks: [], pending: [], samples: 0, seq: 0, errors: [], paused: false, t0: performance.now() };
     await rec.start({
@@ -623,7 +631,16 @@ async function startRec() {
     renderSidebar(); renderHeaderMeta();
     liveSono();
   } catch (e) {
+    console.error(e);
     rec?.stop();
+    const ctx = S.rec;
+    if (ctx?.rec === rec) {
+      clearInterval(ctx.flushTimer); wake(false);
+      jobs.delete(ctx.job); W?.postMessage({ type: "live-stop", job: ctx.job });
+      S.rec = null;
+      if (!ctx.turn.segments.length) removeTurn(ctx.turn, false); else { ctx.turn.status = "done"; saveTurn(ctx.turn); }
+    }
+    setRecUI(false); cancelAnimationFrame(sonoRaf);
     const denied = e?.name === "NotAllowedError" || e?.name === "SecurityError";
     toast(denied ? "Microphone permission was denied" : e?.name === "NotFoundError" ? "No microphone found" : `Couldn’t start recording: ${e?.message || e}`);
   } finally { S.starting = false; }
@@ -637,11 +654,11 @@ async function flushPcm(ctx) {
 }
 function onLive(ctx, m) {
   const t = ctx.turn;
-  if (m.type === "partial") { t._partial = prefs.corrections.length ? applyCorrections(m.text) : m.text; updateTurn(t); keepBottom(); }
+  if (m.type === "partial") { t._partial = correctSegs(m.segments || []); updateTurn(t); keepBottom(); }
   else if (m.type === "segments") {
     t.segments.push(...correctSegs(m.segments));
     if (m.ms) { ctx.ms = (ctx.ms || 0) + m.ms; ctx.audio = (ctx.audio || 0) + m.audioSec; }
-    t._partial = ""; updateTurn(t); saveTurn(t); keepBottom();
+    t._partial = m.partial ? correctSegs(m.partial) : null; updateTurn(t); saveTurn(t); keepBottom();
   } else if (m.type === "job-error") ctx.errors.push(m.error);
   else if (m.type === "sonogram") { t.sono = m.sono; updateTurnStatus(t); saveTurn(t); }
   else if (m.type === "live-done") finishLive(ctx);
@@ -673,7 +690,7 @@ async function stopRec() {
     await removeTurn(t, false);
     return;
   }
-  t.status = "transcribing"; t._partial = "";
+  t.status = "transcribing"; t._partial = null;
   updateTurn(t);
   // If the live graph lost audio (starved device), swap in the MediaRecorder copy and re-transcribe it.
   let sonoPcm = pcm, isI16 = true;
@@ -710,7 +727,7 @@ async function finishLive(ctx) {
   else if (!t.segments.length && ctx.errors.length) { t.status = "error"; t.error = ctx.errors[0]; }
   else t.status = "done";
   if (ctx.ms) t.rtf = ctx.audio / (ctx.ms / 1000);
-  t._partial = "";
+  t._partial = null;
   await saveTurn(t);
   updateTurn(t);
   touch(t.sessionId);
@@ -733,7 +750,7 @@ function setRecUI(on) {
   $("#pause").innerHTML = icon("pause");
   $("#rec").setAttribute("aria-label", on ? "Stop (R)" : "Record (R)");
   $("#rec").title = on ? "Stop (R)" : "Record (R)";
-  if (!on) { $("#rec").style.setProperty("--lvl", 0); $("#clock").textContent = "0:00"; $("#strip-warn").hidden = true; idleStrip(); }
+  if (!on) { $("#rec").style.setProperty("--lvl", 0); $("#clock").textContent = "0:00"; const w = $("#strip-warn"); if (w) w.hidden = true; idleStrip(); }
 }
 
 let sonoRaf;
@@ -747,6 +764,9 @@ function liveSono() {
     const ctx = S.rec;
     if (!ctx) return;
     sonoRaf = requestAnimationFrame(step);
+    try { draw(ctx); } catch (e) { if (!step.warned) { step.warned = true; console.warn("live view", e); } }
+  };
+  const draw = (ctx) => {
     const an = ctx.rec.analyser;
     if (!an) return;
     fl ||= new Float32Array(an.frequencyBinCount);
@@ -763,7 +783,7 @@ function liveSono() {
     // A silent input for the first few seconds usually means a muted or wrong microphone.
     if (!ctx.paused) { ctx.peakDb = Math.max(ctx.peakDb ?? -200, db); ctx.liveMs = (ctx.liveMs || 0) + 28; }
     const mute = !ctx.paused && ctx.liveMs > 3500 && ctx.peakDb < -72;
-    if (mute !== ctx.muteShown) { ctx.muteShown = mute; $("#strip-warn").hidden = !mute; }
+    if (mute !== ctx.muteShown) { ctx.muteShown = mute; const w = $("#strip-warn"); if (w) w.hidden = !mute; }
     if (cv.width !== Math.round(cv.getBoundingClientRect().width * devicePixelRatio)) fit();
     const W = cv.width, H = cv.height, dx = Math.max(2, Math.round(2 * devicePixelRatio));
     ctx2.globalCompositeOperation = "copy";   // shift without re-blending old ink
@@ -864,10 +884,15 @@ async function transcribeTurn(t) {
     });
     worker().postMessage({ type: "file", job: t.id, spec: specOf(m), pcm: pcm.buffer, opts: { commands: prefs.commands } }, [pcm.buffer]);
   }).finally(() => { jobs.delete(t.id); jobSeen.delete(t.id); t._busy = false; });
-  t.status = "done"; t._progress = 0;
+  if (stopping.delete(t.id)) {
+    t.status = "error";
+    t.error = `Stopped at ${fmtDur(t.segments.at(-1)?.end || 0)} of ${fmtDur(t.duration)}`;
+  } else t.status = "done";
+  t._progress = 0;
   await saveTurn(t);
   updateTurn(t);
 }
+const stopping = new Set();
 async function retranscribe(t, modelId = prefs.model) {
   if (!t.hasAudio) return;
   if (t.segments?.length) t.prev = { model: t.model, segments: t.segments, edited: t.edited };
@@ -986,7 +1011,7 @@ async function removeTurn(t, undoable = true) {
   S.turns.delete(t.id);
   S.queue = S.queue.filter((x) => x !== t.id);
   if (jobs.has(t.id) && t.status !== "recording") { W?.postMessage({ type: "cancel", job: t.id }); }
-  await db.del("turns", t.id); await db.del("audio", t.id);
+  await db.del("turns", t.id); await db.del("audio", t.id); await db.delByIndex("pcm", "turn", t.id);
   $(`#t-${t.id}`)?.remove();
   if (S.sid === t.sessionId && !turnsOf(t.sessionId).length) renderPage();
   renderHeaderMeta(); renderSidebar();
@@ -1402,6 +1427,12 @@ document.addEventListener("click", async (e) => {
     case "edit-done": finishEdit(); break;
     case "retry": retranscribe(t, t.model); break;
     case "retry-tiny": retranscribe(t, "moonshine-tiny"); break;
+    case "stop-turn":
+      if (S.queue.includes(t.id)) {
+        S.queue = S.queue.filter((x) => x !== t.id);
+        t.status = "error"; t.error = "Not transcribed"; await saveTurn(t); updateTurn(t); idleStrip();
+      } else if (t.status === "transcribing") { stopping.add(t.id); W?.postMessage({ type: "cancel", job: t.id }); el.disabled = true; }
+      break;
     case "retry-model": delete S.model[prefs.model]; ensureModel(); break;
     case "corr-add": prefs.corrections.push({ from: "", to: "" }); savePrefs(); renderSettings().then(() => $$("#corrections input[data-corr=from]").at(-1)?.focus()); break;
     case "corr-del": prefs.corrections.splice(+el.closest(".corr").dataset.i, 1); savePrefs(); renderSettings(); break;
@@ -1526,7 +1557,7 @@ addEventListener("keydown", (e) => {
   else if (k === "u") { e.preventDefault(); $("#file").click(); }
   else if (k === "n") { e.preventDefault(); newSession(); }
   else if (k === "/") { e.preventDefault(); $("#app").classList.add("drawer"); $("#search").focus(); }
-  else if (e.key === "?") { e.preventDefault(); $("#keys").showModal(); }
+  else if (e.key === "?") { e.preventDefault(); $("#keys")?.showModal(); }
   else if (k === " " && S.playing && !e.target.closest("button, a, summary")) { e.preventDefault(); player.paused ? player.play() : player.pause(); }
 });
 
@@ -1557,26 +1588,56 @@ async function recover() {
     }
   }
 }
+// ── Updates ──────────────────────────────────────────────────────────────
+// The service worker installs each deploy atomically. When a new build takes over,
+// reload as soon as nothing is in progress (never mid-recording, -upload or -edit).
+let updatePending = false;
+const busy = () => !!(S.rec || S.starting || S.busy || S.queue.length || S.editing || sheet.open || $(".toast") ||
+  document.activeElement?.matches?.("input, textarea, [contenteditable='true']"));
+function applyUpdateWhenIdle() {
+  if (!updatePending) return;
+  if (busy()) return setTimeout(applyUpdateWhenIdle, 2000);
+  location.reload();
+}
+/** HTML and scripts from different builds: drop cached shells and reload once. */
+async function heal(why) {
+  console.warn("Jay build mismatch:", why);
+  if (sessionStorage.getItem("jay.heal") === BUILD) return; // already tried this session
+  sessionStorage.setItem("jay.heal", BUILD);
+  try { for (const k of await caches.keys()) if (k.startsWith("jay-shell-")) await caches.delete(k); } catch {}
+  try { await (await navigator.serviceWorker?.getRegistration("./"))?.update(); } catch {}
+  updatePending = true;
+  applyUpdateWhenIdle();
+}
 async function swReady() {
+  const page = document.querySelector('meta[name="jay-build"]')?.content;
+  if (page !== BUILD) heal("page " + (page || "unstamped"));
+  else sessionStorage.removeItem("jay.heal");
   if (!("serviceWorker" in navigator)) return;
   try {
-    const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    const hadController = !!navigator.serviceWorker.controller;
+    const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" });
+    if (hadController) navigator.serviceWorker.addEventListener("controllerchange", () => { updatePending = true; applyUpdateWhenIdle(); });
     // Threads need cross-origin isolation, which the service worker provides on the next load.
     if (!crossOriginIsolated && !sessionStorage.getItem("jay.coi") && localStorage.getItem("jay.coi") !== "unsupported") {
-      const ok = navigator.serviceWorker.controller ? true : await Promise.race([
+      const ok = hadController || await Promise.race([
         new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", () => r(true), { once: true })),
-        sleep(3000).then(() => false),
+        sleep(4000).then(() => false),
       ]);
-      if (ok && !S.rec && !S.queue.length && !S.busy) {
+      if (ok && !busy()) {
         sessionStorage.setItem("jay.coi", "1");
         location.reload();
         return new Promise(() => {});
       }
     } else if (!crossOriginIsolated && sessionStorage.getItem("jay.coi")) localStorage.setItem("jay.coi", "unsupported");
-    reg.update?.();
+    reg.update?.().catch(() => {});
+    // Long-lived tabs and installed apps check for a new build every 30 min and when reopened.
+    setInterval(() => reg.update?.().catch(() => {}), 30 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update?.().catch(() => {}); });
   } catch (e) { console.warn("Service worker unavailable", e); }
 }
 async function boot() {
+  window.jayBuild = BUILD;
   applyTheme();
   const [sessions, turns] = await Promise.all([db.all("sessions"), db.all("turns")]);
   sessions.forEach((s) => S.sessions.set(s.id, s));

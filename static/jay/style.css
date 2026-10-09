@@ -1,3 +1,4 @@
+/* jay-build:bd5c91a424 */
 /* Jay — field-notebook transcription. Parchment, jay-wing blue, cinnamon. */
 :root {
   color-scheme: light;
@@ -138,6 +139,8 @@ kbd { font: 11px/1 var(--mono); color: var(--ink-3); border: 1px solid var(--lin
 .turn-tools { margin-left: auto; display: flex; gap: 0; opacity: 0; transition: opacity .15s; }
 .turn:hover .turn-tools, .turn:focus-within .turn-tools, .turn.editing .turn-tools { opacity: 1; }
 .turn-tools .icon-btn { width: 30px; height: 30px; }
+.turn-tools .stop { color: var(--cinnamon); }
+.turn:has(.stop) .turn-tools { opacity: 1; }
 .turn-tools svg { width: 17px; height: 17px; }
 
 .scrub { position: relative; height: 40px; margin: 8px 0 12px; border-radius: 6px; overflow: hidden; background: var(--sheet); border: 1px solid var(--line); cursor: pointer; touch-action: none; }
@@ -163,7 +166,8 @@ kbd { font: 11px/1 var(--mono); color: var(--ink-3); border: 1px solid var(--lin
 .seg.now { background: var(--jay-wash); box-shadow: 0 0 0 2px var(--jay-wash); }
 .seg.flash { animation: flash 1.6s var(--ease); }
 .partial { color: var(--ink-3); font-style: italic; }
-.partial::after, .caret::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--cinnamon); animation: blink 1s steps(2) infinite; }
+.partial b.sec { color: inherit; font-style: normal; }
+.partial.tail::after, .caret::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--cinnamon); animation: blink 1s steps(2) infinite; }
 .text .muted { color: var(--ink-3); font-style: italic; }
 .editing .text { outline: none; }
 .editing .seg { cursor: text; background: none; box-shadow: none; }

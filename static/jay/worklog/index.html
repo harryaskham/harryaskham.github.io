@@ -220,6 +220,25 @@ cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
 <p class="dim">Also new: copy pastes into notes and EHR fields as formatted paragraphs with bold report headings. Exports add WebVTT subtitles. The screen stays awake while dictating. A muted or wrong microphone is flagged after a few seconds of silence. A full disk keeps the transcript and says so.</p>
 <div class="bug"><h3>A transcription that never finishes</h3><p>In one test run the engine went quiet mid-job and the clip sat on “Transcribing…”. It never happened again in dozens of runs, but a clinical note must never be stranded.</p><p class="fix">a watchdog: if the engine says nothing about a job for 2 minutes (outside model downloads), Jay restarts it. The clip fails with “Try again”, or, for a finished dictation, is re-transcribed from its saved audio. The test suite hangs the engine on purpose and checks this.</p></div>
 
+<h2>Reported from a phone</h2>
+<div class="bug"><h3>“Couldn’t start recording: Cannot set properties of null (setting ‘hidden’)”</h3>
+<p>Mobile Chrome, browser tab (the installed app was fine). Reproduced exactly by serving the v1-era cached <code>index.html</code> with current scripts:</p>
+<pre>toast: Couldn’t start recording: Cannot set properties of null (setting 'hidden')
+dock:  "dock recording"   ← stuck in a recording state</pre>
+<p>The old service worker raced network against cache and didn't keep the cache refresh alive, so on a slow mobile connection the tab could get old HTML (missing the v4 mic-warning element) with new JavaScript.</p>
+<p class="fix">every shell file now carries one content-derived <code>jay-build</code> stamp. The service worker installs a build atomically (refusing a half-propagated deploy), serves it consistently online and offline, and only reloads onto a new build when nothing is recording, transcribing or being edited. A page whose HTML and scripts disagree heals with one reload. A failed start cleans up fully. CI fails if the stamp is stale.</p>
+<pre><b>$ node _tests/jay-update.mjs</b>
+<span class="ok">✓</span> idle tab picks up a new deploy (page + scripts agree)
+<span class="ok">✓</span> opens offline from the installed build
+<span class="ok">✓</span> no reload mid-recording · update applied once the recording finished
+<span class="ok">✓</span> mixed-build deploy refused; still consistent on the last good build
+<span class="ok">✓</span> stale HTML detected → exactly one healing reload (no loop) · it can record</pre></div>
+<div class="bug"><h3>“Streaming med text keeps overwriting itself on one line”</h3>
+<p>Live partials re-decoded the whole open utterance (up to 24 s of continuous dictation) and replaced one italic line; report sections inside it were flattened.</p>
+<pre><b>before</b>  live partial grew to <span class="bad">42 words</span>, 1 sentence committed in 52 s
+<b>after</b>   committed sentence by sentence, partial ≤ <span class="ok">21 words</span>, committed text rewritten <span class="ok">0×</span></pre>
+<p class="fix">CTC local agreement: words two consecutive decodes agree on, older than 1.2 s, are committed as final ink. Cuts happen only at sentence ends where the audio is genuinely silent, so a word is never split. Decoding after a cut keeps 1.5 s of overlapping context, and partials render with paragraphs and section labels. A debug fake microphone replays clean audio through the real live path at realtime to test this deterministically.</p></div>
+
 <h2>Timeline</h2>
 <ol class="time">
   <li><span class="t">09:20</span><span>Brief. Read the repo’s static-SPA process; sized Parakeet, MedASR, Moonshine, Whisper and the ORT builds.</span></li>
@@ -229,6 +248,7 @@ cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
   <li><span class="t">10:22</span><span><b>v1 live</b> on main → GitHub Pages. Live HTTPS run passed, MedASR included.</span></li>
   <li><span class="t">11:30</span><span><b>v2</b>: audio-starvation recovery, crash recovery, report sections, accessibility fixes, this log.</span></li>
   <li><span class="t">11:40</span><span><b>v3</b>: Firefox and WebKit pass end-to-end; Safari-safe audio storage and WAV decoding.</span></li>
+  <li><span class="t">12:45</span><span><b>v4.1</b>: atomic, self-healing updates (the phone record failure); streaming MedASR commits sentence by sentence.</span></li>
   <li><span class="t">12:10</span><span><b>v4</b>: corrections learned from your edits, paste-ready rich copy, WebVTT, screen wake lock, no-mic warning, storage-full handling, keyboard sheet, and a stall watchdog.</span></li>
 </ol>
 
