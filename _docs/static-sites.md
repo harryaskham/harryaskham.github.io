@@ -83,6 +83,10 @@ python3 _tools/jay-assets.py --check  # verify committed shards
 python3 _tools/jay-stamp.py           # REQUIRED after editing static/jay: restamp the build id
 ```
 
+GitHub Pages compresses some files on the fly (including `.bin`), so the
+local dev server is not a faithful CDN: always run `_tests/jay-smoke.mjs`
+against the live site after a deploy.
+
 Every Jay shell file carries one content-derived `jay-build:<id>` stamp. The
 service worker caches each build atomically (refusing a half-propagated deploy),
 serves it consistently offline, and the page reloads onto a new build only when
@@ -103,6 +107,7 @@ JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-update.mjs       # deploy con
 JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-streaming.mjs    # clean-audio live streaming
 JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-mobile.mjs       # share target, back gesture
 JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-mic.mjs          # mute, mic disconnect, interruption
-MEDASR_DIR=… JAY_URL=… node _tests/jay-downloads.mjs                 # flaky network: resume, cancel
+MEDASR_DIR=… JAY_URL=… node _tests/jay-downloads.mjs                 # flaky network, gzip CDN, cancel
+node _tests/jay-smoke.mjs   # AFTER EVERY DEPLOY: live CDN build consistency + new-visitor cold load
 JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-crossbrowser.mjs # Firefox + WebKit
 ```
