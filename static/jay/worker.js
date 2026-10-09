@@ -21,23 +21,31 @@ async function store(url, buf, type = "application/octet-stream") {
  */
 async function download(url, onBytes, signal, onRetry) {
   const chunks = [];
-  let got = 0, total = 0, attempt = 0;
+  let got = 0, attempt = 0, ranged = true;
   for (;;) {
     try {
-      const headers = got ? { Range: `bytes=${got}-` } : {};
-      const res = await fetch(url, { cache: "no-store", headers, signal });
+      if (got && !ranged) { onBytes(-got, 0); chunks.length = 0; got = 0; } // can't resume: start over
+      const res = await fetch(url, { cache: "no-store", headers: got ? { Range: `bytes=${got}-` } : {}, signal });
+      if (got && res.status === 416) { ranged = false; throw new Error("range not satisfiable"); }
       if (got && res.status !== 206) { onBytes(-got, 0); chunks.length = 0; got = 0; } // Range ignored: start over
       if (!res.ok) { const e = new Error(`HTTP ${res.status} for ${url.split("/").slice(-1)[0].split("?")[0]}`); e.fatal = res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429; throw e; }
-      if (!total) total = res.status === 206 ? got + (+res.headers.get("content-length") || 0) : +res.headers.get("content-length") || 0;
+      // Content-Length counts *encoded* bytes when a CDN compresses on the fly (GitHub Pages gzips
+      // .bin files), and Range offsets then don't map to the decoded bytes we hold: only use either
+      // for identity-encoded responses. The SHA-256 check catches anything truncated regardless.
+      const enc = (res.headers.get("content-encoding") || "identity").toLowerCase();
+      const encoded = enc !== "identity";
+      if (encoded) ranged = false;
+      const len = encoded ? 0 : +res.headers.get("content-length") || 0;
+      const expect = len ? got + len : 0;
       const reader = res.body.getReader();
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
         chunks.push(value); got += value.byteLength;
-        onBytes(value.byteLength, total);
+        onBytes(value.byteLength, expect);
         attempt = 0;
       }
-      if (total && got < total) throw new Error("connection closed early");
+      if (expect && got < expect) throw new Error("connection closed early");
       break;
     } catch (e) {
       if (signal?.aborted || e.name === "AbortError") throw Object.assign(new Error("Download cancelled"), { name: "AbortError" });
@@ -683,5 +691,5 @@ onmessage = async ({ data: d }) => {
     if (/abort|out of memory|RuntimeError|unreachable|memory access/i.test(msg)) post({ type: "fatal", error: msg });
   }
 };
-const BUILD = "jay-build:71fc424208";
+const BUILD = "jay-build:7e8cfe1543";
 post({ type: "hello", build: BUILD });

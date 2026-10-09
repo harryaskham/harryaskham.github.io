@@ -1,8 +1,8 @@
-// jay-build:71fc424208
+// jay-build:7e8cfe1543
 // Jay · service worker. Serves one complete, consistent build of the app shell
 // from a per-build cache (never a mix of old and new files), keeps working
 // offline, and adds COOP/COEP so ONNX Runtime can use WebAssembly threads.
-const BUILD = "jay-build:71fc424208";
+const BUILD = "jay-build:7e8cfe1543";
 const SHELL = "jay-shell-" + BUILD.split(":")[1];
 const SCOPE = new URL("./", self.location.href).pathname;
 const STAMPED = ["index.html", "style.css", "app.js", "db.js", "audio.js", "dsp.js", "worker.js", "capture-worklet.js"];
@@ -43,6 +43,8 @@ self.addEventListener("activate", (e) => {
 function isolate(res) {
   if (!res || res.status === 0 || res.type === "opaque") return res;
   const h = new Headers(res.headers);
+  // fetch() already decoded the body: drop headers that describe the compressed transfer.
+  h.delete("content-encoding"); h.delete("content-length");
   h.set("Cross-Origin-Embedder-Policy", "require-corp");
   h.set("Cross-Origin-Opener-Policy", "same-origin");
   h.set("Cross-Origin-Resource-Policy", "same-origin");

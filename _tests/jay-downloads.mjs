@@ -6,6 +6,8 @@
 import { createRequire } from 'node:module';
 import http from 'node:http';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
+const gzCache = {};
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 const URL_ = process.env.JAY_URL || 'http://127.0.0.1:4000/jay/';
 const DIR = process.env.MEDASR_DIR;
@@ -24,6 +26,16 @@ const server = http.createServer((req, res) => {
   const size = fs.statSync(file).size;
   const m = /bytes=(\d+)-/.exec(req.headers.range || ''); const start = m ? +m[1] : 0;
   const slow = url.pathname.startsWith('/slow/');
+  if (url.pathname.startsWith('/gz/')) {
+    // Like GitHub Pages: compress on the fly; Content-Length is the compressed size; a Range past
+    // the compressed length is 416.
+    const gz = gzCache[name] ||= zlib.gzipSync(fs.readFileSync(file), { level: 1 });
+    log.push({ name, gz: true, range: req.headers.range || null });
+    const st = m ? +m[1] : 0;
+    if (st >= gz.length) { res.writeHead(416, h); return res.end(); }
+    res.writeHead(m ? 206 : 200, { ...h, 'Content-Encoding': 'gzip', 'Content-Length': gz.length - st, ...(m ? { 'Content-Range': `bytes ${st}-${gz.length - 1}/${gz.length}` } : {}) });
+    return res.end(gz.subarray(st));
+  }
   log.push({ name, slow, range: req.headers.range || null, at: Date.now() });
   res.writeHead(m ? 206 : 200, { ...h, 'Content-Length': size - start, ...(m ? { 'Content-Range': `bytes ${start}-${size - 1}/${size}` } : {}), 'Content-Type': 'application/octet-stream' });
   const s = fs.createReadStream(file, { start, highWaterMark: 256 * 1024 });
@@ -49,9 +61,15 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || 
 const page = await (await browser.newContext({ viewport: { width: 1100, height: 800 } })).newPage();
 const errs = []; page.on('pageerror', (e) => errs.push(e.message));
 const stages = []; page.on('console', (m) => { const t = m.text(); const s = /\[jay\] model\s.*/.test(t); if (s) stages.push(t); });
-await page.addInitScript(([a, b]) => { localStorage.setItem('jay.debug', '1'); localStorage.setItem('jay.prefs', JSON.stringify({ custom: [a, b] })); }, [custom('flaky', S), custom('slow', S + '/slow')]);
+await page.addInitScript(([a, b, g]) => { localStorage.setItem('jay.debug', '1'); if (!localStorage.getItem('jay.prefs')) localStorage.setItem('jay.prefs', JSON.stringify({ custom: [a, b, g] })); }, [custom('flaky', S), custom('slow', S + '/slow'), { ...custom('gz', S + '/gz'), name: 'MedASR (gzip CDN)' }]);
 await page.goto(URL_);
 await page.waitForFunction(() => /ready/.test(document.querySelector('#loadline')?.textContent || ''), null, { timeout: 60000 });
+// 0. a CDN that gzips on the fly (GitHub Pages): Content-Length ≠ decoded size must not break downloads
+await page.click('#model-chip'); await page.click('#menu button:has-text("gzip CDN")');
+await page.waitForFunction(() => /ready|error/.test(document.querySelector('#model-chip .dot')?.className || ''), null, { timeout: 180000 });
+ok(await page.evaluate(() => document.querySelector('#model-chip .dot').classList.contains('ready')), 'model from a gzip-on-the-fly CDN loads: ' + (await page.evaluate(() => document.querySelector('#model-chip').title)));
+await page.click('#model-chip'); await page.click('#menu button:has-text("Moonshine Tiny")');
+await page.waitForFunction(() => document.querySelector('#model-chip .dot')?.classList.contains('ready') && /Tiny/.test(document.querySelector('#model-name').textContent), null, { timeout: 60000 });
 // 1. resume after a dropped connection
 const seenRetry = page.waitForFunction(() => /Connection dropped — resuming/.test(document.querySelector('#loadline')?.textContent || ''), null, { timeout: 60000 }).then(() => true).catch(() => false);
 await page.click('#model-chip'); await page.click('#menu button:has-text("flaky mirror")');

@@ -1,4 +1,4 @@
-// jay-build:71fc424208
+// jay-build:7e8cfe1543
 // Jay · microphone capture. Runs in the AudioWorklet thread: mixes to mono and
 // resamples device audio (44.1/48/… kHz) to 16 kHz with a windowed-sinc filter.
 class Capture extends AudioWorkletProcessor {

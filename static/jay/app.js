@@ -3,7 +3,7 @@
 import * as db from "./db.js";
 import { Recorder, FakeRecorder, decodeFile, f32ToI16, concatI16, wavBlob, SR } from "./audio.js";
 
-const BUILD = "jay-build:71fc424208";
+const BUILD = "jay-build:7e8cfe1543";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
