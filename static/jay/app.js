@@ -1,7 +1,7 @@
 // Jay · on-device medical transcription. UI, sessions, recording, uploads,
 // search, history and export. All audio and transcripts stay in this browser.
 import * as db from "./db.js";
-import { Recorder, decodeFile, f32ToI16, i16ToF32, concatI16, wavBlob, SR } from "./audio.js";
+import { Recorder, decodeFile, f32ToI16, concatI16, wavBlob, SR } from "./audio.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -29,13 +29,13 @@ const MOONSHINE_BASE = HF("onnx-community/moonshine-base-ONNX", "b1e9b6aae3c3c72
 const MEDASR = HF("ysdede/medasr-onnx", "2baa5ece746ece2e7e5eb129797ca53ca0f5050d");
 const BUILTIN = [
   {
-    id: "moonshine-tiny", name: "Moonshine Tiny", tags: ["in"], kind: "moonshine", builtin: true, size: 24.3e6,
+    id: "moonshine-tiny", name: "Moonshine Tiny", short: "Tiny", tags: ["in"], kind: "moonshine", builtin: true, size: 24.3e6,
     blurb: "General English · instant, offline, bundled with Jay",
     manifest: "./models/moonshine-tiny/manifest.json", config: { decoder_num_hidden_layers: 6, decoder_num_key_value_heads: 8, headDim: 36 },
     license: "MIT · Useful Sensors", link: "https://huggingface.co/UsefulSensors/moonshine-tiny",
   },
   {
-    id: "medasr", name: "MedASR", tags: ["med"], kind: "ctc", format: "medasr", size: 108.1e6,
+    id: "medasr", name: "MedASR", short: "MedASR", tags: ["med"], kind: "ctc", format: "medasr", size: 108.1e6,
     blurb: "Google's clinical speech model · radiology & medical dictation, spoken punctuation",
     files: {
       model: { url: MEDASR + "model_int8.onnx", sha256: "6672e7bf25ff6c7fa2f6b620dcae6127431614390665f08dd3ffbd9e72e23309", size: 108083856 },
@@ -44,7 +44,7 @@ const BUILTIN = [
     license: "Health AI Developer Foundations terms · int8 ONNX", link: "https://huggingface.co/google/medasr",
   },
   {
-    id: "moonshine-base", name: "Moonshine Base", tags: [], kind: "moonshine", size: 66.8e6,
+    id: "moonshine-base", name: "Moonshine Base", short: "Base", tags: [], kind: "moonshine", size: 66.8e6,
     blurb: "General English · more accurate, ~3× slower than Tiny",
     files: {
       encoder: { url: MOONSHINE_BASE + "onnx/encoder_model_quantized.onnx", sha256: "1dd9ab0a7f987113d30affcba5a068d11c8f90fa0223caa3e491ade431ad9751", size: 20513063 },
@@ -76,7 +76,7 @@ const S = {
 };
 const turnsOf = (sid) => [...S.turns.values()].filter((t) => t.sessionId === sid).sort((a, b) => a.createdAt - b.createdAt);
 const strip = (t) => Object.fromEntries(Object.entries(t).filter(([k]) => !k.startsWith("_")));
-const saveTurn = (t) => db.put("turns", strip(t));
+const saveTurn = (t) => (S.turns.get(t.id) === t ? db.put("turns", strip(t)) : Promise.resolve());
 const saveSession = (s) => db.put("sessions", s);
 
 // ── Worker ───────────────────────────────────────────────────────────────
@@ -90,27 +90,55 @@ function worker() {
     if (debug && m.type !== "model") console.debug("[jay]", m.type, m.job || "", m.text ?? m.segments?.map((x) => x.text).join(" | ") ?? m.error ?? "");
     if (m.type === "model") onModel(m);
     else if (m.type === "runtime") { S.runtime = m.info; renderSettingsIfOpen(); }
+    else if (m.type === "fatal") restartWorker(m.error);
     else if (m.type === "cache-status") { Object.assign(S.cache, m.status); renderSettingsIfOpen(); renderEmptyIfShown(); }
     else if (m.job && jobs.has(m.job)) jobs.get(m.job)(m);
   };
-  W.onerror = (e) => { console.error(e); toast("Transcription engine crashed — reload Jay"); };
+  if (localStorage.getItem("jay.threads")) W.postMessage({ type: "config", threads: +localStorage.getItem("jay.threads") });
+  W.onerror = (e) => { e.preventDefault?.(); restartWorker(e.message || "engine error"); };
   return W;
 }
+/** Tear down a crashed engine; in-flight jobs fail cleanly and recordings keep their audio. */
+function restartWorker(reason) {
+  console.warn("Jay engine restart:", reason);
+  try { W?.terminate(); } catch {}
+  W = null;
+  for (const id of Object.keys(S.model)) if (S.model[id].state !== "error") delete S.model[id];
+  const live = S.rec?.job;
+  for (const [job, fn] of [...jobs]) {
+    if (job === live) { S.rec.crashed = true; continue; }
+    fn({ type: "job-error", job, error: "The transcription engine restarted — try again" });
+    jobs.delete(job);
+  }
+  toast("Transcription engine restarted");
+  renderChip();
+  if (S.rec) { worker().postMessage({ type: "live-start", job: live, spec: specOf(modelById(S.rec.turn.model)), opts: S.rec.opts }); }
+}
 function onModel(m) {
+  m.at = Date.now();
   S.model[m.id] = m;
   if (m.state === "ready") { S.cache[m.id] = { state: "cached" }; if (S.runtime == null && m.runtime) S.runtime = m.runtime; }
   if (m.state === "error" && m.id === prefs.model) toast(`${modelById(m.id).name}: ${m.error}`);
   renderChip(); renderSettingsIfOpen(); renderEmptyIfShown();
-  for (const t of S.turns.values()) if (t._busy && t.sessionId === S.sid) updateTurnStatus(t);
+  for (const t of S.turns.values()) if (t.sessionId === S.sid && t.model === m.id && /transcribing|recording|queued/.test(t.status)) updateTurnStatus(t);
 }
 function ensureModel(m = current()) {
   const st = S.model[m.id]?.state;
   if (st === "ready" || st === "loading") return;
   if (!W) worker();
-  S.model[m.id] = { id: m.id, state: "loading", stage: "start" };
+  S.model[m.id] = { id: m.id, state: "loading", stage: "start", at: Date.now() };
   worker().postMessage({ type: "load", spec: specOf(m) });
   renderChip();
 }
+// A load that goes silent (no progress for 3 min) becomes a retryable error, never an endless spinner.
+setInterval(() => {
+  for (const st of Object.values(S.model)) {
+    if (st.state === "loading" && Date.now() - (st.at || 0) > 180000) {
+      onModel({ id: st.id, state: "error", error: "Model load stalled" });
+      restartWorker("model load stalled");
+    }
+  }
+}, 10000);
 function refreshCache() { worker().postMessage({ type: "cache-status", specs: allModels().map(specOf) }); }
 
 // ── Toasts & menus ───────────────────────────────────────────────────────
@@ -252,6 +280,25 @@ function renderPage() {
   if (!turns.length) { box.innerHTML = emptyHtml(); return; }
   box.innerHTML = turns.map(turnHtml).join("");
   requestAnimationFrame(() => turns.forEach(drawSono));
+  turns.forEach(ensureSono);
+}
+const sonoPending = new Set();
+/** Backups omit sonograms; rebuild them lazily from stored audio. */
+async function ensureSono(t) {
+  if (t.sono || !t.hasAudio || t.status !== "done" || sonoPending.has(t.id) || jobs.has(t.id)) return;
+  sonoPending.add(t.id);
+  try {
+    const blob = await db.get("audio", t.id);
+    if (!blob) return;
+    const pcm = await decodeFile(blob);
+    const job = "sono-" + t.id;
+    jobs.set(job, (m) => {
+      if (m.type !== "sonogram" && m.type !== "job-error") return;
+      jobs.delete(job); sonoPending.delete(t.id);
+      if (m.sono) { t.sono = m.sono; saveTurn(t); updateTurnStatus(t); }
+    });
+    worker().postMessage({ type: "sonogram", job, pcm: pcm.buffer }, [pcm.buffer]);
+  } catch { sonoPending.delete(t.id); }
 }
 function emptyHtml() {
   const m = current();
@@ -269,6 +316,7 @@ function emptyHtml() {
     <div class="loadline" id="loadline">${loadLine(m)}</div>
   </div></div>`;
 }
+const loadText = (m) => loadLine(m).replace(/<[^>]+>/g, "").replace(/ · Retry$/, "");
 function loadLine(m) {
   const st = S.model[m.id];
   if (!st) return "";
@@ -278,7 +326,7 @@ function loadLine(m) {
     return `Loading ${m.name}…`;
   }
   if (st.state === "ready") return `${m.name} ready · runs on this device${S.runtime ? ` · ${S.runtime.threads} thread${S.runtime.threads > 1 ? "s" : ""}` : ""}`;
-  if (st.state === "error") return `Couldn’t load ${m.name}: ${esc(st.error)}`;
+  if (st.state === "error") return `Couldn’t load ${m.name}: ${esc(st.error)} · <button class="link" data-act="retry-model">Retry</button>`;
   return "";
 }
 function renderEmptyIfShown() {
@@ -300,12 +348,13 @@ function paragraphs(t) {
   });
   return out;
 }
+const secLabel = (h) => h.replace(/^([^:<]{2,40}:)/, '<b class="sec">$1</b>');
 function textHtml(t) {
   const ts = terms();
   const paras = paragraphs(t);
   const editing = S.editing === t.id;
-  let html = paras.map((p) => `<p><span class="ts" data-seek="${p.start}">${fmtDur(p.start)}</span>${p.segs
-    .map(([s, i]) => `<span class="seg" data-i="${i}" data-t="${s.start}"${editing ? ' contenteditable="true" spellcheck="true"' : ""}>${editing ? esc(s.text) : highlight(s.text, ts)}</span>`)
+  let html = paras.map((p) => `<p><button class="ts" data-seek="${p.start}" aria-label="Play from ${fmtDur(p.start)}" tabindex="${editing ? -1 : 0}">${fmtDur(p.start)}</button>${p.segs
+    .map(([s, i]) => `<span class="seg" data-i="${i}" data-t="${s.start}"${editing ? ' contenteditable="true" spellcheck="true"' : ""}>${editing ? esc(s.text) : s.sec ? secLabel(highlight(s.text, ts)) : highlight(s.text, ts)}</span>`)
     .join(" ")}</p>`).join("");
   if (t._partial) html += paras.length ? "" : "<p></p>";
   if (t._partial) html = html.replace(/<\/p>$/, ` <span class="partial">${esc(t._partial)}</span></p>`);
@@ -329,9 +378,9 @@ function statusHtml(t) {
   return "";
 }
 function footHtml(t) {
-  if (t.status === "error") return `<div class="foot"><span>${esc(t.error || "Transcription failed")}</span>${t.hasAudio ? `<button data-act="retry">Try again</button>` : ""}</div>`;
-  if (t.status === "transcribing" && S.model[t.model]?.state === "loading") return `<div class="foot"><span>${esc(loadLine(modelById(t.model)))}</span></div>`;
-  if (t.prev && t.status === "done") return `<div class="foot"><span>Re-transcribed with ${esc(modelById(t.model).name)}</span><button data-act="restore">Restore previous</button></div>`;
+  if (t.status === "error") return `<div class="foot"><span>${esc(t.error || "Transcription failed")}</span>${t.hasAudio ? `<button data-act="retry">Try again</button>${t.model !== "moonshine-tiny" ? `<button data-act="retry-tiny">Use Moonshine Tiny</button>` : ""}` : ""}</div>`;
+  if (/transcribing|recording|queued/.test(t.status) && S.model[t.model]?.state === "loading") return `<div class="foot"><span>${esc(loadText(modelById(t.model)))}</span></div>`;
+  if (t.prev && t.status === "done") return `<div class="foot"><span>${t.prev.live ? "Transcribed from the full recording" : `Re-transcribed with ${esc(modelById(t.model).name)}`}</span><button data-act="restore">${t.prev.live ? "Show live draft" : "Restore previous"}</button></div>`;
   return "";
 }
 function chipHtml(t) {
@@ -451,7 +500,8 @@ async function touch(sid) {
   if (s.autoTitle) {
     const first = turnsOf(sid).map(turnText).find((x) => x.trim());
     if (first) {
-      const words = first.replace(/[\n\r]+/g, " ").split(/\s+/).slice(0, 7).join(" ").replace(/[,:;.]+$/, "");
+      const sentence = first.replace(/[\n\r]+/g, " ").split(/(?<=[.?!])\s/)[0];
+      const words = sentence.split(/\s+/).slice(0, 8).join(" ").replace(/[,:;.]+$/, "");
       if (words.length > 3) s.title = words.length > 52 ? words.slice(0, 50) + "…" : words;
     }
   }
@@ -493,7 +543,7 @@ async function startRec() {
   try {
     rec = new Recorder();
     const job = uid();
-    const ctx = { job, chunks: [], pending: [], samples: 0, seq: 0, errors: [], paused: false };
+    const ctx = { job, chunks: [], pending: [], samples: 0, seq: 0, errors: [], paused: false, t0: performance.now() };
     await rec.start({
       deviceId: prefs.mic, noise: prefs.noise,
       onPcm: (f32) => {
@@ -512,7 +562,8 @@ async function startRec() {
     ctx.rec = rec; ctx.turn = t;
     S.rec = ctx;
     jobs.set(job, (msg) => onLive(ctx, msg));
-    worker().postMessage({ type: "live-start", job, spec: specOf(m), opts: { pause: prefs.pause, commands: prefs.commands, maxSeg: m.kind === "moonshine" ? 16 : 24 } });
+    ctx.opts = { pause: prefs.pause, commands: prefs.commands, maxSeg: m.kind === "moonshine" ? 15 : 24 };
+    worker().postMessage({ type: "live-start", job, spec: specOf(m), opts: ctx.opts });
     ctx.flushTimer = setInterval(() => flushPcm(ctx), 4000);
     appendTurn(t);
     setRecUI(true);
@@ -555,9 +606,11 @@ async function stopRec() {
   ctx.paused = false;
   await ctx.rec.stop(); // flushes the worklet's tail into onPcm before closing
   S.rec = null;
+  const st = ctx.rec.stats;
+  if (localStorage.getItem("jay.debug")) console.debug("[jay] capture", JSON.stringify({ ...st, samples16k: ctx.samples, wall: (performance.now() - ctx.t0) / 1000 }));
   setRecUI(false);
   const t = ctx.turn;
-  const pcm = concatI16(ctx.chunks);
+  let pcm = concatI16(ctx.chunks);
   t.duration = pcm.length / SR;
   if (t.duration < 0.4 && !t.segments.length) {
     worker().postMessage({ type: "live-stop", job: t.id });
@@ -566,12 +619,26 @@ async function stopRec() {
     return;
   }
   t.status = "transcribing"; t._partial = "";
+  updateTurn(t);
+  // If the live graph lost audio (starved device), swap in the MediaRecorder copy and re-transcribe it.
+  let sonoPcm = pcm, isI16 = true;
+  const bk = ctx.rec.backupBlob;
+  if (bk && bk.size && t.duration < 90 * 60) {
+    try {
+      const full = await decodeFile(bk);
+      if (localStorage.getItem("jay.debug")) console.debug("[jay] backup", bk.type, bk.size, "full", (full.length / SR).toFixed(2), "live", (pcm.length / SR).toFixed(2));
+      if (full.length - pcm.length > Math.max(SR * 0.3, pcm.length * 0.015)) {
+        ctx.recovered = true;
+        t.duration = full.length / SR;
+        pcm = f32ToI16(full); sonoPcm = full; isI16 = false;
+      }
+    } catch (e) { if (localStorage.getItem("jay.debug")) console.debug("[jay] backup failed", e?.message || e); }
+  }
   await db.put("audio", wavBlob(pcm), t.id);
   t.hasAudio = true;
   await db.delByIndex("pcm", "turn", t.id);
   updateTurn(t); await saveTurn(t);
-  const f = i16ToF32(pcm);
-  worker().postMessage({ type: "sonogram", job: t.id, pcm: f.buffer }, [f.buffer]);
+  worker().postMessage({ type: "sonogram", job: t.id, pcm: sonoPcm.buffer, i16: isI16 }, [sonoPcm.buffer]);
   worker().postMessage({ type: "live-stop", job: t.id });
   touch(t.sessionId);
   persistQuietly();
@@ -579,7 +646,12 @@ async function stopRec() {
 async function finishLive(ctx) {
   const t = ctx.turn;
   jobs.delete(t.id);
-  if (!t.segments.length && ctx.errors.length) { t.status = "error"; t.error = ctx.errors[0]; }
+  if ((ctx.crashed || ctx.recovered) && t.hasAudio) {
+    if (t.segments.length) t.prev = { model: t.model, segments: t.segments, edited: false, live: true };
+    t.segments = []; t.status = "queued"; S.queue.push(t.id);
+    if (ctx.recovered) toast("The live stream missed some audio — re-transcribing the full recording");
+  }
+  else if (!t.segments.length && ctx.errors.length) { t.status = "error"; t.error = ctx.errors[0]; }
   else t.status = "done";
   if (ctx.ms) t.rtf = ctx.audio / (ctx.ms / 1000);
   t._partial = "";
@@ -670,10 +742,11 @@ function idleStrip() {
   const st = S.model[prefs.model];
   const busy = [...S.turns.values()].some((t) => t.status === "transcribing" || t.status === "queued");
   let msg = `Drop audio anywhere`;
-  if (st?.state === "loading") msg = esc(loadLine(current()));
+  if (st?.state === "loading") msg = esc(loadText(current()));
   else if (busy) msg = `Transcribing…`;
   else if (st?.state === "error") msg = `Model unavailable — choose another`;
   $("#strip-status").innerHTML = msg;
+  $("#strip-status").classList.toggle("hint", msg === "Drop audio anywhere");
 }
 
 // ── Uploads ──────────────────────────────────────────────────────────────
@@ -834,6 +907,7 @@ async function removeTurn(t, undoable = true) {
   const blob = undoable ? await db.get("audio", t.id) : null;
   S.turns.delete(t.id);
   S.queue = S.queue.filter((x) => x !== t.id);
+  if (jobs.has(t.id) && t.status !== "recording") { W?.postMessage({ type: "cancel", job: t.id }); }
   await db.del("turns", t.id); await db.del("audio", t.id);
   $(`#t-${t.id}`)?.remove();
   if (S.sid === t.sessionId && !turnsOf(t.sessionId).length) renderPage();
@@ -955,7 +1029,7 @@ async function storageInfo() {
 async function updateStorage() {
   const i = await storageInfo();
   $("#store-label").textContent = fmtBytes(i.usage);
-  $("#store-fill").style.width = Math.min(100, (i.usage / Math.max(i.quota, 1)) * 100 * 8) + "%";
+  $("#store-meter").title = `Storage · audio ${fmtBytes(i.audio)} · models ${fmtBytes(i.models)}`;
   return i;
 }
 let persistAsked = false;
@@ -1139,11 +1213,11 @@ async function deleteModel(id) {
 // ── Model chip ───────────────────────────────────────────────────────────
 function renderChip() {
   const m = current(), st = S.model[m.id];
-  $("#model-name").textContent = m.name;
+  $("#model-name").innerHTML = `<span class="full">${esc(m.name)}</span><span class="short">${esc(m.short || m.name)}</span>`;
   const dot = $("#model-chip .dot");
   dot.className = "dot " + (st?.state || "");
   dot.style.setProperty("--p", st?.total ? Math.round((st.got / st.total) * 100) : 15);
-  $("#model-chip").title = st?.state === "loading" ? loadLine(m) : st?.state === "error" ? st.error : `${m.name} · ${m.blurb}`;
+  $("#model-chip").title = st?.state === "loading" ? loadText(m) : st?.state === "error" ? st.error : `${m.name} · ${m.blurb}`;
   if (!S.rec) idleStrip();
 }
 function chipMenu() {
@@ -1208,6 +1282,7 @@ document.addEventListener("click", async (e) => {
   const el = e.target.closest("[data-act]");
   if (!el) {
     const seg = e.target.closest(".seg, .ts");
+    if (seg?.matches(".ts") && seg.closest(".editing")) return;
     if (seg && !e.target.closest(".editing") && !getSelection().toString()) {
       const t = S.turns.get(seg.closest(".turn").dataset.id);
       play(t, +(seg.dataset.t ?? seg.dataset.seek));
@@ -1228,6 +1303,8 @@ document.addEventListener("click", async (e) => {
     case "edit": startEdit(t); break;
     case "edit-done": finishEdit(); break;
     case "retry": retranscribe(t, t.model); break;
+    case "retry-tiny": retranscribe(t, "moonshine-tiny"); break;
+    case "retry-model": delete S.model[prefs.model]; ensureModel(); break;
     case "restore": if (t.prev) { [t.segments, t.model, t.edited] = [t.prev.segments, t.prev.model, t.prev.edited]; t.prev = null; await saveTurn(t); turnEl.outerHTML = turnHtml(t); drawSono(t); } break;
     case "turn-more": menu(el, [
       { label: "Copy text", icon: "copy", run: () => copy(plainText(t), "Transcript copied") },
@@ -1328,7 +1405,7 @@ addEventListener("keydown", (e) => {
   else if (k === "u") { e.preventDefault(); $("#file").click(); }
   else if (k === "n") { e.preventDefault(); newSession(); }
   else if (k === "/") { e.preventDefault(); $("#app").classList.add("drawer"); $("#search").focus(); }
-  else if (k === " " && S.playing) { e.preventDefault(); player.paused ? player.play() : player.pause(); }
+  else if (k === " " && S.playing && !e.target.closest("button, a, summary")) { e.preventDefault(); player.paused ? player.play() : player.pause(); }
 });
 
 let dragDepth = 0;
@@ -1382,12 +1459,11 @@ async function boot() {
   const [sessions, turns] = await Promise.all([db.all("sessions"), db.all("turns")]);
   sessions.forEach((s) => S.sessions.set(s.id, s));
   turns.forEach((t) => S.turns.set(t.id, t));
+  await recover();
   route();
   renderChip();
   updateStorage();
   await swReady();
-  await recover();
-  if (S.queue.length) renderPage();
   worker();
   refreshCache();
   if (prefs.preload || S.queue.length) ensureModel();

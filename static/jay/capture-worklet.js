@@ -21,7 +21,11 @@ class Capture extends AudioWorkletProcessor {
     this.x = this.half;              // fractional input position of next output sample
     this.out = new Float32Array(1600);
     this.olen = 0;
-    this.port.onmessage = (e) => { if (e.data === "flush") this.flush(); };
+    this.lost = 0; this.seen = 0; this.empty = 0;
+    this.port.onmessage = (e) => {
+      if (e.data === "flush") this.flush();
+      if (e.data === "stats") this.port.postMessage({ stats: { lost: this.lost, seen: this.seen, empty: this.empty, rate: sampleRate } });
+    };
   }
   flush() {
     if (!this.olen) return;
@@ -30,8 +34,12 @@ class Capture extends AudioWorkletProcessor {
     this.olen = 0;
   }
   process(inputs) {
+    // Render-thread health: frames skipped between calls mean the audio thread was starved.
+    if (this.lastFrame != null && currentFrame - this.lastFrame > 128) this.lost += currentFrame - this.lastFrame - 128;
+    this.lastFrame = currentFrame;
+    this.seen += 128;
     const ch = inputs[0];
-    if (!ch || !ch.length || !ch[0]) return true;
+    if (!ch || !ch.length || !ch[0]) { this.empty += 128; return true; }
     const n = ch[0].length;
     if (this.hlen + n > this.hist.length) {
       const nh = new Float32Array((this.hlen + n) * 2);

@@ -232,6 +232,19 @@ export function planChunks(audio, maxSec = 20) {
   return chunks.map(([a, b]) => ({ start: a * FRAME, end: Math.min(audio.length, b * FRAME) }));
 }
 
+/** Quietest 100 ms point (sample index) of audio between fractions a..b. */
+export function quietest(audio, a = 0.35, b = 0.65) {
+  const n = Math.floor(audio.length / FRAME);
+  const lo = Math.floor(n * a), hi = Math.max(lo + 1, Math.floor(n * b));
+  let best = Math.floor((lo + hi) / 2), bv = Infinity;
+  for (let i = lo; i < hi; i++) {
+    let s = 0;
+    for (let k = -5; k <= 5; k++) s += frameDb(audio, Math.min(n - 1, Math.max(0, i + k)) * FRAME);
+    if (s < bv) { bv = s; best = i; }
+  }
+  return best * FRAME;
+}
+
 // ── Text post-processing ─────────────────────────────────────────────────
 const CMD = {
   period: ".", "full stop": ".", comma: ",", colon: ":", semicolon: ";",

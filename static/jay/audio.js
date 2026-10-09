@@ -21,7 +21,10 @@ export class Recorder {
     await this.ctx.audioWorklet.addModule(new URL("./capture-worklet.js", import.meta.url));
     const src = this.ctx.createMediaStreamSource(this.stream);
     this.node = new AudioWorkletNode(this.ctx, "jay-capture", { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1, channelCountMode: "explicit" });
-    this.node.port.onmessage = (e) => { if (!this.paused) onPcm(e.data); };
+    this.node.port.onmessage = (e) => {
+      if (e.data?.stats) { this.stats = e.data.stats; this.onStats?.(e.data.stats); return; }
+      if (!this.paused) onPcm(e.data);
+    };
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 1024;
     this.analyser.smoothingTimeConstant = 0.2;
@@ -31,13 +34,31 @@ export class Recorder {
     src.connect(this.analyser);
     await this.ctx.resume();
     this.label = this.stream.getAudioTracks()[0]?.label || "";
+    // Independent safety recording: if the real-time graph is starved (busy device),
+    // MediaRecorder still captures everything and we can recover on stop.
+    try {
+      if (window.MediaRecorder && !localStorage.getItem("jay.nomr")) {
+        this.mr = new MediaRecorder(this.stream, { audioBitsPerSecond: 64000 });
+        this.mrParts = [];
+        this.mr.ondataavailable = (e) => e.data.size && this.mrParts.push(e.data);
+        this.mrDone = new Promise((r) => (this.mr.onstop = () => r(new Blob(this.mrParts, { type: this.mr.mimeType }))));
+        this.mr.start(2000);
+      }
+    } catch { this.mr = null; }
   }
-  pause() { this.paused = true; this.node?.port.postMessage("flush"); }
-  resume() { this.paused = false; }
+  pause() { this.paused = true; this.node?.port.postMessage("flush"); try { this.mr?.pause(); } catch {} }
+  resume() { this.paused = false; try { this.mr?.resume(); } catch {} }
+  /** Full-fidelity backup recording (Blob) or null. */
+  async backup() {
+    if (!this.mr) return null;
+    try { if (this.mr.state !== "inactive") this.mr.stop(); return await this.mrDone; } catch { return null; }
+  }
   async stop() {
     this.paused = false;
     this.node?.port.postMessage("flush");
+    this.node?.port.postMessage("stats");
     await new Promise((r) => setTimeout(r, 120));
+    this.backupBlob = await this.backup();
     this.stream?.getTracks().forEach((t) => t.stop());
     try { await this.ctx.close(); } catch {}
   }

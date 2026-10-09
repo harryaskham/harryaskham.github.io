@@ -1,7 +1,7 @@
 // Jay · ASR worker. Owns ONNX Runtime (WASM), model download/cache, live VAD
 // streaming and whole-file chunked transcription. Audio never leaves the device.
 import * as ort from "./runtime/ort.js";
-import { SR, FRAME, frameDb, lasrFeatures, sonogram, planChunks, formatMedasr, spokenCommands, plain } from "./dsp.js";
+import { SR, FRAME, frameDb, lasrFeatures, sonogram, planChunks, quietest, formatMedasr, spokenCommands, plain } from "./dsp.js";
 
 const MODEL_CACHE = "jay-models-v1";
 const post = (m, t) => postMessage(m, t || []);
@@ -86,7 +86,8 @@ function initRuntime() {
     const entry = { ...w, parts: w.parts.map((p) => base + p) };
     const bin = await getFile(entry, { add() {} });
     const iso = self.crossOriginIsolated === true;
-    const threads = iso ? Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1)) : 1;
+    // Leave headroom for the real-time audio thread and UI: about half the cores, at most 4.
+    const threads = iso ? (self.jayThreads || Math.max(1, Math.min(4, Math.floor((navigator.hardwareConcurrency || 4) / 2)))) : 1;
     ort.env.wasm.wasmBinary = bin;
     ort.env.wasm.numThreads = threads;
     ort.env.wasm.proxy = false;
@@ -97,7 +98,11 @@ function initRuntime() {
   })().catch((e) => { runtime = null; throw e; });
   return runtime;
 }
-const session = (buf) => ort.InferenceSession.create(new Uint8Array(buf), { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+// No busy-spinning: idle ORT threads must not starve the real-time audio thread or the UI.
+const session = (buf) => ort.InferenceSession.create(new Uint8Array(buf), {
+  executionProviders: ["wasm"], graphOptimizationLevel: "all",
+  extra: { session: { "intra_op.allow_spinning": "0", "inter_op.allow_spinning": "0" } },
+});
 
 // ── Models ───────────────────────────────────────────────────────────────
 let model = null;      // {id, kind, ...sessions}
@@ -298,12 +303,15 @@ function ctcSegments(words, offset, fmt) {
     if (cur.length) {
       const raw = cur.map((w) => w.text).join(" ");
       const text = fmt(raw);
-      if (text) segs.push({ start: offset + cur[0].start, end: offset + cur[cur.length - 1].end, text, brk });
-    }
-    cur = []; brk = nextBrk;
+      const seg = { start: offset + cur[0].start, end: offset + cur[cur.length - 1].end, text, brk };
+      if (/^\[/.test(raw) && /^[^:]{2,40}:/.test(text)) seg.sec = 1;
+      if (text) segs.push(seg);
+      brk = nextBrk;
+    } else brk = Math.max(brk, nextBrk);
+    cur = [];
   };
   for (const w of words) {
-    if (/^\[/.test(w.text) && cur.length) flush(1);
+    if (/^\[/.test(w.text)) flush(1);
     cur.push(w);
     const t = w.text.toLowerCase();
     if (/paragraph\}$/.test(t)) { cur.pop(); if (cur.at(-1)?.text === "{new") cur.pop(); flush(2); continue; }
@@ -315,9 +323,21 @@ function ctcSegments(words, offset, fmt) {
   return segs;
 }
 
-async function transcribe(m, audio, offset, opts) {
+/** Moonshine occasionally stops early on long phrases; re-decode as two halves if output looks clipped. */
+async function moonshineSafe(m, audio, final) {
+  const text = await moonshine(m, audio);
+  const sec = audio.length / SR;
+  const words = text.split(/\s+/).filter(Boolean).length;
+  if (!final || sec < 5 || words / sec > 1.6) return text;
+  const cut = quietest(audio);
+  const [a, b] = await Promise.all([moonshine(m, audio.subarray(0, cut)), moonshine(m, audio.subarray(cut))]);
+  const joined = `${a} ${b}`.trim();
+  return joined.split(/\s+/).length > words * 1.25 ? joined : text;
+}
+
+async function transcribe(m, audio, offset, opts, final = true) {
   if (m.kind === "moonshine") {
-    let text = await moonshine(m, audio);
+    let text = await moonshineSafe(m, audio, final);
     if (/^[\s.,!?-]*$/.test(text)) return [];
     text = opts.commands ? spokenCommands(text) : plain(text);
     // Sentence-level segments with time spread by character share, so playback can follow along.
@@ -420,7 +440,7 @@ class Live {
           if (seg !== this.segIndex) return null;
           const m = await loadModel(this.spec);
           const to = Math.min(this.pos, this.base + this.len);
-          const segs = await transcribe(m, this.slice(from, to), from / SR, this.opts);
+          const segs = await transcribe(m, this.slice(from, to), from / SR, this.opts, false);
           if (seg === this.segIndex) post({ type: "partial", job: this.id, text: segs.map((s) => s.text).join(" ") });
         }, this).catch(() => { this.partialQueued = false; });
       }
@@ -505,6 +525,7 @@ async function deleteModel(spec) {
 
 // ── Messages ─────────────────────────────────────────────────────────────
 onmessage = async ({ data: d }) => {
+  if (d.threads) self.jayThreads = d.threads;
   try {
     switch (d.type) {
       case "load": await enqueue(0, () => loadModel(d.spec)); break;
@@ -514,13 +535,15 @@ onmessage = async ({ data: d }) => {
       case "live-stop": { const l = lives.get(d.job); lives.delete(d.job); if (l) await l.stop(); else post({ type: "live-done", job: d.job }); break; }
       case "file": await fileJob(d); break;
       case "cancel": cancelled.add(d.job); break;
-      case "sonogram": { const s = sonogram(new Float32Array(d.pcm)); post({ type: "sonogram", job: d.job, sono: s }, [s.data.buffer]); break; }
+      case "sonogram": { const s = sonogram(d.i16 ? new Int16Array(d.pcm) : new Float32Array(d.pcm)); post({ type: "sonogram", job: d.job, sono: s }, [s.data.buffer]); break; }
       case "cache-status": post({ type: "cache-status", status: await cacheStatus(d.specs) }); break;
       case "delete-model": await deleteModel(d.spec); post({ type: "cache-status", status: await cacheStatus(d.specs || []) }); break;
       case "runtime": post({ type: "runtime", info: await initRuntime() }); break;
     }
   } catch (e) {
-    post({ type: "job-error", job: d.job, error: String(e?.message || e) });
+    const msg = String(e?.message || e);
+    post({ type: "job-error", job: d.job, error: msg });
+    if (/abort|out of memory|RuntimeError|unreachable|memory access/i.test(msg)) post({ type: "fatal", error: msg });
   }
 };
 post({ type: "hello" });
