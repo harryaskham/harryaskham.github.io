@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# One-shot Jekyll build (production).
+# Requires the nix-shell environment (loaded automatically by direnv).
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+python3 scripts/check-static.py
+ruby scripts/check-static-routing.rb
+
+echo "Building site..."
+jekyll build
+python3 scripts/check-static.py --built _site
+echo "Done. Output in _site/"
