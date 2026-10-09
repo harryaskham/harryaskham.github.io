@@ -38,11 +38,13 @@ try {
   ok((await build()).every((b) => b === 'jay-build:b0b0b0b0b0') && await page.$('#rec'), 'opens offline from the installed build');
   await ctx.setOffline(false);
   // 3. a deploy during a recording waits until the recording is stopped
-  await page.click('#rec'); await page.waitForTimeout(1500);
+  await page.click('#rec');
+  await page.waitForFunction(() => document.querySelector('#dock').classList.contains('recording'), null, { timeout: 30000 });
   deploy('jay-build:c1c1c1c1c1');
   await page.evaluate(() => navigator.serviceWorker.getRegistration('./').then((r) => r.update()));
   await page.waitForTimeout(6000);
-  ok(await page.evaluate(() => window.jayBuild === 'jay-build:b0b0b0b0b0' && document.querySelector('#dock').classList.contains('recording')), 'no reload mid-recording');
+  const mid = await page.evaluate(() => ({ build: window.jayBuild, dock: document.querySelector('#dock').className, toast: [...document.querySelectorAll('.toast')].map((t) => t.textContent).join(' | ') }));
+  ok(mid.build === 'jay-build:b0b0b0b0b0' && /recording/.test(mid.dock), 'no reload mid-recording ' + JSON.stringify(mid));
   await page.click('#rec');
   await page.waitForFunction(() => window.jayBuild === 'jay-build:c1c1c1c1c1', null, { timeout: 40000 });
   ok(true, 'update applied once the recording finished');

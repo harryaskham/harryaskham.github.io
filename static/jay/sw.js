@@ -1,8 +1,8 @@
-// jay-build:bd5c91a424
+// jay-build:0237969105
 // Jay · service worker. Serves one complete, consistent build of the app shell
 // from a per-build cache (never a mix of old and new files), keeps working
 // offline, and adds COOP/COEP so ONNX Runtime can use WebAssembly threads.
-const BUILD = "jay-build:bd5c91a424";
+const BUILD = "jay-build:0237969105";
 const SHELL = "jay-shell-" + BUILD.split(":")[1];
 const SCOPE = new URL("./", self.location.href).pathname;
 const STAMPED = ["index.html", "style.css", "app.js", "db.js", "audio.js", "dsp.js", "worker.js", "capture-worklet.js"];
@@ -60,8 +60,23 @@ async function serve(req, url) {
   return res;
 }
 
+// Android share sheet → "Jay": stash the shared audio, then open the app to transcribe it.
+async function share(req) {
+  try {
+    const form = await req.formData();
+    const cache = await caches.open("jay-share");
+    let i = 0;
+    for (const f of form.getAll("audio")) {
+      if (!(f instanceof Blob) || !f.size) continue;
+      await cache.put(abs(`share/${Date.now()}-${i++}`), new Response(f, { headers: { "content-type": f.type || "application/octet-stream", "x-name": encodeURIComponent(f.name || "shared audio") } }));
+    }
+  } catch {}
+  return Response.redirect(abs("./?shared=1"), 303);
+}
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
+  if (req.method === "POST" && new URL(req.url).pathname === SCOPE + "share") { e.respondWith(share(req)); return; }
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin || !url.pathname.startsWith(SCOPE)) return;

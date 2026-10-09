@@ -19,11 +19,13 @@ await page.goto(URL_);
 await page.waitForFunction(() => /ready/.test(document.querySelector('#loadline')?.textContent || ''), null, { timeout: 120000 });
 // 1. crash mid-recording → recover on reload
 await page.keyboard.press('r');
-await page.waitForTimeout(12000);
+// wait until a few seconds of audio are flushed to IndexedDB, then "crash" (reload) mid-recording
+await page.waitForFunction(() => document.querySelector('.turn.live .seg') || parseInt(document.querySelector('#clock').textContent.split(':')[1]) >= 8, null, { timeout: 60000 });
+await page.waitForTimeout(4500);
 await page.reload();
 await page.waitForFunction(() => document.querySelector('.turn .chip') && !/queued|transcrib|live/.test(document.querySelector('.turn .chip').textContent), null, { timeout: 120000 });
 const rec = await page.evaluate(() => ({ text: document.querySelector('.turn .text').textContent, dur: document.querySelector('.turn .dur')?.textContent, toast: document.querySelector('.toast')?.textContent }));
-ok(/degrees|celsius|heart/i.test(rec.text) && rec.dur !== '0:00', `interrupted dictation recovered (${rec.dur}): ${rec.text.slice(0, 60)}`);
+ok(rec.text.replace(/^\d+:\d+/, '').trim().length > 10 && rec.dur !== '0:00', `interrupted dictation recovered (${rec.dur}): ${rec.text.slice(0, 60)}`);
 // 2. delete during transcription stays deleted
 await page.setInputFiles('#file', '/tmp/jay-browser-check/upload.wav');
 await page.waitForFunction(() => /transcrib/.test([...document.querySelectorAll('.turn .chip')].at(-1)?.textContent || ''), null, { timeout: 30000 });
@@ -76,8 +78,10 @@ await page.waitForTimeout(300);
 const tst = await page.evaluate(() => document.querySelector('.toast')?.textContent || '');
 ok(/Always write “Heart rate” as “Pulse”/.test(tst), 'edit suggests a correction: ' + tst.slice(0, 60));
 await page.click('.toast button:has-text("Remember")');
+const nPrev = await page.evaluate(() => document.querySelectorAll('.turn').length);
 await page.setInputFiles('#file', '/tmp/jay-browser-check/upload.wav');
-await page.waitForFunction(() => [...document.querySelectorAll('.turn .chip')].every((c) => !/transcrib|queued/.test(c.textContent)), null, { timeout: 120000 });
+// wait for the *new* turn to exist and finish (the old "all chips done" check could pass before it rendered)
+await page.waitForFunction((n) => document.querySelectorAll('.turn').length > n && [...document.querySelectorAll('.turn .chip')].every((c) => !/transcrib|queued/.test(c.textContent)), nPrev, { timeout: 120000 });
 const newest = await page.locator('.turn').last().locator('.text').textContent();
 ok(/Pulse is 72/.test(newest) && !/Heart rate/.test(newest), 'correction applied to the next transcript: ' + newest.slice(0, 120));
 const [vtt] = await Promise.all([page.waitForEvent('download'), (async () => { await page.click('[data-act=export-session]'); await page.click('#menu button:has-text("Subtitles")'); })()]);

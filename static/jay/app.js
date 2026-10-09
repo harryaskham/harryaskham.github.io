@@ -3,7 +3,7 @@
 import * as db from "./db.js";
 import { Recorder, FakeRecorder, decodeFile, f32ToI16, concatI16, wavBlob, SR } from "./audio.js";
 
-const BUILD = "jay-build:bd5c91a424";
+const BUILD = "jay-build:0237969105";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -548,7 +548,8 @@ async function touch(sid) {
   if (s.autoTitle) {
     const first = turnsOf(sid).map(turnText).find((x) => x.trim());
     if (first) {
-      const sentence = first.replace(/[\n\r]+/g, " ").split(/(?<=[.?!])\s/)[0];
+      // Report headings ("Exam Type: …") make poor titles; use what follows them.
+      const sentence = first.replace(/[\n\r]+/g, " ").split(/(?<=[.?!])\s/)[0].replace(/^[A-Z][\w ]{1,30}:\s+/, "");
       const words = sentence.split(/\s+/).slice(0, 8).join(" ").replace(/[,:;.]+$/, "");
       if (words.length > 3) s.title = words.length > 52 ? words.slice(0, 50) + "…" : words;
     }
@@ -628,6 +629,7 @@ async function startRec() {
     wake(true);
     appendTurn(t);
     setRecUI(true);
+    navigator.vibrate?.(15);
     renderSidebar(); renderHeaderMeta();
     liveSono();
   } catch (e) {
@@ -673,6 +675,7 @@ async function stopRec() {
   ctx.stopping = true;
   clearInterval(ctx.flushTimer);
   wake(false);
+  navigator.vibrate?.([10, 60, 10]);
   if (ctx.paused) ctx.rec.resume();
   ctx.paused = false;
   await ctx.rec.stop(); // flushes the worklet's tail into onPcm before closing
@@ -767,11 +770,11 @@ function liveSono() {
     try { draw(ctx); } catch (e) { if (!step.warned) { step.warned = true; console.warn("live view", e); } }
   };
   const draw = (ctx) => {
+    $("#clock").textContent = fmtDur(ctx.samples / SR);
     const an = ctx.rec.analyser;
     if (!an) return;
     fl ||= new Float32Array(an.frequencyBinCount);
     time ||= new Float32Array(an.fftSize);
-    $("#clock").textContent = fmtDur(ctx.samples / SR);
     const now = performance.now();
     if (now - last < 28) return;
     last = now;
@@ -832,8 +835,9 @@ function idleStrip() {
 
 // ── Uploads ──────────────────────────────────────────────────────────────
 const AUDIO_RE = /\.(m4a|mp3|wav|ogg|oga|opus|webm|flac|aac|mp4|mov|caf|aiff?|amr|3gp|wma)$/i;
-async function addFiles(files) {
-  files = [...files].filter((f) => /^(audio|video)\//.test(f.type) || AUDIO_RE.test(f.name));
+async function addFiles(files, trusted = false) {
+  // Shared voice notes often arrive as application/octet-stream; let the decoder decide for those.
+  files = [...files].filter((f) => trusted || /^(audio|video)\//.test(f.type) || AUDIO_RE.test(f.name));
   if (!files.length) return toast("Those files don’t look like audio");
   if (S.rec) return toast("Stop recording first");
   const s = await ensureSession();
@@ -1356,6 +1360,20 @@ function chipMenu() {
   ]);
 }
 
+// ── Drawer (phone): the system back gesture closes it instead of leaving the session ──
+const drawerIsOverlay = () => matchMedia("(max-width: 760px)").matches;
+function openDrawer() {
+  if ($("#app").classList.contains("drawer")) return;
+  $("#app").classList.add("drawer");
+  if (drawerIsOverlay()) history.pushState({ jayDrawer: 1 }, "");
+}
+function closeDrawer() {
+  if (!$("#app").classList.contains("drawer")) return;
+  $("#app").classList.remove("drawer");
+  if (history.state?.jayDrawer) history.back();
+}
+addEventListener("popstate", () => $("#app").classList.remove("drawer"));
+
 // ── Theme ────────────────────────────────────────────────────────────────
 function applyTheme() {
   const t = prefs.theme;
@@ -1376,8 +1394,8 @@ $("#new-session").onclick = newSession;
 $("#settings-btn").onclick = () => openSettings(tab);
 $("#store-meter").onclick = () => openSettings("storage");
 $("#theme-btn").onclick = () => { prefs.theme = { system: "light", light: "dark", dark: "system" }[prefs.theme]; savePrefs(); applyTheme(); };
-$("#menu-btn").onclick = () => $("#app").classList.add("drawer");
-$("#scrim").onclick = () => $("#app").classList.remove("drawer");
+$("#menu-btn").onclick = () => openDrawer();
+$("#scrim").onclick = () => closeDrawer();
 $("#search").addEventListener("input", (e) => { S.query = e.target.value; clearTimeout(renderSidebar.t); renderSidebar.t = setTimeout(() => { renderSidebar(); if (S.sid) $$(".turn").forEach((el) => { const t = S.turns.get(el.dataset.id); if (t && S.editing !== t.id) $(".text", el).innerHTML = textHtml(t); }); }, 90); });
 $("#search").addEventListener("keydown", (e) => {
   if (e.key === "Escape") { e.target.value = ""; S.query = ""; renderSidebar(); renderPage(); e.target.blur(); }
@@ -1543,11 +1561,11 @@ document.addEventListener("focusout", (e) => {
 
 addEventListener("keydown", (e) => {
   const typing = e.target.closest("input, textarea, select, [contenteditable='true']");
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#app").classList.add("drawer"); $("#search").focus(); $("#search").select(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openDrawer(); $("#search").focus(); $("#search").select(); return; }
   if (e.key === "Escape") {
     if (!$("#menu").hidden) return closeMenu();
     if (S.editing) return finishEdit();
-    $("#app").classList.remove("drawer");
+    closeDrawer();
     return;
   }
   if (typing || e.metaKey || e.ctrlKey || e.altKey || sheet.open) return;
@@ -1556,7 +1574,7 @@ addEventListener("keydown", (e) => {
   else if (k === "p" && S.rec) { e.preventDefault(); togglePause(); }
   else if (k === "u") { e.preventDefault(); $("#file").click(); }
   else if (k === "n") { e.preventDefault(); newSession(); }
-  else if (k === "/") { e.preventDefault(); $("#app").classList.add("drawer"); $("#search").focus(); }
+  else if (k === "/") { e.preventDefault(); openDrawer(); $("#search").focus(); }
   else if (e.key === "?") { e.preventDefault(); $("#keys")?.showModal(); }
   else if (k === " " && S.playing && !e.target.closest("button, a, summary")) { e.preventDefault(); player.paused ? player.play() : player.pause(); }
 });
@@ -1568,6 +1586,26 @@ addEventListener("dragover", (e) => e.preventDefault());
 addEventListener("drop", (e) => { e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging"); if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files); });
 addEventListener("beforeunload", (e) => { if (S.rec) { flushPcm(S.rec); e.preventDefault(); } });
 document.addEventListener("visibilitychange", () => { if (document.hidden && S.rec) flushPcm(S.rec); });
+
+/** Files shared to Jay from other apps (Android share sheet) wait in a cache until the app opens. */
+async function importShared() {
+  try {
+    const cache = await caches.open("jay-share");
+    const keys = await cache.keys();
+    if (location.search.includes("shared")) history.replaceState(null, "", location.pathname + location.hash);
+    if (!keys.length) return;
+    const files = [];
+    for (const k of keys) {
+      const r = await cache.match(k);
+      const b = await r.blob();
+      files.push(new File([b], decodeURIComponent(r.headers.get("x-name") || "shared audio"), { type: b.type }));
+      await cache.delete(k);
+    }
+    history.replaceState(null, "", "#/"); openSession(null);
+    await addFiles(files, true);
+    toast(`Transcribing ${files.length} shared file${files.length === 1 ? "" : "s"}`);
+  } catch (e) { console.warn("share import", e); }
+}
 
 // ── Boot ─────────────────────────────────────────────────────────────────
 async function recover() {
@@ -1651,5 +1689,7 @@ async function boot() {
   refreshCache();
   if (prefs.preload || S.queue.length) ensureModel();
   pumpQueue();
+  importShared();
+  if (location.hash === "#/dictate") { history.replaceState(null, "", "#/"); toast("Tap the mic to start dictating"); }
 }
 boot();

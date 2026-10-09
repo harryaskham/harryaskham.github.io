@@ -624,5 +624,5 @@ onmessage = async ({ data: d }) => {
     if (/abort|out of memory|RuntimeError|unreachable|memory access/i.test(msg)) post({ type: "fatal", error: msg });
   }
 };
-const BUILD = "jay-build:bd5c91a424";
+const BUILD = "jay-build:0237969105";
 post({ type: "hello", build: BUILD });
