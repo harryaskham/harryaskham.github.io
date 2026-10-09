@@ -195,7 +195,19 @@ bare test page, 4 busy workers, no Jay code: clock 0.30–0.67× realtime (headl
 Moonshine Tiny  28 s of audio in 2.2 s  (≈13× realtime) · model warm in &lt;1 s from cache
 MedASR          43.8 s radiology in 5.1 s (≈9× realtime) · 108 MB download + compile ≈ 4.4 s
 cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
-<p class="dim">The site check confirmed the rest of a.skh.am is untouched: compared with the previous build, the only output differences are the new <code>/jay/</code> folder and the feed timestamp. Jay’s service worker only handles <code>/jay/</code>. Not yet tested by hand: Safari and Firefox, and a real microphone in a noisy room.</p>
+<p class="dim">The site check confirmed the rest of a.skh.am is untouched: compared with the previous build, the only output differences are the new <code>/jay/</code> folder and the feed timestamp. Jay’s service worker only handles <code>/jay/</code>. Firefox and WebKit engines are covered by automated runs (see below); not yet tried by hand on an iPhone, or with a real microphone in a noisy room.</p>
+
+<h2>Other browsers</h2>
+<p>Real Firefox 151 and WebKit 26.5 engines, run through Playwright:</p>
+<pre><b>$ node _tests/jay-crossbrowser.mjs</b>
+[firefox] 151.0 boot ok 5.5s  isolated · 4 threads · Moonshine Tiny ready
+[firefox] upload 9.4s: The patient temperature is 37.2 degrees Celsius. Heart rate is 72 beats…
+[firefox] record ✓ · search ✓ · phone 390 px ✓ · page errors: none
+[webkit]  26.5 boot ok 3.6s   isolated · 4 threads · Moonshine Tiny ready
+[webkit]  upload <span class="bad">STUCK</span>  →  <span class="ok">2.4s</span> after the fixes below
+[webkit]  search ✓ · phone 390 px ✓ · page errors: none</pre>
+<div class="bug"><h3>WebKit could not store audio at all</h3><p>Putting a <code>Blob</code> into IndexedDB failed outright, as it does on older Safari. Every upload stalled on “queued”.</p><p class="fix">probe once; where Blobs fail, store audio as an <code>ArrayBuffer</code> + type + name and rebuild the Blob on read. No other code needed to change.</p></div>
+<div class="bug"><h3><code>decodeAudioData</code> never resolved</h3><p>In the Linux WebKit build, decoding hung forever, leaving an endless “Transcribing…”.</p><p class="fix">a native RIFF/WAVE reader (PCM 8/16/24/32, float, extensible) with a windowed-sinc resampler. Jay’s own 16 kHz recordings now skip the codec entirely. Anything else gets a timeout and a clear error instead of a spinner.</p></div>
 
 <h2>Timeline</h2>
 <ol class="time">
@@ -205,6 +217,7 @@ cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
   <li><span class="t">10:05</span><span>First end-to-end run in Chromium: 8 threads, 28 s transcribed in 2.2 s.</span></li>
   <li><span class="t">10:22</span><span><b>v1 live</b> on main → GitHub Pages. Live HTTPS run passed, MedASR included.</span></li>
   <li><span class="t">11:30</span><span><b>v2</b>: audio-starvation recovery, crash recovery, report sections, accessibility fixes, this log.</span></li>
+  <li><span class="t">11:40</span><span><b>v3</b>: Firefox and WebKit pass end-to-end; Safari-safe audio storage and WAV decoding.</span></li>
 </ol>
 
 <footer>Built by an AI coding agent in pi, working in this repo · audio in screenshots is from public MedASR test clips · not linked from the app</footer>
