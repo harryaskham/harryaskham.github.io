@@ -3,7 +3,7 @@
 import * as db from "./db.js";
 import { Recorder, FakeRecorder, decodeFile, f32ToI16, concatI16, wavBlob, SR } from "./audio.js";
 
-const BUILD = "jay-build:0237969105";
+const BUILD = "jay-build:71fc424208";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -113,7 +113,7 @@ function worker() {
   if (W) return W;
   W = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
   const debug = localStorage.getItem("jay.debug");
-  if (debug) self.jayWorker = () => W;
+  if (debug) { self.jayWorker = () => W; self.jayRec = () => S.rec?.rec; }
   W.onmessage = ({ data: m }) => {
     if (m.type === "hello" && m.build && m.build !== BUILD) heal("worker " + m.build);
     if (debug) console.debug("[jay]", m.type, m.job || "", m.text ?? m.segments?.map((x) => x.text).join(" | ") ?? m.error ?? "");
@@ -147,9 +147,13 @@ function restartWorker(reason) {
 }
 function onModel(m) {
   m.at = Date.now();
+  // The engine holds one model at a time: loading another one unloads whatever was ready.
+  if ((m.state === "loading" && !m.prefetch) || m.state === "ready") for (const [id, st] of Object.entries(S.model)) if (id !== m.id && st.state === "ready") delete S.model[id];
   S.model[m.id] = m;
+  if (m.state === "cached") { S.cache[m.id] = { state: "cached" }; delete S.model[m.id]; toast(`${modelById(m.id).name} downloaded`); }
   if (m.state === "ready") { S.cache[m.id] = { state: "cached" }; if (S.runtime == null && m.runtime) S.runtime = m.runtime; }
   if (m.state === "error" && m.id === prefs.model) toast(`${modelById(m.id).name}: ${m.error}`);
+  if (m.state === "cancelled") delete S.model[m.id];
   renderChip(); renderSettingsIfOpen(); renderEmptyIfShown();
   for (const t of S.turns.values()) if (t.sessionId === S.sid && t.model === m.id && /transcribing|recording|queued/.test(t.status)) updateTurnStatus(t);
 }
@@ -358,12 +362,13 @@ function emptyHtml() {
     <div class="loadline" id="loadline">${loadLine(m)}</div>
   </div></div>`;
 }
-const loadText = (m) => loadLine(m).replace(/<[^>]+>/g, "").replace(/ · Retry$/, "");
+const loadText = (m) => loadLine(m).replace(/<[^>]+>/g, "").replace(/ · (Retry|Cancel)$/, "");
 function loadLine(m) {
   const st = S.model[m.id];
   if (!st) return "";
   if (st.state === "loading") {
-    if (st.stage === "download" && st.total) return `Fetching ${m.name} · ${Math.round((st.got / st.total) * 100)}% of ${fmtBytes(st.total)}`;
+    if (st.stage === "retry") return `Connection dropped — resuming ${m.name}${st.total ? ` at ${Math.round((st.got / st.total) * 100)}%` : ""}… · <button class="link" data-act="cancel-model">Cancel</button>`;
+    if (st.stage === "download" && st.total) return `Fetching ${m.name} · ${Math.round((st.got / st.total) * 100)}% of ${fmtBytes(st.total)} · <button class="link" data-act="cancel-model">Cancel</button>`;
     if (st.stage === "compile") return `Warming up ${m.name}…`;
     return `Loading ${m.name}…`;
   }
@@ -595,7 +600,12 @@ async function wake(on) {
     }
   } catch {}
 }
-document.addEventListener("visibilitychange", () => { if (S.rec && document.visibilityState === "visible") wake(true); });
+document.addEventListener("visibilitychange", () => {
+  if (!S.rec || document.visibilityState !== "visible") return;
+  wake(true);
+  if (S.rec.rec.ctx?.state && S.rec.rec.ctx.state !== "running") S.rec.rec.ctx.resume?.().catch(() => {});
+});
+navigator.mediaDevices?.addEventListener?.("devicechange", () => { if (sheet.open && tab === "prefs") fillMics(); });
 async function startRec() {
   if (S.rec || S.starting) return;
   if (!navigator.mediaDevices?.getUserMedia) return toast("Microphone access isn’t available in this browser");
@@ -622,6 +632,18 @@ async function startRec() {
     await saveTurn(t);
     ctx.rec = rec; ctx.turn = t;
     S.rec = ctx;
+    rec.onEnded = async () => {
+      if (S.rec !== ctx || ctx.stopping) return;
+      try { const label = await rec.switchSource(); toast(`Microphone disconnected — continuing on ${label || "another microphone"}`); }
+      catch { toast("The microphone disconnected — recording saved"); stopRec(); }
+    };
+    rec.onMute = (m) => { ctx.sysMuted = m; micWarn(ctx); };
+    rec.onState = (st) => {
+      if (S.rec !== ctx || ctx.stopping) return;
+      ctx.interrupted = st !== "running";
+      if (ctx.interrupted) rec.ctx.resume?.().catch(() => {});
+      micWarn(ctx);
+    };
     jobs.set(job, (msg) => onLive(ctx, msg));
     ctx.opts = { pause: prefs.pause, commands: prefs.commands, maxSeg: m.kind === "moonshine" ? 15 : 24 };
     worker().postMessage({ type: "live-start", job, spec: specOf(m), opts: ctx.opts });
@@ -756,6 +778,14 @@ function setRecUI(on) {
   if (!on) { $("#rec").style.setProperty("--lvl", 0); $("#clock").textContent = "0:00"; const w = $("#strip-warn"); if (w) w.hidden = true; idleStrip(); }
 }
 
+/** One warning slot in the recorder strip, most important first. */
+function micWarn(ctx) {
+  const w = $("#strip-warn");
+  if (!w) return;
+  const msg = ctx.sysMuted ? "Microphone muted by the system" : ctx.interrupted ? "Audio interrupted — resuming" : ctx.silent ? "No sound from the microphone" : "";
+  w.textContent = msg;
+  w.hidden = !msg;
+}
 let sonoRaf;
 function liveSono() {
   const cv = $("#live-sono"), ctx2 = cv.getContext("2d");
@@ -785,8 +815,8 @@ function liveSono() {
     $("#rec").style.setProperty("--lvl", lvl.toFixed(2));
     // A silent input for the first few seconds usually means a muted or wrong microphone.
     if (!ctx.paused) { ctx.peakDb = Math.max(ctx.peakDb ?? -200, db); ctx.liveMs = (ctx.liveMs || 0) + 28; }
-    const mute = !ctx.paused && ctx.liveMs > 3500 && ctx.peakDb < -72;
-    if (mute !== ctx.muteShown) { ctx.muteShown = mute; const w = $("#strip-warn"); if (w) w.hidden = !mute; }
+    const silent = !ctx.paused && ctx.liveMs > 3500 && ctx.peakDb < -72;
+    if (silent !== ctx.silent) { ctx.silent = silent; micWarn(ctx); }
     if (cv.width !== Math.round(cv.getBoundingClientRect().width * devicePixelRatio)) fit();
     const W = cv.width, H = cv.height, dx = Math.max(2, Math.round(2 * devicePixelRatio));
     ctx2.globalCompositeOperation = "copy";   // shift without re-blending old ink
@@ -1198,7 +1228,7 @@ function modelRow(m) {
   let state = "", action = "";
   if (st?.state === "loading") {
     const p = st.total ? Math.round((st.got / st.total) * 100) : 0;
-    state = st.stage === "download" ? `Downloading · ${p}%` : st.stage === "compile" ? "Preparing…" : "Loading…";
+    state = st.stage === "download" ? `Downloading · ${p}%` : st.stage === "retry" ? `Reconnecting · ${p}%` : st.stage === "compile" ? "Preparing…" : "Loading…";
     action = `<div class="mbar"><i style="width:${p}%"></i></div>`;
   } else if (st?.state === "ready") state = "Loaded";
   else if (st?.state === "error") state = `Error · ${st.error}`;
@@ -1213,8 +1243,9 @@ function modelRow(m) {
       <div class="fine">${esc(state)}${m.license ? ` · ${m.link ? `<a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.license)}</a>` : esc(m.license)}` : ""}</div>
       ${action}
     </div>
-    ${!sel && c?.state !== "cached" && !m.builtin && st?.state !== "loading" && !m.custom ? `<button class="btn" data-act="get-model">${icon("download")}Get</button>` : ""}
-    ${removable ? `<button class="icon-btn" data-act="del-model" title="Remove from this device" aria-label="Remove">${icon("trash")}</button>` : ""}
+    ${!sel && c?.state !== "cached" && !m.builtin && st?.state !== "loading" && !Object.values(m.files || {}).some((f) => f.local) ? `<button class="btn" data-act="get-model">${icon("download")}Get</button>` : ""}
+    ${st?.state === "loading" && /download|retry/.test(st.stage) && S.rec?.turn.model !== m.id ? `<button class="btn" data-act="cancel-model">${icon("x")}Cancel</button>` : ""}
+    ${removable && st?.state !== "loading" ? `<button class="icon-btn" data-act="del-model" title="Remove from this device" aria-label="Remove">${icon("trash")}</button>` : ""}
   </div>`;
 }
 function modelsHtml() {
@@ -1281,6 +1312,7 @@ async function fillMics() {
   const sel = $("#mic-select");
   if (!sel || !navigator.mediaDevices?.enumerateDevices) return;
   const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput" && d.deviceId && d.deviceId !== "default");
+  sel.querySelectorAll("option:not([value=''])").forEach((o) => o.remove());
   for (const d of devs) sel.insertAdjacentHTML("beforeend", `<option value="${esc(d.deviceId)}">${esc(d.label || "Microphone")}</option>`);
   sel.value = prefs.mic;
   sel.onchange = () => { prefs.mic = sel.value; savePrefs(); };
@@ -1496,7 +1528,24 @@ document.addEventListener("click", async (e) => {
       break;
     }
     case "pick-model": selectModel(row.dataset.model); break;
-    case "get-model": { const m = modelById(row.dataset.model); ensureModel(m); renderSettings(); break; }
+    case "cancel-model": {
+      const id = row?.dataset.model || prefs.model;
+      if (S.rec?.turn.model === id) break;
+      W?.postMessage({ type: "cancel-load", id });
+      for (const x of S.turns.values()) if (x.model === id && S.queue.includes(x.id)) { x.status = "error"; x.error = "Model download cancelled"; saveTurn(x); updateTurn(x); }
+      S.queue = S.queue.filter((q) => S.turns.get(q)?.model !== id);
+      if (prefs.model === id) { prefs.model = "moonshine-tiny"; savePrefs(); ensureModel(); }
+      toast(`${modelById(id).name} download cancelled`);
+      renderChip(); renderSettingsIfOpen(); renderEmptyIfShown();
+      break;
+    }
+    case "get-model": {
+      const m = modelById(row.dataset.model);
+      S.model[m.id] = { id: m.id, state: "loading", stage: "start", at: Date.now(), prefetch: true };
+      worker().postMessage({ type: "prefetch", spec: specOf(m) });
+      renderSettings();
+      break;
+    }
     case "del-model": deleteModel(row.dataset.model); break;
     case "persist": await navigator.storage?.persist?.(); renderSettings(); break;
     case "backup-audio": exportBackup(true); break;

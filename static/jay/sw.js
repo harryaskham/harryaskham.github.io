@@ -1,8 +1,8 @@
-// jay-build:0237969105
+// jay-build:71fc424208
 // Jay · service worker. Serves one complete, consistent build of the app shell
 // from a per-build cache (never a mix of old and new files), keeps working
 // offline, and adds COOP/COEP so ONNX Runtime can use WebAssembly threads.
-const BUILD = "jay-build:0237969105";
+const BUILD = "jay-build:71fc424208";
 const SHELL = "jay-shell-" + BUILD.split(":")[1];
 const SCOPE = new URL("./", self.location.href).pathname;
 const STAMPED = ["index.html", "style.css", "app.js", "db.js", "audio.js", "dsp.js", "worker.js", "capture-worklet.js"];

@@ -1,4 +1,4 @@
-// jay-build:0237969105
+// jay-build:71fc424208
 // Jay · main-thread audio: mic recorder, file decode, WAV packing.
 export const SR = 16000;
 
@@ -20,7 +20,8 @@ export class Recorder {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio });
     }
     await this.ctx.audioWorklet.addModule(new URL("./capture-worklet.js", import.meta.url));
-    const src = this.ctx.createMediaStreamSource(this.stream);
+    this.constraints = audio;
+    const src = (this.src = this.ctx.createMediaStreamSource(this.stream));
     this.node = new AudioWorkletNode(this.ctx, "jay-capture", { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1, channelCountMode: "explicit" });
     this.node.port.onmessage = (e) => {
       if (e.data?.stats) { this.stats = e.data.stats; this.onStats?.(e.data.stats); return; }
@@ -35,6 +36,8 @@ export class Recorder {
     src.connect(this.analyser);
     await this.ctx.resume();
     this.label = this.stream.getAudioTracks()[0]?.label || "";
+    this.watch();
+    this.ctx.onstatechange = () => this.onState?.(this.ctx.state);
     // Independent safety recording: if the real-time graph is starved (busy device),
     // MediaRecorder still captures everything and we can recover on stop.
     try {
@@ -46,6 +49,29 @@ export class Recorder {
         this.mr.start(2000);
       }
     } catch { this.mr = null; }
+  }
+  /** Report the input device going away (headset unplugged) or being muted by the OS. */
+  watch() {
+    const t = this.stream.getAudioTracks()[0];
+    if (!t) return;
+    t.addEventListener("ended", () => this.onEnded?.());
+    t.addEventListener("mute", () => this.onMute?.(true));
+    t.addEventListener("unmute", () => this.onMute?.(false));
+  }
+  /** Keep recording on whatever microphone is available now (e.g. the phone's after a headset drops). */
+  async switchSource() {
+    const audio = { ...this.constraints };
+    delete audio.deviceId;
+    const s = await navigator.mediaDevices.getUserMedia({ audio });
+    const src = this.ctx.createMediaStreamSource(s);
+    src.connect(this.node); src.connect(this.analyser);
+    try { this.src?.disconnect(); } catch {}
+    this.stream.getTracks().forEach((t) => t.stop());
+    this.stream = s; this.src = src;
+    this.label = s.getAudioTracks()[0]?.label || "";
+    this.watch();
+    if (this.ctx.state !== "running") await this.ctx.resume().catch(() => {});
+    return this.label;
   }
   pause() { this.paused = true; this.node?.port.postMessage("flush"); try { this.mr?.pause(); } catch {} }
   resume() { this.paused = false; try { this.mr?.resume(); } catch {} }

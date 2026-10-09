@@ -239,6 +239,20 @@ dock:  "dock recording"   ← stuck in a recording state</pre>
 <b>after</b>   committed sentence by sentence, partial ≤ <span class="ok">21 words</span>, committed text rewritten <span class="ok">0×</span></pre>
 <p class="fix">CTC local agreement: words two consecutive decodes agree on, older than 1.2 s, are committed as final ink. Cuts happen only at sentence ends where the audio is genuinely silent, so a word is never split. Decoding after a cut keeps 1.5 s of overlapping context, and partials render with paragraphs and section labels. A debug fake microphone replays clean audio through the real live path at realtime to test this deterministically.</p></div>
 
+<h2>Real-world conditions</h2>
+<p>Phones lose signal mid-download, people unplug headsets mid-sentence, and calls interrupt audio. Each case is now handled and tested:</p>
+<pre><b>$ node _tests/jay-downloads.mjs</b>   (local MedASR mirror that drops the first connection at 40%)
+<span class="ok">✓</span> dropped at 43,253,760 bytes, resumed with bytes=42991616-; UI said "Connection dropped — resuming"
+<span class="ok">✓</span> resumed model is intact (checksum passed) and transcribes the report
+<span class="ok">✓</span> switching to Tiny took 0.9s and cancelled the slow download
+<span class="ok">✓</span> Cancel in the Models sheet stops the download and offers Get again
+<span class="ok">✓</span> Get downloads MedASR in the background; Moonshine Tiny stays loaded and selected
+<b>$ node _tests/jay-mic.mjs</b>
+<span class="ok">✓</span> system mute shows a warning · unmute clears it
+<span class="ok">✓</span> mic disconnect → switched stream and kept recording: "Microphone disconnected — continuing on …"
+<span class="ok">✓</span> suspended audio context resumes itself · recording across the mic switch saved</pre>
+<div class="bug"><h3>Two model-state bugs the download tests exposed</h3><p>A model marked “ready” earlier was assumed still loaded after another one had replaced it, so switching back never told the engine. And “Get” on a model you weren’t using loaded and compiled it, evicting the one you were.</p><p class="fix">the app tracks which single model the engine actually holds; “Get” is now a background download-only prefetch.</p></div>
+
 <h2>Timeline</h2>
 <ol class="time">
   <li><span class="t">09:20</span><span>Brief. Read the repo’s static-SPA process; sized Parakeet, MedASR, Moonshine, Whisper and the ORT builds.</span></li>
@@ -248,6 +262,7 @@ dock:  "dock recording"   ← stuck in a recording state</pre>
   <li><span class="t">10:22</span><span><b>v1 live</b> on main → GitHub Pages. Live HTTPS run passed, MedASR included.</span></li>
   <li><span class="t">11:30</span><span><b>v2</b>: audio-starvation recovery, crash recovery, report sections, accessibility fixes, this log.</span></li>
   <li><span class="t">11:40</span><span><b>v3</b>: Firefox and WebKit pass end-to-end; Safari-safe audio storage and WAV decoding.</span></li>
+  <li><span class="t">13:40</span><span><b>v6</b>: resumable, cancellable model downloads; dictation survives mic disconnects, OS mute and audio interruptions.</span></li>
   <li><span class="t">13:05</span><span><b>v5</b>: share audio to Jay from any Android app, back gesture closes the drawer, haptics, a Dictate launcher shortcut.</span></li>
   <li><span class="t">12:45</span><span><b>v4.1</b>: atomic, self-healing updates (the phone record failure); streaming MedASR commits sentence by sentence.</span></li>
   <li><span class="t">12:10</span><span><b>v4</b>: corrections learned from your edits, paste-ready rich copy, WebVTT, screen wake lock, no-mic warning, storage-full handling, keyboard sheet, and a stall watchdog.</span></li>

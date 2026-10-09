@@ -14,19 +14,37 @@ async function cached(url) {
 async function store(url, buf, type = "application/octet-stream") {
   try { const c = await caches.open(MODEL_CACHE); await c.put(url, new Response(buf, { headers: { "content-type": type } })); } catch {}
 }
-async function download(url, onBytes) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url.split("/").slice(-1)[0]}`);
-  const total = +res.headers.get("content-length") || 0;
-  if (!res.body) { const b = await res.arrayBuffer(); onBytes(b.byteLength, total); return b; }
-  const reader = res.body.getReader();
+/**
+ * Streaming download that survives flaky mobile networks: on a dropped connection it
+ * resumes from the last byte with an HTTP Range request (falls back to a restart if the
+ * server ignores Range), with backoff. Abortable via `signal`.
+ */
+async function download(url, onBytes, signal, onRetry) {
   const chunks = [];
-  let got = 0;
+  let got = 0, total = 0, attempt = 0;
   for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value); got += value.byteLength;
-    onBytes(value.byteLength, total);
+    try {
+      const headers = got ? { Range: `bytes=${got}-` } : {};
+      const res = await fetch(url, { cache: "no-store", headers, signal });
+      if (got && res.status !== 206) { onBytes(-got, 0); chunks.length = 0; got = 0; } // Range ignored: start over
+      if (!res.ok) { const e = new Error(`HTTP ${res.status} for ${url.split("/").slice(-1)[0].split("?")[0]}`); e.fatal = res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429; throw e; }
+      if (!total) total = res.status === 206 ? got + (+res.headers.get("content-length") || 0) : +res.headers.get("content-length") || 0;
+      const reader = res.body.getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value); got += value.byteLength;
+        onBytes(value.byteLength, total);
+        attempt = 0;
+      }
+      if (total && got < total) throw new Error("connection closed early");
+      break;
+    } catch (e) {
+      if (signal?.aborted || e.name === "AbortError") throw Object.assign(new Error("Download cancelled"), { name: "AbortError" });
+      if (e.fatal || ++attempt > 8) throw e;
+      onRetry?.(attempt);
+      await new Promise((r) => setTimeout(r, Math.min(15000, 600 * 2 ** (attempt - 1))));
+    }
   }
   const out = new Uint8Array(got);
   let o = 0;
@@ -53,13 +71,13 @@ async function getFile(entry, progress) {
   let buf;
   if (entry.parts) {
     const bufs = [];
-    for (const p of entry.parts) bufs.push(await download(p, (n) => progress.add(n)));
+    for (const p of entry.parts) bufs.push(await download(p, (n) => progress.add(n), progress.signal, progress.retry));
     const joined = new Uint8Array(bufs.reduce((s, b) => s + b.byteLength, 0));
     let o = 0;
     for (const b of bufs) { joined.set(new Uint8Array(b), o); o += b.byteLength; }
     buf = await gunzip(joined.buffer);
   } else {
-    buf = await download(entry.url, (n) => progress.add(n));
+    buf = await download(entry.url, (n) => progress.add(n), progress.signal, progress.retry);
   }
   if (entry.sha256 && (await sha256(buf)) !== entry.sha256) throw new Error("Download was corrupted — please retry.");
   await store(key, buf);
@@ -143,9 +161,36 @@ async function resolveFiles(spec) {
   return files;
 }
 
+/** Download a model into the cache for later, without loading it or evicting the current one. */
+const prefetching = new Map();
+async function prefetch(spec) {
+  if (prefetching.has(spec.id)) return prefetching.get(spec.id).promise;
+  const abort = new AbortController();
+  const promise = (async () => {
+    const files = await resolveFiles(spec);
+    const total = Object.values(files).reduce((s, f) => s + (f.gzip || f.size || 0), 0);
+    let got = 0, last = 0;
+    const progress = {
+      signal: abort.signal,
+      add(n) { got += n; const now = performance.now(); if (now - last > 150) { last = now; post({ type: "model", id: spec.id, state: "loading", stage: "download", got, total, prefetch: true }); } },
+      retry(attempt) { post({ type: "model", id: spec.id, state: "loading", stage: "retry", attempt, got, total, prefetch: true }); },
+    };
+    for (const f of Object.values(files)) {
+      if (abort.signal.aborted) throw Object.assign(new Error("Download cancelled"), { name: "AbortError" });
+      try { await getFile(f, progress); } catch (e) { if (!f.optional) throw e; }
+    }
+  })();
+  prefetching.set(spec.id, { abort, promise });
+  try { await promise; post({ type: "model", id: spec.id, state: "cached" }); }
+  catch (e) { post({ type: "model", id: spec.id, ...(e.name === "AbortError" ? { state: "cancelled" } : { state: "error", error: String(e.message || e) }) }); }
+  finally { prefetching.delete(spec.id); }
+}
+
 async function loadModel(spec) {
   if (model?.id === spec.id && model.rev === spec.rev) return model;
   if (loading?.id === spec.id) return loading.promise;
+  if (prefetching.has(spec.id)) await prefetching.get(spec.id).promise.catch(() => {});
+  const abort = new AbortController();
   const promise = (async () => {
     post({ type: "model", id: spec.id, state: "loading", stage: "runtime" });
     await initRuntime();
@@ -153,15 +198,20 @@ async function loadModel(spec) {
     const files = await resolveFiles(spec);
     const total = Object.values(files).reduce((s, f) => s + (f.gzip || f.size || 0), 0);
     let got = 0, cachedBytes = 0, last = 0;
+    let retrying = 0;
     const progress = {
+      signal: abort.signal,
       add(n, fromCache) {
         got += n; if (fromCache) cachedBytes += n;
+        if (n > 0) retrying = 0;
         const now = performance.now();
         if (now - last > 120) { last = now; post({ type: "model", id: spec.id, state: "loading", stage: cachedBytes >= got ? "reading" : "download", got, total }); }
       },
+      retry(attempt) { retrying = attempt; post({ type: "model", id: spec.id, state: "loading", stage: "retry", attempt, got, total }); },
     };
     const bytes = {};
     for (const [k, f] of Object.entries(files)) {
+      if (abort.signal.aborted) throw Object.assign(new Error("Download cancelled"), { name: "AbortError" });
       try { bytes[k] = await getFile(f, progress); }
       catch (e) { if (!f.optional) throw e; }
     }
@@ -188,9 +238,13 @@ async function loadModel(spec) {
     post({ type: "model", id: spec.id, state: "ready", runtime: await runtime });
     return m;
   })();
-  loading = { id: spec.id, promise };
+  loading = { id: spec.id, promise, abort };
   try { return await promise; }
-  catch (e) { post({ type: "model", id: spec.id, state: "error", error: String(e.message || e) }); throw e; }
+  catch (e) {
+    if (e.name === "AbortError") post({ type: "model", id: spec.id, state: "cancelled" });
+    else post({ type: "model", id: spec.id, state: "error", error: String(e.message || e) });
+    throw e;
+  }
   finally { if (loading?.promise === promise) loading = null; }
 }
 
@@ -604,7 +658,12 @@ onmessage = async ({ data: d }) => {
   if (d.spin) self.jaySpin = true;
   try {
     switch (d.type) {
-      case "load": await enqueue(0, () => loadModel(d.spec)); break;
+      case "load":
+        if (loading && loading.id !== d.spec.id) loading.abort.abort();
+        await enqueue(0, () => loadModel(d.spec)).catch((e) => { if (e.name !== "AbortError") throw e; });
+        break;
+      case "cancel-load": if (loading?.id === d.id) loading.abort.abort(); prefetching.get(d.id)?.abort.abort(); break;
+      case "prefetch": prefetch(d.spec); break;
       case "live-start": lives.set(d.job, new Live(d.job, d.spec, d.opts || {})); break;
       case "live-audio": lives.get(d.job)?.push(new Float32Array(d.pcm)); break;
       case "live-pause": lives.get(d.job)?.flush(); break;
@@ -624,5 +683,5 @@ onmessage = async ({ data: d }) => {
     if (/abort|out of memory|RuntimeError|unreachable|memory access/i.test(msg)) post({ type: "fatal", error: msg });
   }
 };
-const BUILD = "jay-build:0237969105";
+const BUILD = "jay-build:71fc424208";
 post({ type: "hello", build: BUILD });
