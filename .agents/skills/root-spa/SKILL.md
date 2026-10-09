@@ -74,7 +74,8 @@ static/foo/
   files Jekyll would otherwise skip. Framework output requiring such paths needs
   an intentional pipeline change, not a pretend registry entry.
 - Current media limits: **each file <10,000,000 bytes; all `static/` files combined
-  <25,000,000 bytes**. Check the validator for current limits. Optimize oversized
+  <25,000,000 bytes**, excluding on-device ML assets under `static/<slug>/models/`
+  or `static/<slug>/runtime/`, which have a separate 40,000,000-byte budget. Check the validator for current limits. Optimize oversized
   assets or explicitly review a budget change; do not bypass validation. Alex has
   additional existing clip/hash checks that must continue to pass.
 - Set a useful title, viewport, accessible image alt text, and local favicon.

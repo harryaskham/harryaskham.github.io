@@ -15,6 +15,7 @@ links; the plugin and validator discover new directories automatically:
 | `static/alex/` | <https://a.skh.am/alex/> |
 | `static/par/` | <https://a.skh.am/par/> |
 | `static/eddie/` | <https://a.skh.am/eddie/> |
+| `static/jay/` | <https://a.skh.am/jay/> |
 
 `_plugins/root_static.rb` strips `static/` from static-file destinations during
 both `jekyll build` and `jekyll serve`. It does not add redirects or a second
@@ -67,4 +68,27 @@ reduced motion, image failure, video placement and no-JS fallback:
 
 ```sh
 playwright-cli -s=eddie-check run-code --filename=/absolute/path/to/_tests/eddie-browser.js
+```
+
+Jay is a fully local medical transcription PWA. Speech recognition runs in a
+module worker on ONNX Runtime Web (WASM SIMD, threads when cross-origin isolated);
+audio, transcripts and history live in IndexedDB and never leave the browser.
+Moonshine Tiny (MIT) and the CPU WASM runtime ship with the page as verified,
+gzip-sharded `.bin` files; MedASR and Moonshine Base are optional one-time
+downloads cached in Cache Storage. Regenerate or verify the vendored bytes with:
+
+```sh
+python3 _tools/jay-assets.py          # rebuild static/jay/{runtime,models}
+python3 _tools/jay-assets.py --check  # verify committed shards
+```
+
+On-device model weights and runtimes under `static/<name>/models/` or
+`static/<name>/runtime/` use a separate reviewed 40 MB budget so they do not
+consume the 25 MB media budget; the 10 MB per-file limit still applies. Jay's
+service worker is scoped to `/jay/` only. It adds COOP/COEP headers for WASM
+threads and caches the app shell for offline use. It never handles requests
+outside `/jay/`, and it bypasses `/jay/worklog/`.
+
+```sh
+JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-browser.mjs
 ```

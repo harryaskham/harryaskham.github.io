@@ -10,6 +10,11 @@ from urllib.parse import unquote, urlsplit
 
 REPO = Path(__file__).resolve().parents[1]
 ROOT = REPO / "static"
+# On-device ML weights/runtimes (static/<site>/models/**, static/<site>/runtime/**)
+# have their own reviewed budget so they never eat the ordinary media budget.
+MODEL_DIRS = ("models", "runtime")
+MEDIA_BUDGET = 25_000_000
+MODEL_BUDGET = 40_000_000
 
 
 def local_link(value, source, site):
@@ -43,7 +48,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--built", type=Path, help="Jekyll destination to check byte-for-byte")
     args = parser.parse_args()
-    total = count = 0
+    total = models = count = 0
     for site in sorted(ROOT.iterdir()):
         assert site.is_dir() and not site.is_symlink(), f"Only subsite directories belong in static/: {site}"
         assert (site / "index.html").is_file(), f"Missing index.html: {site}"
@@ -54,7 +59,10 @@ def main():
                 continue
             data = file.read_bytes()
             assert len(data) < 10_000_000, f"Asset exceeds 10 MB: {file}"
-            total += len(data)
+            if file.relative_to(site).parts[0] in MODEL_DIRS:
+                models += len(data)
+            else:
+                total += len(data)
             count += 1
             if file.suffix == ".html":
                 assert not data.startswith(b"---"), f"Standalone HTML must not have Jekyll front matter: {file}"
@@ -66,11 +74,12 @@ def main():
                 output = args.built / file.relative_to(ROOT)
                 assert output.is_file(), f"Missing root-mounted output: {output}"
                 assert data == output.read_bytes(), f"Static asset was changed: {output}"
-    assert total < 25_000_000, "Static assets exceed 25 MB"
+    assert total < MEDIA_BUDGET, "Static assets exceed 25 MB"
+    assert models < MODEL_BUDGET, "On-device model/runtime assets exceed 40 MB"
     if args.built:
         assert not (args.built / "static").exists(), "Unexpected /static/ output"
     subprocess.run([sys.executable, str(REPO / "scripts/check-alex.py")], check=True)
-    print(f"Static sites: {count} files; {total:,} bytes; links and budgets valid" +
+    print(f"Static sites: {count} files; {total:,} media + {models:,} model bytes; links and budgets valid" +
           ("; all files published unchanged at root" if args.built else ""))
 
 

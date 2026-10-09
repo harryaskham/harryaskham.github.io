@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Jay — on-device medical transcription</title>
+  <meta name="description" content="Jay transcribes dictation and recordings entirely on your device. Record or drop audio, search every session, export anytime.">
+  <meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#11151f" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="Jay">
+  <meta property="og:description" content="On-device medical transcription. Audio never leaves your device.">
+  <meta property="og:url" content="https://a.skh.am/jay/">
+  <meta property="og:image" content="https://a.skh.am/jay/icon-512.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <link rel="modulepreload" href="app.js">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true">
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5" class="solid"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" class="solid"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4M7.5 8.5 12 4l4.5 4.5M4.5 15v3.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4.5 19.5h4l10-10-4-4-10 10zM13 7l4 4"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4.5V9h-4.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11.5M7.5 11 12 15.5l4.5-4.5M4.5 15v3.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3" class="solid"/><circle cx="12" cy="12" r="1.3" class="solid"/><circle cx="18" cy="12" r="1.3" class="solid"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5v15a7.5 7.5 0 0 0 0-15z" class="solid"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6.5 3.5h7l4 4v13h-11zM13.5 3.5v4h4"/><path d="M9.5 16v-3M12 17v-5M14.5 15.5v-2"/></symbol>
+  <symbol id="i-feather" viewBox="0 0 24 24"><path d="M5 19 15.5 8.5M7 17c-1-5 2-11 12.5-12.5C18 15 12 18 7 17zM10 14h5"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M9.5 3.5v3M14.5 3.5v3M9.5 17.5v3M14.5 17.5v3M3.5 9.5h3M3.5 14.5h3M17.5 9.5h3M17.5 14.5h3"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M5 7h9M18 7h1M5 17h3M12 17h7"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="jay" viewBox="0 0 64 64">
+    <path style="fill:var(--jay-crest)" d="M19 57C14 46 15 34 22 27 18 21 13 13 9 6c8 2 16 7 21 11 9-3 17 1 20 10l1 11c-3 9-10 16-19 19z"/>
+    <path style="fill:var(--jay-face)" d="M37 35c5-2 11-1 14 3-3 9-10 16-19 19-1-8 0-16 5-22z"/>
+    <path style="fill:var(--jay-ink)" d="M50 29.5 61 33.5 50 36.5z"/>
+    <path style="fill:none;stroke:var(--jay-ink);stroke-width:2.6;stroke-linecap:round" d="M50.5 30.5c-5-1.6-10-1.6-15 .5M50 40c-4 8-12 12-21 11.5"/>
+    <circle style="fill:var(--jay-ink)" cx="43" cy="30" r="2.5"/>
+    <circle style="fill:var(--jay-face)" cx="43.8" cy="29.2" r=".8"/>
+    <path style="fill:none;stroke:var(--jay-ink);stroke-width:2.6;stroke-linecap:round" d="M17 44l6 2M16.5 49l6.5 1.5M18 53.5l6 1" opacity=".9"/>
+  </symbol>
+</svg>
+
+<div class="app" id="app">
+  <aside class="ledger" id="ledger" aria-label="Sessions">
+    <header class="brand">
+      <a class="wordmark" href="#/" aria-label="Jay home">
+        <svg class="mark" aria-hidden="true"><use href="#jay"/></svg>
+        <span>Jay</span>
+      </a>
+      <button class="icon-btn" id="new-session" title="New session (N)" aria-label="New session"><svg><use href="#i-plus"/></svg></button>
+    </header>
+    <label class="search">
+      <svg aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="search" type="search" placeholder="Search notes" autocomplete="off" spellcheck="false" aria-label="Search all sessions">
+      <kbd>/</kbd>
+    </label>
+    <nav class="sessions" id="sessions"></nav>
+    <footer class="ledger-foot">
+      <button class="store-meter" id="store-meter" title="Storage">
+        <svg aria-hidden="true"><use href="#i-db"/></svg>
+        <span class="bar"><i id="store-fill"></i></span>
+        <span id="store-label">—</span>
+      </button>
+      <button class="icon-btn" id="theme-btn" title="Theme" aria-label="Theme"><svg><use href="#i-auto"/></svg></button>
+      <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
+    </footer>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="page" id="page">
+    <header class="page-head" id="page-head">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Sessions"><svg><use href="#i-menu"/></svg></button>
+      <div class="title-wrap">
+        <h1 id="title" class="title" spellcheck="false"></h1>
+        <div class="meta" id="meta"></div>
+      </div>
+      <div class="head-actions" id="head-actions">
+        <button class="icon-btn" data-act="copy-session" title="Copy transcript" aria-label="Copy transcript"><svg><use href="#i-copy"/></svg></button>
+        <button class="icon-btn" data-act="export-session" title="Export" aria-label="Export"><svg><use href="#i-download"/></svg></button>
+        <button class="icon-btn" data-act="session-more" title="More" aria-label="More"><svg><use href="#i-more"/></svg></button>
+      </div>
+    </header>
+    <section class="turns" id="turns" aria-live="polite"></section>
+
+    <footer class="dock" id="dock">
+      <button class="rec" id="rec" aria-label="Record (R)" title="Record (R)">
+        <svg class="i-on"><use href="#i-mic"/></svg><svg class="i-off"><use href="#i-stop"/></svg>
+      </button>
+      <div class="strip" id="strip">
+        <canvas id="live-sono" aria-hidden="true"></canvas>
+        <span class="clock" id="clock">0:00</span>
+        <span class="strip-status" id="strip-status"></span>
+        <button class="icon-btn pause" id="pause" aria-label="Pause (P)" title="Pause (P)"><svg><use href="#i-pause"/></svg></button>
+      </div>
+      <button class="dock-btn" id="upload" title="Transcribe audio files (U)"><svg><use href="#i-upload"/></svg><span>Upload</span></button>
+      <button class="model-chip" id="model-chip" aria-haspopup="menu"><i class="dot"></i><span id="model-name">Moonshine Tiny</span><svg><use href="#i-chev"/></svg></button>
+      <input type="file" id="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.opus,.webm,.flac,.aac,.mp4,.mov" multiple hidden>
+    </footer>
+  </main>
+</div>
+
+<div class="drop" id="drop" aria-hidden="true"><div><svg><use href="#i-upload"/></svg><b>Drop to transcribe</b></div></div>
+<div class="toasts" id="toasts" role="status"></div>
+<div class="menu" id="menu" role="menu" hidden></div>
+<audio id="player" preload="metadata"></audio>
+
+<dialog class="sheet" id="settings">
+  <form method="dialog" class="sheet-head">
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="models"><svg><use href="#i-chip"/></svg>Models</button>
+      <button type="button" role="tab" data-tab="storage"><svg><use href="#i-db"/></svg>Storage</button>
+      <button type="button" role="tab" data-tab="prefs"><svg><use href="#i-sliders"/></svg>Preferences</button>
+    </nav>
+    <button class="icon-btn" value="close" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+  </form>
+  <div class="sheet-body" id="sheet-body"></div>
+</dialog>
+
+<noscript><p class="noscript">Jay runs entirely in your browser and needs JavaScript enabled.</p></noscript>
+</body>
+</html>
