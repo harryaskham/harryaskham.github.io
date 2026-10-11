@@ -1,0 +1,90 @@
+# Shared GitHub Pages publisher for every harryaskham/* project site.
+#
+# One self-hosted job: build → validate → upload a short-lived Pages artifact
+# → deploy. No GitHub-hosted runners, no gh-pages branch, no legacy Pages
+# build (which itself runs on GitHub-hosted machines and makes an artifact).
+#
+# Caller (in <repo>/.github/workflows/pages.yml):
+#
+#   on:
+#     push:
+#       branches: [main]
+#       paths: [site/**, .github/workflows/pages.yml]
+#     workflow_dispatch:
+#   permissions: { contents: read, pages: write, id-token: write }
+#   jobs:
+#     pages:
+#       uses: harryaskham/harryaskham.github.io/.github/workflows/publish-pages.yml@main
+#       with:
+#         path: site
+#         build: nix develop --command python3 scripts/check-site.py
+#
+# The repo needs: Pages source = "GitHub Actions" (build_type=workflow), a
+# github-pages environment that allows the deploying ref (main, plus v* tags if
+# the caller deploys on tags), and self-hosted runners for runs-on — see
+# collective modules/home-manager/git.nix (enableDefaultRunners).
+name: Publish Pages (shared)
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: Directory to publish (must contain index.html after build)
+        type: string
+        default: site
+      build:
+        description: Shell command that builds/validates the site; empty for prebuilt static files
+        type: string
+        default: ''
+      runs-on:
+        description: JSON runner labels
+        type: string
+        default: '["self-hosted", "nix", "x86_64-linux"]'
+      submodules:
+        description: actions/checkout submodules value (false, true or recursive)
+        type: string
+        default: 'false'
+      timeout-minutes:
+        type: number
+        default: 30
+
+jobs:
+  publish:
+    name: Build and deploy
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    concurrency:
+      group: pages-${{ github.repository }}
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.submodules }}
+          persist-credentials: false
+
+      - name: Check Pages is in Actions mode
+        uses: actions/configure-pages@v5
+
+      - name: Build
+        if: inputs.build != ''
+        env:
+          BUILD: ${{ inputs.build }}
+        run: bash -euo pipefail -c "$BUILD"
+
+      - name: Validate output
+        env:
+          SITE: ${{ inputs.path }}
+        run: |
+          test -s "$SITE/index.html" || { echo "::error::$SITE/index.html missing after build"; exit 1; }
+          echo "Publishing $(find "$SITE" -type f | wc -l) files, $(du -sh "$SITE" | cut -f1) from $SITE" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ inputs.path }}
+          retention-days: 1
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
