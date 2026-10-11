@@ -5,8 +5,16 @@ on:
     branches: ['**']
   delete:
     branches: ['**']
+  # Daily: re-derive /all and deploy only if it differs from what gh-pages serves.
+  schedule:
+    - cron: '17 6 * * *'
   # Manual rebuild of the live site, e.g. to re-derive /all after a repo site appears.
   workflow_dispatch:
+    inputs:
+      only_if_changed:
+        description: 'Deploy only if /all differs from gh-pages (what the daily run does)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -17,9 +25,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── Daily /all check: a no-op unless the derived index changed ─
+  # The rendered page has no dates, so an unchanged refresh is byte-identical
+  # to the deployed copy. Fails (and emails) if the token stops seeing private repos.
+  index-check:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.only_if_changed)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive site index (/all)
+        env:
+          GH_TOKEN: ${{ secrets.SITE_INDEX_TOKEN }}
+        run: python3 _tools/site-index.py --refresh --strict
+
+      - name: Compare with deployed gh-pages
+        id: compare
+        run: |
+          git fetch --depth=1 origin gh-pages
+          if git show FETCH_HEAD:all/index.html > /tmp/deployed.html 2>/dev/null \
+             && cmp -s /tmp/deployed.html static/all/index.html; then
+            changed=false
+          else
+            changed=true
+            diff -u /tmp/deployed.html static/all/index.html | head -60 || true
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "/all changed: **$changed**" >> "$GITHUB_STEP_SUMMARY"
+
   # ── Live site: main (or legacy master) → root of gh-pages ─────
   deploy-live:
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    needs: index-check
+    # Pushes and plain manual runs always deploy; the daily check only on change.
+    if: >-
+      always() && !cancelled() &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') &&
+      (github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && !inputs.only_if_changed) ||
+       needs.index-check.outputs.changed == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

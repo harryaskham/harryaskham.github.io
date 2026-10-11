@@ -14,6 +14,10 @@ Two sources, both derived rather than registered:
     python3 _tools/site-index.py --refresh  # rediscover repos + live metadata, then render
     python3 _tools/site-index.py --check    # CI: fail if the rendered page is stale
 
+The rendered page depends only on what is indexed (no dates), so an unchanged
+refresh is byte-identical: the daily check compares it with gh-pages and
+deploys only on a real difference.
+
 --refresh uses `gh api`. With the owner's token it sees private repos and exact
 Pages URLs; with any other token (e.g. Actions' GITHUB_TOKEN) it discovers
 public repos only and keeps snapshot entries it cannot see. Network failures
@@ -29,6 +33,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from urllib.parse import urljoin
@@ -111,16 +116,25 @@ def gh(*args):
     return out.stdout
 
 
-def fetch(url):
-    """GET a page; return (live, html). Live means 200 at this exact path, no off-path redirect."""
+def fetch(url, tries=3):
+    """GET a page; return (live, html). Live means 200 at this exact path, no off-path redirect.
+
+    4xx is a definite answer. Network errors and 5xx are retried so a momentary
+    blip cannot flip a site offline (and so trigger a pointless deploy)."""
     req = urllib.request.Request(url, headers={"User-Agent": "a.skh.am site-index"})
-    try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            final = r.geturl().split("?")[0].split("#")[0]
-            body = r.read(512_000).decode(r.headers.get_content_charset() or "utf-8", errors="replace")
-            return final.rstrip("/") == url.rstrip("/"), body
-    except (urllib.error.URLError, TimeoutError, ConnectionError):
-        return False, ""
+    for attempt in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                final = r.geturl().split("?")[0].split("#")[0]
+                body = r.read(512_000).decode(r.headers.get_content_charset() or "utf-8", errors="replace")
+                return final.rstrip("/") == url.rstrip("/"), body
+        except urllib.error.HTTPError as e:
+            if e.code < 500:
+                return False, ""
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+            pass
+        time.sleep(2 * (attempt + 1))
+    return False, ""
 
 
 def discover(snapshot):
@@ -174,11 +188,12 @@ def refresh(snapshot):
         }
 
     with cf.ThreadPoolExecutor(8) as pool:
-        repos = [r for r in pool.map(describe, found) if r]
+        repos = sorted((r for r in pool.map(describe, found) if r), key=lambda r: r["name"].lower())
+    same = repos == snapshot.get("repos")
     return {
-        "refreshed": dt.date.today().isoformat(),
+        "refreshed": snapshot.get("refreshed") if same else dt.date.today().isoformat(),
         "complete": owner,
-        "repos": sorted(repos, key=lambda r: r["name"].lower()),
+        "repos": repos,
     }
 
 
@@ -249,7 +264,7 @@ def render(snapshot):
 {group("repos", "Repos", repos)}
       <p class="none" id="none" hidden>No match</p>
     </div>
-    <footer class="foot"><span>{total} sites</span><span title="Repos last discovered">{escape(snapshot.get("refreshed", ""))}</span></footer>
+    <footer class="foot"><span>{total} sites</span></footer>
   </nav>
   <div class="split" id="split" role="separator" aria-orientation="vertical" aria-label="Resize index" tabindex="0"></div>
   <main class="viewer" id="viewer">
@@ -283,6 +298,7 @@ def main():
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--refresh", action="store_true", help="rediscover repo sites and live metadata (network)")
     mode.add_argument("--check", action="store_true", help="fail if static/all/index.html is stale")
+    ap.add_argument("--strict", action="store_true", help="with --refresh: fail unless discovery was complete")
     args = ap.parse_args()
     snapshot = json.loads(SNAPSHOT.read_text()) if SNAPSHOT.is_file() else {"repos": []}
 
@@ -295,13 +311,17 @@ def main():
     if args.refresh:
         try:
             fresh = refresh(snapshot)
-            if not fresh["complete"]:
+        except Exception as exc:  # never block a deploy on discovery
+            if args.strict:
+                sys.exit(f"site-index: refresh failed: {exc}")
+            print(f"site-index: refresh failed, keeping snapshot: {exc}", file=sys.stderr)
+        else:
+            if not fresh.pop("complete"):
+                if args.strict:
+                    sys.exit("site-index: token cannot see private repos (is SITE_INDEX_TOKEN valid?)")
                 print("site-index: token cannot see private repos; kept snapshot entries it could not verify", file=sys.stderr)
-            fresh.pop("complete")
             snapshot = fresh
             SNAPSHOT.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n")
-        except Exception as exc:  # never block a deploy on discovery
-            print(f"site-index: refresh failed, keeping snapshot: {exc}", file=sys.stderr)
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(render(snapshot))

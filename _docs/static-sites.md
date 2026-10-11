@@ -133,8 +133,9 @@ python3 _tools/site-index.py --check    # run by check-static.py: fail if stale
 ```
 
 `static/all/index.html` is generated (edit the generator, `style.css` or `app.js`).
-Repo discovery results are cached in `_tools/site-index.json`; refresh locally with
-the owner's `gh` login to include private repos, then commit both files.
+Repo discovery results are cached in `_tools/site-index.json` (the offline fallback);
+refresh locally with the owner's `gh` login to include private repos, then commit both
+files.
 
 Both deploy jobs run `--refresh` before validation, so publishing always re-derives
 `/all`. With a `SITE_INDEX_TOKEN` secret (fine-grained PAT: all repositories,
@@ -142,3 +143,13 @@ Metadata + Pages read-only) CI sees private repos too; without it CI rediscovers
 public repos, re-checks every snapshot entry live, and keeps private entries from
 the committed snapshot. Discovery failures keep the snapshot and never fail a
 deploy. `workflow_dispatch` rebuilds the live site on demand.
+
+A daily scheduled run (`index-check`) re-derives `/all` and compares it byte-for-byte
+with `all/index.html` on `gh-pages`; the live deploy runs only if they differ, so an
+ordinary day makes no commit. The page deliberately contains no dates and fetches
+retry transient errors, so only a real change (a site added, removed, retitled,
+re-iconned or going offline) triggers a deploy. The check runs `--strict` and fails
+if `SITE_INDEX_TOKEN` is missing, expired or can no longer see private repos.
+Run the same check by hand with `gh workflow run pages.yml -f only_if_changed=true`.
+The bot never commits to `main`: `_tools/site-index.json` is only the offline
+fallback and is updated whenever someone refreshes locally.
