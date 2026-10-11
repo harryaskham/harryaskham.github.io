@@ -14,6 +14,10 @@ static/foo/app.js      →  _site/foo/app.js      →  https://a.skh.am/foo/app.
 ```
 
 **No registry, route table, per-app Jekyll config, or workflow edit is needed.**
+The unlinked index at `/all/` is derived from these folders too: run
+`python3 _tools/site-index.py` (offline) and commit the regenerated
+`static/all/index.html`; `scripts/build` and the deploy workflow do this for you,
+and `check-static.py` fails with that instruction if you forget.
 The [root-static plugin](../../../_plugins/root_static.rb) discovers Jekyll static
 files under `static/` and strips that prefix from their output destinations.
 Nested assets retain their paths. There is no second `/static/foo/` deployment.
@@ -93,6 +97,7 @@ not in an app's asset tree. The deployment must continue to exclude agent folder
 ## Validate locally
 
 ```sh
+python3 _tools/site-index.py     # re-derive /all so it lists the new page
 python3 scripts/check-static.py
 nix-shell --run './scripts/build'
 nix-shell --run 'make dev'

@@ -1,0 +1,165 @@
+{
+  "refreshed": "2026-10-11",
+  "repos": [
+    {
+      "name": "agent-utils",
+      "title": "Agent Utils tool inventory",
+      "description": "Concise inventory of the first-party surfaces and repo-local tools that agents and operators use around this repository.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/agent-utils"
+    },
+    {
+      "name": "aish",
+      "title": "aish — a terminal you can talk to",
+      "description": "aish is an audio-first conversational terminal: a real persistent shell and a persistent agent in one transcript, fully usable with the screen off.",
+      "icon": "https://a.skh.am/aish/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/aish"
+    },
+    {
+      "name": "android-utils",
+      "title": "android-utils",
+      "description": "android-utils: Linux desktops, a terminal, a floating window manager and more for Android — built with Nix, shipped through Google Play internal testing.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/android-utils"
+    },
+    {
+      "name": "annum",
+      "title": "Annum — Calendar, mail & Teams",
+      "description": "Annum brings your Microsoft 365 calendar, mail and Teams conversations into a native workspace for Mac and Android.",
+      "icon": "https://a.skh.am/annum/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/annum"
+    },
+    {
+      "name": "cacophony",
+      "title": "Cacophony — conduct a swarm of coding agents",
+      "description": "Cacophony runs a coordinated swarm of coding agents for every repository: one task board, one message bus and one lifecycle controller across all of your machines.",
+      "icon": "https://a.skh.am/cacophony/images/favicon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/cacophony"
+    },
+    {
+      "name": "caravan",
+      "title": "Caravan — A merge queue that keeps agents moving",
+      "description": "Caravan is a deterministic, agent-friendly merge queue built directly on GitHub pull-request topology—no queue database required.",
+      "icon": "https://a.skh.am/caravan/assets/favicon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/caravan"
+    },
+    {
+      "name": "collective",
+      "title": "collective",
+      "description": "Nix-based system configuration for NixOS, macOS, and Android",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/collective"
+    },
+    {
+      "name": "cost",
+      "title": "Cost — AI credit usage",
+      "description": "AI credit usage, rolling spend rate and reset-aware history. Cost for macOS, Android and the terminal.",
+      "icon": "https://a.skh.am/cost/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/cost"
+    },
+    {
+      "name": "io-mcp",
+      "title": "io-mcp — MCP hub for agent–human communication",
+      "description": "A centralised MCP server that connects AI coding agents to humans through TTS, choices, messaging, and terminal graphics. Run a whole project from your phone with a scroll wheel and earphones — or from any terminal.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/io-mcp"
+    },
+    {
+      "name": "kittui",
+      "title": "kittui",
+      "description": "kittui renders rich graphics into the terminal via the kitty graphics protocol, and kittwm composes them into a real window manager. One agreed capability model drives every surface backend — Quartz, X11/Xvfb, Windows, browser — so hosts, the SDK, and cross-platform work all route against the same contract instead of per-backend guesswork.",
+      "icon": "https://a.skh.am/kittui/landing-assets/favicon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/kittui"
+    },
+    {
+      "name": "nlir",
+      "title": "nlir — natural-language IR",
+      "description": "Terse sigil shorthand in, fluent English out.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/nlir"
+    },
+    {
+      "name": "omni-cli",
+      "title": "Overview - omni",
+      "description": "omni CLI for casting keystrokes",
+      "icon": "https://a.skh.am/omni-cli/favicon-8114d1fc.png",
+      "live": true,
+      "source": "https://github.com/harryaskham/omni-cli"
+    },
+    {
+      "name": "panopticon",
+      "title": "Panopticon — your desktop, zoomed out into an agent's instrument",
+      "description": "Panopticon is a macOS overlay that zooms the live desktop out into a CRT-styled pi agent harness. The agent sees the screen, rewinds it, and drives it — while you watch every action.",
+      "icon": "https://a.skh.am/panopticon/assets/favicon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/panopticon"
+    },
+    {
+      "name": "paratenic",
+      "title": "Paratenic · one agent, many windows",
+      "description": "Paratenic — synchronize one live agent session across local and remote clients with the Agent Host Protocol.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/paratenic"
+    },
+    {
+      "name": "pi-daemon",
+      "title": "Pi Daemon",
+      "description": "Pi daemon exposing SDK-based on-demand agent sessions",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/pi-daemon"
+    },
+    {
+      "name": "ring-mods",
+      "title": "tmp — ring-mods research",
+      "description": "colmi r02 / r12 ring mods",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/ring-mods"
+    },
+    {
+      "name": "slick",
+      "title": "Slick — Slack reader",
+      "description": "A read-only Slack client for activity, conversations, threads and files. Slick for macOS and Android.",
+      "icon": "https://a.skh.am/slick/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/slick"
+    },
+    {
+      "name": "stack",
+      "title": "stack — how I use computers (work in progress)",
+      "description": "Harry Askham's personal computing stack: one Nix flake, dozens of Android apps, and a swarm of agents. Work in progress.",
+      "icon": "https://a.skh.am/stack/favicon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/stack"
+    },
+    {
+      "name": "tendril",
+      "title": "Overview - Tendril",
+      "description": "CLI tool for AI agents to control screens and windows via screenshots, mouse, and keyboard actions",
+      "icon": "https://a.skh.am/tendril/favicon-8114d1fc.png",
+      "live": true,
+      "source": "https://github.com/harryaskham/tendril"
+    },
+    {
+      "name": "tools",
+      "title": "Tools",
+      "description": "Assorted Computer Programmes",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/tools"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ links; the plugin and validator discover new directories automatically:
 | `static/par/` | <https://a.skh.am/par/> |
 | `static/eddie/` | <https://a.skh.am/eddie/> |
 | `static/jay/` | <https://a.skh.am/jay/> |
+| `static/all/` | <https://a.skh.am/all/> (generated index, below) |
 
 `_plugins/root_static.rb` strips `static/` from static-file destinations during
 both `jekyll build` and `jekyll serve`. It does not add redirects or a second
@@ -111,3 +112,33 @@ MEDASR_DIR=… JAY_URL=… node _tests/jay-downloads.mjs                 # flaky
 node _tests/jay-smoke.mjs   # AFTER EVERY DEPLOY: live CDN build consistency + new-visitor cold load
 JAY_URL=http://127.0.0.1:4000/jay/ node _tests/jay-crossbrowser.mjs # Firefox + WebKit
 ```
+
+## /all — index of everything under a.skh.am
+
+`/all/` is an unlinked index of every site served at `a.skh.am/<name>/`: a filterable
+sidebar, with each site opening in a same-origin frame (`#/<name>` deep links) or in
+a new tab. Nothing links to it and it is not a registry: it is derived.
+
+- **Pages**: every `static/<slug>/index.html` except `all` itself; title, description
+  and favicon come from that file.
+- **Repos**: every `harryaskham/*` repository whose GitHub Pages `html_url` is exactly
+  `https://a.skh.am/<repo>/`. That rule excludes this user site (served at `/`) and
+  any project with its own domain, so no blocklist is needed. Titles, descriptions,
+  favicons and liveness come from each live page.
+
+```sh
+python3 _tools/site-index.py            # render static/all/index.html (offline)
+python3 _tools/site-index.py --refresh  # rediscover repos via `gh api` + live metadata
+python3 _tools/site-index.py --check    # run by check-static.py: fail if stale
+```
+
+`static/all/index.html` is generated (edit the generator, `style.css` or `app.js`).
+Repo discovery results are cached in `_tools/site-index.json`; refresh locally with
+the owner's `gh` login to include private repos, then commit both files.
+
+Both deploy jobs run `--refresh` before validation, so publishing always re-derives
+`/all`. With a `SITE_INDEX_TOKEN` secret (fine-grained PAT: all repositories,
+Metadata + Pages read-only) CI sees private repos too; without it CI rediscovers
+public repos, re-checks every snapshot entry live, and keeps private entries from
+the committed snapshot. Discovery failures keep the snapshot and never fail a
+deploy. `workflow_dispatch` rebuilds the live site on demand.

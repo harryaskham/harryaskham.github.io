@@ -6,6 +6,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Re-derive /all from static/ and the repo snapshot (offline; CI also rediscovers repos).
+python3 _tools/site-index.py
+
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-4000}"
 

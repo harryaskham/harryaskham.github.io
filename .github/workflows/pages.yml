@@ -5,6 +5,8 @@ on:
     branches: ['**']
   delete:
     branches: ['**']
+  # Manual rebuild of the live site, e.g. to re-derive /all after a repo site appears.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,7 +19,7 @@ concurrency:
 jobs:
   # ── Live site: main (or legacy master) → root of gh-pages ─────
   deploy-live:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +29,16 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler-cache: true
+
+      # /all is derived, never registered: static/<slug>/ pages from this checkout,
+      # plus every harryaskham/* repo whose Pages site is served at a.skh.am/<repo>/.
+      # SITE_INDEX_TOKEN (fine-grained, all repos, Metadata+Pages read) also sees
+      # private repos; without it public repos are rediscovered and the committed
+      # snapshot keeps the rest. Discovery failures keep the snapshot, never fail.
+      - name: Derive site index (/all)
+        env:
+          GH_TOKEN: ${{ secrets.SITE_INDEX_TOKEN || github.token }}
+        run: python3 _tools/site-index.py --refresh
 
       - name: Validate standalone site routing
         run: bundle exec ruby scripts/check-static-routing.rb
@@ -98,6 +110,12 @@ jobs:
           SAFE_BRANCH="$(echo "$BRANCH" | sed 's|/|--|g')"
           echo "branch=$SAFE_BRANCH" >> "$GITHUB_OUTPUT"
           echo "Preview path: /preview/$SAFE_BRANCH/"
+
+      # Same derivation as the live deploy, so previews show the real /all.
+      - name: Derive site index (/all)
+        env:
+          GH_TOKEN: ${{ secrets.SITE_INDEX_TOKEN || github.token }}
+        run: python3 _tools/site-index.py --refresh
 
       - name: Validate standalone site routing
         run: bundle exec ruby scripts/check-static-routing.rb
