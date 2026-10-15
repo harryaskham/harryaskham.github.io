@@ -40,6 +40,10 @@ on:
         description: JSON runner labels
         type: string
         default: '["self-hosted", "nix", "x86_64-linux"]'
+      ref:
+        description: Ref to check out and publish; empty = the triggering commit. Use gh-pages to serve a tree composed on that branch (e.g. kittui's per-surface deploys)
+        type: string
+        default: ''
       submodules:
         description: actions/checkout submodules value (false, true or recursive)
         type: string
@@ -62,6 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           submodules: ${{ inputs.submodules }}
           persist-credentials: false
 
