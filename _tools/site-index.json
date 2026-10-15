@@ -1,5 +1,5 @@
 {
-  "refreshed": "2026-10-11",
+  "refreshed": "2026-10-15",
   "repos": [
     {
       "name": "agent-utils",
@@ -84,7 +84,7 @@
     {
       "name": "nlir",
       "title": "nlir — natural-language IR",
-      "description": "Terse sigil shorthand in, fluent English out.",
+      "description": "A small language for programs over data and meaning: exact structure and model-realised semantics in one evaluator — forwards and backwards.",
       "icon": "",
       "live": true,
       "source": "https://github.com/harryaskham/nlir"
@@ -107,23 +107,23 @@
     },
     {
       "name": "paratenic",
-      "title": "Paratenic · one agent, many windows",
-      "description": "Paratenic — synchronize one live agent session across local and remote clients with the Agent Host Protocol.",
-      "icon": "",
+      "title": "Paratenic — host the agents you already run",
+      "description": "Paratenic is an Agent Host Protocol server for live agent sessions: it adopts Pi sessions already running, republishes pi-daemon's durable sessions and serves them to every AHP client.",
+      "icon": "https://a.skh.am/paratenic/assets/mark.svg",
       "live": true,
       "source": "https://github.com/harryaskham/paratenic"
     },
     {
       "name": "pi-daemon",
-      "title": "Pi Daemon",
-      "description": "Pi daemon exposing SDK-based on-demand agent sessions",
-      "icon": "",
+      "title": "pi-daemon — the Pi Durable agent host",
+      "description": "pi-daemon runs Pi agents as Durable sessions: one SQLite store per session, crash-only workers, and AHP, ACP and Chord for Culture, editors and applications. Kill it mid-turn; nothing is lost and nothing runs twice.",
+      "icon": "https://a.skh.am/pi-daemon/assets/mark.svg",
       "live": true,
       "source": "https://github.com/harryaskham/pi-daemon"
     },
     {
       "name": "ring-mods",
-      "title": "tmp — ring-mods research",
+      "title": "ring-mods research",
       "description": "colmi r02 / r12 ring mods",
       "icon": "",
       "live": true,
