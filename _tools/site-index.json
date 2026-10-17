@@ -90,6 +90,15 @@
       "source": "https://github.com/harryaskham/kittui"
     },
     {
+      "name": "nix-reflect",
+      "title": "nix-reflect · a Nix parser and evaluator written in Nix",
+      "description": "nix-reflect is a Nix library that parses Nix source into an inspectable tree and evaluates that tree to a value, with scopes, lazy thunks and typed errors implemented in Nix itself. How it works, and how much of the language it handles today, measured against the real evaluator.",
+      "icon": "https://a.skh.am/nix-reflect/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/nix-reflect",
+      "group": "libraries"
+    },
+    {
       "name": "nlir",
       "title": "nlir — natural-language IR",
       "description": "A small language for programs over data and meaning: exact structure and model-realised semantics in one evaluator — forwards and backwards.",
@@ -128,6 +137,15 @@
       "icon": "https://a.skh.am/pi-daemon/assets/mark.svg",
       "live": true,
       "source": "https://github.com/harryaskham/pi-daemon"
+    },
+    {
+      "name": "quaalude",
+      "title": "quaalude · a custom Haskell prelude for Advent of Code",
+      "description": "quaalude is a replacement Prelude for Haskell, written for Advent of Code: Relude and about sixty libraries plus thirty modules of collections, grids, coordinates, parsing, search and Z3 helpers behind a dense Unicode notation, so a solution needs no imports. A guide with GHCi examples, the names real solutions use most, and a reference generated from the compiled library.",
+      "icon": "https://a.skh.am/quaalude/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/quaalude",
+      "group": "libraries"
     },
     {
       "name": "ring-mods",
