@@ -1,5 +1,5 @@
 {
-  "refreshed": "2026-10-15",
+  "refreshed": "2026-10-17",
   "repos": [
     {
       "name": "agent-utils",
@@ -66,6 +66,14 @@
       "source": "https://github.com/harryaskham/cost"
     },
     {
+      "name": "ctx",
+      "title": "ctx · shared, versioned, watchable context for agents and programs",
+      "description": "ctx is one small daemon that keeps a versioned JSON tree for every agent, session and script: read it, write it with compare-and-set, watch it change, put it in prompts and wake agents when it moves.",
+      "icon": "https://a.skh.am/ctx/assets/favicon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/ctx"
+    },
+    {
       "name": "io-mcp",
       "title": "io-mcp — MCP hub for agent–human communication",
       "description": "A centralised MCP server that connects AI coding agents to humans through TTS, choices, messaging, and terminal graphics. Run a whole project from your phone with a scroll wheel and earphones — or from any terminal.",
@@ -108,7 +116,7 @@
     {
       "name": "paratenic",
       "title": "Paratenic — host the agents you already run",
-      "description": "Paratenic is an Agent Host Protocol server for live agent sessions: it adopts Pi sessions already running, republishes pi-daemon's durable sessions and serves them to every AHP client.",
+      "description": "Paratenic is an Agent Host Protocol server for live agent sessions: it adopts Pi sessions already running, starts Pi agents for sessions clients create, and serves them to every AHP client.",
       "icon": "https://a.skh.am/paratenic/assets/mark.svg",
       "live": true,
       "source": "https://github.com/harryaskham/paratenic"
