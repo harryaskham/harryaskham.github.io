@@ -2,6 +2,14 @@
   "refreshed": "2026-10-17",
   "repos": [
     {
+      "name": "advent",
+      "title": "advent · Advent of Code in Haskell, 2015–2025",
+      "description": "Haskell solutions to every Advent of Code puzzle from 2015 to 2025, one file per day, in a viewer that shows each solution next to a short critique of how it works and where it is weak, from plain Haskell in 2015 to the quaalude custom prelude in 2025.",
+      "icon": "https://a.skh.am/advent/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/advent"
+    },
+    {
       "name": "agent-utils",
       "title": "Agent Utils · the toolbox around a coding agent",
       "description": "Agent Utils is a Pi package and a set of standalone tools that give coding agents a voice, eyes, hands and a fleet: speech in and out, images and screens, choices, session control, work apps and fleet-wide dashboards.",
