@@ -51,9 +51,9 @@
     },
     {
       "name": "collective",
-      "title": "collective",
-      "description": "Nix-based system configuration for NixOS, macOS, and Android",
-      "icon": "",
+      "title": "Collective · one Nix flake for every machine",
+      "description": "Collective is one typed Nix flake that configures a fleet of NixOS desktops and servers, WSL devboxes, a Mac and its Linux VM, and Android phones: one registry, one module tree, prebuilt closures and a CLI to run it.",
+      "icon": "https://a.skh.am/collective/assets/favicon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/collective"
     },
@@ -164,7 +164,7 @@
     {
       "name": "tools",
       "title": "Tools",
-      "description": "Assorted Computer Programmes",
+      "description": "Tools: a physical-model synth and score language, a rhythm partner, speech synthesis and transcription, terminal handwriting and graphics, key lighting and release automation.",
       "icon": "",
       "live": true,
       "source": "https://github.com/harryaskham/tools"
