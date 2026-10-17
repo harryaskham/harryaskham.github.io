@@ -3,9 +3,9 @@
   "repos": [
     {
       "name": "agent-utils",
-      "title": "Agent Utils tool inventory",
-      "description": "Concise inventory of the first-party surfaces and repo-local tools that agents and operators use around this repository.",
-      "icon": "",
+      "title": "Agent Utils · the toolbox around a coding agent",
+      "description": "Agent Utils is a Pi package and a set of standalone tools that give coding agents a voice, eyes, hands and a fleet: speech in and out, images and screens, choices, session control, work apps and fleet-wide dashboards.",
+      "icon": "https://a.skh.am/agent-utils/assets/favicon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/agent-utils"
     },
@@ -83,9 +83,9 @@
     },
     {
       "name": "kittui",
-      "title": "kittui",
-      "description": "kittui renders rich graphics into the terminal via the kitty graphics protocol, and kittwm composes them into a real window manager. One agreed capability model drives every surface backend — Quartz, X11/Xvfb, Windows, browser — so hosts, the SDK, and cross-platform work all route against the same contract instead of per-backend guesswork.",
-      "icon": "https://a.skh.am/kittui/landing-assets/favicon.svg",
+      "title": "kittui · terminal graphics, natively",
+      "description": "kittui renders graphics into the terminal through the kitty graphics protocol, from Rust, C, TypeScript, Python or the shell, and kittwm composes terminals, browsers and native windows into one window manager.",
+      "icon": "https://a.skh.am/kittui/assets/favicon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/kittui"
     },
@@ -99,9 +99,9 @@
     },
     {
       "name": "omni-cli",
-      "title": "Overview - omni",
-      "description": "omni CLI for casting keystrokes",
-      "icon": "https://a.skh.am/omni-cli/favicon-8114d1fc.png",
+      "title": "omni · cast keystrokes to every device",
+      "description": "omni casts keystrokes, text, key combos and scrolls from one CLI to the omni keyboard on Android, iOS and watches, to desktops through a replay daemon, and to agents over MCP, using one NDJSON wire.",
+      "icon": "https://a.skh.am/omni-cli/assets/favicon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/omni-cli"
     },
@@ -155,9 +155,9 @@
     },
     {
       "name": "tendril",
-      "title": "Overview - Tendril",
-      "description": "CLI tool for AI agents to control screens and windows via screenshots, mouse, and keyboard actions",
-      "icon": "https://a.skh.am/tendril/favicon-8114d1fc.png",
+      "title": "Tendril · eyes and hands on a desktop, for agents",
+      "description": "Tendril is a stateless Rust CLI that lets agents see and drive desktops: list windows, displays and cameras, capture screenshots, read accessibility elements, type, click and scroll, on Linux, macOS, Windows and Android.",
+      "icon": "https://a.skh.am/tendril/assets/favicon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/tendril"
     },
