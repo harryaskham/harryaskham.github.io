@@ -50,6 +50,12 @@ SOURCE = f"https://github.com/{OWNER}/{OWNER}.github.io/tree/main/static"
 # Declared sections render between Pages and Repos, in this order, then any others alphabetically.
 GROUP_META = "a.skh.am:group"
 GROUPS = {"libraries": "Libraries"}
+# Every repo site declares how it was made with <meta name="a.skh.am:made" content="hand|with-agents|agents">
+# (see _tools/made-badge.py); /all marks each entry and /made/ lists them by class.
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("made_badge", Path(__file__).with_name("made-badge.py"))
+MADE = _ilu.module_from_spec(_spec); _spec.loader.exec_module(MADE)
+MADE_META = MADE.META
 
 
 # ── metadata ────────────────────────────────────────────────────────────────
@@ -59,7 +65,7 @@ class Meta(HTMLParser):
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.title, self.description, self.icons, self.group = "", "", [], ""
+        self.title, self.description, self.icons, self.group, self.made = "", "", [], "", ""
         self._in_title = self._seen_title = self._in_svg = False
 
     def handle_starttag(self, tag, attrs):
@@ -70,6 +76,9 @@ class Meta(HTMLParser):
             self._in_title = True  # the document title only, never inline-SVG <title>s
         elif tag == "meta" and a.get("name", a.get("property", "")).lower() in ("description", "og:description"):
             self.description = self.description or a.get("content", "")
+        elif tag == "meta" and a.get("name", "").lower() == MADE_META:
+            v = a.get("content", "").strip().lower()
+            self.made = self.made or (v if v in MADE.CLASSES else "")
         elif tag == "meta" and a.get("name", "").lower() == GROUP_META:
             self.group = self.group or re.sub(r"[^a-z0-9-]", "", a.get("content", "").lower())
         elif tag == "link" and a.get("href"):
@@ -99,7 +108,7 @@ def parse(html, base):
     m = Meta()
     m.feed(html)
     icon = next((urljoin(base, i) for i in m.icons if not i.startswith("data:")), "")
-    return {"title": tidy(m.title), "description": tidy(m.description), "icon": icon, "group": m.group}
+    return {"title": tidy(m.title), "description": tidy(m.description), "icon": icon, "group": m.group, "made": m.made}
 
 
 def local_pages():
@@ -180,7 +189,7 @@ def refresh(snapshot):
         live, html = fetch(url)
         if not live and r["exact"] is None and r["name"] not in old:
             return None  # unverified public repo that isn't serving here (e.g. its own domain)
-        meta = parse(html, url) if live else {"title": "", "description": "", "icon": "", "group": ""}
+        meta = parse(html, url) if live else {"title": "", "description": "", "icon": "", "group": "", "made": ""}
         if meta["icon"] and not fetch(meta["icon"])[0]:
             meta["icon"] = ""
         prev = old.get(r["name"], {})
@@ -192,6 +201,7 @@ def refresh(snapshot):
             "live": live,
             "source": f"https://github.com/{OWNER}/{r['name']}",
             **({"group": g} if (g := meta["group"] or (prev.get("group", "") if not live else "")) else {}),
+            **({"made": m} if (m := meta["made"] or (prev.get("made", "") if not live else "")) else {}),
         }
 
     with cf.ThreadPoolExecutor(8) as pool:
@@ -224,13 +234,17 @@ def item(site):
     icon = (f'<img src="{escape(site["icon"])}" alt="" width="16" height="16" loading="lazy" decoding="async">'
             if site["icon"] else "")
     state = "" if site["live"] else ' data-offline=""'
+    made = site.get("made", "")
+    mark = (f'<span class="made" data-made="{made}" title="{escape(MADE.CLASSES[made]["title"])}">'
+            f'<svg aria-hidden="true" viewBox="0 0 12 12">{MADE.CLASSES[made]["glyph"]}</svg>'
+            f'<span class="vh">{escape(MADE.CLASSES[made]["label"])}</span></span>') if made else ""
     note = "" if site["live"] else '<span class="off" title="Not serving">offline</span>'
     return (
         f'      <li data-name="{escape(name)}" data-source="{escape(site["source"])}"{state}'
         f' data-find="{escape((name + " " + title + " " + site["description"]).lower())}">'
         f'<a class="go" href="{escape(url)}" target="view" title="{escape(site["description"] or title)}">'
         f'<span class="ico" data-letter="{escape(name[:1].upper())}">{icon}</span>'
-        f'<span class="path">/{escape(name)}</span>{note}<span class="title">{escape(title)}</span></a>'
+        f'<span class="path">/{escape(name)}{mark}</span>{note}<span class="title">{escape(title)}</span></a>'
         f'<a class="out" href="{escape(url)}" target="_blank" rel="noopener" aria-label="Open /{escape(name)} in a new tab" title="New tab">'
         f'<svg aria-hidden="true"><use href="#i-out"/></svg></a></li>'
     )
@@ -277,7 +291,7 @@ def render(snapshot):
 {sections}
       <p class="none" id="none" hidden>No match</p>
     </div>
-    <footer class="foot"><span>{total} sites</span></footer>
+    <footer class="foot"><span>{total} sites</span><a href="../made/" target="view">How these were made</a></footer>
   </nav>
   <div class="split" id="split" role="separator" aria-orientation="vertical" aria-label="Resize index" tabindex="0"></div>
   <main class="viewer" id="viewer">
@@ -304,6 +318,65 @@ def render(snapshot):
 """
 
 
+MADE_OUT = STATIC / "made" / "index.html"
+
+
+def render_made(snapshot):
+    """a.skh.am/made/: what the three "made" labels mean, and which site carries which."""
+    repos = [r for r in snapshot.get("repos", []) if r.get("live")]
+    blocks = []
+    for kind, c in MADE.CLASSES.items():
+        sites = sorted((r for r in repos if r.get("made") == kind), key=lambda r: r["name"].lower())
+        rows = "".join(f'<li><a href="{HOST}/{escape(r["name"])}/">/{escape(r["name"])}</a></li>' for r in sites)
+        blocks.append(f'<section id="{kind}"><p class="pill">{MADE.badge(kind)}</p>'
+                      f'<p>{escape(c["title"].split(": ", 1)[1])[:1].upper()}{escape(c["title"].split(": ", 1)[1])[1:]}.</p>'
+                      f'<ul>{rows or "<li class=none>None yet</li>"}</ul></section>')
+    missing = sorted(r["name"] for r in repos if not r.get("made"))
+    gap = (f'<p class="gap">Not labelled yet: {", ".join(f"/{escape(n)}" for n in missing)}.</p>' if missing else "")
+    return f"""<!doctype html>
+<!-- Generated by _tools/site-index.py from the a.skh.am:made tags each site declares; labels come from _tools/made-badge.py. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>How these sites were made · a.skh.am</title>
+<meta name="description" content="What the made-by-hand, made-with-agents and made-by-agents labels on a.skh.am project sites mean, how each project was classified, and which site carries which label.">
+<link rel="icon" href="../all/icon.svg" type="image/svg+xml">
+<style>
+:root {{ color-scheme: light dark; --bg: #f4f1ea; --ink: #1d1e21; --muted: #5f5c55; --line: #d8d2c4; --link: #a8321f;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }}
+@media (prefers-color-scheme: dark) {{ :root {{ --bg: #16171a; --ink: #e7e3da; --muted: #a29e95; --line: #33353b; --link: #f08a72; }} }}
+* {{ box-sizing: border-box; }}
+body {{ margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--sans); }}
+main {{ max-width: 760px; margin: 0 auto; padding: 48px 22px 64px; }}
+h1 {{ font-size: clamp(28px, 4vw, 38px); line-height: 1.15; margin: 0 0 14px; letter-spacing: -.01em; }}
+h2 {{ font-size: 19px; margin: 40px 0 8px; }}
+p {{ margin: 0 0 14px; }}
+.lede {{ color: var(--muted); font-size: 17px; }}
+section {{ border-top: 1px solid var(--line); padding: 22px 0 6px; }}
+.pill {{ margin: 0 0 10px; }}
+ul {{ list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px 16px; }}
+li a {{ font: 500 14px var(--mono); color: var(--link); text-decoration: none; }}
+li a:hover {{ text-decoration: underline; }}
+li.none, .gap {{ color: var(--muted); font-size: 14px; }}
+</style>
+</head>
+<body>
+<main>
+<h1>How these sites were made</h1>
+<p class="lede">Each project site on a.skh.am carries one of three labels in its footer, saying how much of the project was written by a person and how much by AI agents.</p>
+{"".join(blocks)}
+{gap}
+<h2>How projects were classified</h2>
+<p>From each repository's history: how many commits were made before 2026, how many were landed by the agent fleet (its commits are authored as Cacophony Daemon), co-author trailers naming an AI model, and when agent instruction files first appeared. The author then checked every label, and the author's call stands where the numbers are close.</p>
+<p>The labels describe the code, not the sites themselves, which were all written by agents.</p>
+</main>
+</body>
+</html>
+"""
+
+
 # ── entry point ─────────────────────────────────────────────────────────────
 
 def main():
@@ -312,12 +385,15 @@ def main():
     mode.add_argument("--refresh", action="store_true", help="rediscover repo sites and live metadata (network)")
     mode.add_argument("--check", action="store_true", help="fail if static/all/index.html is stale")
     ap.add_argument("--strict", action="store_true", help="with --refresh: fail unless discovery was complete")
+    ap.add_argument("--require-made", action="store_true", help="fail if a live repo site lacks <meta name=a.skh.am:made>")
     args = ap.parse_args()
     snapshot = json.loads(SNAPSHOT.read_text()) if SNAPSHOT.is_file() else {"repos": []}
 
     if args.check:
         if not OUT.is_file() or OUT.read_text() != render(snapshot):
             sys.exit("static/all/index.html is stale: run python3 _tools/site-index.py")
+        if not MADE_OUT.is_file() or MADE_OUT.read_text() != render_made(snapshot):
+            sys.exit("static/made/index.html is stale: run python3 _tools/site-index.py")
         print("site-index: /all is current")
         return
 
@@ -336,8 +412,15 @@ def main():
             snapshot = fresh
             SNAPSHOT.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n")
 
+    MADE_OUT.parent.mkdir(exist_ok=True)
+    MADE_OUT.write_text(render_made(snapshot))
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(render(snapshot))
+    unlabelled = sorted(r["name"] for r in snapshot["repos"] if r["live"] and not r.get("made"))
+    if unlabelled:
+        print(f"site-index: {len(unlabelled)} live repo sites lack a.skh.am:made: {', '.join(unlabelled)}", file=sys.stderr)
+        if args.require_made:
+            sys.exit(1)
     live = sum(r["live"] for r in snapshot["repos"])
     print(f"site-index: {len(local_pages())} pages + {len(snapshot['repos'])} repos ({live} live) → {OUT.relative_to(REPO)}")
 
