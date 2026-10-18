@@ -328,7 +328,7 @@ def render_made(snapshot):
     for kind, c in MADE.CLASSES.items():
         sites = sorted((r for r in repos if r.get("made") == kind), key=lambda r: r["name"].lower())
         rows = "".join(f'<li><a href="{HOST}/{escape(r["name"])}/">/{escape(r["name"])}</a></li>' for r in sites)
-        blocks.append(f'<section id="{kind}"><p class="pill">{MADE.badge(kind)}</p>'
+        blocks.append(f'<section id="{kind}"><p class="pill">{MADE.seal(kind, 96)}</p>'
                       f'<p>{escape(c["title"].split(": ", 1)[1])[:1].upper()}{escape(c["title"].split(": ", 1)[1])[1:]}.</p>'
                       f'<ul>{rows or "<li class=none>None yet</li>"}</ul></section>')
     missing = sorted(r["name"] for r in repos if not r.get("made"))
@@ -365,7 +365,7 @@ li.none, .gap {{ color: var(--muted); font-size: 14px; }}
 <body>
 <main>
 <h1>How these sites were made</h1>
-<p class="lede">Each project site on a.skh.am carries one of three labels in its footer, saying how much of the project was written by a person and how much by AI agents.</p>
+<p class="lede">Each project site on a.skh.am carries one of three seals in its footer, saying how much of the project was written by a person and how much by AI agents.</p>
 {"".join(blocks)}
 {gap}
 <h2>How projects were classified</h2>
