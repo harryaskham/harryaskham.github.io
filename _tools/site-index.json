@@ -28,7 +28,7 @@
     {
       "name": "android-utils",
       "title": "android-utils",
-      "description": "android-utils: Linux desktops, a terminal, a floating window manager and more for Android — built with Nix, shipped through Google Play internal testing.",
+      "description": "android-utils: Android apps built with Nix and shipped through Google Play internal testing: X11 and Wayland desktops, a floating window manager, a browser, a terminal, a keyboard, PulseAudio servers for phone and watch, an on-device inference server, and the libraries they share.",
       "icon": "",
       "live": true,
       "source": "https://github.com/harryaskham/android-utils"
