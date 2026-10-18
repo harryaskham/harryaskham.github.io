@@ -140,6 +140,14 @@
       "source": "https://github.com/harryaskham/omni-cli"
     },
     {
+      "name": "owt",
+      "title": "owt · a server whose endpoints arrive with the request",
+      "description": "owt is a small Flask server that runs the Python code each request carries and returns the result, so any language that can make an HTTP request can call a Python library without a new endpoint being written. How it works, its pipe syntax, and its sharp edges, shown with requests to a local server.",
+      "icon": "https://a.skh.am/owt/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/owt"
+    },
+    {
       "name": "panopticon",
       "title": "Panopticon — your desktop, zoomed out into an agent's instrument",
       "description": "Panopticon is a macOS overlay that zooms the live desktop out into a CRT-styled pi agent harness. The agent sees the screen, rewinds it, and drives it — while you watch every action.",
