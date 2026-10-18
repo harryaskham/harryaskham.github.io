@@ -1,5 +1,5 @@
 {
-  "refreshed": "2026-10-17",
+  "refreshed": "2026-10-18",
   "repos": [
     {
       "name": "advent",
@@ -74,6 +74,14 @@
       "source": "https://github.com/harryaskham/cost"
     },
     {
+      "name": "crossbow",
+      "title": "Crossbow · a pipeline language for solving puzzles",
+      "description": "Crossbow is a small, dynamically typed programming language written in Haskell for solving puzzles interactively: values flow through pipelines of curried functions, lists of functions apply element-wise, and its standard library is written in Crossbow. How it reads and runs, with output from the real interpreter.",
+      "icon": "https://a.skh.am/crossbow/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/crossbow"
+    },
+    {
       "name": "ctx",
       "title": "ctx · shared, versioned, watchable context for agents and programs",
       "description": "ctx is one small daemon that keeps a versioned JSON tree for every agent, session and script: read it, write it with compare-and-set, watch it change, put it in prompts and wake agents when it moves.",
@@ -96,6 +104,15 @@
       "icon": "https://a.skh.am/kittui/assets/favicon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/kittui"
+    },
+    {
+      "name": "mcp-cli",
+      "title": "mcp-cli · Rust crates for CLIs that are also MCP servers",
+      "description": "mcp-cli-core runs one typed Rust command as a CLI with JSON output or as a tool on an MCP stdio server. Four companion crates add configuration, self-update, feedback reporting and a cache-and-daemon transport. How they work, a recorded MCP session, and their tests.",
+      "icon": "https://a.skh.am/mcp-cli/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/mcp-cli",
+      "group": "libraries"
     },
     {
       "name": "nix-reflect",
@@ -145,6 +162,14 @@
       "icon": "https://a.skh.am/pi-daemon/assets/mark.svg",
       "live": true,
       "source": "https://github.com/harryaskham/pi-daemon"
+    },
+    {
+      "name": "pulseaudio-lambda",
+      "title": "pulseaudio-lambda · live audio through any command",
+      "description": "pulseaudio-lambda records audio from PulseAudio, pipes it through any command's stdin and stdout, and plays the result, so a filter can be a shell script, a sox effect or a Python model. Its main use is a streaming stem separator that removes the drums from whatever is playing. How the bridge works and how much latency it adds, measured.",
+      "icon": "https://a.skh.am/pulseaudio-lambda/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/pulseaudio-lambda"
     },
     {
       "name": "quaalude",
