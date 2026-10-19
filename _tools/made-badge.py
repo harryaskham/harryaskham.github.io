@@ -85,7 +85,7 @@ def seal(kind: str, size: int = 112) -> str:
     for i in range(72):  # 36 points, alternating radii
         r = 58 if i % 2 == 0 else 53.2
         t = math.pi * 2 * i / 72 - math.pi / 2
-        pts.append(f"{60 + r * math.cos(t):.2f},{60 + r * math.sin(t):.2f}")
+        pts.append(f"{60 + r * math.cos(t):.1f},{60 + r * math.sin(t):.1f}")
     star = " ".join(pts)
     font = "font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-weight:800"
 
@@ -94,6 +94,14 @@ def seal(kind: str, size: int = 112) -> str:
         hi = (f'<text x="{x}" y="{y + 0.7}" text-anchor="{anchor}" style="{style};fill:#fff;fill-opacity:.55" {extra}>{body}</text>')
         lo = f'<text x="{x}" y="{y}" text-anchor="{anchor}" style="{style};fill:{f["ink"]}" {extra}>{body}</text>'
         return hi + lo
+
+    def star5(cx, cy, r=3.1):
+        q = []
+        for i in range(10):
+            rr = r if i % 2 == 0 else r * 0.42
+            t = math.pi * i / 5 - math.pi / 2
+            q.append(f"{cx + rr * math.cos(t):.1f},{cy + rr * math.sin(t):.1f}")
+        return f'<polygon points="{" ".join(q)}" style="fill:{f["ink"]}"/>'
 
     def arc(id_, d, body, size_=8.6):
         style = f"{font};font-size:{size_}px;letter-spacing:1.4px"
@@ -111,16 +119,17 @@ def seal(kind: str, size: int = 112) -> str:
         f'<radialGradient id="{k}-disk" cx=".38" cy=".32" r=".8">'
         f'<stop offset="0" stop-color="{f["light"]}"/><stop offset=".6" stop-color="{f["mid"]}"/>'
         f'<stop offset="1" stop-color="{f["dark"]}"/></radialGradient>'
+        f'<polygon id="{k}-edge" points="{star}"/>'
         f'</defs>'
-        f'<polygon points="{star}" transform="translate(1.6 2.4)" style="fill:#000;fill-opacity:.32"/>'
-        f'<polygon points="{star}" style="fill:url(#{k}-foil);stroke:{f["dark"]};stroke-width:.8"/>'
+        f'<use href="#{k}-edge" transform="translate(1.6 2.4)" style="fill:#000;fill-opacity:.32"/>'
+        f'<use href="#{k}-edge" style="fill:url(#{k}-foil);stroke:{f["dark"]};stroke-width:.8"/>'
         f'<circle cx="60" cy="60" r="49.5" style="fill:url(#{k}-disk);stroke:{f["dark"]};stroke-width:1.4"/>'
         f'<circle cx="60" cy="60" r="48" style="fill:none;stroke:#fff;stroke-opacity:.5;stroke-width:.8"/>'
         f'<circle cx="60" cy="60" r="34.5" style="fill:none;stroke:{f["dark"]};stroke-width:1"/>'
         f'<circle cx="60" cy="60" r="33.4" style="fill:none;stroke:#fff;stroke-opacity:.45;stroke-width:.6"/>'
         + arc("top", "M 19.5 60 A 40.5 40.5 0 0 1 100.5 60", "OFFICIAL · A.SKH.AM")
         + arc("bot", "M 14.6 60 A 45.4 45.4 0 0 0 105.4 60", "SEAL OF ORIGIN")
-        + text(17.2, 63.2, 7, "★", spacing=0) + text(102.8, 63.2, 7, "★", spacing=0)
+        + star5(17.2, 60.6) + star5(102.8, 60.6)
         + text(60, 55, 8.4, f["small"], spacing=1)
         + text(60, 73, 16 if len(f["big"]) <= 4 else 13.6, f["big"], spacing=0.4)
         + f'<ellipse cx="46" cy="40" rx="26" ry="14" transform="rotate(-28 46 40)" style="fill:#fff;fill-opacity:.16"/>'
@@ -131,7 +140,21 @@ def seal(kind: str, size: int = 112) -> str:
             f'{svg}</a>')
 
 
+def check() -> int:
+    """Every class is complete and every seal and pill is well-formed XML (run by scripts/check-static.py)."""
+    import xml.etree.ElementTree as ET
+    for kind in CLASSES:
+        assert {"label", "title", "bg", "border", "ink", "glyph"} <= CLASSES[kind].keys(), kind
+        assert kind in SEAL, kind
+        for snippet in (seal(kind), badge(kind), meta(kind).replace(">", "/>")):
+            ET.fromstring(snippet)
+    print(f"made-badge: {len(CLASSES)} classes, seals and pills well-formed")
+    return 0
+
+
 def main(argv):
+    if argv == ["--check"]:
+        return check()
     if argv == ["--all"]:
         for k in CLASSES:
             print(f"<!-- {k} -->\n{meta(k)}\n{seal(k)}\n")
