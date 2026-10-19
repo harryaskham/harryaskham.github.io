@@ -47,6 +47,15 @@
       "made": "agents"
     },
     {
+      "name": "apple-utils",
+      "title": "apple-utils · a keyboard for iPhone, Watch and Mac, and four macOS utilities",
+      "description": "apple-utils holds Omni, a keyboard for iPhone, Apple Watch and Mac that reads the same layouts as its Android twin and can be typed into remotely, and four macOS utilities: atop, a monitor for the signs that precede a Mac's crashes; Dasung Touch; Krun Display, a Metal display for Linux VMs; and pulsecast, which sends Mac audio to PulseAudio and back.",
+      "icon": "https://a.skh.am/apple-utils/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/apple-utils",
+      "made": "agents"
+    },
+    {
       "name": "cacophony",
       "title": "Cacophony — conduct a swarm of coding agents",
       "description": "Cacophony runs a coordinated swarm of coding agents for every repository: one task board, one message bus and one lifecycle controller across all of your machines.",
@@ -111,6 +120,24 @@
       "made": "agents"
     },
     {
+      "name": "emanation",
+      "title": "Emanation · a network of news websites written by language models",
+      "description": "Emanation was a Haskell system, written by hand in 2024, that ran a network of news websites written by language models: from a few lines of configuration it registered domains, invented sites and writers, wrote articles from news sources and kept every site reconciled with its configuration. How it worked, what it published, and the ideas in its code.",
+      "icon": "https://a.skh.am/emanation/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/emanation",
+      "made": "hand"
+    },
+    {
+      "name": "gfx-replacer",
+      "title": "gfx-replacer · swap the images a terminal program prints",
+      "description": "gfx-replacer runs a program in a pseudo-terminal and replaces the images it prints (Sixel, kitty and iTerm2 graphics) or chosen lines of text with other images, according to rules in a TOML file. A real run on generated images, the rule kinds, and what does not work yet.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/gfx-replacer",
+      "made": "agents"
+    },
+    {
       "name": "io-mcp",
       "title": "io-mcp — MCP hub for agent–human communication",
       "description": "A centralised MCP server that connects AI coding agents to humans through TTS, choices, messaging, and terminal graphics. Run a whole project from your phone with a scroll wheel and earphones — or from any terminal.",
@@ -136,6 +163,15 @@
       "live": true,
       "source": "https://github.com/harryaskham/mcp-cli",
       "group": "libraries",
+      "made": "agents"
+    },
+    {
+      "name": "midi2hid",
+      "title": "midi2hid · play keyboard-and-mouse games with a MIDI controller",
+      "description": "midi2hid maps MIDI input (notes, chords, sequences and control changes) to keyboard, mouse and gamepad input, so a MIDI controller can play games. Four small Rust processes, profiles in TOML, a terminal and a desktop editor, and what each platform supports today.",
+      "icon": "",
+      "live": true,
+      "source": "https://github.com/harryaskham/midi2hid",
       "made": "agents"
     },
     {
@@ -195,8 +231,8 @@
     },
     {
       "name": "pi-daemon",
-      "title": "pi-daemon — the Pi Durable agent host",
-      "description": "pi-daemon runs Pi agents as Durable sessions: one SQLite store per session, crash-only workers, and AHP, ACP and Chord for Culture, editors and applications. Kill it mid-turn; nothing is lost and nothing runs twice.",
+      "title": "pi-daemon — durable Pi agents, free of any process",
+      "description": "pi-daemon keeps Pi agents in durable sessions that no process owns: one SQLite store per session, a worker per profile, and AHP, ACP and Chord for Culture, pi-client, editors and applications on any machine.",
       "icon": "https://a.skh.am/pi-daemon/assets/mark.svg",
       "live": true,
       "source": "https://github.com/harryaskham/pi-daemon",
