@@ -291,7 +291,7 @@ def render(snapshot):
 {sections}
       <p class="none" id="none" hidden>No match</p>
     </div>
-    <footer class="foot"><span>{total} sites</span><a href="../made/" target="view">How these were made</a></footer>
+    <footer class="foot"><span>{total} sites</span><a href="https://a.skh.am/made/" target="view">How these were made</a></footer>
   </nav>
   <div class="split" id="split" role="separator" aria-orientation="vertical" aria-label="Resize index" tabindex="0"></div>
   <main class="viewer" id="viewer">
@@ -342,7 +342,7 @@ def render_made(snapshot):
 <meta name="color-scheme" content="light dark">
 <title>How these sites were made · a.skh.am</title>
 <meta name="description" content="What the made-by-hand, made-with-agents and made-by-agents labels on a.skh.am project sites mean, how each project was classified, and which site carries which label.">
-<link rel="icon" href="../all/icon.svg" type="image/svg+xml">
+<link rel="icon" href="https://a.skh.am/all/icon.svg" type="image/svg+xml">
 <style>
 :root {{ color-scheme: light dark; --bg: #f4f1ea; --ink: #1d1e21; --muted: #5f5c55; --line: #d8d2c4; --link: #a8321f;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }}
