@@ -1,5 +1,5 @@
 {
-  "refreshed": "2026-10-18",
+  "refreshed": "2026-10-19",
   "repos": [
     {
       "name": "advent",
@@ -7,7 +7,8 @@
       "description": "Haskell solutions to every Advent of Code puzzle from 2015 to 2025, one file per day, in a viewer that shows each solution next to a short critique of how it works and where it is weak, from plain Haskell in 2015 to the quaalude custom prelude in 2025.",
       "icon": "https://a.skh.am/advent/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/advent"
+      "source": "https://github.com/harryaskham/advent",
+      "made": "hand"
     },
     {
       "name": "agent-utils",
@@ -15,7 +16,8 @@
       "description": "Agent Utils is a Pi package and a set of standalone tools that give coding agents a voice, eyes, hands and a fleet: speech in and out, images and screens, choices, session control, work apps and fleet-wide dashboards.",
       "icon": "https://a.skh.am/agent-utils/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/agent-utils"
+      "source": "https://github.com/harryaskham/agent-utils",
+      "made": "agents"
     },
     {
       "name": "aish",
@@ -23,7 +25,8 @@
       "description": "aish is an audio-first conversational terminal: a real persistent shell and a persistent agent in one transcript, fully usable with the screen off.",
       "icon": "https://a.skh.am/aish/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/aish"
+      "source": "https://github.com/harryaskham/aish",
+      "made": "agents"
     },
     {
       "name": "android-utils",
@@ -31,7 +34,8 @@
       "description": "android-utils: Android apps built with Nix and shipped through Google Play internal testing: X11 and Wayland desktops, a floating window manager, a browser, a terminal, a keyboard, PulseAudio servers for phone and watch, an on-device inference server, and the libraries they share.",
       "icon": "",
       "live": true,
-      "source": "https://github.com/harryaskham/android-utils"
+      "source": "https://github.com/harryaskham/android-utils",
+      "made": "agents"
     },
     {
       "name": "annum",
@@ -39,7 +43,8 @@
       "description": "Annum brings your Microsoft 365 calendar, mail and Teams conversations into a native workspace for Mac and Android.",
       "icon": "https://a.skh.am/annum/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/annum"
+      "source": "https://github.com/harryaskham/annum",
+      "made": "agents"
     },
     {
       "name": "cacophony",
@@ -47,7 +52,8 @@
       "description": "Cacophony runs a coordinated swarm of coding agents for every repository: one task board, one message bus and one lifecycle controller across all of your machines.",
       "icon": "https://a.skh.am/cacophony/images/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/cacophony"
+      "source": "https://github.com/harryaskham/cacophony",
+      "made": "agents"
     },
     {
       "name": "caravan",
@@ -55,7 +61,8 @@
       "description": "Caravan is a deterministic, agent-friendly merge queue built directly on GitHub pull-request topology—no queue database required.",
       "icon": "https://a.skh.am/caravan/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/caravan"
+      "source": "https://github.com/harryaskham/caravan",
+      "made": "agents"
     },
     {
       "name": "collective",
@@ -63,7 +70,18 @@
       "description": "Collective is one typed Nix flake that configures a fleet of NixOS desktops and servers, WSL devboxes, a Mac and its Linux VM, and Android phones: one registry, one module tree, prebuilt closures and a CLI to run it.",
       "icon": "https://a.skh.am/collective/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/collective"
+      "source": "https://github.com/harryaskham/collective",
+      "made": "with-agents"
+    },
+    {
+      "name": "collective-public",
+      "title": "collective-public · a Nix library and modules from a personal configuration",
+      "description": "collective-public is the public part of a personal Nix configuration: collective-lib, a Nix library with a type system for Nix values and a test framework; modules for Nix-on-Droid, NixOS and Home Manager; and scripts that turn a Windows machine into a NixOS-WSL development box. What works, what is tested, and what is out of date.",
+      "icon": "https://a.skh.am/collective-public/assets/icon.svg",
+      "live": true,
+      "source": "https://github.com/harryaskham/collective-public",
+      "group": "libraries",
+      "made": "hand"
     },
     {
       "name": "cost",
@@ -71,7 +89,8 @@
       "description": "AI credit usage, rolling spend rate and reset-aware history. Cost for macOS, Android and the terminal.",
       "icon": "https://a.skh.am/cost/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/cost"
+      "source": "https://github.com/harryaskham/cost",
+      "made": "agents"
     },
     {
       "name": "crossbow",
@@ -79,7 +98,8 @@
       "description": "Crossbow is a small, dynamically typed programming language written in Haskell for solving puzzles interactively: values flow through pipelines of curried functions, lists of functions apply element-wise, and its standard library is written in Crossbow. How it reads and runs, with output from the real interpreter.",
       "icon": "https://a.skh.am/crossbow/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/crossbow"
+      "source": "https://github.com/harryaskham/crossbow",
+      "made": "hand"
     },
     {
       "name": "ctx",
@@ -87,7 +107,8 @@
       "description": "ctx is one small daemon that keeps a versioned JSON tree for every agent, session and script: read it, write it with compare-and-set, watch it change, put it in prompts and wake agents when it moves.",
       "icon": "https://a.skh.am/ctx/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/ctx"
+      "source": "https://github.com/harryaskham/ctx",
+      "made": "agents"
     },
     {
       "name": "io-mcp",
@@ -95,7 +116,8 @@
       "description": "A centralised MCP server that connects AI coding agents to humans through TTS, choices, messaging, and terminal graphics. Run a whole project from your phone with a scroll wheel and earphones — or from any terminal.",
       "icon": "",
       "live": true,
-      "source": "https://github.com/harryaskham/io-mcp"
+      "source": "https://github.com/harryaskham/io-mcp",
+      "made": "agents"
     },
     {
       "name": "kittui",
@@ -103,7 +125,8 @@
       "description": "kittui renders graphics into the terminal through the kitty graphics protocol, from Rust, C, TypeScript, Python or the shell, and kittwm composes terminals, browsers and native windows into one window manager.",
       "icon": "https://a.skh.am/kittui/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/kittui"
+      "source": "https://github.com/harryaskham/kittui",
+      "made": "agents"
     },
     {
       "name": "mcp-cli",
@@ -112,7 +135,8 @@
       "icon": "https://a.skh.am/mcp-cli/assets/icon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/mcp-cli",
-      "group": "libraries"
+      "group": "libraries",
+      "made": "agents"
     },
     {
       "name": "nix-reflect",
@@ -121,7 +145,8 @@
       "icon": "https://a.skh.am/nix-reflect/assets/icon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/nix-reflect",
-      "group": "libraries"
+      "group": "libraries",
+      "made": "hand"
     },
     {
       "name": "nlir",
@@ -129,7 +154,8 @@
       "description": "A small language for programs over data and meaning: exact structure and model-realised semantics in one evaluator — forwards and backwards.",
       "icon": "",
       "live": true,
-      "source": "https://github.com/harryaskham/nlir"
+      "source": "https://github.com/harryaskham/nlir",
+      "made": "agents"
     },
     {
       "name": "omni-cli",
@@ -137,7 +163,8 @@
       "description": "omni casts keystrokes, text, key combos and scrolls from one CLI to the omni keyboard on Android, iOS and watches, to desktops through a replay daemon, and to agents over MCP, using one NDJSON wire.",
       "icon": "https://a.skh.am/omni-cli/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/omni-cli"
+      "source": "https://github.com/harryaskham/omni-cli",
+      "made": "agents"
     },
     {
       "name": "owt",
@@ -145,7 +172,8 @@
       "description": "owt is a small Flask server that runs the Python code each request carries and returns the result, so any language that can make an HTTP request can call a Python library without a new endpoint being written. How it works, its pipe syntax, and its sharp edges, shown with requests to a local server.",
       "icon": "https://a.skh.am/owt/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/owt"
+      "source": "https://github.com/harryaskham/owt",
+      "made": "hand"
     },
     {
       "name": "panopticon",
@@ -153,7 +181,8 @@
       "description": "Panopticon is a macOS overlay that zooms the live desktop out into a CRT-styled pi agent harness. The agent sees the screen, rewinds it, and drives it — while you watch every action.",
       "icon": "https://a.skh.am/panopticon/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/panopticon"
+      "source": "https://github.com/harryaskham/panopticon",
+      "made": "agents"
     },
     {
       "name": "paratenic",
@@ -161,7 +190,8 @@
       "description": "Paratenic is an Agent Host Protocol server for live agent sessions: it adopts Pi sessions already running, starts Pi agents for sessions clients create, and serves them to every AHP client.",
       "icon": "https://a.skh.am/paratenic/assets/mark.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/paratenic"
+      "source": "https://github.com/harryaskham/paratenic",
+      "made": "agents"
     },
     {
       "name": "pi-daemon",
@@ -169,7 +199,8 @@
       "description": "pi-daemon runs Pi agents as Durable sessions: one SQLite store per session, crash-only workers, and AHP, ACP and Chord for Culture, editors and applications. Kill it mid-turn; nothing is lost and nothing runs twice.",
       "icon": "https://a.skh.am/pi-daemon/assets/mark.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/pi-daemon"
+      "source": "https://github.com/harryaskham/pi-daemon",
+      "made": "agents"
     },
     {
       "name": "pulseaudio-lambda",
@@ -177,7 +208,8 @@
       "description": "pulseaudio-lambda records audio from PulseAudio, pipes it through any command's stdin and stdout, and plays the result, so a filter can be a shell script, a sox effect or a Python model. Its main use is a streaming stem separator that removes the drums from whatever is playing. How the bridge works and how much latency it adds, measured.",
       "icon": "https://a.skh.am/pulseaudio-lambda/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/pulseaudio-lambda"
+      "source": "https://github.com/harryaskham/pulseaudio-lambda",
+      "made": "with-agents"
     },
     {
       "name": "quaalude",
@@ -186,7 +218,8 @@
       "icon": "https://a.skh.am/quaalude/assets/icon.svg",
       "live": true,
       "source": "https://github.com/harryaskham/quaalude",
-      "group": "libraries"
+      "group": "libraries",
+      "made": "hand"
     },
     {
       "name": "ring-mods",
@@ -194,7 +227,8 @@
       "description": "colmi r02 / r12 ring mods",
       "icon": "",
       "live": true,
-      "source": "https://github.com/harryaskham/ring-mods"
+      "source": "https://github.com/harryaskham/ring-mods",
+      "made": "agents"
     },
     {
       "name": "slick",
@@ -202,7 +236,8 @@
       "description": "A read-only Slack client for activity, conversations, threads and files. Slick for macOS and Android.",
       "icon": "https://a.skh.am/slick/assets/icon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/slick"
+      "source": "https://github.com/harryaskham/slick",
+      "made": "agents"
     },
     {
       "name": "stack",
@@ -210,7 +245,8 @@
       "description": "Harry Askham's personal computing stack: one Nix flake, dozens of Android apps, and a swarm of agents. Work in progress.",
       "icon": "https://a.skh.am/stack/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/stack"
+      "source": "https://github.com/harryaskham/stack",
+      "made": "agents"
     },
     {
       "name": "tendril",
@@ -218,7 +254,8 @@
       "description": "Tendril is a stateless Rust CLI that lets agents see and drive desktops: list windows, displays and cameras, capture screenshots, read accessibility elements, type, click and scroll, on Linux, macOS, Windows and Android.",
       "icon": "https://a.skh.am/tendril/assets/favicon.svg",
       "live": true,
-      "source": "https://github.com/harryaskham/tendril"
+      "source": "https://github.com/harryaskham/tendril",
+      "made": "agents"
     },
     {
       "name": "tools",
@@ -226,7 +263,8 @@
       "description": "Tools: a physical-model synth and score language, a rhythm partner, speech synthesis and transcription, terminal handwriting and graphics, key lighting and release automation.",
       "icon": "",
       "live": true,
-      "source": "https://github.com/harryaskham/tools"
+      "source": "https://github.com/harryaskham/tools",
+      "made": "agents"
     }
   ]
 }
