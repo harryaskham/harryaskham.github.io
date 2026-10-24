@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Bootstrap · a.skh.am</title>
+<meta name="description" content="Copy-paste commands for bringing up a new Collective machine: a Nix-on-Droid phone, a Windows devbox, a Linux VM on a Mac.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<main>
+<h1>Bootstrap</h1>
+<p class="lede">Commands for bringing up a new <a href="https://a.skh.am/collective/">Collective</a> machine. The machine must already be registered in the flake, and you need its SSH private key.</p>
+
+<form class="fields machine" id="machine-form" hidden>
+  <label for="machine">Machine name</label>
+  <input id="machine" name="m" data-field="m" placeholder="MACHINE" autocomplete="off" autocapitalize="none" spellcheck="false" pattern="[a-z0-9-]*" maxlength="40">
+  <span class="hint">fills <code class="m" data-slot="m">MACHINE</code> below</span>
+</form>
+
+<nav aria-label="Machine types">
+  <a href="#nix-on-droid">Nix-on-Droid</a>
+  <a href="#prebuilt">Prebuilt generation</a>
+  <a href="#devbox">Windows devbox</a>
+  <a href="#maintenance">Devbox maintenance</a>
+  <a href="#linux-vm">Linux VM on a Mac</a>
+  <a href="#collective">Any Collective machine</a>
+</nav>
+
+<section id="nix-on-droid">
+<h2>Nix-on-Droid phone or tablet</h2>
+<ol>
+  <li>Install Nix-on-Droid and choose the <strong>flake</strong> bootstrap.</li>
+  <li>Connect the Android Tailscale app, so the build can reach the binary caches.</li>
+  <li>In Nix-on-Droid, run this, paste the machine's SSH private key when asked, then press Ctrl-D:</li>
+</ol>
+<pre><code>nix shell github:NixOS/nixpkgs/nixos-24.05#curl -c curl -fsSLo bootstrap-nod.sh \
+  -H 'Accept: application/vnd.github.raw' \
+  https://api.github.com/repos/harryaskham/collective-public/contents/scripts/bootstrap-nod.sh
+bash bootstrap-nod.sh <span class="m" data-slot="m">MACHINE</span></code></pre>
+<p>It installs the key, prints its public key, age recipient and app uid/gid, clones Collective, then builds and activates the machine with its own Nix and caches. Run it again to pull and rebuild; once activated, use <code>cltv switch</code>.</p>
+<p>Until Cacophony is bootstrapped, activation warns that it is not starting caco; everything else runs. Then, in a new shell, bring up Cacophony:</p>
+<pre><code>~/collective/scripts/bootstrap-caco.sh</code></pre>
+</section>
+
+<section id="prebuilt">
+<h2>Activate a prebuilt generation</h2>
+<p>If the phone's bootstrap would compile for hours, activate a generation that a prebuild or CI has already built. Run the bootstrap first, so the key and checkout are in place (Ctrl-C once it prints <code>Building activation package</code>). Then give the generation's store path and a binary cache that holds it:</p>
+<form class="fields generation" id="generation-form" hidden>
+  <label for="generation">Generation</label>
+  <input id="generation" name="g" data-field="g" placeholder="/nix/store/…-nix-on-droid-generation" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="200">
+  <label for="cache">Cache URL</label>
+  <input id="cache" name="c" data-field="c" placeholder="http://host:port/cache" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="200">
+  <label for="cache-key">Cache key</label>
+  <input id="cache-key" name="k" data-field="k" placeholder="cache:base64key=" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="120">
+</form>
+<pre><code>nix build --no-link <span class="m" data-slot="g">GENERATION</span> \
+  --option extra-substituters <span class="m" data-slot="c">CACHE_URL</span> \
+  --option extra-trusted-public-keys <span class="m" data-slot="k">CACHE_KEY</span>
+<span class="m" data-slot="g">GENERATION</span>/activate</code></pre>
+<p>The generation must be built for this install's app uid/gid, which the bootstrap prints. Once it has activated, bring up Cacophony with <code>~/collective/scripts/bootstrap-caco.sh</code> in a new shell; after that, <code>cltv switch</code> works as usual.</p>
+</section>
+
+<section id="devbox">
+<h2>Windows devbox (NixOS on WSL)</h2>
+<p>In an <strong>elevated</strong> PowerShell on the Windows host. It asks for the hostname and the machine's SSH key, installs NixOS on WSL and switches it:</p>
+<pre><code>$h=@{"User-Agent"="collective-devbox-bootstrap";"Cache-Control"="no-cache"}; $r="https://api.github.com/repos/harryaskham/collective-public/git/ref/heads/main"; $s=(irm "${r}?nocache=$([guid]::NewGuid())" -Headers $h).object.sha; &amp; ([scriptblock]::Create((irm "https://raw.githubusercontent.com/harryaskham/collective-public/$s/windows/bootstrap-devbox.ps1" -Headers $h))) -PublicCommit $s</code></pre>
+<p>To resume an interrupted bootstrap without reinstalling the distro:</p>
+<pre><code>$h=@{"User-Agent"="collective-devbox-bootstrap";"Cache-Control"="no-cache"}; $r="https://api.github.com/repos/harryaskham/collective-public/git/ref/heads/main"; $s=(irm "${r}?nocache=$([guid]::NewGuid())" -Headers $h).object.sha; $p=Join-Path $env:TEMP "bootstrap-devbox.ps1"; irm "https://raw.githubusercontent.com/harryaskham/collective-public/$s/windows/bootstrap-devbox.ps1" -Headers $h -OutFile $p; &amp; $p -PublicCommit $s -SkipWSLInstall</code></pre>
+<p>Then, inside NixOS on WSL, provision Cacophony:</p>
+<pre><code>~/collective/scripts/bootstrap-caco.sh</code></pre>
+</section>
+
+<section id="maintenance">
+<h2>Devbox maintenance</h2>
+<p>Disk report and WSL disk compaction, in an elevated PowerShell (the dry run also works unelevated). Each run leaves a receipt under <code>%LOCALAPPDATA%\devbox\maintenance</code>:</p>
+<pre><code>$h=@{"User-Agent"="collective-devbox";"Cache-Control"="no-cache"}; $s=(irm "https://api.github.com/repos/harryaskham/collective-public/git/ref/heads/main?nocache=$([guid]::NewGuid())" -Headers $h).object.sha; $p=Join-Path $env:TEMP "devbox-maintenance.ps1"; irm "https://raw.githubusercontent.com/harryaskham/collective-public/$s/windows/devbox-maintenance.ps1" -Headers $h -OutFile $p
+&amp; $p -Distro NixOS -DryRun
+&amp; $p -Operation Compact -Distro NixOS</code></pre>
+<p>Grow the WSL disk to 1.5 TiB, after saving work in every WSL session:</p>
+<pre><code>$u="https://raw.githubusercontent.com/harryaskham/collective-public/main/windows/grow-devbox-vhd.ps1"; $p=Join-Path $env:TEMP "grow-devbox-vhd.ps1"; irm $u -OutFile $p; &amp; $p -Distro NixOS</code></pre>
+</section>
+
+<section id="linux-vm">
+<h2>Linux VM on a Mac</h2>
+<p>On the macOS host, from its Collective checkout. The last step copies the host's Git identities, clones Collective in the guest, rebuilds it and brings up Tailscale; it is safe to re-run:</p>
+<pre><code>linux-vm seed <span class="m" data-slot="m">MACHINE</span>
+linux-vm start <span class="m" data-slot="m">MACHINE</span>
+scripts/bootstrap-macos-linux-vm.sh <span class="m" data-slot="m">MACHINE</span></code></pre>
+</section>
+
+<section id="collective">
+<h2>Any machine with Collective</h2>
+<p>Once a machine has a checkout and has switched once:</p>
+<pre><code>cltv switch            # build and activate this machine
+cltv switch --cached   # activate the generation its prebuild cache published</code></pre>
+</section>
+</main>
+</body>
+</html>
