@@ -1,29 +1,68 @@
-// Machine-name substitution and copy buttons. Without JavaScript the page still
-// shows every command, with MACHINE as the placeholder.
+// Placeholder substitution and copy buttons. Without JavaScript the page still
+// shows every command with its placeholders (MACHINE, GENERATION, ...).
+//
+// Each field fills the [data-slot] spans of the same key and is kept in the URL
+// query (?m=, ?g=, ?c=, ?k=), so a prefilled link can be opened on the device.
+// Values are inserted as text and restricted to characters that cannot break
+// out of a shell word (no spaces, quotes, $, ;, & or |).
 (() => {
-  const PLACEHOLDER = "MACHINE";
-  const form = document.getElementById("machine-form");
-  const input = document.getElementById("machine");
-  const slots = document.querySelectorAll("pre .m, .hint .m");
-  const clean = (value) => value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40);
+  const FIELDS = {
+    m: {
+      placeholder: "MACHINE",
+      clean: (v) => v.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40),
+      valid: (v) => /^[a-z0-9-]+$/.test(v),
+    },
+    g: {
+      placeholder: "GENERATION",
+      clean: (v) => v.replace(/[^A-Za-z0-9/._+=?-]/g, "").slice(0, 200),
+      valid: (v) => /^\/nix\/store\/[0-9a-z]{32}-[A-Za-z0-9+._?=-]+$/.test(v),
+    },
+    c: {
+      placeholder: "CACHE_URL",
+      clean: (v) => v.replace(/[^A-Za-z0-9:/._-]/g, "").slice(0, 200),
+      valid: (v) => /^https?:\/\/[A-Za-z0-9.-]+(:[0-9]+)?(\/[A-Za-z0-9._-]+)*\/?$/.test(v),
+    },
+    k: {
+      placeholder: "CACHE_KEY",
+      clean: (v) => v.replace(/[^A-Za-z0-9._+/=:-]/g, "").slice(0, 120),
+      valid: (v) => /^[A-Za-z0-9._-]+:[A-Za-z0-9+/]+=*$/.test(v),
+    },
+  };
 
-  function apply(value) {
-    const name = clean(value);
-    slots.forEach((slot) => { slot.textContent = name || PLACEHOLDER; });
-    const url = new URL(window.location.href);
-    if (name) url.searchParams.set("m", name); else url.searchParams.delete("m");
-    window.history.replaceState(null, "", url);
-    return name;
+  const inputs = document.querySelectorAll("input[data-field]");
+  const params = new URLSearchParams(window.location.search);
+
+  function render(key, value) {
+    document.querySelectorAll(`[data-slot="${key}"]`).forEach((slot) => {
+      slot.textContent = value || FIELDS[key].placeholder;
+    });
   }
 
-  form.hidden = false;
-  form.addEventListener("submit", (event) => event.preventDefault());
-  input.addEventListener("input", () => {
-    const name = clean(input.value);
-    if (input.value !== name) input.value = name;
-    apply(name);
+  function remember(key, value) {
+    const url = new URL(window.location.href);
+    if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
+    window.history.replaceState(null, "", url);
+  }
+
+  inputs.forEach((input) => {
+    const key = input.dataset.field;
+    const field = FIELDS[key];
+    if (!field) return;
+    const update = (value, store) => {
+      const cleaned = field.clean(value);
+      if (input.value !== cleaned) input.value = cleaned;
+      input.setAttribute("aria-invalid", cleaned && !field.valid(cleaned) ? "true" : "false");
+      render(key, cleaned);
+      if (store) remember(key, cleaned);
+    };
+    input.addEventListener("input", () => update(input.value, true));
+    update(params.get(key) || "", false);
   });
-  input.value = apply(new URLSearchParams(window.location.search).get("m") || "");
+
+  document.querySelectorAll("form.fields").forEach((form) => {
+    form.hidden = false;
+    form.addEventListener("submit", (event) => event.preventDefault());
+  });
 
   async function copy(text) {
     if (navigator.clipboard && window.isSecureContext) {

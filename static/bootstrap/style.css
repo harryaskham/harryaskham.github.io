@@ -33,6 +33,15 @@ code { font: 14px var(--mono); }
 }
 .machine input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .machine .hint { color: var(--muted); font-size: 14px; }
+.generation { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; align-items: center; margin: 4px 0 16px; }
+.generation label { font-weight: 600; }
+.generation input {
+  font: 14px var(--mono); color: var(--ink); background: var(--code-bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; width: 100%;
+}
+.generation input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.fields input[aria-invalid="true"] { border: 1px dashed var(--accent); }
+@media (max-width: 520px) { .generation { grid-template-columns: 1fr; gap: 4px; } .generation input { margin-bottom: 6px; } }
 
 nav { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 18px 0 8px; }
 nav a { font: 500 14px var(--mono); text-decoration: none; }
