@@ -42,6 +42,8 @@
   https://api.github.com/repos/harryaskham/collective-public/contents/scripts/bootstrap-nod.sh
 bash bootstrap-nod.sh <span class="m" data-slot="m">MACHINE</span></code></pre>
 <p>It installs the key, prints its public key, age recipient and app uid/gid, clones Collective, then builds and activates the machine with its own Nix and caches. Run it again to pull and rebuild; once activated, use <code>cltv switch</code>.</p>
+<p>Until Cacophony is bootstrapped, activation warns that it is not starting caco; everything else runs. Then, in a new shell, bring up Cacophony:</p>
+<pre><code>~/collective/scripts/bootstrap-caco.sh</code></pre>
 </section>
 
 <section id="prebuilt">
@@ -59,7 +61,7 @@ bash bootstrap-nod.sh <span class="m" data-slot="m">MACHINE</span></code></pre>
   --option extra-substituters <span class="m" data-slot="c">CACHE_URL</span> \
   --option extra-trusted-public-keys <span class="m" data-slot="k">CACHE_KEY</span>
 <span class="m" data-slot="g">GENERATION</span>/activate</code></pre>
-<p>The generation must be built for this install's app uid/gid, which the bootstrap prints. Once it has activated, <code>cltv switch</code> works as usual.</p>
+<p>The generation must be built for this install's app uid/gid, which the bootstrap prints. Once it has activated, bring up Cacophony with <code>~/collective/scripts/bootstrap-caco.sh</code> in a new shell; after that, <code>cltv switch</code> works as usual.</p>
 </section>
 
 <section id="devbox">
@@ -69,7 +71,7 @@ bash bootstrap-nod.sh <span class="m" data-slot="m">MACHINE</span></code></pre>
 <p>To resume an interrupted bootstrap without reinstalling the distro:</p>
 <pre><code>$h=@{"User-Agent"="collective-devbox-bootstrap";"Cache-Control"="no-cache"}; $r="https://api.github.com/repos/harryaskham/collective-public/git/ref/heads/main"; $s=(irm "${r}?nocache=$([guid]::NewGuid())" -Headers $h).object.sha; $p=Join-Path $env:TEMP "bootstrap-devbox.ps1"; irm "https://raw.githubusercontent.com/harryaskham/collective-public/$s/windows/bootstrap-devbox.ps1" -Headers $h -OutFile $p; &amp; $p -PublicCommit $s -SkipWSLInstall</code></pre>
 <p>Then, inside NixOS on WSL, provision Cacophony:</p>
-<pre><code>~/collective/scripts/bootstrap-devbox-caco.sh</code></pre>
+<pre><code>~/collective/scripts/bootstrap-caco.sh</code></pre>
 </section>
 
 <section id="maintenance">
