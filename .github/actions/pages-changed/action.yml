@@ -1,0 +1,56 @@
+name: Pages sources changed?
+description: >-
+  Decides whether a Pages publish should build. Scheduled runs with `paths`
+  compare the source revision named by the current gh-pages commit (its subject
+  ends with the hex revision) with this commit through the compare API and
+  answer run=false when no changed file matches; anything else (push, manual
+  run, no paths, no gh-pages yet, unreadable revision, 300+ changed files)
+  answers run=true. Each Pages build of a private repository is a billed
+  GitHub-hosted run, so documentation sites publish on a schedule and skip
+  quiet periods without checking out or building.
+inputs:
+  paths:
+    description: Source globs, space or newline separated; ** allowed, !glob excludes
+    required: false
+    default: ''
+  token:
+    description: Token with contents read on this repository
+    required: false
+    default: ${{ github.token }}
+outputs:
+  run:
+    description: "'true' to build and publish, 'false' to skip"
+    value: ${{ steps.check.outputs.run }}
+runs:
+  using: composite
+  steps:
+    - id: check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ github.repository }}
+        SOURCE: ${{ github.sha }}
+        PATHS: ${{ inputs.paths }}
+        EVENT: ${{ github.event_name }}
+      run: |
+        set -euo pipefail
+        go() { echo "run=$1" >> "$GITHUB_OUTPUT"; echo "$2" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; }
+        [ -n "$PATHS" ] && [ "$EVENT" = schedule ] || go true "Publishing ($EVENT)"
+        msg=$(gh api "repos/$REPO/commits/gh-pages" --jq .commit.message 2>/dev/null) || go true "No gh-pages yet"
+        base=$(printf '%s\n' "$msg" | head -n1 | grep -oE '[0-9a-f]{7,40}$' || true)
+        [ -n "$base" ] || go true "gh-pages names no source revision"
+        files=$(gh api "repos/$REPO/compare/$base...$SOURCE" --jq '.files[]?.filename' 2>/dev/null) \
+          || go true "Cannot compare $base with ${SOURCE:0:12}"
+        [ "$(printf '%s' "$files" | grep -c .)" -lt 300 ] || go true "300+ files changed since $base"
+        read -r -d '' -a globs <<< "$PATHS" || true
+        while IFS= read -r f; do
+          [ -n "$f" ] || continue
+          hit=false
+          for g in "${globs[@]}"; do
+            pat=${g#!}; pat=${pat//\*\*/*}
+            # shellcheck disable=SC2053
+            if [[ $f == $pat ]]; then [ "$g" = "${g#!}" ] && hit=true || hit=false; fi
+          done
+          $hit && go true "Publishing: $f changed since $base"
+        done <<< "$files"
+        go false "Site sources unchanged since $base; nothing to publish"

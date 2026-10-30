@@ -88,34 +88,9 @@ jobs:
     steps:
       - name: Skip unless the site's sources changed
         id: changed
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          SOURCE: ${{ github.sha }}
-          PATHS: ${{ inputs.paths }}
-          EVENT: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          go() { echo "run=$1" >> "$GITHUB_OUTPUT"; echo "$2" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; }
-          [ -n "$PATHS" ] && [ "$EVENT" = schedule ] || go true "Publishing ($EVENT)"
-          msg=$(gh api "repos/$REPO/commits/gh-pages" --jq .commit.message 2>/dev/null) || go true "No gh-pages yet"
-          base=$(printf '%s\n' "$msg" | head -n1 | grep -oE '[0-9a-f]{7,40}$' || true)
-          [ -n "$base" ] || go true "gh-pages names no source revision"
-          files=$(gh api "repos/$REPO/compare/$base...$SOURCE" --jq '.files[]?.filename' 2>/dev/null) \
-            || go true "Cannot compare $base with ${SOURCE:0:12}"
-          [ "$(printf '%s' "$files" | grep -c .)" -lt 300 ] || go true "300+ files changed since $base"
-          read -r -d '' -a globs <<< "$PATHS" || true
-          while IFS= read -r f; do
-            [ -n "$f" ] || continue
-            hit=false
-            for g in "${globs[@]}"; do
-              pat=${g#!}; pat=${pat//\*\*/*}
-              # shellcheck disable=SC2053
-              if [[ $f == $pat ]]; then [ "$g" = "${g#!}" ] && hit=true || hit=false; fi
-            done
-            $hit && go true "Publishing: $f changed since $base"
-          done <<< "$files"
-          go false "Site sources unchanged since $base; nothing to publish"
+        uses: harryaskham/harryaskham.github.io/.github/actions/pages-changed@main
+        with:
+          paths: ${{ inputs.paths }}
 
       - uses: actions/checkout@v4
         if: steps.changed.outputs.run == 'true'
