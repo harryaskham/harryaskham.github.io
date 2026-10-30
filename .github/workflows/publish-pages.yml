@@ -8,12 +8,17 @@
 # 2026-10-15, when an Actions-mode deploy failed on "Artifact storage quota has
 # been hit" at the same moment a branch build succeeded.
 #
-# Caller (in <repo>/.github/workflows/pages.yml):
+# Every publish of a private repo's site costs Actions minutes: the gh-pages push
+# starts GitHub's own "pages build and deployment" run on GitHub-hosted runners
+# (three jobs, each billed as at least a minute), and nothing moves it to our
+# runners. So publish only what changed, and batch documentation sites:
+#
+# Documentation site (batched every 6 hours; `gh workflow run pages.yml`
+# publishes at once):
 #
 #   on:
-#     push:
-#       branches: [main]
-#       paths: [site/**, .github/workflows/pages.yml]
+#     schedule:
+#       - cron: '7 */6 * * *'
 #     workflow_dispatch:
 #   permissions: { contents: write, pages: write }
 #   jobs:
@@ -21,7 +26,17 @@
 #       uses: harryaskham/harryaskham.github.io/.github/workflows/publish-pages.yml@main
 #       with:
 #         path: site
+#         paths: site/** scripts/check-site.py .github/workflows/pages.yml
 #         build: nix shell nixpkgs#python3 --command python3 scripts/check-site.py
+#
+# A site that hosts an app publishes on source change instead: replace
+# `schedule` with `push: {branches: [main], paths: [...]}` and drop `paths`.
+#
+# Scheduled runs with `paths` compare the source revision the current gh-pages
+# commit was published from with this commit (GitHub compare API) and stop
+# before checking out or building when no changed file matches. Every run
+# commits only when the built tree differs, and requests a Pages build only
+# after it pushed.
 #
 # The repo needs Pages source = branch gh-pages, folder / (build_type legacy;
 # the job fails with the exact fix if not) and self-hosted runners for runs-on
@@ -47,6 +62,13 @@ on:
         description: Ref to check out and build; empty = the triggering commit
         type: string
         default: ''
+      paths:
+        description: >-
+          Source globs (space or newline separated, ** allowed, !glob excludes)
+          that affect the site. When set, scheduled runs skip unless a file
+          matching them changed since the published revision.
+        type: string
+        default: ''
       submodules:
         description: actions/checkout submodules value (false, true or recursive)
         type: string
@@ -64,19 +86,52 @@ jobs:
       group: pages-${{ github.repository }}
       cancel-in-progress: false
     steps:
+      - name: Skip unless the site's sources changed
+        id: changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SOURCE: ${{ github.sha }}
+          PATHS: ${{ inputs.paths }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          go() { echo "run=$1" >> "$GITHUB_OUTPUT"; echo "$2" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; }
+          [ -n "$PATHS" ] && [ "$EVENT" = schedule ] || go true "Publishing ($EVENT)"
+          msg=$(gh api "repos/$REPO/commits/gh-pages" --jq .commit.message 2>/dev/null) || go true "No gh-pages yet"
+          base=$(printf '%s\n' "$msg" | head -n1 | grep -oE '[0-9a-f]{7,40}$' || true)
+          [ -n "$base" ] || go true "gh-pages names no source revision"
+          files=$(gh api "repos/$REPO/compare/$base...$SOURCE" --jq '.files[]?.filename' 2>/dev/null) \
+            || go true "Cannot compare $base with ${SOURCE:0:12}"
+          [ "$(printf '%s' "$files" | grep -c .)" -lt 300 ] || go true "300+ files changed since $base"
+          read -r -d '' -a globs <<< "$PATHS" || true
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            hit=false
+            for g in "${globs[@]}"; do
+              pat=${g#!}; pat=${pat//\*\*/*}
+              # shellcheck disable=SC2053
+              if [[ $f == $pat ]]; then [ "$g" = "${g#!}" ] && hit=true || hit=false; fi
+            done
+            $hit && go true "Publishing: $f changed since $base"
+          done <<< "$files"
+          go false "Site sources unchanged since $base; nothing to publish"
+
       - uses: actions/checkout@v4
+        if: steps.changed.outputs.run == 'true'
         with:
           ref: ${{ inputs.ref }}
           submodules: ${{ inputs.submodules }}
           persist-credentials: false
 
       - name: Build
-        if: inputs.build != ''
+        if: steps.changed.outputs.run == 'true' && inputs.build != ''
         env:
           BUILD: ${{ inputs.build }}
         run: bash -euo pipefail -c "$BUILD"
 
       - name: Validate output
+        if: steps.changed.outputs.run == 'true'
         env:
           SITE: ${{ inputs.path }}
         run: |
@@ -84,6 +139,8 @@ jobs:
           echo "Publishing $(find -L "$SITE" -type f | wc -l) files, $(du -shL "$SITE" | cut -f1) from $SITE" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Push to gh-pages
+        id: push
+        if: steps.changed.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           SITE: ${{ inputs.path }}
@@ -114,19 +171,23 @@ jobs:
             git -C "$dir" -c user.name='github-actions[bot]' \
               -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
               commit -q -m "Publish ${REPO#*/} site from ${SOURCE:0:7}"
-            if rgit -C "$dir" push -q "$remote" HEAD:gh-pages; then rm -rf "$dir"; return 0; fi
+            if rgit -C "$dir" push -q "$remote" HEAD:gh-pages; then pushed=true; rm -rf "$dir"; return 0; fi
             rm -rf "$dir"; return 1
           }
+          pushed=false
           for attempt in 1 2 3; do
             publish && break
             [ "$attempt" = 3 ] && { echo "::error::gh-pages push failed"; exit 1; }
             sleep $((attempt * 5))
           done
+          echo "pushed=$pushed" >> "$GITHUB_OUTPUT"
 
       - name: Check Pages serves gh-pages
+        if: steps.changed.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          PUSHED: ${{ steps.push.outputs.pushed }}
         run: |
           mode=$(gh api "repos/$REPO/pages" --jq '.build_type+":"+(.source.branch//"")+":"+(.source.path//"")' 2>/dev/null || echo "disabled")
           if [ "$mode" != "legacy:gh-pages:/" ]; then
@@ -134,6 +195,11 @@ jobs:
             echo "gh api -X PUT repos/$REPO/pages --input - <<< '{\"build_type\":\"legacy\",\"source\":{\"branch\":\"gh-pages\",\"path\":\"/\"}}'"
             exit 1
           fi
-          gh api -X POST "repos/$REPO/pages/builds" --jq '"Pages build " + .status' \
-            || echo "::warning::build request failed; the gh-pages push still triggers a build"
+          # Each Pages build is a billed GitHub-hosted run: request one only after a push.
+          if [ "$PUSHED" = true ]; then
+            gh api -X POST "repos/$REPO/pages/builds" --jq '"Pages build " + .status' \
+              || echo "::warning::build request failed; the gh-pages push still triggers a build"
+          else
+            echo "gh-pages unchanged; no Pages build requested" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
           gh api "repos/$REPO/pages" --jq '"Serving " + .html_url' | tee -a "$GITHUB_STEP_SUMMARY"
