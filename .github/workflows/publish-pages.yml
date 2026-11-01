@@ -55,7 +55,10 @@ on:
         type: string
         default: ''
       runs-on:
-        description: JSON runner labels
+        description: >-
+          JSON runner labels. Private repositories keep the self-hosted default;
+          public repositories must pass '["ubuntu-latest"]' (fleet runners never
+          serve public repos, and hosted minutes are free there)
         type: string
         default: '["self-hosted", "nix", "x86_64-linux"]'
       ref:
@@ -98,6 +101,11 @@ jobs:
           ref: ${{ inputs.ref }}
           submodules: ${{ inputs.submodules }}
           persist-credentials: false
+
+      # Public repositories publish from GitHub-hosted runners (runs-on
+      # '["ubuntu-latest"]'), which have no Nix; builds here use nix develop/shell.
+      - uses: DeterminateSystems/determinate-nix-action@v3
+        if: steps.changed.outputs.run == 'true' && runner.environment == 'github-hosted'
 
       - name: Build
         if: steps.changed.outputs.run == 'true' && inputs.build != ''
