@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Fast Jekyll development server with live reload.
+# Requires the nix-shell environment (loaded automatically by direnv).
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+HOST="${HOST:-127.0.0.1}"
+PORT="${PORT:-4000}"
+
+echo "Starting Jekyll dev server at http://${HOST}:${PORT} ..."
+exec jekyll serve \
+  --watch \
+  --drafts \
+  --livereload \
+  --host "$HOST" \
+  --port "$PORT" \
+  --incremental

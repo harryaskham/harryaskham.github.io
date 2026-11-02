@@ -1,0 +1,13 @@
+{
+ "runtime": {
+  "version": "onnxruntime-web 1.30.0",
+  "wasm": {
+   "parts": [
+    "ort-wasm-simd-threaded.wasm.gz.0.bin"
+   ],
+   "size": 14239897,
+   "gzip": 3652765,
+   "sha256": "3398c10d07d229bd91b364548e130e0e51a8e5704b88c7c083ebbeb78842dee2"
+  }
+ }
+}
