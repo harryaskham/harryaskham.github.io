@@ -1,0 +1,28 @@
+{
+ "id": "moonshine-tiny",
+ "source": "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/a6da1241cd305dcd64eab1edbd615f2bb9aabb95/",
+ "files": {
+  "encoder": {
+   "parts": [
+    "encoder.gz.0.bin"
+   ],
+   "size": 7937661,
+   "gzip": 5579595,
+   "sha256": "c6fc4b7bc5af75c0591fd157a1f3829b533d18e9769a888fd95a62e470dd4f4a"
+  },
+  "decoder": {
+   "parts": [
+    "decoder.gz.0.bin",
+    "decoder.gz.1.bin"
+   ],
+   "size": 20243286,
+   "gzip": 15109335,
+   "sha256": "eed87831c3a6103534aae7d47a5d485025c659a1323901513961c39fe8a1a367"
+  }
+ },
+ "vocab": {
+  "file": "vocab.json",
+  "size": 317134,
+  "sha256": "09653cbc861e3e82b75306c70de0b9311bd6432352bf0d2c86dbd201ec073334"
+ }
+}

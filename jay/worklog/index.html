@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Jay · build log</title>
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<style>
+  :root { --paper:#f5f1e8; --sheet:#fbf9f4; --line:#dcd4c2; --ink:#1a2230; --ink2:#4a5466; --ink3:#7d8494; --jay:#2f63c4; --deep:#1d3f86; --wash:#dfe7f6; --cin:#b65a32; --cinw:#f3e1d6; --fawn:#a8865c;
+    --serif:"Iowan Old Style","Charter","Palatino Linotype",Palatino,Georgia,serif; --sans:ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,Arial,sans-serif; --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --wing:repeating-linear-gradient(90deg,var(--deep) 0 5px,var(--jay) 5px 9px,#9fc0f0 9px 11px,var(--ink) 11px 13px); }
+  @media (prefers-color-scheme: dark) { :root { --paper:#11151f; --sheet:#1a2030; --line:#283044; --ink:#ece6d8; --ink2:#b6b9c4; --ink3:#7f8698; --jay:#6f9ef0; --deep:#9fc0f0; --wash:#1e2a44; --cin:#e08a5f; --cinw:#3a261f; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--serif); -webkit-font-smoothing: antialiased; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 24px 96px; }
+  header { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 3px solid; border-image: var(--wing) 1; }
+  header svg { width: 64px; height: 64px; flex: none; }
+  h1 { font: italic 600 40px/1 var(--serif); margin: 0; letter-spacing: -.01em; }
+  header p { margin: 4px 0 0; font: 13px var(--mono); color: var(--ink3); }
+  header a { color: var(--jay); }
+  h2 { font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); margin: 52px 0 14px; display: flex; gap: 10px; align-items: center; }
+  h2::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
+  h3 { font: 600 19px/1.3 var(--serif); margin: 26px 0 6px; }
+  p, li { color: var(--ink); } .dim { color: var(--ink2); }
+  a { color: var(--jay); }
+  code, .m { font: .82em var(--mono); background: var(--sheet); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); }
+  pre { font: 12.5px/1.55 var(--mono); background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; color: var(--ink2); }
+  pre b { color: var(--ink); font-weight: 600; } pre .ok { color: #3f9a64; } pre .bad { color: var(--cin); } pre .hl { color: var(--jay); }
+  table { width: 100%; border-collapse: collapse; font: 13.5px/1.45 var(--sans); margin: 10px 0; }
+  th { text-align: left; font: 600 10.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); border-bottom: 1px solid var(--line); padding: 8px 10px 6px 0; }
+  td { border-bottom: 1px dashed var(--line); padding: 8px 10px 8px 0; vertical-align: top; }
+  td.n { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  .pick { color: var(--deep); font-weight: 600; }
+  figure { margin: 18px 0 26px; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: var(--sheet); }
+  figcaption { font: 12.5px/1.5 var(--mono); color: var(--ink3); margin-top: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .grid figure { margin: 0; }
+  .phones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .bug { border-left: 3px solid var(--cin); padding: 2px 0 2px 16px; margin: 18px 0; }
+  .bug h3 { margin-top: 0; }
+  .fix { color: var(--ink2); }
+  .fix::before { content: "fix → "; font: 600 12px var(--mono); color: #3f9a64; }
+  .quote { border-left: 3px solid var(--jay); padding: 2px 0 2px 16px; color: var(--ink2); font-style: italic; margin: 10px 0; }
+  .marks { display: flex; gap: 22px; align-items: end; margin: 8px 0; flex-wrap: wrap; }
+  .marks div { text-align: center; font: 12px var(--mono); color: var(--ink3); }
+  .marks svg { width: 110px; height: 110px; display: block; margin-bottom: 6px; }
+  .sono img { image-rendering: auto; border-radius: 6px; }
+  ol.time { list-style: none; padding: 0; margin: 0; font: 14px/1.5 var(--sans); }
+  ol.time li { display: grid; grid-template-columns: 70px 1fr; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--line); }
+  ol.time .t { font: 12px var(--mono); color: var(--ink3); padding-top: 2px; }
+  .flow { font: 12.5px/1.65 var(--mono); }
+  footer { margin-top: 60px; font: 12px var(--mono); color: var(--ink3); }
+  @media (max-width: 640px) { main { padding: 28px 16px 64px; } h1 { font-size: 32px; } .grid, .pair { grid-template-columns: 1fr; } .phones { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(4.5 2) scale(.86)"><path fill="#2f63c4" d="M19 57C14 46 15 34 22 27 18 21 13 13 9 6c8 2 16 7 21 11 9-3 17 1 20 10l1 11c-3 9-10 16-19 19z"/><path fill="#fbf9f4" d="M37 35c5-2 11-1 14 3-3 9-10 16-19 19-1-8 0-16 5-22z"/><path fill="#1a2230" d="M50 29.5 61 33.5 50 36.5z"/><path fill="none" stroke="#1a2230" stroke-width="2.6" stroke-linecap="round" d="M50.5 30.5c-5-1.6-10-1.6-15 .5M50 40c-4 8-12 12-21 11.5"/><circle fill="#1a2230" cx="43" cy="30" r="2.5"/><circle fill="#fbf9f4" cx="43.8" cy="29.2" r=".8"/><path fill="none" stroke="#1a2230" stroke-width="2.6" stroke-linecap="round" d="M17 44l6 2M16.5 49l6.5 1.5M18 53.5l6 1"/></g></svg>
+  <div>
+    <h1>Jay — build log</h1>
+    <p>Notes, evidence and screenshots from building <a href="../">a.skh.am/jay</a> · 9 Oct 2026</p>
+  </div>
+</header>
+
+<h2>The brief</h2>
+<p class="quote">“A completely local transcription service for medical transcription… in-browser WASM, high-perf small model… all audio stays on device, recording or upload, streaming if the model supports it, search, history of previous audio, a sidebar of sessions with many upload/recording turns, export/clear local storage. Style it as Jay with a creative birdsong theme. Deploy when ready.”</p>
+<p class="dim">Then, mid-build: <em>“a one-time online download is fine… or inline a really small one like Parakeet and ship a compiled wasm blob so it just works on open”</em>, <em>“don’t worry about overt security, it should be smooth”</em>, and <em>“get a version up now and iterate live”</em>.</p>
+
+<h2>What it is</h2>
+<figure><img src="session.jpg" alt="Jay desktop: a session with a dictation and an upload, sonogram scrubbers, playback highlighting the current sentence" loading="lazy" width="1600" height="1000">
+<figcaption>A session: live dictation + an uploaded file. The scrubber is a sonogram of the clip; the sentence being played is highlighted; each paragraph has a seek timestamp.</figcaption></figure>
+<ul>
+  <li>Speech recognition runs in a module worker on <b>ONNX Runtime Web</b> (WebAssembly SIMD, multi-threaded). No server, no API, no account.</li>
+  <li><b>Moonshine Tiny</b> (MIT) ships with the page, so it works on first open and offline afterwards. <b>MedASR</b> (Google’s clinical model) and <b>Moonshine Base</b> are one-click downloads, cached on the device.</li>
+  <li>Record with live, streaming partials, or drop any audio/video files. Sessions hold many clips; everything is searchable, editable, exportable (Markdown / text / JSON) and backed up or restored as one file.</li>
+  <li>Audio, transcripts and history live only in the browser’s IndexedDB. It is an installable PWA and keeps working with no network.</li>
+</ul>
+
+<h2>Choosing a model that fits in a static site</h2>
+<p>The site is plain GitHub Pages with a 10 MB per-file and 25 MB media budget, so “inline Parakeet” got sized up first:</p>
+<table>
+  <tr><th>Candidate</th><th>Smallest usable build</th><th>Verdict</th></tr>
+  <tr><td>NVIDIA Parakeet CTC 0.6B</td><td class="n">455–611 MB</td><td>Too big to ship, or for a first visit</td></tr>
+  <tr><td>Google MedASR (105M Conformer-CTC)</td><td class="n">108 MB int8</td><td class="pick">Download once: the medical model</td></tr>
+  <tr><td>Moonshine Streaming Tiny</td><td class="n">~76 MB (5 graphs)</td><td>Real streaming, but its decoder alone is 54 MB</td></tr>
+  <tr><td>Whisper tiny.en</td><td class="n">~40 MB</td><td>Bigger and weaker than Moonshine at this size</td></tr>
+  <tr><td>Moonshine Tiny (27M)</td><td class="n">28 MB → 20.7 MB gz</td><td class="pick">Ship it, gzip-sharded</td></tr>
+  <tr><td>ORT Web CPU wasm (SIMD+threads)</td><td class="n">14.2 MB → 3.7 MB gz</td><td class="pick">Ship it; the WebGPU build (28 MB) is not needed</td></tr>
+</table>
+<pre><b>$ python3 _tools/jay-assets.py</b>
+download onnxruntime-web-1.30.0.tgz            <span class="ok">sha256 ✓</span>
+download moonshine-tiny encoder_model_quantized <span class="ok">sha256 ✓</span>  7,937,661 → 5,579,595 gz
+download moonshine-tiny decoder_model_merged_q  <span class="ok">sha256 ✓</span> 20,243,286 → 15,109,335 gz (2 shards)
+ort-wasm-simd-threaded.wasm                     14,239,897 → 3,652,765 gz
+<span class="hl">Jay assets verified: 24,341,695 bytes of gzip shards</span>
+<b>$ python3 scripts/check-static.py</b>
+Static sites: 124 files; 22,773,654 media + 24,732,788 model bytes; links and budgets valid</pre>
+<p class="dim">Model/runtime bytes got their own reviewed 40 MB budget, so the existing 25 MB media budget for the rest of the site is unchanged. The browser reassembles the shards, gunzips them with <code>DecompressionStream</code>, checks the SHA-256 and caches them.</p>
+
+<h2>Proving the pipeline before the UI</h2>
+<h3>Python reference: MedASR vs Moonshine Tiny on clinical dictation</h3>
+<p class="dim">Public MedASR test clips, run through onnxruntime on CPU with greedy decoding. The radiology clip is 43.8 s.</p>
+<pre><b>MED</b>  [EXAM TYPE] CT chest PE protocol {period} [INDICATION] 54-year-old female, shortness of
+     breath, evaluate for PE {period} … No saddle embolus {period} Lungs {colon} No pneumothorax
+     {period} Small bilateral effusions {comma} right greater than left {period} [IMPRESSION] …
+<b>MOON</b> Exam types CTE Chespee, Protocol Period, Inucation 54-year-old female shortens of breath,
+     evaluate for BE period … <span class="bad">nosatal, endless period, lungs colon, no new mirth or ax period</span></pre>
+<p>MedASR is clearly the right engine for clinical vocabulary. It even emits <code>{period}</code> and <code>[SECTION]</code> tokens, which Jay renders as punctuation and report headings. Moonshine Tiny is fine for general speech.</p>
+<pre><b>leading-silence pad</b>  0.00 s → "<span class="bad">mmunology</span> is the study…"   "<span class="bad">please</span> take your…"   "Hear rate is 72…"
+                     0.25 s → "<span class="ok">Immunology</span> is the study…"   "<span class="ok">Please</span> take your…"   "<span class="ok">Heart</span> rate is 72…"</pre>
+<h3>Porting the DSP to JavaScript</h3>
+<pre><b>log-mel (LasrFeatureExtractor port)</b>  298 frames × 128 mels in 19 ms · max |JS − NumPy| = <span class="ok">0</span>
+<b>48 → 16 kHz worklet resampler</b> (windowed sinc, 64× table)
+  440 Hz gain 1.000 · 1 kHz 1.000 · 6 kHz 1.000 · 7.6 kHz 0.306 · 9 kHz <span class="ok">0.000</span> · 12 kHz <span class="ok">0.000</span>
+  44.1 kHz input: same response · ~1% of one core</pre>
+
+<h3>Making a field-guide sonogram</h3>
+<div class="sono">
+<figure><img src="sono-1.png" alt="First sonogram attempt: noisy streaks" loading="lazy" width="480" height="120"><figcaption>v1 · max-pooled power, global floor: busy streaks</figcaption></figure>
+<figure><img src="sono-2.png" alt="Second attempt: harder floor" loading="lazy" width="480" height="120"><figcaption>v2 · pre-emphasis, mean pooling, harder floor</figcaption></figure>
+<figure><img src="sono-3.png" alt="Third attempt: smoothed with per-band floors, syllables visible" loading="lazy" width="480" height="120"><figcaption>v3 (shipped) · 5×3 smoothing + per-band floors: syllables and formants read like a field guide</figcaption></figure>
+</div>
+
+<h3>The mark</h3>
+<div class="marks">
+  <div><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#f5f1e8"/><path fill="#2f63c4" d="M15 41c-1-11 4-20 13-24l9-12 1.5 9 7-6.5-1 9.5c6 3 9.5 9 9.5 16H43c-3 4-9 8.5-17 8.5-4.5 0-8.5-.2-11-.5z"/><path fill="#fbf9f4" d="M33 33c4.5-.5 8.5 1 10 4.5-3 4.5-10 8-17.5 8 3.5-3.5 5-8 7.5-12.5z"/><path fill="#1a2230" d="M53 31.5 63 34l-10 3z"/><circle fill="#1a2230" cx="44.6" cy="29" r="2.4"/></svg>v1 · reads as a cat</div>
+  <div><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#f5f1e8"/><g transform="translate(4.5 2) scale(.86)"><path fill="#2f63c4" d="M19 57C14 46 15 34 22 27 18 21 13 13 9 6c8 2 16 7 21 11 9-3 17 1 20 10l1 11c-3 9-10 16-19 19z"/><path fill="#fbf9f4" d="M37 35c5-2 11-1 14 3-3 9-10 16-19 19-1-8 0-16 5-22z"/><path fill="#1a2230" d="M50 29.5 61 33.5 50 36.5z"/><path fill="none" stroke="#1a2230" stroke-width="2.6" stroke-linecap="round" d="M50.5 30.5c-5-1.6-10-1.6-15 .5M50 40c-4 8-12 12-21 11.5"/><circle fill="#1a2230" cx="43" cy="30" r="2.5"/><circle fill="#fbf9f4" cx="43.8" cy="29.2" r=".8"/><path fill="none" stroke="#1a2230" stroke-width="2.6" stroke-linecap="round" d="M17 44l6 2M16.5 49l6.5 1.5M18 53.5l6 1"/></g></svg>v2 · swept crest, bridle, necklace, wing bars</div>
+</div>
+
+<h2>The app</h2>
+<div class="grid">
+  <figure><img src="empty.jpg" alt="Empty state with the jay, Dictate and Upload buttons, and a MedASR suggestion" loading="lazy" width="1600" height="1000"><figcaption>First open: the built-in model is already warm.</figcaption></figure>
+  <figure><img src="live.jpg" alt="Live dictation with partial transcript and a scrolling live sonogram" loading="lazy" width="1600" height="1000"><figcaption>Live dictation: finals in ink, a partial in italics, the live sonogram strip.</figcaption></figure>
+  <figure><img src="download.jpg" alt="Switching to MedASR with a download progress line" loading="lazy" width="1600" height="1000"><figcaption>One-click MedASR: 108 MB fetched once, checked and cached.</figcaption></figure>
+  <figure><img src="medasr.jpg" alt="MedASR radiology report with section headings" loading="lazy" width="1600" height="1000"><figcaption>MedASR on a 44 s CT-PE dictation: sections, punctuation and spoken commands rendered.</figcaption></figure>
+  <figure><img src="search.jpg" alt="Search for effusions across sessions with highlights" loading="lazy" width="1600" height="1000"><figcaption>Search across every session, highlighted in the sidebar and the transcript.</figcaption></figure>
+  <figure><img src="models.jpg" alt="Models settings sheet" loading="lazy" width="1600" height="1000"><figcaption>Models: built-in, downloadable, or bring your own ONNX (from Hugging Face or local files).</figcaption></figure>
+  <figure><img src="storage.jpg" alt="Storage settings sheet with usage breakdown, backup and clean-up" loading="lazy" width="1600" height="1000"><figcaption>Storage: usage breakdown, full backup/restore, delete audio but keep text, erase.</figcaption></figure>
+  <figure><img src="dark.jpg" alt="Dark dusk theme" loading="lazy" width="1600" height="1000"><figcaption>Dusk theme follows the system or a manual toggle.</figcaption></figure>
+</div>
+<div class="phones" style="margin-top:18px">
+  <figure><img src="phone.jpg" alt="Phone layout" loading="lazy" width="390" height="844"><figcaption>Phone</figcaption></figure>
+  <figure><img src="phone-drawer.jpg" alt="Phone with the sessions drawer open" loading="lazy" width="390" height="844"><figcaption>Sessions drawer</figcaption></figure>
+</div>
+
+<h2>How it flows</h2>
+<pre class="flow">mic ─▶ <b>AudioWorklet</b> (mono, sinc 48k→16k) ─▶ main thread ─┬─▶ IndexedDB PCM chunks every 4 s (crash-safe)
+   └─▶ <b>MediaRecorder</b> safety copy ─────────────────────┤
+                                                     └─▶ <b>ASR worker</b>
+                                                          energy VAD · rolling partials · finals queue
+                                                          ONNX Runtime Web (WASM SIMD, ½ cores, no spin)
+                                                          Moonshine enc/dec  ·  MedASR log-mel → CTC
+                                                          ─▶ segments with timestamps ─▶ IndexedDB
+files ─▶ decodeAudioData @16 kHz ─▶ worker: sonogram + silence-aware chunk plan ─▶ same engine</pre>
+
+<h2>Bugs found by actually looking</h2>
+<div class="bug"><h3>The live sonogram filled up solid blue</h3>
+<div class="pair"><figure><img src="bug-strip-before.jpg" alt="Live strip saturated blue" loading="lazy"><figcaption>before</figcaption></figure><figure><img src="live.jpg" alt="Live strip fixed" loading="lazy"><figcaption>after</figcaption></figure></div>
+<p>The strip scrolls by drawing the canvas onto itself. With normal <code>source-over</code> blending, every frame re-blended the old semi-transparent ink, so it piled up to opaque.</p><p class="fix">draw the shift with <code>globalCompositeOperation = "copy"</code>.</p></div>
+<div class="bug"><h3>The phone layout was 516 px wide in a 390 px screen</h3>
+<div class="pair"><figure><img src="bug-overflow-before.jpg" alt="Phone overflowing horizontally" loading="lazy"><figcaption>before</figcaption></figure><figure><img src="phone.jpg" alt="Phone fixed" loading="lazy"><figcaption>after</figcaption></figure></div>
+<p>A <code>1fr</code> grid track has a minimum width of <code>auto</code>, so the un-wrapped session title stretched the whole page.</p><p class="fix"><code>minmax(0, 1fr)</code> on the app and page grids.</p></div>
+<div class="bug"><h3>Under load, the “mic” heard about 84% of what was said</h3>
+<pre>source speech span 28.18 s · recorded <span class="bad">23.65 s</span> (8 threads)  ·  <span class="ok">26.86 s</span> (3 threads)
+worklet saw 12.2 s of audio in 36.1 s wall clock → the AudioContext clock itself stalled
+bare test page, 4 busy workers, no Jay code: clock 0.30–0.67× realtime (headless sink)</pre>
+<p>Speech-recognition threads plus ORT’s busy-spinning thread pool starved the real-time audio thread. Headless Chromium’s fake output makes this extreme, and a busy or backgrounded phone can do the same.</p>
+<p class="fix">use half the cores (max 4) and turn off spinning. Run a parallel <code>MediaRecorder</code> copy; on stop, if the live stream came up short, swap in the full recording and re-transcribe it (the live draft stays available).</p></div>
+<div class="bug"><h3>The last words of a dictation went missing</h3><p>Stop cleared the recording state before the worklet’s final flush arrived, so the tail was dropped.</p><p class="fix">keep accepting PCM until <code>stop()</code> has drained the worklet.</p></div>
+<div class="bug"><h3>“37.2” became “37. 2”</h3><p>Sentence splitting (for click-to-seek timing) split on the decimal point.</p><p class="fix">only split after <code>.?!</code> followed by whitespace.</p></div>
+<div class="bug"><h3>Radiology sections ran together</h3><p>Each sentence end flushed the buffer, so the following <code>[INDICATION]</code> marker saw an empty buffer and its line break was lost.</p><p class="fix">section markers always open a paragraph, with small-caps labels.</p></div>
+<div class="bug"><h3>Shorter Moonshine chunks made things worse</h3><p>Capping Moonshine at 10 s cut mid-phrase and lost the word at the join (“a condition <span class="bad">which</span> bones”).</p><p class="fix">back to 15 s, plus a targeted re-decode in two halves only when output looks clipped.</p></div>
+<div class="bug"><h3>Smaller ones</h3><p>Visiting this log could have overwritten the app’s offline copy (fixed: per-path service-worker cache keys, and this page is bypassed). A clip deleted mid-transcription could reappear (fixed: save guard and cancel). Restored backups had no sonograms (fixed: rebuilt from audio). A recovered dictation briefly showed “Listening” (fixed: recover before first render).</p></div>
+
+<h2>Verification</h2>
+<pre><b>$ node _tests/jay-browser.mjs</b>   (real Chromium, fake mic fed with the clinical clips)
+<span class="ok">✓</span> cross-origin isolated via service worker (WASM threads)
+<span class="ok">✓</span> built-in model ready: Moonshine Tiny ready · runs on this device · 4 threads
+<span class="ok">✓</span> upload transcribed on device
+<span class="ok">✓</span> pause splits paragraphs
+<span class="ok">✓</span> live partial transcript while speaking
+<span class="ok">✓</span> live dictation finalised through the tail
+<span class="ok">✓</span> live sonogram canvas sized · playback from local audio · search finds and highlights
+<span class="ok">✓</span> MedASR clinical sections: EXAM TYPE · INDICATION · TECHNIQUE · FINDINGS · IMPRESSION
+<span class="ok">✓</span> history persists across reload · no horizontal overflow on phone · no page errors
+<b>$ node _tests/jay-reliability.mjs</b>
+<span class="ok">✓</span> interrupted dictation recovered after a reload mid-recording
+<span class="ok">✓</span> deleted-while-transcribing clip stays deleted after reload
+<span class="ok">✓</span> full backup → erase everything → restore: audio plays, sonograms regenerated
+<span class="ok">✓</span> edit suggests a correction · correction applied to the next transcript · WebVTT export
+<span class="ok">✓</span> hung engine detected; clip failed cleanly · Try again transcribes on the restarted engine
+<b>speed in the browser</b> (8-core-class laptop)
+Moonshine Tiny  28 s of audio in 2.2 s  (≈13× realtime) · model warm in &lt;1 s from cache
+MedASR          43.8 s radiology in 5.1 s (≈9× realtime) · 108 MB download + compile ≈ 4.4 s
+cold first visit to ready: 3.2–3.7 s (6/6 runs)</pre>
+<p class="dim">The site check confirmed the rest of a.skh.am is untouched: compared with the previous build, the only output differences are the new <code>/jay/</code> folder and the feed timestamp. Jay’s service worker only handles <code>/jay/</code>. Firefox and WebKit engines are covered by automated runs (see below); not yet tried by hand on an iPhone, or with a real microphone in a noisy room.</p>
+
+<h2>Other browsers</h2>
+<p>Real Firefox 151 and WebKit 26.5 engines, run through Playwright:</p>
+<pre><b>$ node _tests/jay-crossbrowser.mjs</b>
+[firefox] 151.0 boot ok 5.5s  isolated · 4 threads · Moonshine Tiny ready
+[firefox] upload 9.4s: The patient temperature is 37.2 degrees Celsius. Heart rate is 72 beats…
+[firefox] record ✓ · search ✓ · phone 390 px ✓ · page errors: none
+[webkit]  26.5 boot ok 3.6s   isolated · 4 threads · Moonshine Tiny ready
+[webkit]  upload <span class="bad">STUCK</span>  →  <span class="ok">2.4s</span> after the fixes below
+[webkit]  search ✓ · phone 390 px ✓ · page errors: none</pre>
+<div class="bug"><h3>WebKit could not store audio at all</h3><p>Putting a <code>Blob</code> into IndexedDB failed outright, as it does on older Safari. Every upload stalled on “queued”.</p><p class="fix">probe once; where Blobs fail, store audio as an <code>ArrayBuffer</code> + type + name and rebuild the Blob on read. No other code needed to change.</p></div>
+<div class="bug"><h3><code>decodeAudioData</code> never resolved</h3><p>In the Linux WebKit build, decoding hung forever, leaving an endless “Transcribing…”.</p><p class="fix">a native RIFF/WAVE reader (PCM 8/16/24/32, float, extensible) with a windowed-sinc resampler. Jay’s own 16 kHz recordings now skip the codec entirely. Anything else gets a timeout and a clear error instead of a spinner.</p></div>
+
+<h2>Working like a clinician would</h2>
+<p>Fix a misheard term once and Jay offers to remember it. Every later transcript, live or uploaded, comes out corrected, and existing notes can be fixed in one click:</p>
+<pre><b>edit</b>   "The diagnosis includes <span class="bad">colesus-itis</span> gastritis…" → "<span class="ok">cholecystitis</span>"
+<b>toast</b>  Always write “colesus-itis” as “cholecystitis”?  [Remember]
+<b>rules</b>  word-boundary, case-aware: "Colesus-itis noted. PE suspected; rule out PE."
+       → "Cholecystitis noted. Pulmonary embolism suspected; rule out pulmonary embolism."</pre>
+<p class="dim">Also new: copy pastes into notes and EHR fields as formatted paragraphs with bold report headings. Exports add WebVTT subtitles. The screen stays awake while dictating. A muted or wrong microphone is flagged after a few seconds of silence. A full disk keeps the transcript and says so.</p>
+<div class="bug"><h3>A transcription that never finishes</h3><p>In one test run the engine went quiet mid-job and the clip sat on “Transcribing…”. It never happened again in dozens of runs, but a clinical note must never be stranded.</p><p class="fix">a watchdog: if the engine says nothing about a job for 2 minutes (outside model downloads), Jay restarts it. The clip fails with “Try again”, or, for a finished dictation, is re-transcribed from its saved audio. The test suite hangs the engine on purpose and checks this.</p></div>
+
+<h2>Reported from a phone</h2>
+<div class="bug"><h3>“Couldn’t start recording: Cannot set properties of null (setting ‘hidden’)”</h3>
+<p>Mobile Chrome, browser tab (the installed app was fine). Reproduced exactly by serving the v1-era cached <code>index.html</code> with current scripts:</p>
+<pre>toast: Couldn’t start recording: Cannot set properties of null (setting 'hidden')
+dock:  "dock recording"   ← stuck in a recording state</pre>
+<p>The old service worker raced network against cache and didn't keep the cache refresh alive, so on a slow mobile connection the tab could get old HTML (missing the v4 mic-warning element) with new JavaScript.</p>
+<p class="fix">every shell file now carries one content-derived <code>jay-build</code> stamp. The service worker installs a build atomically (refusing a half-propagated deploy), serves it consistently online and offline, and only reloads onto a new build when nothing is recording, transcribing or being edited. A page whose HTML and scripts disagree heals with one reload. A failed start cleans up fully. CI fails if the stamp is stale.</p>
+<pre><b>$ node _tests/jay-update.mjs</b>
+<span class="ok">✓</span> idle tab picks up a new deploy (page + scripts agree)
+<span class="ok">✓</span> opens offline from the installed build
+<span class="ok">✓</span> no reload mid-recording · update applied once the recording finished
+<span class="ok">✓</span> mixed-build deploy refused; still consistent on the last good build
+<span class="ok">✓</span> stale HTML detected → exactly one healing reload (no loop) · it can record</pre></div>
+<div class="bug"><h3>“Streaming med text keeps overwriting itself on one line”</h3>
+<p>Live partials re-decoded the whole open utterance (up to 24 s of continuous dictation) and replaced one italic line; report sections inside it were flattened.</p>
+<pre><b>before</b>  live partial grew to <span class="bad">42 words</span>, 1 sentence committed in 52 s
+<b>after</b>   committed sentence by sentence, partial ≤ <span class="ok">21 words</span>, committed text rewritten <span class="ok">0×</span></pre>
+<p class="fix">CTC local agreement: words two consecutive decodes agree on, older than 1.2 s, are committed as final ink. Cuts happen only at sentence ends where the audio is genuinely silent, so a word is never split. Decoding after a cut keeps 1.5 s of overlapping context, and partials render with paragraphs and section labels. A debug fake microphone replays clean audio through the real live path at realtime to test this deterministically.</p></div>
+
+<h2>Real-world conditions</h2>
+<p>Phones lose signal mid-download, people unplug headsets mid-sentence, and calls interrupt audio. Each case is now handled and tested:</p>
+<pre><b>$ node _tests/jay-downloads.mjs</b>   (local MedASR mirror that drops the first connection at 40%)
+<span class="ok">✓</span> dropped at 43,253,760 bytes, resumed with bytes=42991616-; UI said "Connection dropped — resuming"
+<span class="ok">✓</span> resumed model is intact (checksum passed) and transcribes the report
+<span class="ok">✓</span> switching to Tiny took 0.9s and cancelled the slow download
+<span class="ok">✓</span> Cancel in the Models sheet stops the download and offers Get again
+<span class="ok">✓</span> Get downloads MedASR in the background; Moonshine Tiny stays loaded and selected
+<b>$ node _tests/jay-mic.mjs</b>
+<span class="ok">✓</span> system mute shows a warning · unmute clears it
+<span class="ok">✓</span> mic disconnect → switched stream and kept recording: "Microphone disconnected — continuing on …"
+<span class="ok">✓</span> suspended audio context resumes itself · recording across the mic switch saved</pre>
+<div class="bug"><h3>Two model-state bugs the download tests exposed</h3><p>A model marked “ready” earlier was assumed still loaded after another one had replaced it, so switching back never told the engine. And “Get” on a model you weren’t using loaded and compiled it, evicting the one you were.</p><p class="fix">the app tracks which single model the engine actually holds; “Get” is now a background download-only prefetch.</p></div>
+
+<div class="bug"><h3>v6 broke the built-in model for new visitors (caught by the post-deploy run, fixed in v6.1)</h3>
+<pre>Couldn’t load Moonshine Tiny: <span class="bad">HTTP 416 for decoder.gz.1.bin</span>
+content-encoding: gzip · content-length: 6,111,203   ← GitHub Pages compresses .bin on the fly
+decoded body:                         6,109,335   ← what fetch() actually hands back</pre>
+<p>The new resumable downloader read “fewer bytes than Content-Length” as a dropped connection, retried with <code>Range: bytes=6109335-</code>, and treated the CDN’s 416 as fatal. The local dev server doesn’t compress, so every local test passed.</p>
+<p class="fix">Content-Length and Range resume are only trusted for uncompressed responses; a compressed transfer restarts instead, and a 416 restarts rather than failing. The service worker drops stale encoding headers. The downloads test now emulates a gzip-on-the-fly CDN (it fails on the v6 code), and a post-deploy smoke test cold-loads the live site as a brand-new visitor after every push.</p>
+<pre><b>$ node _tests/jay-smoke.mjs</b>   (live site, fresh profile)
+<span class="ok">✓</span> CDN serves one consistent build jay-build:7e8cfe1543
+<span class="ok">✓</span> new visitor: built-in model ready in 4.2s
+<span class="ok">✓</span> upload transcribes: Biopsy is a medical procedure in which…</pre></div>
+
+<h2>Timeline</h2>
+<ol class="time">
+  <li><span class="t">09:20</span><span>Brief. Read the repo’s static-SPA process; sized Parakeet, MedASR, Moonshine, Whisper and the ORT builds.</span></li>
+  <li><span class="t">09:36</span><span>Reproducible asset pipeline: pinned, checksummed, gzip-sharded under 10 MB per file.</span></li>
+  <li><span class="t">09:40</span><span>Python reference for both models; JS log-mel matches NumPy exactly.</span></li>
+  <li><span class="t">10:05</span><span>First end-to-end run in Chromium: 8 threads, 28 s transcribed in 2.2 s.</span></li>
+  <li><span class="t">10:22</span><span><b>v1 live</b> on main → GitHub Pages. Live HTTPS run passed, MedASR included.</span></li>
+  <li><span class="t">11:30</span><span><b>v2</b>: audio-starvation recovery, crash recovery, report sections, accessibility fixes, this log.</span></li>
+  <li><span class="t">11:40</span><span><b>v3</b>: Firefox and WebKit pass end-to-end; Safari-safe audio storage and WAV decoding.</span></li>
+  <li><span class="t">14:00</span><span><b>v6.1</b>: hotfix for the GitHub Pages gzip/416 regression; post-deploy smoke test.</span></li>
+  <li><span class="t">13:40</span><span><b>v6</b>: resumable, cancellable model downloads; dictation survives mic disconnects, OS mute and audio interruptions.</span></li>
+  <li><span class="t">13:05</span><span><b>v5</b>: share audio to Jay from any Android app, back gesture closes the drawer, haptics, a Dictate launcher shortcut.</span></li>
+  <li><span class="t">12:45</span><span><b>v4.1</b>: atomic, self-healing updates (the phone record failure); streaming MedASR commits sentence by sentence.</span></li>
+  <li><span class="t">12:10</span><span><b>v4</b>: corrections learned from your edits, paste-ready rich copy, WebVTT, screen wake lock, no-mic warning, storage-full handling, keyboard sheet, and a stall watchdog.</span></li>
+</ol>
+
+<footer>Built by an AI coding agent in pi, working in this repo · audio in screenshots is from public MedASR test clips · not linked from the app</footer>
+</main>
+</body>
+</html>
